@@ -26,10 +26,10 @@ export default function BlocApp() {
   const [disabledExpenses, setDisabledExpenses] = useState({});
   const [showExpenseConfig, setShowExpenseConfig] = useState(false);
 
-  const [newAssociation, setNewAssociation] = useState({ name: "", address: "" });
+const [newAssociation, setNewAssociation] = useState({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
   const [newBlock, setNewBlock] = useState({ name: "" });
   const [newStair, setNewStair] = useState({ name: "", blockId: "" });
-  const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "" });
+const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "", surface: "", apartmentType: "", heatingSource: "" });
   const [newExpense, setNewExpense] = useState({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
   
@@ -239,22 +239,26 @@ export default function BlocApp() {
     );
   };
 
-  const addAssociation = () => {
-    if (!newAssociation.name || !newAssociation.address) return;
-    
-    const association = {
-      id: Date.now(),
-      name: newAssociation.name,
-      address: newAssociation.address,
-      createdAt: new Date().toLocaleDateString("ro-RO")
-    };
-    setAssociations([...associations, association]);
-    setSelectedAssociation(association);
-    setNewAssociation({ name: "", address: "" });
-    
-    // Inițializează lunile pentru noua asociație
-    initializeMonths();
+const addAssociation = () => {
+  if (!newAssociation.name || !newAssociation.address) return;
+  
+  const association = {
+    id: Date.now(),
+    name: newAssociation.name,
+    address: newAssociation.address,
+    bankAccount: newAssociation.bankAccount || "",
+    administrator: newAssociation.administrator || "",
+    president: newAssociation.president || "",
+    censor: newAssociation.censor || "",
+    createdAt: new Date().toLocaleDateString("ro-RO")
   };
+  setAssociations([...associations, association]);
+  setSelectedAssociation(association);
+  setNewAssociation({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
+  
+  // Inițializează lunile pentru noua asociație
+  initializeMonths();
+};
 
   const addBlock = () => {
     if (!newBlock.name || !selectedAssociation) return;
@@ -280,19 +284,32 @@ export default function BlocApp() {
     setNewStair({ name: "", blockId: "" });
   };
 
-  const addApartment = () => {
-    if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) return;
-    
-    const apartment = {
-      id: Date.now(),
-      number: parseInt(newApartment.number),
-      persons: parseInt(newApartment.persons),
-      stairId: parseInt(newApartment.stairId),
-      owner: newApartment.owner
-    };
-    setApartments([...apartments, apartment]);
-    setNewApartment({ number: "", persons: "", stairId: "", owner: "" });
+const addApartment = () => {
+  if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) return;
+  
+  const apartment = {
+    id: Date.now(),
+    number: parseInt(newApartment.number),
+    persons: parseInt(newApartment.persons),
+    stairId: parseInt(newApartment.stairId),
+    owner: newApartment.owner,
+    surface: newApartment.surface ? parseFloat(newApartment.surface) : null,
+    apartmentType: newApartment.apartmentType || null,
+    heatingSource: newApartment.heatingSource || null
   };
+  
+  setApartments([...apartments, apartment]);
+  
+  setNewApartment({ 
+    number: "", 
+    persons: "", 
+    stairId: newApartment.stairId, // păstrăm scara selectată
+    owner: "", 
+    surface: "", 
+    apartmentType: "", 
+    heatingSource: "" 
+  });
+};
 
   const addCustomExpense = () => {
     if (!newCustomExpense.name || !selectedAssociation) return;
@@ -650,30 +667,58 @@ export default function BlocApp() {
                 Pentru a începe, trebuie să configurezi structura asociației (se face doar o dată).
               </p>
               
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    value={newAssociation.name}
-                    onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
-                    placeholder="Numele asociației (ex: Asociația Primăverii 12)"
-                    className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-                  />
-                  <input
-                    value={newAssociation.address}
-                    onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
-                    placeholder="Adresa completă"
-                    className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-                  />
-                </div>
-                <button 
-                  onClick={addAssociation}
-                  className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 flex items-center disabled:bg-gray-400"
-                  disabled={!newAssociation.name || !newAssociation.address}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Creează Asociația
-                </button>
-              </div>
+<div className="space-y-4">
+  <div className="grid md:grid-cols-2 gap-4">
+    <input
+      value={newAssociation.name}
+      onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
+      placeholder="Numele asociației (ex: Asociația Primăverii 12)"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+    <input
+      value={newAssociation.address}
+      onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
+      placeholder="Adresa completă"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+  </div>
+  <div className="grid md:grid-cols-2 gap-4">
+    <input
+      value={newAssociation.bankAccount}
+      onChange={(e) => setNewAssociation({...newAssociation, bankAccount: e.target.value})}
+      placeholder="Cont bancar (opțional)"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+    <input
+      value={newAssociation.administrator}
+      onChange={(e) => setNewAssociation({...newAssociation, administrator: e.target.value})}
+      placeholder="Administrator (opțional)"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+  </div>
+  <div className="grid md:grid-cols-2 gap-4">
+    <input
+      value={newAssociation.president}
+      onChange={(e) => setNewAssociation({...newAssociation, president: e.target.value})}
+      placeholder="Președinte (opțional)"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+    <input
+      value={newAssociation.censor}
+      onChange={(e) => setNewAssociation({...newAssociation, censor: e.target.value})}
+      placeholder="Cenzor (opțional)"
+      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
+    />
+  </div>
+  <button 
+    onClick={addAssociation}
+    className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 flex items-center disabled:bg-gray-400"
+    disabled={!newAssociation.name || !newAssociation.address}
+  >
+    <Plus className="w-4 h-4 mr-2" />
+    Creează Asociația
+  </button>
+</div>
             </div>
           )}
 
@@ -784,303 +829,495 @@ export default function BlocApp() {
     );
   }
 
-  // Setup View
-  if (currentView === "setup") {
-    const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation?.id);
-    const availableStairs = stairs.filter(stair => 
-      associationBlocks.some(block => block.id === stair.blockId)
-    );
-    const allApartments = getAssociationApartments();
+// Setup View
+if (currentView === "setup") {
+  const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation?.id);
+  const availableStairs = stairs.filter(stair => 
+    associationBlocks.some(block => block.id === stair.blockId)
+  );
+  const allApartments = getAssociationApartments();
 
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">⚙️ Configurare Asociație</h2>
-            <button 
-              onClick={() => setCurrentView("dashboard")}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Înapoi
-            </button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 gap-4">
+          <h2 className="text-2xl font-bold text-gray-800">⚙️ Configurare Asociație</h2>
+          <button 
+            onClick={() => setCurrentView("dashboard")}
+            className="w-full lg:w-auto bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center justify-center"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Înapoi
+          </button>
+        </div>
+
+        {/* Linia 1: Date Asociație (50%) + Blocuri (25%) + Scări (25%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          {/* Date Asociație (50% = 2 coloane din 4) */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-blue-50 border-b">
+              <h3 className="text-lg font-semibold">📋 Date Asociație</h3>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Numele asociației *</label>
+                  <input
+                    value={selectedAssociation?.name || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, name: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="ex: Asociația Primăverii 12"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Adresa completă *</label>
+                  <input
+                    value={selectedAssociation?.address || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, address: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="Strada, numărul, sectorul"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cont bancar</label>
+                  <input
+                    value={selectedAssociation?.bankAccount || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, bankAccount: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="RO49 AAAA 1B31..."
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
+                  <input
+                    value={selectedAssociation?.administrator || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, administrator: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="Numele administratorului"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Președinte</label>
+                  <input
+                    value={selectedAssociation?.president || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, president: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="Numele președintelui"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cenzor</label>
+                  <input
+                    value={selectedAssociation?.censor || ""}
+                    onChange={(e) => {
+                      if (selectedAssociation) {
+                        const updatedAssociation = { ...selectedAssociation, censor: e.target.value };
+                        setAssociations(prev => prev.map(assoc => 
+                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
+                        ));
+                        setSelectedAssociation(updatedAssociation);
+                      }
+                    }}
+                    placeholder="Numele cenzorului"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-gray-600 flex justify-between">
+                <span><strong>Creat:</strong> {selectedAssociation?.createdAt}</span>
+                <span className="text-gray-500">* Câmpurile marcate sunt obligatorii</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6">
-            {/* Blocks Section */}
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-4 bg-green-50 border-b">
-                <h3 className="text-lg font-semibold">🏠 Blocuri ({associationBlocks.length})</h3>
+          {/* Blocuri (25% = 1 coloană din 4) */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-green-50 border-b">
+              <h3 className="text-lg font-semibold">🏠 Blocuri ({associationBlocks.length})</h3>
+            </div>
+            <div className="p-4">
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={newBlock.name}
+                  onChange={(e) => setNewBlock({...newBlock, name: e.target.value})}
+                  placeholder="ex: Bloc B4"
+                  className="flex-1 p-2 border rounded-lg text-sm"
+                />
+                <button 
+                  onClick={addBlock}
+                  className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-sm"
+                  disabled={!newBlock.name}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
               </div>
-              <div className="p-4">
-                <div className="flex gap-2 mb-4">
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {associationBlocks.map(block => (
+                  <div key={block.id} className="p-2 bg-gray-50 rounded text-sm">
+                    {block.name} ({stairs.filter(s => s.blockId === block.id).length} scări)
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Scări (25% = 1 coloană din 4) */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-purple-50 border-b">
+              <h3 className="text-lg font-semibold">🔼 Scări ({availableStairs.length})</h3>
+            </div>
+            <div className="p-4">
+              <div className="space-y-2 mb-4">
+                <select 
+                  value={newStair.blockId}
+                  onChange={(e) => setNewStair({...newStair, blockId: e.target.value})}
+                  className="w-full p-2 border rounded-lg text-sm"
+                >
+                  <option value="">Selectează bloc</option>
+                  {associationBlocks.map(block => (
+                    <option key={block.id} value={block.id}>{block.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
                   <input
-                    value={newBlock.name}
-                    onChange={(e) => setNewBlock({...newBlock, name: e.target.value})}
-                    placeholder="ex: Bloc B4"
+                    value={newStair.name}
+                    onChange={(e) => setNewStair({...newStair, name: e.target.value})}
+                    placeholder="ex: Scara A"
                     className="flex-1 p-2 border rounded-lg text-sm"
                   />
                   <button 
-                    onClick={addBlock}
-                    className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-sm"
-                    disabled={!newBlock.name}
+                    onClick={addStair}
+                    className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 text-sm"
+                    disabled={!newStair.name || !newStair.blockId}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {associationBlocks.map(block => (
-                    <div key={block.id} className="p-2 bg-gray-50 rounded text-sm">
-                      {block.name} ({stairs.filter(s => s.blockId === block.id).length} scări)
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {availableStairs.map(stair => {
+                  const block = blocks.find(b => b.id === stair.blockId);
+                  return (
+                    <div key={stair.id} className="p-2 bg-gray-50 rounded text-sm">
+                      {block?.name} - {stair.name} ({apartments.filter(a => a.stairId === stair.id).length} apt)
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Stairs Section */}
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-4 bg-purple-50 border-b">
-                <h3 className="text-lg font-semibold">🔼 Scări ({availableStairs.length})</h3>
-              </div>
-              <div className="p-4">
-                <div className="space-y-2 mb-4">
-                  <select 
-                    value={newStair.blockId}
-                    onChange={(e) => setNewStair({...newStair, blockId: e.target.value})}
-                    className="w-full p-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Selectează bloc</option>
-                    {associationBlocks.map(block => (
-                      <option key={block.id} value={block.id}>{block.name}</option>
-                    ))}
-                  </select>
-                  <div className="flex gap-2">
-                    <input
-                      value={newStair.name}
-                      onChange={(e) => setNewStair({...newStair, name: e.target.value})}
-                      placeholder="ex: Scara A"
-                      className="flex-1 p-2 border rounded-lg text-sm"
-                    />
-                    <button 
-                      onClick={addStair}
-                      className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 text-sm"
-                      disabled={!newStair.name || !newStair.blockId}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+        {/* Linia 2: Apartamente (50%) + Cheltuieli (50%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Apartamente (50%) */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-orange-50 border-b">
+              <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
+            </div>
+            <div className="p-4">
+              <div className="space-y-2 mb-4">
+                <select 
+                  value={newApartment.stairId}
+                  onChange={(e) => setNewApartment({...newApartment, stairId: e.target.value})}
+                  className="w-full p-2 border rounded-lg text-sm"
+                >
+                  <option value="">Selectează scara</option>
                   {availableStairs.map(stair => {
                     const block = blocks.find(b => b.id === stair.blockId);
                     return (
-                      <div key={stair.id} className="p-2 bg-gray-50 rounded text-sm">
-                        {block?.name} - {stair.name} ({apartments.filter(a => a.stairId === stair.id).length} apt)
-                      </div>
+                      <option key={stair.id} value={stair.id}>
+                        {block?.name} - {stair.name}
+                      </option>
                     );
                   })}
-                </div>
-              </div>
-            </div>
+                </select>
 
-            {/* Apartments Section */}
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-4 bg-orange-50 border-b">
-                <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
-              </div>
-              <div className="p-4">
-                <div className="space-y-2 mb-4">
-                  <select 
-                    value={newApartment.stairId}
-                    onChange={(e) => setNewApartment({...newApartment, stairId: e.target.value})}
+                {/* Prima linie: Nr apt + Nume proprietar */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newApartment.number}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d+$/.test(value)) {
+                        setNewApartment({...newApartment, number: value});
+                      }
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Nr apartament *"
                     className="w-full p-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Selectează scara</option>
-                    {availableStairs.map(stair => {
-                      const block = blocks.find(b => b.id === stair.blockId);
-                      return (
-                        <option key={stair.id} value={stair.id}>
-                          {block?.name} - {stair.name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  
+                  />
                   <input
                     value={newApartment.owner}
                     onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
-                    placeholder="Numele proprietarului"
+                    placeholder="Nume proprietar *"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
-                  
-                  <div className="flex gap-2">
-                    <input
-                      value={newApartment.number}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "" || /^\d+$/.test(value)) {
-                          setNewApartment({...newApartment, number: value});
-                        }
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Nr apt"
-                      className="flex-1 p-2 border rounded-lg text-sm"
-                    />
-                    <input
-                      value={newApartment.persons}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "" || /^\d+$/.test(value)) {
-                          setNewApartment({...newApartment, persons: value});
-                        }
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Nr pers"
-                      className="flex-1 p-2 border rounded-lg text-sm"
-                    />
-                    <button 
-                      onClick={addApartment}
-                      className="bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm"
-                      disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {allApartments.map(apartment => {
-                    const stair = stairs.find(s => s.id === apartment.stairId);
-                    const block = blocks.find(b => b.id === stair?.blockId);
-                    return (
-                      <div key={apartment.id} className="p-2 bg-gray-50 rounded text-sm">
-                        <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
-                        <div className="text-gray-600">{block?.name} - {stair?.name} • {apartment.persons} pers</div>
+
+                {/* A doua linie: Nr persoane + Tip apartament */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newApartment.persons}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d+$/.test(value)) {
+                        setNewApartment({...newApartment, persons: value});
+                      }
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Nr persoane *"
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                  <select
+                    value={newApartment.apartmentType}
+                    onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Tip apartament</option>
+                    <option value="Garsoniera">Garsoniera</option>
+                    <option value="2 camere">2 camere</option>
+                    <option value="3 camere">3 camere</option>
+                    <option value="4 camere">4 camere</option>
+                    <option value="5 camere">5 camere</option>
+                    <option value="Penthouse">Penthouse</option>
+                  </select>
+                </div>
+
+                {/* A treia linie: Suprafața + Sursă încălzire */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newApartment.surface}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
+                        setNewApartment({...newApartment, surface: value.replace(',', '.')});
+                      }
+                    }}
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Suprafață mp"
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                  <select
+                    value={newApartment.heatingSource}
+                    onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Sursă încălzire</option>
+                    <option value="Termoficare">Termoficare</option>
+                    <option value="Centrala proprie">Centrală proprie</option>
+                    <option value="Centrala bloc">Centrală bloc</option>
+                    <option value="Debransat">Debranșat</option>
+                  </select>
+                </div>
+
+                {/* Buton adăugare */}
+                <button 
+                  onClick={addApartment}
+                  className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
+                  disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adaugă Apartament
+                </button>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allApartments.map(apartment => {
+                  const stair = stairs.find(s => s.id === apartment.stairId);
+                  const block = blocks.find(b => b.id === stair?.blockId);
+                  return (
+                    <div key={apartment.id} className="p-2 bg-gray-50 rounded text-sm">
+                      <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
+                      <div className="text-gray-600">
+                        {block?.name} - {stair?.name} • {apartment.persons} pers
+                        {apartment.surface && ` • ${apartment.surface} mp`}
+                        {apartment.apartmentType && ` • ${apartment.apartmentType}`}
                       </div>
-                    );
-                  })}
-                </div>
+                      {apartment.heatingSource && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          🔥 {apartment.heatingSource}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          </div>
 
-            {/* Expenses Section */}
-            <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-4 bg-red-50 border-b">
-                <h3 className="text-lg font-semibold">💰 Cheltuieli ({getAssociationExpenseTypes().length})</h3>
-              </div>
-              <div className="p-4">
-                <div className="space-y-3 mb-4">
-                  <div className="flex gap-2">
-                    <input
-                      value={newCustomExpense.name}
-                      onChange={(e) => setNewCustomExpense({...newCustomExpense, name: e.target.value})}
-                      placeholder="ex: Deratizare"
-                      className="flex-1 p-2 border rounded-lg text-sm"
-                    />
-                    <button 
-                      onClick={addCustomExpense}
-                      className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
-                      disabled={!newCustomExpense.name}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Configurează cheltuială:</label>
-                    <select 
-                      value={selectedExpenseForConfig || ""}
-                      onChange={(e) => setSelectedExpenseForConfig(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-sm mb-2"
-                    >
-                      <option value="">Selectează cheltuiala</option>
-                      {getAssociationExpenseTypes().map(expenseType => (
-                        <option key={expenseType.name} value={expenseType.name}>
-                          {expenseType.name}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    {selectedExpenseForConfig && (
-                      <div className="space-y-2">
-                        <select
-                          value={getExpenseConfig(selectedExpenseForConfig).distributionType}
-                          onChange={(e) => updateExpenseConfig(selectedExpenseForConfig, { distributionType: e.target.value })}
-                          className="w-full p-2 border rounded-lg text-sm"
-                        >
-                          <option value="apartment">Pe apartament (egal)</option>
-                          <option value="individual">Pe apartament (individual)</option>
-                          <option value="person">Pe persoană</option>
-                          <option value="consumption">Pe consum (mc/Gcal/kWh)</option>
-                        </select>
-                        
-                        {allApartments.length > 0 && (
-                          <div className="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded">
-                            <div className="text-xs font-medium text-gray-600 mb-1">Participarea apartamentelor:</div>
-                            {allApartments.map(apartment => {
-                              const participation = getApartmentParticipation(apartment.id, selectedExpenseForConfig);
-                              return (
-                                <div key={apartment.id} className="flex items-center gap-2 text-sm">
-                                  <span className="w-16">Apt {apartment.number}</span>
-                                  <select
-                                    value={participation.type}
-                                    onChange={(e) => {
-                                      const type = e.target.value;
-                                      if (type === "integral" || type === "excluded") {
-                                        setApartmentParticipation(apartment.id, selectedExpenseForConfig, type);
-                                      } else {
-                                        setApartmentParticipation(apartment.id, selectedExpenseForConfig, type, participation.value || (type === "percentage" ? 50 : 0));
-                                      }
-                                    }}
-                                    className="p-1 border rounded text-xs"
-                                  >
-                                    <option value="integral">Integral</option>
-                                    <option value="percentage">Procent</option>
-                                    <option value="fixed">Sumă fixă</option>
-                                    <option value="excluded">Exclus</option>
-                                  </select>
-                                  {(participation.type === "percentage" || participation.type === "fixed") && (
-                                    <input
-                                      type="text"
-                                      inputMode="numeric"
-                                      value={participation.value || ""}
-                                      onChange={(e) => setApartmentParticipation(apartment.id, selectedExpenseForConfig, participation.type, parseFloat(e.target.value) || 0)}
-                                      placeholder={participation.type === "percentage" ? "%" : "RON"}
-                                      className="w-16 p-1 border rounded text-xs"
-                                    />
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+          {/* Cheltuieli (50%) */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-red-50 border-b">
+              <h3 className="text-lg font-semibold">💰 Cheltuieli ({getAssociationExpenseTypes().length})</h3>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3 mb-4">
+                <div className="flex gap-2">
+                  <input
+                    value={newCustomExpense.name}
+                    onChange={(e) => setNewCustomExpense({...newCustomExpense, name: e.target.value})}
+                    placeholder="ex: Deratizare"
+                    className="flex-1 p-2 border rounded-lg text-sm"
+                  />
+                  <button 
+                    onClick={addCustomExpense}
+                    className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
+                    disabled={!newCustomExpense.name}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
                 
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  <div className="text-xs text-gray-600 mb-2">Cheltuieli active pentru {currentMonth}:</div>
-                  {getAssociationExpenseTypes().map(expenseType => {
-                    const config = getExpenseConfig(expenseType.name);
-                    const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                    const isDefault = defaultExpenseTypes.find(def => def.name === expenseType.name);
-                    
-                    return (
-                      <div key={expenseType.name} className={`p-2 rounded text-sm ${isCustom ? "bg-red-50" : "bg-blue-50"} flex items-center justify-between`}>
-                        <div className="flex-1">
-                          <div className="font-medium">{expenseType.name}</div>
-                          <div className="text-xs text-gray-600">
-                            {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
-                             config.distributionType === "individual" ? "Pe apartament (individual)" :
-                             config.distributionType === "person" ? "Pe persoană" : 
-                             (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
-                          </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Configurează cheltuială:</label>
+                  <select 
+                    value={selectedExpenseForConfig || ""}
+                    onChange={(e) => setSelectedExpenseForConfig(e.target.value)}
+                    className="w-full p-2 border rounded-lg text-sm mb-2"
+                  >
+                    <option value="">Selectează cheltuiala</option>
+                    {getAssociationExpenseTypes().map(expenseType => (
+                      <option key={expenseType.name} value={expenseType.name}>
+                        {expenseType.name}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {selectedExpenseForConfig && (
+                    <div className="space-y-2">
+                      <select
+                        value={getExpenseConfig(selectedExpenseForConfig).distributionType}
+                        onChange={(e) => updateExpenseConfig(selectedExpenseForConfig, { distributionType: e.target.value })}
+                        className="w-full p-2 border rounded-lg text-sm"
+                      >
+                        <option value="apartment">Pe apartament (egal)</option>
+                        <option value="individual">Pe apartament (individual)</option>
+                        <option value="person">Pe persoană</option>
+                        <option value="consumption">Pe consum (mc/Gcal/kWh)</option>
+                      </select>
+                      
+                      {allApartments.length > 0 && (
+                        <div className="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded">
+                          <div className="text-xs font-medium text-gray-600 mb-1">Participarea apartamentelor:</div>
+                          {allApartments.map(apartment => {
+                            const participation = getApartmentParticipation(apartment.id, selectedExpenseForConfig);
+                            return (
+                              <div key={apartment.id} className="flex items-center gap-2 text-sm">
+                                <span className="w-16">Apt {apartment.number}</span>
+                                <select
+                                  value={participation.type}
+                                  onChange={(e) => {
+                                    const type = e.target.value;
+                                    if (type === "integral" || type === "excluded") {
+                                      setApartmentParticipation(apartment.id, selectedExpenseForConfig, type);
+                                    } else {
+                                      setApartmentParticipation(apartment.id, selectedExpenseForConfig, type, participation.value || (type === "percentage" ? 50 : 0));
+                                    }
+                                  }}
+                                  className="p-1 border rounded text-xs"
+                                >
+                                  <option value="integral">Integral</option>
+                                  <option value="percentage">Procent</option>
+                                  <option value="fixed">Sumă fixă</option>
+                                  <option value="excluded">Exclus</option>
+                                </select>
+                                {(participation.type === "percentage" || participation.type === "fixed") && (
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={participation.value || ""}
+                                    onChange={(e) => setApartmentParticipation(apartment.id, selectedExpenseForConfig, participation.type, parseFloat(e.target.value) || 0)}
+                                    placeholder={participation.type === "percentage" ? "%" : "RON"}
+                                    className="w-16 p-1 border rounded text-xs"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="flex gap-1">
-                          {isDefault && (
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="text-xs text-gray-600 mb-2">Cheltuieli active pentru {currentMonth}:</div>
+                {getAssociationExpenseTypes().map(expenseType => {
+                  const config = getExpenseConfig(expenseType.name);
+                  const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
+                  const isDefault = defaultExpenseTypes.find(def => def.name === expenseType.name);
+                  
+                  return (
+                    <div key={expenseType.name} className={`p-2 rounded text-sm ${isCustom ? "bg-red-50" : "bg-blue-50"} flex items-center justify-between`}>
+                      <div className="flex-1">
+                        <div className="font-medium">{expenseType.name}</div>
+                        <div className="text-xs text-gray-600">
+                          {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
+                           config.distributionType === "individual" ? "Pe apartament (individual)" :
+                           config.distributionType === "person" ? "Pe persoană" : 
+                           (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        {isDefault && (
+                          <button
+                            onClick={() => toggleExpenseStatus(expenseType.name, true)}
+                            className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
+                            title="Elimină pentru această lună"
+                          >
+                            Elimină
+                          </button>
+                        )}
+                        {isCustom && (
+                          <>
                             <button
                               onClick={() => toggleExpenseStatus(expenseType.name, true)}
                               className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
@@ -1088,16 +1325,49 @@ export default function BlocApp() {
                             >
                               Elimină
                             </button>
-                          )}
-                          {isCustom && (
-                            <>
-                              <button
-                                onClick={() => toggleExpenseStatus(expenseType.name, true)}
-                                className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
-                                title="Elimină pentru această lună"
-                              >
-                                Elimină
-                              </button>
+                            <button
+                              onClick={() => {
+                                setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
+                              }}
+                              className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                              title="Șterge definitiv cheltuiala"
+                            >
+                              Șterge
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {getDisabledExpenseTypes().length > 0 && (
+                  <>
+                    <div className="text-xs text-gray-600 mb-2 mt-4 pt-2 border-t">Cheltuieli dezactivate pentru {currentMonth}:</div>
+                    {getDisabledExpenseTypes().map(expenseType => {
+                      const config = getExpenseConfig(expenseType.name);
+                      const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
+                      
+                      return (
+                        <div key={expenseType.name} className="p-2 rounded text-sm bg-gray-50 flex items-center justify-between opacity-60">
+                          <div className="flex-1">
+                            <div className="font-medium line-through">{expenseType.name}</div>
+                            <div className="text-xs text-gray-600">
+                              {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
+                               config.distributionType === "individual" ? "Pe apartament (individual)" :
+                               config.distributionType === "person" ? "Pe persoană" : 
+                               (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => toggleExpenseStatus(expenseType.name, false)}
+                              className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                              title="Reactivează pentru această lună"
+                            >
+                              Reactivează
+                            </button>
+                            {isCustom && (
                               <button
                                 onClick={() => {
                                   setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
@@ -1107,79 +1377,36 @@ export default function BlocApp() {
                               >
                                 Șterge
                               </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {getDisabledExpenseTypes().length > 0 && (
-                    <>
-                      <div className="text-xs text-gray-600 mb-2 mt-4 pt-2 border-t">Cheltuieli dezactivate pentru {currentMonth}:</div>
-                      {getDisabledExpenseTypes().map(expenseType => {
-                        const config = getExpenseConfig(expenseType.name);
-                        const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                        
-                        return (
-                          <div key={expenseType.name} className="p-2 rounded text-sm bg-gray-50 flex items-center justify-between opacity-60">
-                            <div className="flex-1">
-                              <div className="font-medium line-through">{expenseType.name}</div>
-                              <div className="text-xs text-gray-600">
-                                {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
-                                 config.distributionType === "individual" ? "Pe apartament (individual)" :
-                                 config.distributionType === "person" ? "Pe persoană" : 
-                                 (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => toggleExpenseStatus(expenseType.name, false)}
-                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                                title="Reactivează pentru această lună"
-                              >
-                                Reactivează
-                              </button>
-                              {isCustom && (
-                                <button
-                                  onClick={() => {
-                                    setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
-                                  }}
-                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-                                  title="Șterge definitiv cheltuiala"
-                                >
-                                  Șterge
-                                </button>
-                              )}
-                            </div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             </div>
           </div>
-
-          {allApartments.length > 0 && (
-            <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-xl text-center">
-              <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Configurare Completă!</h3>
-              <p className="text-green-700 mb-4">
-                Ai configurat {allApartments.length} apartamente. Acum poți începe să gestionezi întreținerea.
-              </p>
-              <button 
-                onClick={() => setCurrentView("dashboard")}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-              >
-                Mergi la Dashboard
-              </button>
-            </div>
-          )}
         </div>
+
+        {allApartments.length > 0 && (
+          <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-xl text-center">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Configurare Completă!</h3>
+            <p className="text-green-700 mb-4">
+              Ai configurat {allApartments.length} apartamente. Acum poți începe să gestionezi întreținerea.
+            </p>
+            <button 
+              onClick={() => setCurrentView("dashboard")}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+            >
+              Mergi la Dashboard
+            </button>
+          </div>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Maintenance View 
   if (currentView === "maintenance") {
