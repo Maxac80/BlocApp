@@ -25,11 +25,15 @@ export default function BlocApp() {
   const [selectedExpenseForConfig, setSelectedExpenseForConfig] = useState(null);
   const [disabledExpenses, setDisabledExpenses] = useState({});
   const [showExpenseConfig, setShowExpenseConfig] = useState(false);
+  
+  // State-uri noi pentru editarea apartamentelor
+  const [editingApartment, setEditingApartment] = useState(null);
+  const [editingApartmentData, setEditingApartmentData] = useState({});
 
-const [newAssociation, setNewAssociation] = useState({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
+  const [newAssociation, setNewAssociation] = useState({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
   const [newBlock, setNewBlock] = useState({ name: "" });
   const [newStair, setNewStair] = useState({ name: "", blockId: "" });
-const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "", surface: "", apartmentType: "", heatingSource: "" });
+  const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "", surface: "", apartmentType: "", heatingSource: "" });
   const [newExpense, setNewExpense] = useState({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
   
@@ -239,26 +243,26 @@ const [newApartment, setNewApartment] = useState({ number: "", persons: "", stai
     );
   };
 
-const addAssociation = () => {
-  if (!newAssociation.name || !newAssociation.address) return;
-  
-  const association = {
-    id: Date.now(),
-    name: newAssociation.name,
-    address: newAssociation.address,
-    bankAccount: newAssociation.bankAccount || "",
-    administrator: newAssociation.administrator || "",
-    president: newAssociation.president || "",
-    censor: newAssociation.censor || "",
-    createdAt: new Date().toLocaleDateString("ro-RO")
+  const addAssociation = () => {
+    if (!newAssociation.name || !newAssociation.address) return;
+    
+    const association = {
+      id: Date.now(),
+      name: newAssociation.name,
+      address: newAssociation.address,
+      bankAccount: newAssociation.bankAccount || "",
+      administrator: newAssociation.administrator || "",
+      president: newAssociation.president || "",
+      censor: newAssociation.censor || "",
+      createdAt: new Date().toLocaleDateString("ro-RO")
+    };
+    setAssociations([...associations, association]);
+    setSelectedAssociation(association);
+    setNewAssociation({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
+    
+    // Inițializează lunile pentru noua asociație
+    initializeMonths();
   };
-  setAssociations([...associations, association]);
-  setSelectedAssociation(association);
-  setNewAssociation({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
-  
-  // Inițializează lunile pentru noua asociație
-  initializeMonths();
-};
 
   const addBlock = () => {
     if (!newBlock.name || !selectedAssociation) return;
@@ -284,32 +288,73 @@ const addAssociation = () => {
     setNewStair({ name: "", blockId: "" });
   };
 
-const addApartment = () => {
-  if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) return;
-  
-  const apartment = {
-    id: Date.now(),
-    number: parseInt(newApartment.number),
-    persons: parseInt(newApartment.persons),
-    stairId: parseInt(newApartment.stairId),
-    owner: newApartment.owner,
-    surface: newApartment.surface ? parseFloat(newApartment.surface) : null,
-    apartmentType: newApartment.apartmentType || null,
-    heatingSource: newApartment.heatingSource || null
+  const addApartment = () => {
+    if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) return;
+    
+    const apartment = {
+      id: Date.now(),
+      number: parseInt(newApartment.number),
+      persons: parseInt(newApartment.persons),
+      stairId: parseInt(newApartment.stairId),
+      owner: newApartment.owner,
+      surface: newApartment.surface ? parseFloat(newApartment.surface) : null,
+      apartmentType: newApartment.apartmentType || null,
+      heatingSource: newApartment.heatingSource || null
+    };
+    
+    setApartments([...apartments, apartment]);
+    
+    setNewApartment({ 
+      number: "", 
+      persons: "", 
+      stairId: newApartment.stairId, // păstrăm scara selectată
+      owner: "", 
+      surface: "", 
+      apartmentType: "", 
+      heatingSource: "" 
+    });
   };
-  
-  setApartments([...apartments, apartment]);
-  
-  setNewApartment({ 
-    number: "", 
-    persons: "", 
-    stairId: newApartment.stairId, // păstrăm scara selectată
-    owner: "", 
-    surface: "", 
-    apartmentType: "", 
-    heatingSource: "" 
-  });
-};
+
+  // Funcții noi pentru editarea apartamentelor
+  const startEditingApartment = (apartment) => {
+    setEditingApartment(apartment.id);
+    setEditingApartmentData({
+      owner: apartment.owner,
+      persons: apartment.persons.toString(),
+      apartmentType: apartment.apartmentType || "",
+      surface: apartment.surface?.toString() || "",
+      heatingSource: apartment.heatingSource || ""
+    });
+  };
+
+  const cancelApartmentEdit = () => {
+    setEditingApartment(null);
+    setEditingApartmentData({});
+  };
+
+  const saveApartmentEdit = (apartmentId) => {
+    const updatedApartment = {
+      ...apartments.find(apt => apt.id === apartmentId),
+      owner: editingApartmentData.owner,
+      persons: parseInt(editingApartmentData.persons),
+      apartmentType: editingApartmentData.apartmentType || null,
+      surface: editingApartmentData.surface ? parseFloat(editingApartmentData.surface) : null,
+      heatingSource: editingApartmentData.heatingSource || null
+    };
+    
+    setApartments(prev => prev.map(apt => 
+      apt.id === apartmentId ? updatedApartment : apt
+    ));
+    
+    setEditingApartment(null);
+    setEditingApartmentData({});
+  };
+
+  const deleteApartment = (apartmentId) => {
+    if (window.confirm("Ești sigur că vrei să ștergi acest apartament?")) {
+      setApartments(prev => prev.filter(apt => apt.id !== apartmentId));
+    }
+  };
 
   const addCustomExpense = () => {
     if (!newCustomExpense.name || !selectedAssociation) return;
@@ -604,6 +649,7 @@ const addApartment = () => {
   };
 
   const maintenanceData = calculateMaintenance();
+
 
   if (currentView === "dashboard") {
     return (
@@ -1054,60 +1100,165 @@ if (currentView === "setup") {
 
         {/* Linia 2: Apartamente (50%) + Cheltuieli (50%) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Apartamente (50%) */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-orange-50 border-b">
-              <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
-            </div>
-            <div className="p-4">
-              <div className="space-y-2 mb-4">
-                <select 
-                  value={newApartment.stairId}
-                  onChange={(e) => setNewApartment({...newApartment, stairId: e.target.value})}
-                  className="w-full p-2 border rounded-lg text-sm"
-                >
-                  <option value="">Selectează scara</option>
-                  {availableStairs.map(stair => {
-                    const block = blocks.find(b => b.id === stair.blockId);
-                    return (
-                      <option key={stair.id} value={stair.id}>
-                        {block?.name} - {stair.name}
-                      </option>
-                    );
-                  })}
-                </select>
+{/* Apartamente (50%) */}
+<div className="bg-white rounded-xl shadow-lg">
+  <div className="p-4 bg-orange-50 border-b">
+    <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
+  </div>
+  <div className="p-4">
+    <div className="space-y-2 mb-4">
+      <select 
+        value={newApartment.stairId}
+        onChange={(e) => setNewApartment({...newApartment, stairId: e.target.value})}
+        className="w-full p-2 border rounded-lg text-sm"
+      >
+        <option value="">Selectează scara</option>
+        {availableStairs.map(stair => {
+          const block = blocks.find(b => b.id === stair.blockId);
+          return (
+            <option key={stair.id} value={stair.id}>
+              {block?.name} - {stair.name}
+            </option>
+          );
+        })}
+      </select>
 
-                {/* Prima linie: Nr apt + Nume proprietar */}
+      {/* Prima linie: Nr apt + Nume proprietar */}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          value={newApartment.number}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || /^\d+$/.test(value)) {
+              setNewApartment({...newApartment, number: value});
+            }
+          }}
+          type="text"
+          inputMode="numeric"
+          placeholder="Nr apartament *"
+          className="w-full p-2 border rounded-lg text-sm"
+        />
+        <input
+          value={newApartment.owner}
+          onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
+          placeholder="Nume proprietar *"
+          className="w-full p-2 border rounded-lg text-sm"
+        />
+      </div>
+
+      {/* A doua linie: Nr persoane + Tip apartament */}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          value={newApartment.persons}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || /^\d+$/.test(value)) {
+              setNewApartment({...newApartment, persons: value});
+            }
+          }}
+          type="text"
+          inputMode="numeric"
+          placeholder="Nr persoane *"
+          className="w-full p-2 border rounded-lg text-sm"
+        />
+        <select
+          value={newApartment.apartmentType}
+          onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
+          className="w-full p-2 border rounded-lg text-sm"
+        >
+          <option value="">Tip apartament</option>
+          <option value="Garsoniera">Garsoniera</option>
+          <option value="2 camere">2 camere</option>
+          <option value="3 camere">3 camere</option>
+          <option value="4 camere">4 camere</option>
+          <option value="5 camere">5 camere</option>
+          <option value="Penthouse">Penthouse</option>
+        </select>
+      </div>
+
+      {/* A treia linie: Suprafața + Sursă încălzire */}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          value={newApartment.surface}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
+              setNewApartment({...newApartment, surface: value.replace(',', '.')});
+            }
+          }}
+          type="text"
+          inputMode="decimal"
+          placeholder="Suprafață mp"
+          className="w-full p-2 border rounded-lg text-sm"
+        />
+        <select
+          value={newApartment.heatingSource}
+          onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
+          className="w-full p-2 border rounded-lg text-sm"
+        >
+          <option value="">Sursă încălzire</option>
+          <option value="Termoficare">Termoficare</option>
+          <option value="Centrala proprie">Centrală proprie</option>
+          <option value="Centrala bloc">Centrală bloc</option>
+          <option value="Debransat">Debranșat</option>
+        </select>
+      </div>
+
+      {/* Buton adăugare */}
+      <button 
+        onClick={addApartment}
+        className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
+        disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Adaugă Apartament
+      </button>
+    </div>
+    
+    <div className="space-y-2 max-h-64 overflow-y-auto">
+      {allApartments.map(apartment => {
+        const stair = stairs.find(s => s.id === apartment.stairId);
+        const block = blocks.find(b => b.id === stair?.blockId);
+        const isEditing = editingApartment === apartment.id;
+        
+        return (
+          <div key={apartment.id} className={`p-3 rounded text-sm ${isEditing ? "bg-blue-50 border-2 border-blue-200" : "bg-gray-50"}`}>
+            {isEditing ? (
+              // Modul de editare
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-blue-600">Editare Apartament {apartment.number}</span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => saveApartmentEdit(apartment.id)}
+                      className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                      disabled={!editingApartmentData.owner || !editingApartmentData.persons}
+                    >
+                      Salvează
+                    </button>
+                    <button
+                      onClick={() => cancelApartmentEdit()}
+                      className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Editare proprietar și persoane */}
                 <div className="grid grid-cols-2 gap-2">
                   <input
-                    value={newApartment.number}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "" || /^\d+$/.test(value)) {
-                        setNewApartment({...newApartment, number: value});
-                      }
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Nr apartament *"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                  <input
-                    value={newApartment.owner}
-                    onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
+                    value={editingApartmentData.owner}
+                    onChange={(e) => setEditingApartmentData({...editingApartmentData, owner: e.target.value})}
                     placeholder="Nume proprietar *"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
-                </div>
-
-                {/* A doua linie: Nr persoane + Tip apartament */}
-                <div className="grid grid-cols-2 gap-2">
                   <input
-                    value={newApartment.persons}
+                    value={editingApartmentData.persons}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === "" || /^\d+$/.test(value)) {
-                        setNewApartment({...newApartment, persons: value});
+                        setEditingApartmentData({...editingApartmentData, persons: value});
                       }
                     }}
                     type="text"
@@ -1115,9 +1266,13 @@ if (currentView === "setup") {
                     placeholder="Nr persoane *"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
+                </div>
+                
+                {/* Editare tip apartament și suprafață */}
+                <div className="grid grid-cols-2 gap-2">
                   <select
-                    value={newApartment.apartmentType}
-                    onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
+                    value={editingApartmentData.apartmentType || ""}
+                    onChange={(e) => setEditingApartmentData({...editingApartmentData, apartmentType: e.target.value})}
                     className="w-full p-2 border rounded-lg text-sm"
                   >
                     <option value="">Tip apartament</option>
@@ -1128,16 +1283,12 @@ if (currentView === "setup") {
                     <option value="5 camere">5 camere</option>
                     <option value="Penthouse">Penthouse</option>
                   </select>
-                </div>
-
-                {/* A treia linie: Suprafața + Sursă încălzire */}
-                <div className="grid grid-cols-2 gap-2">
                   <input
-                    value={newApartment.surface}
+                    value={editingApartmentData.surface || ""}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                        setNewApartment({...newApartment, surface: value.replace(',', '.')});
+                        setEditingApartmentData({...editingApartmentData, surface: value.replace(',', '.')});
                       }
                     }}
                     type="text"
@@ -1145,53 +1296,63 @@ if (currentView === "setup") {
                     placeholder="Suprafață mp"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
-                  <select
-                    value={newApartment.heatingSource}
-                    onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
-                    className="w-full p-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Sursă încălzire</option>
-                    <option value="Termoficare">Termoficare</option>
-                    <option value="Centrala proprie">Centrală proprie</option>
-                    <option value="Centrala bloc">Centrală bloc</option>
-                    <option value="Debransat">Debranșat</option>
-                  </select>
                 </div>
-
-                {/* Buton adăugare */}
-                <button 
-                  onClick={addApartment}
-                  className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
-                  disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
+                
+                {/* Editare sursă încălzire */}
+                <select
+                  value={editingApartmentData.heatingSource || ""}
+                  onChange={(e) => setEditingApartmentData({...editingApartmentData, heatingSource: e.target.value})}
+                  className="w-full p-2 border rounded-lg text-sm"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adaugă Apartament
-                </button>
+                  <option value="">Sursă încălzire</option>
+                  <option value="Termoficare">Termoficare</option>
+                  <option value="Centrala proprie">Centrală proprie</option>
+                  <option value="Centrala bloc">Centrală bloc</option>
+                  <option value="Debransat">Debranșat</option>
+                </select>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {allApartments.map(apartment => {
-                  const stair = stairs.find(s => s.id === apartment.stairId);
-                  const block = blocks.find(b => b.id === stair?.blockId);
-                  return (
-                    <div key={apartment.id} className="p-2 bg-gray-50 rounded text-sm">
-                      <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
-                      <div className="text-gray-600">
-                        {block?.name} - {stair?.name} • {apartment.persons} pers
-                        {apartment.surface && ` • ${apartment.surface} mp`}
-                        {apartment.apartmentType && ` • ${apartment.apartmentType}`}
-                      </div>
-                      {apartment.heatingSource && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          🔥 {apartment.heatingSource}
-                        </div>
-                      )}
+            ) : (
+              // Modul de afișare
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
+                    <div className="text-gray-600">
+                      {block?.name} - {stair?.name} • {apartment.persons} pers
+                      {apartment.surface && ` • ${apartment.surface} mp`}
+                      {apartment.apartmentType && ` • ${apartment.apartmentType}`}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    {apartment.heatingSource && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        🔥 {apartment.heatingSource}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => startEditingApartment(apartment)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                      title="Editează apartamentul"
+                    >
+                      Editează
+                    </button>
+                    <button
+                      onClick={() => deleteApartment(apartment.id)}
+                      className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                      title="Șterge apartamentul"
+                    >
+                      Șterge
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
+        );
+      })}
+    </div>
+  </div>
+</div>
           {/* Cheltuieli (50%) */}
           <div className="bg-white rounded-xl shadow-lg">
             <div className="p-4 bg-red-50 border-b">
