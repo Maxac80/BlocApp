@@ -1,25 +1,168 @@
 import React, { useState } from "react";
-import { Building2, Calculator, Plus, CheckCircle, XCircle, ArrowLeft, Settings } from "lucide-react";
+import { Building2, Calculator, Plus, CheckCircle, XCircle, ArrowLeft, Settings, AlertCircle } from "lucide-react";
+import { useAssociationData } from "./useFirestore";
+import { useAuth } from "./AuthContext";
+
+// ✅ UN SINGUR SET DE IMPORT-URI FIREBASE:
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { db } from './firebase';
+
+// ✅ ADAUGĂ ACEASTĂ FUNCȚIE ÎNAINTE DE export default function BlocApp():
+const deleteCollection = async (collectionName) => {
+  try {
+    console.log(`🗑️ Șterg colecția: ${collectionName}`);
+    
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    const deletePromises = [];
+    
+    querySnapshot.forEach((document) => {
+      deletePromises.push(deleteDoc(doc(db, collectionName, document.id)));
+    });
+    
+    await Promise.all(deletePromises);
+    console.log(`✅ Colecția ${collectionName} ștearsă complet (${deletePromises.length} documente)`);
+  } catch (error) {
+    console.error(`❌ Eroare la ștergerea colecției ${collectionName}:`, error);
+  }
+};
 
 export default function BlocApp() {
+const { userProfile, user, currentUser } = useAuth(); // Obține și currentUser ca backup
+  // Determină utilizatorul activ (user sau currentUser, oricare este disponibil)
+  const activeUser = user || currentUser;
+  const {
+    loading,
+    error,
+    association,
+    blocks,
+    stairs,
+    apartments,
+    expenses,
+    customExpenses,
+    createAssociation,
+    updateAssociation,
+    addBlock,
+    addStair,
+    addApartment,
+    updateApartment,
+    deleteApartment,
+    addCustomExpense,
+    deleteCustomExpense,
+    addMonthlyExpense,
+    updateMonthlyExpense
+  } = useAssociationData();
+// ✅ FUNCȚIE EXTINSĂ PENTRU ÎNCĂRCAREA TUTUROR CONFIGURĂRILOR
+const loadInitialBalances = async () => {
+  if (!association?.id) return;
+  
+  try {
+    // 1. Încarcă soldurile inițiale
+    const balancesQuery = query(
+      collection(db, 'initialBalances'),
+      where('associationId', '==', association.id)
+    );
+    const balancesSnapshot = await getDocs(balancesQuery);
+    
+    const loadedBalances = {};
+    balancesSnapshot.docs.forEach(docSnapshot => {
+      const data = docSnapshot.data();
+      loadedBalances[data.apartmentId] = {
+        restante: data.restante || 0,
+        penalitati: data.penalitati || 0
+      };
+    });
+    
+    // 2. Încarcă cheltuielile eliminate
+    const disabledExpensesQuery = query(
+      collection(db, 'disabledExpenses'),
+      where('associationId', '==', association.id)
+    );
+    const disabledExpensesSnapshot = await getDocs(disabledExpensesQuery);
+    
+    const loadedDisabledExpenses = {};
+    disabledExpensesSnapshot.docs.forEach(docSnapshot => {
+      const data = docSnapshot.data();
+      const key = `${data.associationId}-${data.month}`;
+      loadedDisabledExpenses[key] = data.expenseNames || [];
+    });
+    
+    // 3. Încarcă ajustările de solduri pentru toate lunile
+    const adjustmentsQuery = query(
+      collection(db, 'balanceAdjustments'),
+      where('associationId', '==', association.id)
+    );
+    const adjustmentsSnapshot = await getDocs(adjustmentsQuery);
+    
+    const loadedAdjustments = {};
+    adjustmentsSnapshot.docs.forEach(docSnapshot => {
+      const data = docSnapshot.data();
+      const monthKey = `${data.associationId}-${data.month}`;
+      if (!loadedAdjustments[monthKey]) {
+        loadedAdjustments[monthKey] = {};
+      }
+      loadedAdjustments[monthKey][data.apartmentId] = {
+        restante: data.restante || 0,
+        penalitati: data.penalitati || 0
+      };
+    });
+    
+    // Aplicăm toate datele încărcate
+    setDisabledExpenses(loadedDisabledExpenses);
+    setMonthlyBalances(prev => ({ ...prev, ...loadedAdjustments }));
+    
+    // Aplicăm soldurile inițiale la luna curentă dacă nu există ajustări
+    const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    const monthKey = `${association.id}-${currentMonthStr}`;
+    
+    if (!loadedAdjustments[monthKey] && Object.keys(loadedBalances).length > 0) {
+      setMonthlyBalances(prev => ({
+        ...prev,
+        [monthKey]: loadedBalances
+      }));
+    }
+    
+    if (Object.keys(loadedBalances).length > 0) {
+      setHasInitialBalances(true);
+    }
+    
+    console.log('✅ Configurații încărcate:', {
+      solduri: Object.keys(loadedBalances).length,
+      cheltuieliEliminate: Object.keys(loadedDisabledExpenses).length,
+      ajustari: Object.keys(loadedAdjustments).length
+    });
+  } catch (error) {
+    console.error('❌ Eroare la încărcarea configurărilor:', error);
+  }
+};
+
+// ✅ ÎNCARCĂ SOLDURILE CÂND SE ÎNCARCĂ ASOCIAȚIA
+React.useEffect(() => {
+  if (association?.id) {
+    loadInitialBalances();
+  }
+}, [association?.id]);
+
+  console.log('🔍 DEBUG BlocApp:');
+  console.log('- user:', user);
+  console.log('- userProfile:', userProfile);
+  console.log('- loading:', loading);
+  console.log('- error:', error);
+  console.log('- association:', association);
+  console.log('- blocks count:', blocks?.length);
+  console.log('- stairs count:', stairs?.length);
+  console.log('- apartments count:', apartments?.length);
+
   const [currentView, setCurrentView] = useState("dashboard");
   const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
   const [showInitialBalances, setShowInitialBalances] = useState(false);
   const [showAdjustBalances, setShowAdjustBalances] = useState(false);
   const [adjustModalData, setAdjustModalData] = useState([]);
   const [hasInitialBalances, setHasInitialBalances] = useState(false);
-  const [associations, setAssociations] = useState([]);
-  const [selectedAssociation, setSelectedAssociation] = useState(null);
-  const [blocks, setBlocks] = useState([]);
-  const [stairs, setStairs] = useState([]);
-  const [apartments, setApartments] = useState([]);
-  const [expenses, setExpenses] = useState([]);
   const [monthlyTables, setMonthlyTables] = useState({});
   const [monthlyBalances, setMonthlyBalances] = useState({});
   const [monthStatuses, setMonthStatuses] = useState({});
   const [availableMonths, setAvailableMonths] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }));
-  const [customExpenses, setCustomExpenses] = useState([]);
   const [expenseConfig, setExpenseConfig] = useState({});
   const [expenseParticipation, setExpenseParticipation] = useState({});
   const [selectedExpenseForConfig, setSelectedExpenseForConfig] = useState(null);
@@ -36,6 +179,247 @@ export default function BlocApp() {
   const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "", surface: "", apartmentType: "", heatingSource: "" });
   const [newExpense, setNewExpense] = useState({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
+const [initialBalances, setInitialBalances] = useState({});
+
+
+
+// ✅ FUNCȚIE PENTRU SALVAREA SOLDURILOR ÎN FIRESTORE
+const saveInitialBalances = async () => {
+  if (!association?.id) return;
+  
+  try {
+    const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    const monthKey = `${association.id}-${currentMonthStr}`;
+    const currentBalances = monthlyBalances[monthKey] || {};
+    
+    // Șterge soldurile existente pentru această asociație
+    const existingBalancesQuery = query(
+      collection(db, 'initialBalances'),
+      where('associationId', '==', association.id)
+    );
+    const existingSnapshot = await getDocs(existingBalancesQuery);
+    
+    const deletePromises = existingSnapshot.docs.map(docSnapshot => 
+      deleteDoc(doc(db, 'initialBalances', docSnapshot.id))
+    );
+    await Promise.all(deletePromises);
+    
+    // Salvează noile solduri
+    const savePromises = Object.entries(currentBalances).map(([apartmentId, balance]) => {
+      return addDoc(collection(db, 'initialBalances'), {
+        associationId: association.id,
+        apartmentId: apartmentId,
+        restante: balance.restante || 0,
+        penalitati: balance.penalitati || 0,
+        savedAt: new Date().toISOString()
+      });
+    });
+    
+    await Promise.all(savePromises);
+    
+    setHasInitialBalances(true);
+    setShowInitialBalances(false);
+    console.log('✅ Solduri inițiale salvate în Firestore');
+    alert('✅ Soldurile inițiale au fost salvate cu succes!');
+  } catch (error) {
+    console.error('❌ Eroare la salvarea soldurilor:', error);
+    alert('❌ Eroare la salvarea soldurilor: ' + error.message);
+  }
+};
+
+// ✅ FUNCȚIE NOUĂ PENTRU SALVAREA AJUSTĂRILOR DE SOLDURI
+const saveBalanceAdjustments = async (month, adjustmentData) => {
+  if (!association?.id) return;
+  
+  try {
+    // Șterge ajustările existente pentru această lună
+    const existingQuery = query(
+      collection(db, 'balanceAdjustments'),
+      where('associationId', '==', association.id),
+      where('month', '==', month)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    
+    const deletePromises = existingSnapshot.docs.map(docSnapshot => 
+      deleteDoc(doc(db, 'balanceAdjustments', docSnapshot.id))
+    );
+    await Promise.all(deletePromises);
+    
+    // Salvează noile ajustări
+    const savePromises = adjustmentData.map(apartmentData => {
+      return addDoc(collection(db, 'balanceAdjustments'), {
+        associationId: association.id,
+        month: month,
+        apartmentId: apartmentData.apartmentId,
+        restante: apartmentData.restanteAjustate || 0,
+        penalitati: apartmentData.penalitatiAjustate || 0,
+        savedAt: new Date().toISOString()
+      });
+    });
+    
+    await Promise.all(savePromises);
+    console.log(`✅ Ajustări solduri salvate pentru ${month}:`, adjustmentData.length, 'apartamente');
+  } catch (error) {
+    console.error('❌ Eroare la salvarea ajustărilor:', error);
+    throw error;
+  }
+};
+
+// Funcție pentru ștergerea tuturor datelor BlocApp
+const deleteAllBlocAppData = async () => {
+  if (!window.confirm('⚠️ ATENȚIE! Ești sigur că vrei să ștergi TOATE datele?\n\nAceasta va șterge:\n- Toate asociațiile\n- Toate blocurile\n- Toate scările\n- Toate apartamentele\n- Toate cheltuielile\n\nAceastă acțiune este IREVERSIBILĂ!')) {
+    return;
+  }
+  
+  // A doua confirmare pentru siguranță
+  if (!window.confirm('🚨 ULTIMA CONFIRMARE!\n\nEști 100% sigur? Toate datele vor fi șterse definitiv!')) {
+    return;
+  }
+  
+  console.log('🚨 ȘTERGERE COMPLETĂ A DATELOR ÎNCEPUT...');
+  
+  try {
+    // Șterge în ordine pentru a evita dependențele
+    await deleteCollection('expenses');
+    await deleteCollection('customExpenses');
+    await deleteCollection('apartments');
+    await deleteCollection('stairs');
+    await deleteCollection('blocks');
+    await deleteCollection('associations');
+    await deleteCollection('test'); // Dacă există documente de test
+    
+    console.log('✅ TOATE DATELE AU FOST ȘTERSE!');
+    alert('✅ Toate datele au fost șterse cu succes!\n\nPagina se va reîncărca...');
+    
+    // Reîncarcă pagina pentru a reseta starea
+    window.location.reload();
+  } catch (error) {
+    console.error('❌ Eroare la ștergerea datelor:', error);
+    alert('❌ Eroare la ștergerea datelor: ' + error.message);
+  }
+};
+
+// Funcție pentru ștergerea doar a datelor asociației curente
+const deleteCurrentAssociationData = async () => {
+  if (!association) {
+    alert('Nu există asociație de șters');
+    return;
+  }
+  
+  if (!window.confirm(`Ești sigur că vrei să ștergi datele asociației "${association.name}"?\n\nAceasta va șterge toate blocurile, scările, apartamentele și cheltuielile acestei asociații.`)) {
+    return;
+  }
+  
+  try {
+    console.log('🗑️ Șterg datele asociației:', association.id, association.name);
+    
+    // Șterge cheltuielile asociației
+    const expensesQuery = query(
+      collection(db, 'expenses'),
+      where('associationId', '==', association.id)
+    );
+    const expensesSnapshot = await getDocs(expensesQuery);
+    for (const expenseDoc of expensesSnapshot.docs) {
+      await deleteDoc(doc(db, 'expenses', expenseDoc.id));
+    }
+    console.log(`✅ Șterse ${expensesSnapshot.docs.length} cheltuieli`);
+    
+    // Șterge cheltuielile custom ale asociației
+    const customExpensesQuery = query(
+      collection(db, 'customExpenses'),
+      where('associationId', '==', association.id)
+    );
+    const customExpensesSnapshot = await getDocs(customExpensesQuery);
+    for (const customExpenseDoc of customExpensesSnapshot.docs) {
+      await deleteDoc(doc(db, 'customExpenses', customExpenseDoc.id));
+    }
+    console.log(`✅ Șterse ${customExpensesSnapshot.docs.length} cheltuieli custom`);
+    
+    // Șterge apartamentele (prin scări și blocuri)
+    const blocksQuery = query(
+      collection(db, 'blocks'),
+      where('associationId', '==', association.id)
+    );
+    const blocksSnapshot = await getDocs(blocksQuery);
+    const blockIds = blocksSnapshot.docs.map(doc => doc.id);
+    
+    if (blockIds.length > 0) {
+      const stairsQuery = query(
+        collection(db, 'stairs'),
+        where('blockId', 'in', blockIds)
+      );
+      const stairsSnapshot = await getDocs(stairsQuery);
+      const stairIds = stairsSnapshot.docs.map(doc => doc.id);
+      
+      if (stairIds.length > 0) {
+        const apartmentsQuery = query(
+          collection(db, 'apartments'),
+          where('stairId', 'in', stairIds)
+        );
+        const apartmentsSnapshot = await getDocs(apartmentsQuery);
+        for (const apartmentDoc of apartmentsSnapshot.docs) {
+          await deleteDoc(doc(db, 'apartments', apartmentDoc.id));
+        }
+        console.log(`✅ Șterse ${apartmentsSnapshot.docs.length} apartamente`);
+      }
+      
+      // Șterge scările
+      for (const stairDoc of stairsSnapshot.docs) {
+        await deleteDoc(doc(db, 'stairs', stairDoc.id));
+      }
+      console.log(`✅ Șterse ${stairsSnapshot.docs.length} scări`);
+    }
+    
+    // Șterge blocurile
+    for (const blockDoc of blocksSnapshot.docs) {
+      await deleteDoc(doc(db, 'blocks', blockDoc.id));
+    }
+    console.log(`✅ Șterse ${blocksSnapshot.docs.length} blocuri`);
+    
+    // Șterge asociația
+    await deleteDoc(doc(db, 'associations', association.id));
+    console.log('✅ Asociația ștearsă');
+    
+    alert(`✅ Datele asociației "${association.name}" au fost șterse cu succes!\n\nPagina se va reîncărca...`);
+    
+    // Reîncarcă pagina
+    window.location.reload();
+  } catch (error) {
+    console.error('❌ Eroare la ștergerea datelor asociației:', error);
+    alert('❌ Eroare la ștergerea datelor: ' + error.message);
+  }
+};
+
+  // Loading state pentru toată aplicația
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Se încarcă datele asociației...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-red-800 mb-2">Eroare la încărcarea datelor</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
+          >
+            Reîncarcă pagina
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   // Helper pentru a genera lista de luni disponibile
   const getAvailableMonths = () => {
@@ -177,8 +561,8 @@ export default function BlocApp() {
   ];
 
   const getAssociationExpenseTypes = () => {
-    const customExpensesList = customExpenses.filter(exp => exp.associationId === selectedAssociation?.id);
-    const disabledKey = `${selectedAssociation?.id}-${currentMonth}`;
+    const customExpensesList = customExpenses.filter(exp => exp.associationId === association?.id);
+    const disabledKey = `${association?.id}-${currentMonth}`;
     const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
     
     // Filtrează cheltuielile standard care nu sunt dezactivate pentru luna curentă
@@ -195,7 +579,7 @@ export default function BlocApp() {
   };
 
   const getDisabledExpenseTypes = () => {
-    const disabledKey = `${selectedAssociation?.id}-${currentMonth}`;
+    const disabledKey = `${association?.id}-${currentMonth}`;
     const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
     
     // Cheltuieli standard dezactivate
@@ -204,7 +588,7 @@ export default function BlocApp() {
     );
     
     // Cheltuieli custom dezactivate
-    const customExpensesList = customExpenses.filter(exp => exp.associationId === selectedAssociation?.id);
+    const customExpensesList = customExpenses.filter(exp => exp.associationId === association?.id);
     const disabledCustomExpenses = customExpensesList.filter(exp => 
       monthDisabledExpenses.includes(exp.name)
     );
@@ -212,30 +596,91 @@ export default function BlocApp() {
     return [...disabledDefaultExpenses, ...disabledCustomExpenses];
   };
 
-  const toggleExpenseStatus = (expenseName, disable = true) => {
-    const disabledKey = `${selectedAssociation?.id}-${currentMonth}`;
-    
+// ✅ FUNCȚIE MODIFICATĂ PENTRU SALVAREA CHELTUIELILOR ELIMINATE
+const toggleExpenseStatus = async (expenseName, disable = true) => {
+  const disabledKey = `${association?.id}-${currentMonth}`;
+  
+  try {
+    // Actualizează starea locală
     setDisabledExpenses(prev => {
       const currentDisabled = prev[disabledKey] || [];
       
+      let newDisabled;
       if (disable) {
-        // Adaugă în lista de dezactivate
-        return {
-          ...prev,
-          [disabledKey]: [...currentDisabled, expenseName]
-        };
+        newDisabled = [...currentDisabled, expenseName];
       } else {
-        // Elimină din lista de dezactivate (reactivează)
-        return {
-          ...prev,
-          [disabledKey]: currentDisabled.filter(name => name !== expenseName)
-        };
+        newDisabled = currentDisabled.filter(name => name !== expenseName);
       }
+      
+      return {
+        ...prev,
+        [disabledKey]: newDisabled
+      };
     });
-  };
+    
+    // Salvează în Firestore
+    await saveDisabledExpenses(disabledKey, expenseName, disable);
+    
+  } catch (error) {
+    console.error('❌ Eroare la actualizarea statusului cheltuielii:', error);
+  }
+};
+
+// ✅ FUNCȚIE NOUĂ PENTRU SALVAREA CHELTUIELILOR ELIMINATE
+const saveDisabledExpenses = async (monthKey, expenseName, disable) => {
+  try {
+    const [associationId, month] = monthKey.split('-');
+    
+    // Găsește documentul existent pentru această lună
+    const existingQuery = query(
+      collection(db, 'disabledExpenses'),
+      where('associationId', '==', associationId),
+      where('month', '==', month)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    
+    if (existingSnapshot.empty) {
+      // Creează document nou
+      if (disable) {
+        await addDoc(collection(db, 'disabledExpenses'), {
+          associationId: associationId,
+          month: month,
+          expenseNames: [expenseName],
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } else {
+      // Actualizează documentul existent
+      const existingDoc = existingSnapshot.docs[0];
+      const currentExpenseNames = existingDoc.data().expenseNames || [];
+      
+      let updatedExpenseNames;
+      if (disable) {
+        updatedExpenseNames = [...currentExpenseNames, expenseName];
+      } else {
+        updatedExpenseNames = currentExpenseNames.filter(name => name !== expenseName);
+      }
+      
+      if (updatedExpenseNames.length === 0) {
+        // Șterge documentul dacă nu mai există cheltuieli eliminate
+        await deleteDoc(doc(db, 'disabledExpenses', existingDoc.id));
+      } else {
+        // Actualizează lista
+        await updateDoc(doc(db, 'disabledExpenses', existingDoc.id), {
+          expenseNames: updatedExpenseNames,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+    
+    console.log(`✅ Cheltuiala "${expenseName}" ${disable ? 'eliminată' : 'reactivată'} pentru ${month}`);
+  } catch (error) {
+    console.error('❌ Eroare la salvarea cheltuielilor eliminate:', error);
+  }
+};
 
   const getAvailableExpenseTypes = () => {
-    const associationExpenses = expenses.filter(exp => exp.associationId === selectedAssociation?.id && exp.month === currentMonth);
+    const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
     const usedExpenseNames = associationExpenses.map(exp => exp.name);
     
     return getAssociationExpenseTypes().filter(expenseType => 
@@ -243,77 +688,126 @@ export default function BlocApp() {
     );
   };
 
-  const addAssociation = () => {
-    if (!newAssociation.name || !newAssociation.address) return;
-    
-    const association = {
-      id: Date.now(),
+  // Funcții actualizate pentru a folosi hook-urile Firestore
+const handleAddAssociation = async () => {
+  console.log('🏢 handleAddAssociation called');
+  console.log('📊 newAssociation:', newAssociation);
+  console.log('📊 activeUser:', activeUser);
+  
+  if (!newAssociation.name || !newAssociation.address) {
+    alert('Te rog completează numele și adresa asociației!');
+    return;
+  }
+  
+  if (!activeUser?.uid) {
+    alert('Nu ești autentificat. Reîncarcă pagina și încearcă din nou.');
+    return;
+  }
+  
+  try {
+    console.log('🚀 Creez asociația...');
+    await createAssociation({
       name: newAssociation.name,
       address: newAssociation.address,
       bankAccount: newAssociation.bankAccount || "",
       administrator: newAssociation.administrator || "",
       president: newAssociation.president || "",
-      censor: newAssociation.censor || "",
-      createdAt: new Date().toLocaleDateString("ro-RO")
-    };
-    setAssociations([...associations, association]);
-    setSelectedAssociation(association);
-    setNewAssociation({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
+      censor: newAssociation.censor || ""
+    });
+    
+    setNewAssociation({ 
+      name: "", 
+      address: "", 
+      bankAccount: "", 
+      administrator: "", 
+      president: "", 
+      censor: "" 
+    });
     
     // Inițializează lunile pentru noua asociație
     initializeMonths();
+    
+    console.log('✅ Asociație creată cu succes!');
+  } catch (error) {
+    console.error('❌ Eroare la crearea asociației:', error);
+    alert('Eroare la crearea asociației: ' + error.message);
+  }
+};
+
+  const handleAddBlock = async () => {
+    if (!newBlock.name || !association) return;
+    
+    try {
+      await addBlock({
+        name: newBlock.name
+      });
+      setNewBlock({ name: "" });
+    } catch (error) {
+      console.error('Error adding block:', error);
+      alert('Eroare la adăugarea blocului. Încearcă din nou.');
+    }
   };
 
-  const addBlock = () => {
-    if (!newBlock.name || !selectedAssociation) return;
-    
-    const block = {
-      id: Date.now(),
-      name: newBlock.name,
-      associationId: selectedAssociation.id
-    };
-    setBlocks([...blocks, block]);
-    setNewBlock({ name: "" });
-  };
-
-  const addStair = () => {
-    if (!newStair.name || !newStair.blockId) return;
-    
-    const stair = {
-      id: Date.now(),
+const handleAddStair = async () => {
+  console.log('🔼 handleAddStair - newStair:', newStair);
+  console.log('🔼 handleAddStair - blockId type:', typeof newStair.blockId, newStair.blockId);
+  
+  if (!newStair.name || !newStair.blockId) {
+    console.log('❌ Validare eșuată - lipsește numele sau blockId');
+    alert('Te rog completează numele scării și selectează blocul!');
+    return;
+  }
+  
+  try {
+    await addStair({
       name: newStair.name,
-      blockId: parseInt(newStair.blockId)
-    };
-    setStairs([...stairs, stair]);
+      blockId: newStair.blockId // NU mai convertesc la parseInt aici
+    });
     setNewStair({ name: "", blockId: "" });
-  };
+  } catch (error) {
+    console.error('Error adding stair:', error);
+    alert('Eroare la adăugarea scării: ' + error.message);
+  }
+};
 
-  const addApartment = () => {
-    if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) return;
-    
-    const apartment = {
-      id: Date.now(),
+const handleAddApartment = async () => {
+  const availableStairs = getAvailableStairs(); // Adaugă această linie
+  
+  console.log('👥 handleAddApartment - newApartment:', newApartment);
+  console.log('👥 handleAddApartment - stairId type:', typeof newApartment.stairId, newApartment.stairId);
+  console.log('👥 handleAddApartment - availableStairs:', availableStairs);
+  
+  if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) {
+    console.log('❌ Validare eșuată - lipsesc datele obligatorii');
+    alert('Te rog completează toate câmpurile obligatorii (nr apartament, proprietar, persoane, scara)!');
+    return;
+  }
+  
+  try {
+    await addApartment({
       number: parseInt(newApartment.number),
       persons: parseInt(newApartment.persons),
-      stairId: parseInt(newApartment.stairId),
+      stairId: newApartment.stairId,
       owner: newApartment.owner,
       surface: newApartment.surface ? parseFloat(newApartment.surface) : null,
       apartmentType: newApartment.apartmentType || null,
       heatingSource: newApartment.heatingSource || null
-    };
-    
-    setApartments([...apartments, apartment]);
+    });
     
     setNewApartment({ 
       number: "", 
       persons: "", 
-      stairId: newApartment.stairId, // păstrăm scara selectată
+      stairId: newApartment.stairId,
       owner: "", 
       surface: "", 
       apartmentType: "", 
       heatingSource: "" 
     });
-  };
+  } catch (error) {
+    console.error('Error adding apartment:', error);
+    alert('Eroare la adăugarea apartamentului: ' + error.message);
+  }
+};
 
   // Funcții noi pentru editarea apartamentelor
   const startEditingApartment = (apartment) => {
@@ -326,51 +820,64 @@ export default function BlocApp() {
       heatingSource: apartment.heatingSource || ""
     });
   };
-
+const getAvailableStairs = () => {
+  if (!association) return [];
+  const associationBlocks = blocks.filter(block => block.associationId === association.id);
+  return stairs.filter(stair => 
+    associationBlocks.some(block => block.id === stair.blockId)
+  );
+};
   const cancelApartmentEdit = () => {
     setEditingApartment(null);
     setEditingApartmentData({});
   };
 
-  const saveApartmentEdit = (apartmentId) => {
-    const updatedApartment = {
-      ...apartments.find(apt => apt.id === apartmentId),
-      owner: editingApartmentData.owner,
-      persons: parseInt(editingApartmentData.persons),
-      apartmentType: editingApartmentData.apartmentType || null,
-      surface: editingApartmentData.surface ? parseFloat(editingApartmentData.surface) : null,
-      heatingSource: editingApartmentData.heatingSource || null
-    };
-    
-    setApartments(prev => prev.map(apt => 
-      apt.id === apartmentId ? updatedApartment : apt
-    ));
-    
-    setEditingApartment(null);
-    setEditingApartmentData({});
-  };
-
-  const deleteApartment = (apartmentId) => {
-    if (window.confirm("Ești sigur că vrei să ștergi acest apartament?")) {
-      setApartments(prev => prev.filter(apt => apt.id !== apartmentId));
+  const saveApartmentEdit = async (apartmentId) => {
+    try {
+      await updateApartment(apartmentId, {
+        owner: editingApartmentData.owner,
+        persons: parseInt(editingApartmentData.persons),
+        apartmentType: editingApartmentData.apartmentType || null,
+        surface: editingApartmentData.surface ? parseFloat(editingApartmentData.surface) : null,
+        heatingSource: editingApartmentData.heatingSource || null
+      });
+      
+      setEditingApartment(null);
+      setEditingApartmentData({});
+    } catch (error) {
+      console.error('Error updating apartment:', error);
+      alert('Eroare la actualizarea apartamentului. Încearcă din nou.');
     }
   };
 
-  const addCustomExpense = () => {
-    if (!newCustomExpense.name || !selectedAssociation) return;
+  const handleDeleteApartment = async (apartmentId) => {
+    if (window.confirm("Ești sigur că vrei să ștergi acest apartament?")) {
+      try {
+        await deleteApartment(apartmentId);
+      } catch (error) {
+        console.error('Error deleting apartment:', error);
+        alert('Eroare la ștergerea apartamentului. Încearcă din nou.');
+      }
+    }
+  };
+
+  const handleAddCustomExpense = async () => {
+    if (!newCustomExpense.name || !association) return;
     
-    const customExpense = {
-      id: Date.now(),
-      name: newCustomExpense.name,
-      associationId: selectedAssociation.id,
-      defaultDistribution: "apartment"
-    };
-    setCustomExpenses([...customExpenses, customExpense]);
-    setNewCustomExpense({ name: "" });
+    try {
+      await addCustomExpense({
+        name: newCustomExpense.name,
+        defaultDistribution: "apartment"
+      });
+      setNewCustomExpense({ name: "" });
+    } catch (error) {
+      console.error('Error adding custom expense:', error);
+      alert('Eroare la adăugarea cheltuielii personalizate. Încearcă din nou.');
+    }
   };
 
   const getExpenseConfig = (expenseType) => {
-    const key = `${selectedAssociation?.id}-${expenseType}`;
+    const key = `${association?.id}-${expenseType}`;
     const config = expenseConfig[key];
     if (config) return config;
     
@@ -382,7 +889,7 @@ export default function BlocApp() {
   };
 
   const updateExpenseConfig = (expenseType, config) => {
-    const key = `${selectedAssociation?.id}-${expenseType}`;
+    const key = `${association?.id}-${expenseType}`;
     setExpenseConfig(prev => ({
       ...prev,
       [key]: config
@@ -403,9 +910,9 @@ export default function BlocApp() {
   };
 
   const getAssociationApartments = () => {
-    if (!selectedAssociation) return [];
+    if (!association) return [];
     
-    const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation.id);
+    const associationBlocks = blocks.filter(block => block.associationId === association.id);
     const associationStairs = stairs.filter(stair => 
       associationBlocks.some(block => block.id === stair.blockId)
     );
@@ -415,18 +922,18 @@ export default function BlocApp() {
   };
 
   const getCurrentMonthTable = () => {
-    const key = `${selectedAssociation?.id}-${currentMonth}`;
+    const key = `${association?.id}-${currentMonth}`;
     return monthlyTables[key] || null;
   };
 
   const getApartmentBalance = (apartmentId) => {
-    const monthKey = `${selectedAssociation?.id}-${currentMonth}`;
+    const monthKey = `${association?.id}-${currentMonth}`;
     const monthBalances = monthlyBalances[monthKey] || {};
     return monthBalances[apartmentId] || { restante: 0, penalitati: 0 };
   };
 
   const setApartmentBalance = (apartmentId, balance) => {
-    const monthKey = `${selectedAssociation?.id}-${currentMonth}`;
+    const monthKey = `${association?.id}-${currentMonth}`;
     setMonthlyBalances(prev => ({
       ...prev,
       [monthKey]: {
@@ -436,8 +943,8 @@ export default function BlocApp() {
     }));
   };
 
-  const addExpense = () => {
-    if (!newExpense.name || !selectedAssociation) return;
+  const handleAddExpense = async () => {
+    if (!newExpense.name || !association) return;
     
     const expenseSettings = getExpenseConfig(newExpense.name);
     const isConsumptionBased = expenseSettings.distributionType === "consumption";
@@ -458,46 +965,56 @@ export default function BlocApp() {
       return;
     }
     
-    const expense = {
-      id: Date.now(),
-      name: newExpense.name,
-      amount: isConsumptionBased ? 0 : parseFloat(newExpense.amount || 0),
-      distributionType: expenseSettings.distributionType,
-      isUnitBased: isConsumptionBased,
-      unitPrice: isConsumptionBased ? parseFloat(newExpense.unitPrice) : 0,
-      billAmount: isConsumptionBased ? parseFloat(newExpense.billAmount) : 0,
-      consumption: {},
-      individualAmounts: {},
-      associationId: selectedAssociation.id,
-      month: currentMonth
-    };
-    setExpenses([...expenses, expense]);
-    setNewExpense({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
+    try {
+      await addMonthlyExpense({
+        name: newExpense.name,
+        amount: isConsumptionBased ? 0 : parseFloat(newExpense.amount || 0),
+        distributionType: expenseSettings.distributionType,
+        isUnitBased: isConsumptionBased,
+        unitPrice: isConsumptionBased ? parseFloat(newExpense.unitPrice) : 0,
+        billAmount: isConsumptionBased ? parseFloat(newExpense.billAmount) : 0,
+        consumption: {},
+        individualAmounts: {},
+        month: currentMonth
+      });
+      
+      setNewExpense({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Eroare la adăugarea cheltuielii. Încearcă din nou.');
+    }
   };
 
-  const updateExpenseConsumption = (expenseId, apartmentId, consumption) => {
-    setExpenses(prev => prev.map(expense => 
-      expense.id === expenseId 
-        ? { ...expense, consumption: { ...expense.consumption, [apartmentId]: consumption } }
-        : expense
-    ));
+  const updateExpenseConsumption = async (expenseId, apartmentId, consumption) => {
+    try {
+      const expense = expenses.find(exp => exp.id === expenseId);
+      if (expense) {
+        await updateMonthlyExpense(expenseId, {
+          consumption: { ...expense.consumption, [apartmentId]: consumption }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating consumption:', error);
+    }
   };
 
-  const updateExpenseIndividualAmount = (expenseId, apartmentId, amount) => {
-    setExpenses(prev => prev.map(expense => 
-      expense.id === expenseId 
-        ? { ...expense, individualAmounts: { ...expense.individualAmounts, [apartmentId]: amount } }
-        : expense
-    ));
+  const updateExpenseIndividualAmount = async (expenseId, apartmentId, amount) => {
+    try {
+      const expense = expenses.find(exp => exp.id === expenseId);
+      if (expense) {
+        await updateMonthlyExpense(expenseId, {
+          individualAmounts: { ...expense.individualAmounts, [apartmentId]: amount }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating individual amount:', error);
+    }
   };
 
-  const saveInitialBalances = () => {
-    setHasInitialBalances(true);
-    setShowInitialBalances(false);
-  };
+
 
   const togglePayment = (apartmentId) => {
-    const key = `${selectedAssociation?.id}-${currentMonth}`;
+    const key = `${association?.id}-${currentMonth}`;
     const currentTable = getCurrentMonthTable() || calculateMaintenanceWithDetails();
     
     if (!currentTable.length) return;
@@ -520,7 +1037,7 @@ export default function BlocApp() {
     const nextMonth = nextMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
     
     if (currentTable && currentTable.length > 0) {
-      const nextMonthKey = `${selectedAssociation?.id}-${nextMonth}`;
+      const nextMonthKey = `${association?.id}-${nextMonth}`;
       const nextMonthBalances = {};
       
       currentTable.forEach(row => {
@@ -554,7 +1071,7 @@ export default function BlocApp() {
   const calculateMaintenanceWithDetails = () => {
     const associationApartments = getAssociationApartments();
     const associationExpenses = expenses.filter(exp => 
-      exp.associationId === selectedAssociation?.id && exp.month === currentMonth
+      exp.associationId === association?.id && exp.month === currentMonth
     );
     
     if (!associationApartments.length) {
@@ -650,145 +1167,190 @@ export default function BlocApp() {
 
   const maintenanceData = calculateMaintenance();
 
+// ✅ ÎNLOCUIEȘTE SECȚIUNEA DASHBOARD (if (currentView === "dashboard")) din BlocApp.js cu aceasta:
 
-  if (currentView === "dashboard") {
-    return (
-      <div className={`min-h-screen p-4 ${
-        currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
-          ? "bg-gradient-to-br from-blue-50 to-indigo-100"
-          : "bg-gradient-to-br from-green-50 to-emerald-100"
-      }`}>
-        <div className="max-w-6xl mx-auto">
-          <header className="text-center mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
-              <div className="flex items-center justify-center mb-4">
-                <Building2 className="w-12 h-12 text-blue-600 mr-3" />
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">BlocApp</h1>
-                  {selectedAssociation && (
-                    <div className="flex items-center justify-center mt-1">
-                      <div className="flex items-center space-x-3">
-                        <select
-                          value={currentMonth}
-                          onChange={(e) => setCurrentMonth(e.target.value)}
-                          className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        >
-                          {getAvailableMonths().map(month => (
-                            <option key={month.value} value={month.value}>
-                              {month.label}
-                            </option>
-                          ))}
-                        </select>
-                        {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
-                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            LUNA CURENTĂ
-                          </span>
-                        ) : (
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            LUNA URMĂTOARE
-                          </span>
-                        )}
-                        {isMonthReadOnly(currentMonth) ? (
-                          <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            📋 PUBLICATĂ
-                          </span>
-                        ) : (
-                          <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            🔧 ÎN LUCRU
-                          </span>
-                        )}
-                      </div>
+if (currentView === "dashboard") {
+  return (
+    <div className={`min-h-screen p-4 ${
+      currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
+        ? "bg-gradient-to-br from-blue-50 to-indigo-100"
+        : "bg-gradient-to-br from-green-50 to-emerald-100"
+    }`}>
+      <div className="max-w-6xl mx-auto">
+        <header className="text-center mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
+            <div className="flex items-center justify-center mb-4">
+              <Building2 className="w-12 h-12 text-blue-600 mr-3" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">BlocApp</h1>
+                {association && (
+                  <div className="flex items-center justify-center mt-1">
+                    <div className="flex items-center space-x-3">
+                      <select
+                        value={currentMonth}
+                        onChange={(e) => setCurrentMonth(e.target.value)}
+                        className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      >
+                        {getAvailableMonths().map(month => (
+                          <option key={month.value} value={month.value}>
+                            {month.label}
+                          </option>
+                        ))}
+                      </select>
+                      {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          LUNA CURENTĂ
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          LUNA URMĂTOARE
+                        </span>
+                      )}
+                      {isMonthReadOnly(currentMonth) ? (
+                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          📋 PUBLICATĂ
+                        </span>
+                      ) : (
+                        <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          🔧 ÎN LUCRU
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-gray-600">Gestionează ușor întreținerea blocului</p>
+            
+            {/* ✅ BUTOANE DE ȘTERGERE DOAR DACĂ EXISTĂ ASOCIAȚIE */}
+            {association && (
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={deleteAllBlocAppData}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center"
+                >
+                  🗑️ Șterge TOATE datele
+                </button>
+                
+                <button
+                  onClick={deleteCurrentAssociationData}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium flex items-center"
+                >
+                  🏢 Șterge doar "{association.name}"
+                </button>
+                
+                <div className="text-xs text-gray-500 w-full mt-2">
+                  ⚠️ Butoane pentru development - vor fi eliminate în producție
                 </div>
               </div>
-              <p className="text-gray-600">Gestionează ușor întreținerea blocului</p>
-            </div>
-          </header>
+            )}
+          </div>
+        </header>
 
-          {!selectedAssociation && (
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-8">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">🚀 Configurare Inițială</h3>
-              <p className="text-yellow-700 mb-4">
-                Pentru a începe, trebuie să configurezi structura asociației (se face doar o dată).
+        {/* ✅ CONDIȚIE PRINCIPALĂ: Dacă nu există asociație, afișează creatorul */}
+        {!association && (
+          <div className="bg-blue-50 border border-blue-200 p-8 rounded-xl mb-8">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-blue-800 mb-2">🎉 Bun venit în BlocApp!</h3>
+              <p className="text-blue-700 max-w-md mx-auto">
+                Pentru a începe, trebuie să creezi prima ta asociație de proprietari. 
+                Această informație se salvează doar o dată.
               </p>
-              
-<div className="space-y-4">
-  <div className="grid md:grid-cols-2 gap-4">
-    <input
-      value={newAssociation.name}
-      onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
-      placeholder="Numele asociației (ex: Asociația Primăverii 12)"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-    <input
-      value={newAssociation.address}
-      onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
-      placeholder="Adresa completă"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-  </div>
-  <div className="grid md:grid-cols-2 gap-4">
-    <input
-      value={newAssociation.bankAccount}
-      onChange={(e) => setNewAssociation({...newAssociation, bankAccount: e.target.value})}
-      placeholder="Cont bancar (opțional)"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-    <input
-      value={newAssociation.administrator}
-      onChange={(e) => setNewAssociation({...newAssociation, administrator: e.target.value})}
-      placeholder="Administrator (opțional)"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-  </div>
-  <div className="grid md:grid-cols-2 gap-4">
-    <input
-      value={newAssociation.president}
-      onChange={(e) => setNewAssociation({...newAssociation, president: e.target.value})}
-      placeholder="Președinte (opțional)"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-    <input
-      value={newAssociation.censor}
-      onChange={(e) => setNewAssociation({...newAssociation, censor: e.target.value})}
-      placeholder="Cenzor (opțional)"
-      className="w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none"
-    />
-  </div>
-  <button 
-    onClick={addAssociation}
-    className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 flex items-center disabled:bg-gray-400"
-    disabled={!newAssociation.name || !newAssociation.address}
-  >
-    <Plus className="w-4 h-4 mr-2" />
-    Creează Asociația
-  </button>
-</div>
             </div>
-          )}
+            
+            <div className="max-w-2xl mx-auto">
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input
+                    value={newAssociation.name}
+                    onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
+                    placeholder="Numele asociației (ex: Asociația Primăverii 12) *"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                  <input
+                    value={newAssociation.address}
+                    onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
+                    placeholder="Adresa completă (ex: Strada Primăverii 12, Sector 1) *"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input
+                    value={newAssociation.bankAccount}
+                    onChange={(e) => setNewAssociation({...newAssociation, bankAccount: e.target.value})}
+                    placeholder="Cont bancar (opțional)"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                  <input
+                    value={newAssociation.administrator}
+                    onChange={(e) => setNewAssociation({...newAssociation, administrator: e.target.value})}
+                    placeholder="Administrator (opțional)"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input
+                    value={newAssociation.president}
+                    onChange={(e) => setNewAssociation({...newAssociation, president: e.target.value})}
+                    placeholder="Președinte (opțional)"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                  <input
+                    value={newAssociation.censor}
+                    onChange={(e) => setNewAssociation({...newAssociation, censor: e.target.value})}
+                    placeholder="Cenzor (opțional)"
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
 
-          {selectedAssociation && getAssociationApartments().length === 0 && (
-            <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-8">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">📋 Completează Structura</h3>
-              <p className="text-blue-700 mb-4">
-                Asociația a fost creată! Acum adaugă blocurile, scările și apartamentele.
-              </p>
-              <button 
-                onClick={() => setCurrentView("setup")}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-              >
-                Adaugă Blocuri și Apartamente
-              </button>
+                <div className="flex justify-center pt-4">
+                  <button 
+                    onClick={handleAddAssociation}
+                    className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400 text-lg font-medium"
+                    disabled={!newAssociation.name || !newAssociation.address}
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Creează Asociația
+                  </button>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-xs text-blue-600">
+                    * Câmpurile marcate sunt obligatorii. Restul pot fi completate mai târziu.
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {selectedAssociation && (
+        {/* ✅ DACĂ EXISTĂ ASOCIAȚIE FĂRĂ APARTAMENTE */}
+        {association && getAssociationApartments().length === 0 && (
+          <div className="bg-green-50 border border-green-200 p-6 rounded-xl mb-8">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Asociația "{association.name}" a fost creată!</h3>
+            <p className="text-green-700 mb-4">
+              Acum să adaugăm structura: blocurile, scările și apartamentele.
+            </p>
+            <button 
+              onClick={() => setCurrentView("setup")}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+            >
+              📋 Configurează Blocurile și Apartamentele
+            </button>
+          </div>
+        )}
+
+        {/* ✅ DACĂ EXISTĂ ASOCIAȚIE CU APARTAMENTE - DASHBOARD NORMAL */}
+        {association && getAssociationApartments().length > 0 && (
+          <>
             <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100 mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">📍 {selectedAssociation.name}</h3>
-                  <p className="text-gray-600">{selectedAssociation.address}</p>
+                  <h3 className="text-lg font-semibold mb-1">📍 {association.name}</h3>
+                  <p className="text-gray-600">{association.address}</p>
                   <p className="text-sm text-gray-500 mt-1">
                     {getAssociationApartments().length} apartamente • 
                     {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
@@ -810,17 +1372,15 @@ export default function BlocApp() {
                 </div>
               </div>
             </div>
-          )}
 
-          {selectedAssociation && getAssociationApartments().length > 0 && (
             <div className="grid grid-cols-6 gap-4 mb-8 overflow-x-auto">
               <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-green-600">{blocks.filter(b => b.associationId === selectedAssociation.id).length}</div>
+                <div className="text-2xl font-bold text-green-600">{blocks.filter(b => b.associationId === association.id).length}</div>
                 <div className="text-sm text-gray-600">Blocuri</div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
                 <div className="text-2xl font-bold text-purple-600">
-                  {stairs.filter(s => blocks.some(b => b.id === s.blockId && b.associationId === selectedAssociation.id)).length}
+                  {stairs.filter(s => blocks.some(b => b.id === s.blockId && b.associationId === association.id)).length}
                 </div>
                 <div className="text-sm text-gray-600">Scări</div>
               </div>
@@ -834,7 +1394,7 @@ export default function BlocApp() {
               </div>
               <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
                 <div className="text-2xl font-bold text-blue-600">
-                  {expenses.filter(e => e.associationId === selectedAssociation.id && e.month === currentMonth).length}
+                  {expenses.filter(e => e.associationId === association.id && e.month === currentMonth).length}
                 </div>
                 <div className="text-sm text-gray-600">Cheltuieli {currentMonth}</div>
               </div>
@@ -845,9 +1405,7 @@ export default function BlocApp() {
                 <div className="text-sm text-gray-600">Încasări RON</div>
               </div>
             </div>
-          )}
 
-          {selectedAssociation && getAssociationApartments().length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold mb-4">📝 Activitate Recentă</h3>
               {maintenanceData.length > 0 ? (
@@ -869,18 +1427,16 @@ export default function BlocApp() {
                 <p className="text-gray-600">Adaugă cheltuieli pentru a genera primul tabel de întreținere.</p>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
-    );
-  }
-
-// Setup View
-if (currentView === "setup") {
-  const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation?.id);
-  const availableStairs = stairs.filter(stair => 
-    associationBlocks.some(block => block.id === stair.blockId)
+    </div>
   );
+}
+// Setup View - SECȚIUNEA COMPLETĂ din originalul tău
+if (currentView === "setup") {
+  const associationBlocks = blocks.filter(block => block.associationId === association?.id);
+const availableStairs = getAvailableStairs();
   const allApartments = getAssociationApartments();
 
   return (
@@ -909,14 +1465,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Numele asociației *</label>
                   <input
-                    value={selectedAssociation?.name || ""}
+                    value={association?.name || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, name: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ name: e.target.value });
                       }
                     }}
                     placeholder="ex: Asociația Primăverii 12"
@@ -926,14 +1478,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Adresa completă *</label>
                   <input
-                    value={selectedAssociation?.address || ""}
+                    value={association?.address || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, address: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ address: e.target.value });
                       }
                     }}
                     placeholder="Strada, numărul, sectorul"
@@ -945,14 +1493,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Cont bancar</label>
                   <input
-                    value={selectedAssociation?.bankAccount || ""}
+                    value={association?.bankAccount || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, bankAccount: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ bankAccount: e.target.value });
                       }
                     }}
                     placeholder="RO49 AAAA 1B31..."
@@ -962,14 +1506,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
                   <input
-                    value={selectedAssociation?.administrator || ""}
+                    value={association?.administrator || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, administrator: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ administrator: e.target.value });
                       }
                     }}
                     placeholder="Numele administratorului"
@@ -981,14 +1521,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Președinte</label>
                   <input
-                    value={selectedAssociation?.president || ""}
+                    value={association?.president || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, president: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ president: e.target.value });
                       }
                     }}
                     placeholder="Numele președintelui"
@@ -998,14 +1534,10 @@ if (currentView === "setup") {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Cenzor</label>
                   <input
-                    value={selectedAssociation?.censor || ""}
+                    value={association?.censor || ""}
                     onChange={(e) => {
-                      if (selectedAssociation) {
-                        const updatedAssociation = { ...selectedAssociation, censor: e.target.value };
-                        setAssociations(prev => prev.map(assoc => 
-                          assoc.id === selectedAssociation.id ? updatedAssociation : assoc
-                        ));
-                        setSelectedAssociation(updatedAssociation);
+                      if (association) {
+                        updateAssociation({ censor: e.target.value });
                       }
                     }}
                     placeholder="Numele cenzorului"
@@ -1014,7 +1546,7 @@ if (currentView === "setup") {
                 </div>
               </div>
               <div className="mt-3 text-xs text-gray-600 flex justify-between">
-                <span><strong>Creat:</strong> {selectedAssociation?.createdAt}</span>
+                <span><strong>Creat:</strong> {association?.createdAt}</span>
                 <span className="text-gray-500">* Câmpurile marcate sunt obligatorii</span>
               </div>
             </div>
@@ -1034,7 +1566,7 @@ if (currentView === "setup") {
                   className="flex-1 p-2 border rounded-lg text-sm"
                 />
                 <button 
-                  onClick={addBlock}
+                  onClick={handleAddBlock}
                   className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-sm"
                   disabled={!newBlock.name}
                 >
@@ -1058,16 +1590,19 @@ if (currentView === "setup") {
             </div>
             <div className="p-4">
               <div className="space-y-2 mb-4">
-                <select 
-                  value={newStair.blockId}
-                  onChange={(e) => setNewStair({...newStair, blockId: e.target.value})}
-                  className="w-full p-2 border rounded-lg text-sm"
-                >
-                  <option value="">Selectează bloc</option>
-                  {associationBlocks.map(block => (
-                    <option key={block.id} value={block.id}>{block.name}</option>
-                  ))}
-                </select>
+<select 
+  value={newStair.blockId}
+  onChange={(e) => {
+    console.log('🔄 Selectare bloc - value:', e.target.value, 'type:', typeof e.target.value);
+    setNewStair({...newStair, blockId: e.target.value}); // păstrez ca string
+  }}
+  className="w-full p-2 border rounded-lg text-sm"
+>
+  <option value="">Selectează bloc</option>
+  {associationBlocks.map(block => (
+    <option key={block.id} value={block.id}>{block.name}</option>
+  ))}
+</select>
                 <div className="flex gap-2">
                   <input
                     value={newStair.name}
@@ -1076,7 +1611,7 @@ if (currentView === "setup") {
                     className="flex-1 p-2 border rounded-lg text-sm"
                   />
                   <button 
-                    onClick={addStair}
+                    onClick={handleAddStair}
                     className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 text-sm"
                     disabled={!newStair.name || !newStair.blockId}
                   >
@@ -1085,7 +1620,9 @@ if (currentView === "setup") {
                 </div>
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {availableStairs.map(stair => {
+{stairs.filter(stair => 
+  blocks.some(block => block.id === stair.blockId && block.associationId === association?.id)
+).map(stair => {
                   const block = blocks.find(b => b.id === stair.blockId);
                   return (
                     <div key={stair.id} className="p-2 bg-gray-50 rounded text-sm">
@@ -1100,165 +1637,63 @@ if (currentView === "setup") {
 
         {/* Linia 2: Apartamente (50%) + Cheltuieli (50%) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-{/* Apartamente (50%) */}
-<div className="bg-white rounded-xl shadow-lg">
-  <div className="p-4 bg-orange-50 border-b">
-    <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
-  </div>
-  <div className="p-4">
-    <div className="space-y-2 mb-4">
-      <select 
-        value={newApartment.stairId}
-        onChange={(e) => setNewApartment({...newApartment, stairId: e.target.value})}
-        className="w-full p-2 border rounded-lg text-sm"
-      >
-        <option value="">Selectează scara</option>
-        {availableStairs.map(stair => {
-          const block = blocks.find(b => b.id === stair.blockId);
-          return (
-            <option key={stair.id} value={stair.id}>
-              {block?.name} - {stair.name}
-            </option>
-          );
-        })}
-      </select>
+{/* Apartamente (50%) - SECȚIUNEA COMPLETĂ cu editare */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <div className="p-4 bg-orange-50 border-b">
+              <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
+            </div>
+            <div className="p-4">
+              <div className="space-y-2 mb-4">
+                <select 
+                  value={newApartment.stairId}
+                  onChange={(e) => {
+                    console.log('🔄 Selectare scară - value:', e.target.value, 'type:', typeof e.target.value);
+                    setNewApartment({...newApartment, stairId: e.target.value});
+                  }}
+                  className="w-full p-2 border rounded-lg text-sm"
+                >
+                  <option value="">Selectează scara</option>
+                  {availableStairs.map(stair => {
+                    const block = blocks.find(b => b.id === stair.blockId);
+                    return (
+                      <option key={stair.id} value={stair.id}>
+                        {block?.name} - {stair.name}
+                      </option>
+                    );
+                  })}
+                </select>
 
-      {/* Prima linie: Nr apt + Nume proprietar */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          value={newApartment.number}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "" || /^\d+$/.test(value)) {
-              setNewApartment({...newApartment, number: value});
-            }
-          }}
-          type="text"
-          inputMode="numeric"
-          placeholder="Nr apartament *"
-          className="w-full p-2 border rounded-lg text-sm"
-        />
-        <input
-          value={newApartment.owner}
-          onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
-          placeholder="Nume proprietar *"
-          className="w-full p-2 border rounded-lg text-sm"
-        />
-      </div>
-
-      {/* A doua linie: Nr persoane + Tip apartament */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          value={newApartment.persons}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "" || /^\d+$/.test(value)) {
-              setNewApartment({...newApartment, persons: value});
-            }
-          }}
-          type="text"
-          inputMode="numeric"
-          placeholder="Nr persoane *"
-          className="w-full p-2 border rounded-lg text-sm"
-        />
-        <select
-          value={newApartment.apartmentType}
-          onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
-          className="w-full p-2 border rounded-lg text-sm"
-        >
-          <option value="">Tip apartament</option>
-          <option value="Garsoniera">Garsoniera</option>
-          <option value="2 camere">2 camere</option>
-          <option value="3 camere">3 camere</option>
-          <option value="4 camere">4 camere</option>
-          <option value="5 camere">5 camere</option>
-          <option value="Penthouse">Penthouse</option>
-        </select>
-      </div>
-
-      {/* A treia linie: Suprafața + Sursă încălzire */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          value={newApartment.surface}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-              setNewApartment({...newApartment, surface: value.replace(',', '.')});
-            }
-          }}
-          type="text"
-          inputMode="decimal"
-          placeholder="Suprafață mp"
-          className="w-full p-2 border rounded-lg text-sm"
-        />
-        <select
-          value={newApartment.heatingSource}
-          onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
-          className="w-full p-2 border rounded-lg text-sm"
-        >
-          <option value="">Sursă încălzire</option>
-          <option value="Termoficare">Termoficare</option>
-          <option value="Centrala proprie">Centrală proprie</option>
-          <option value="Centrala bloc">Centrală bloc</option>
-          <option value="Debransat">Debranșat</option>
-        </select>
-      </div>
-
-      {/* Buton adăugare */}
-      <button 
-        onClick={addApartment}
-        className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
-        disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Adaugă Apartament
-      </button>
-    </div>
-    
-    <div className="space-y-2 max-h-64 overflow-y-auto">
-      {allApartments.map(apartment => {
-        const stair = stairs.find(s => s.id === apartment.stairId);
-        const block = blocks.find(b => b.id === stair?.blockId);
-        const isEditing = editingApartment === apartment.id;
-        
-        return (
-          <div key={apartment.id} className={`p-3 rounded text-sm ${isEditing ? "bg-blue-50 border-2 border-blue-200" : "bg-gray-50"}`}>
-            {isEditing ? (
-              // Modul de editare
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-blue-600">Editare Apartament {apartment.number}</span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => saveApartmentEdit(apartment.id)}
-                      className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                      disabled={!editingApartmentData.owner || !editingApartmentData.persons}
-                    >
-                      Salvează
-                    </button>
-                    <button
-                      onClick={() => cancelApartmentEdit()}
-                      className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
-                    >
-                      Anulează
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Editare proprietar și persoane */}
+                {/* Prima linie: Nr apt + Nume proprietar */}
                 <div className="grid grid-cols-2 gap-2">
                   <input
-                    value={editingApartmentData.owner}
-                    onChange={(e) => setEditingApartmentData({...editingApartmentData, owner: e.target.value})}
-                    placeholder="Nume proprietar *"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                  <input
-                    value={editingApartmentData.persons}
+                    value={newApartment.number}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === "" || /^\d+$/.test(value)) {
-                        setEditingApartmentData({...editingApartmentData, persons: value});
+                        setNewApartment({...newApartment, number: value});
+                      }
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Nr apartament *"
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                  <input
+                    value={newApartment.owner}
+                    onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
+                    placeholder="Nume proprietar *"
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+
+                {/* A doua linie: Nr persoane + Tip apartament */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={newApartment.persons}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d+$/.test(value)) {
+                        setNewApartment({...newApartment, persons: value});
                       }
                     }}
                     type="text"
@@ -1266,13 +1701,9 @@ if (currentView === "setup") {
                     placeholder="Nr persoane *"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
-                </div>
-                
-                {/* Editare tip apartament și suprafață */}
-                <div className="grid grid-cols-2 gap-2">
                   <select
-                    value={editingApartmentData.apartmentType || ""}
-                    onChange={(e) => setEditingApartmentData({...editingApartmentData, apartmentType: e.target.value})}
+                    value={newApartment.apartmentType}
+                    onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
                     className="w-full p-2 border rounded-lg text-sm"
                   >
                     <option value="">Tip apartament</option>
@@ -1283,12 +1714,16 @@ if (currentView === "setup") {
                     <option value="5 camere">5 camere</option>
                     <option value="Penthouse">Penthouse</option>
                   </select>
+                </div>
+
+                {/* A treia linie: Suprafața + Sursă încălzire */}
+                <div className="grid grid-cols-2 gap-2">
                   <input
-                    value={editingApartmentData.surface || ""}
+                    value={newApartment.surface}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                        setEditingApartmentData({...editingApartmentData, surface: value.replace(',', '.')});
+                        setNewApartment({...newApartment, surface: value.replace(',', '.')});
                       }
                     }}
                     type="text"
@@ -1296,64 +1731,169 @@ if (currentView === "setup") {
                     placeholder="Suprafață mp"
                     className="w-full p-2 border rounded-lg text-sm"
                   />
+                  <select
+                    value={newApartment.heatingSource}
+                    onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Sursă încălzire</option>
+                    <option value="Termoficare">Termoficare</option>
+                    <option value="Centrala proprie">Centrală proprie</option>
+                    <option value="Centrala bloc">Centrală bloc</option>
+                    <option value="Debransat">Debranșat</option>
+                  </select>
                 </div>
-                
-                {/* Editare sursă încălzire */}
-                <select
-                  value={editingApartmentData.heatingSource || ""}
-                  onChange={(e) => setEditingApartmentData({...editingApartmentData, heatingSource: e.target.value})}
-                  className="w-full p-2 border rounded-lg text-sm"
+
+                {/* Buton adăugare */}
+                <button 
+                  onClick={handleAddApartment}
+                  className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
+                  disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
                 >
-                  <option value="">Sursă încălzire</option>
-                  <option value="Termoficare">Termoficare</option>
-                  <option value="Centrala proprie">Centrală proprie</option>
-                  <option value="Centrala bloc">Centrală bloc</option>
-                  <option value="Debransat">Debranșat</option>
-                </select>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adaugă Apartament
+                </button>
               </div>
-            ) : (
-              // Modul de afișare
-              <>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
-                    <div className="text-gray-600">
-                      {block?.name} - {stair?.name} • {apartment.persons} pers
-                      {apartment.surface && ` • ${apartment.surface} mp`}
-                      {apartment.apartmentType && ` • ${apartment.apartmentType}`}
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {allApartments.map(apartment => {
+                  const stair = stairs.find(s => s.id === apartment.stairId);
+                  const block = blocks.find(b => b.id === stair?.blockId);
+                  const isEditing = editingApartment === apartment.id;
+                  
+                  return (
+                    <div key={apartment.id} className={`p-3 rounded text-sm ${isEditing ? "bg-blue-50 border-2 border-blue-200" : "bg-gray-50"}`}>
+                      {isEditing ? (
+                        // Modul de editare
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-blue-600">Editare Apartament {apartment.number}</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => saveApartmentEdit(apartment.id)}
+                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                disabled={!editingApartmentData.owner || !editingApartmentData.persons}
+                              >
+                                Salvează
+                              </button>
+                              <button
+                                onClick={() => cancelApartmentEdit()}
+                                className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
+                              >
+                                Anulează
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Editare proprietar și persoane */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              value={editingApartmentData.owner}
+                              onChange={(e) => setEditingApartmentData({...editingApartmentData, owner: e.target.value})}
+                              placeholder="Nume proprietar *"
+                              className="w-full p-2 border rounded-lg text-sm"
+                            />
+                            <input
+                              value={editingApartmentData.persons}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "" || /^\d+$/.test(value)) {
+                                  setEditingApartmentData({...editingApartmentData, persons: value});
+                                }
+                              }}
+                              type="text"
+                              inputMode="numeric"
+                              placeholder="Nr persoane *"
+                              className="w-full p-2 border rounded-lg text-sm"
+                            />
+                          </div>
+                          
+                          {/* Editare tip apartament și suprafață */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              value={editingApartmentData.apartmentType || ""}
+                              onChange={(e) => setEditingApartmentData({...editingApartmentData, apartmentType: e.target.value})}
+                              className="w-full p-2 border rounded-lg text-sm"
+                            >
+                              <option value="">Tip apartament</option>
+                              <option value="Garsoniera">Garsoniera</option>
+                              <option value="2 camere">2 camere</option>
+                              <option value="3 camere">3 camere</option>
+                              <option value="4 camere">4 camere</option>
+                              <option value="5 camere">5 camere</option>
+                              <option value="Penthouse">Penthouse</option>
+                            </select>
+                            <input
+                              value={editingApartmentData.surface || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
+                                  setEditingApartmentData({...editingApartmentData, surface: value.replace(',', '.')});
+                                }
+                              }}
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="Suprafață mp"
+                              className="w-full p-2 border rounded-lg text-sm"
+                            />
+                          </div>
+                          
+                          {/* Editare sursă încălzire */}
+                          <select
+                            value={editingApartmentData.heatingSource || ""}
+                            onChange={(e) => setEditingApartmentData({...editingApartmentData, heatingSource: e.target.value})}
+                            className="w-full p-2 border rounded-lg text-sm"
+                          >
+                            <option value="">Sursă încălzire</option>
+                            <option value="Termoficare">Termoficare</option>
+                            <option value="Centrala proprie">Centrală proprie</option>
+                            <option value="Centrala bloc">Centrală bloc</option>
+                            <option value="Debransat">Debranșat</option>
+                          </select>
+                        </div>
+                      ) : (
+                        // Modul de afișare
+                        <>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
+                              <div className="text-gray-600">
+                                {block?.name} - {stair?.name} • {apartment.persons} pers
+                                {apartment.surface && ` • ${apartment.surface} mp`}
+                                {apartment.apartmentType && ` • ${apartment.apartmentType}`}
+                              </div>
+                              {apartment.heatingSource && (
+                                <div className="text-xs text-blue-600 mt-1">
+                                  🔥 {apartment.heatingSource}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => startEditingApartment(apartment)}
+                                className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                                title="Editează apartamentul"
+                              >
+                                Editează
+                              </button>
+                              <button
+                                onClick={() => handleDeleteApartment(apartment.id)}
+                                className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                title="Șterge apartamentul"
+                              >
+                                Șterge
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    {apartment.heatingSource && (
-                      <div className="text-xs text-blue-600 mt-1">
-                        🔥 {apartment.heatingSource}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => startEditingApartment(apartment)}
-                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                      title="Editează apartamentul"
-                    >
-                      Editează
-                    </button>
-                    <button
-                      onClick={() => deleteApartment(apartment.id)}
-                      className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-                      title="Șterge apartamentul"
-                    >
-                      Șterge
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-</div>
-          {/* Cheltuieli (50%) */}
+          {/* Cheltuieli (50%) - SECȚIUNEA COMPLETĂ */}
           <div className="bg-white rounded-xl shadow-lg">
             <div className="p-4 bg-red-50 border-b">
               <h3 className="text-lg font-semibold">💰 Cheltuieli ({getAssociationExpenseTypes().length})</h3>
@@ -1368,7 +1908,7 @@ if (currentView === "setup") {
                     className="flex-1 p-2 border rounded-lg text-sm"
                   />
                   <button 
-                    onClick={addCustomExpense}
+                    onClick={handleAddCustomExpense}
                     className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
                     disabled={!newCustomExpense.name}
                   >
@@ -1488,7 +2028,7 @@ if (currentView === "setup") {
                             </button>
                             <button
                               onClick={() => {
-                                setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
+                                deleteCustomExpense(expenseType.name);
                               }}
                               className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
                               title="Șterge definitiv cheltuiala"
@@ -1531,7 +2071,7 @@ if (currentView === "setup") {
                             {isCustom && (
                               <button
                                 onClick={() => {
-                                  setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
+                                  deleteCustomExpense(expenseType.name);
                                 }}
                                 className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
                                 title="Șterge definitiv cheltuiala"
@@ -1569,9 +2109,9 @@ if (currentView === "setup") {
   );
 }
 
-  // Maintenance View 
+  // Maintenance View - SECȚIUNEA COMPLETĂ din originalul tău
   if (currentView === "maintenance") {
-    const associationExpenses = expenses.filter(exp => exp.associationId === selectedAssociation?.id && exp.month === currentMonth);
+    const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
     
     return (
       <div className={`min-h-screen p-4 ${
@@ -1583,11 +2123,11 @@ if (currentView === "setup") {
           <div className="mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">📊 Tabel Întreținere - {selectedAssociation?.name}</h2>
-                {selectedAssociation && getAssociationApartments().length > 0 && (
+                <h2 className="text-2xl font-bold text-gray-800">📊 Tabel Întreținere - {association?.name}</h2>
+                {association && getAssociationApartments().length > 0 && (
                   <p className="text-sm text-gray-600 mt-1">
                     {(() => {
-                      const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation.id);
+                      const associationBlocks = blocks.filter(block => block.associationId === association.id);
                       const associationStairs = stairs.filter(stair => 
                         associationBlocks.some(block => block.id === stair.blockId)
                       );
@@ -1914,29 +2454,41 @@ if (currentView === "setup") {
                   >
                     Anulează
                   </button>
-                  <button
-                    onClick={() => {
-                      adjustModalData.forEach(apartmentData => {
-                        setApartmentBalance(apartmentData.apartmentId, {
-                          restante: Math.round(apartmentData.restanteAjustate * 100) / 100,
-                          penalitati: Math.round(apartmentData.penalitatiAjustate * 100) / 100
-                        });
-                      });
-                      
-                      setShowAdjustBalances(false);
-                      setAdjustModalData([]);
-                      
-                      const key = `${selectedAssociation?.id}-${currentMonth}`;
-                      setMonthlyTables(prev => {
-                        const newTables = { ...prev };
-                        delete newTables[key];
-                        return newTables;
-                      });
-                    }}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-                  >
-                    Salvează Ajustări
-                  </button>
+
+<button
+  onClick={async () => {
+    try {
+      // Salvează local
+      adjustModalData.forEach(apartmentData => {
+        setApartmentBalance(apartmentData.apartmentId, {
+          restante: Math.round(apartmentData.restanteAjustate * 100) / 100,
+          penalitati: Math.round(apartmentData.penalitatiAjustate * 100) / 100
+        });
+      });
+      
+      // Salvează în Firestore
+      await saveBalanceAdjustments(currentMonth, adjustModalData);
+      
+      setShowAdjustBalances(false);
+      setAdjustModalData([]);
+      
+      const key = `${association?.id}-${currentMonth}`;
+      setMonthlyTables(prev => {
+        const newTables = { ...prev };
+        delete newTables[key];
+        return newTables;
+      });
+      
+      alert('✅ Ajustările au fost salvate cu succes!');
+    } catch (error) {
+      console.error('❌ Eroare la salvarea ajustărilor:', error);
+      alert('❌ Eroare la salvarea ajustărilor: ' + error.message);
+    }
+  }}
+  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+>
+  Salvează Ajustări
+</button>
                 </div>
               </div>
             </div>
@@ -1966,7 +2518,7 @@ if (currentView === "setup") {
                         className="flex-1 p-2 border rounded-lg text-sm"
                       />
                       <button 
-                        onClick={addCustomExpense}
+                        onClick={handleAddCustomExpense}
                         className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
                         disabled={!newCustomExpense.name}
                       >
@@ -2086,7 +2638,7 @@ if (currentView === "setup") {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
+                                    deleteCustomExpense(expenseType.name);
                                   }}
                                   className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
                                   title="Șterge definitiv cheltuiala"
@@ -2129,7 +2681,7 @@ if (currentView === "setup") {
                                 {isCustom && (
                                   <button
                                     onClick={() => {
-                                      setCustomExpenses(prev => prev.filter(exp => exp.name !== expenseType.name));
+                                      deleteCustomExpense(expenseType.name);
                                     }}
                                     className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
                                     title="Șterge definitiv cheltuiala"
@@ -2319,7 +2871,7 @@ if (currentView === "setup") {
                   )}
                   
                   <button 
-                    onClick={addExpense}
+                    onClick={handleAddExpense}
                     className="w-full mt-4 bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-600 flex items-center justify-center disabled:bg-gray-400"
                     disabled={!newExpense.name || 
                       (getExpenseConfig(newExpense.name).distributionType === "consumption" ? (!newExpense.unitPrice || !newExpense.billAmount) : 
@@ -2584,10 +3136,10 @@ if (currentView === "setup") {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-lg font-semibold">🧾 Tabel Întreținere - {currentMonth}</h3>
-                    {selectedAssociation && getAssociationApartments().length > 0 && (
+                    {association && getAssociationApartments().length > 0 && (
                       <p className="text-sm text-gray-600 mt-1">
                         {(() => {
-                          const associationBlocks = blocks.filter(block => block.associationId === selectedAssociation.id);
+                          const associationBlocks = blocks.filter(block => block.associationId === association.id);
                           const associationStairs = stairs.filter(stair => 
                             associationBlocks.some(block => block.id === stair.blockId)
                           );
@@ -2603,7 +3155,7 @@ if (currentView === "setup") {
                             structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
                           }
                           
-                          return `${selectedAssociation.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
+                          return `${association.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
                         })()}
                       </p>
                     )}
@@ -2746,7 +3298,7 @@ if (currentView === "setup") {
                         <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Penalități</th>
                         <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 border-r-2 border-gray-300">Total Datorat</th>
                         {expenses
-                          .filter(exp => exp.associationId === selectedAssociation?.id && exp.month === currentMonth)
+                          .filter(exp => exp.associationId === association?.id && exp.month === currentMonth)
                           .map(expense => (
                             <th key={expense.id} className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-blue-50">
                               {expense.name}
@@ -2767,7 +3319,7 @@ if (currentView === "setup") {
                           <td className="px-3 py-3 font-bold text-orange-600">{data.penalitati.toFixed(2)}</td>
                           <td className="px-3 py-3 font-bold text-gray-800 text-lg border-r-2 border-gray-300">{data.totalDatorat.toFixed(2)}</td>
                           {expenses
-                            .filter(exp => exp.associationId === selectedAssociation?.id && exp.month === currentMonth)
+                            .filter(exp => exp.associationId === association?.id && exp.month === currentMonth)
                             .map(expense => (
                               <td key={expense.id} className="px-3 py-3 text-sm">
                                 {data.expenseDetails?.[expense.name] !== undefined ? 
@@ -2799,7 +3351,7 @@ if (currentView === "setup") {
                           {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
                         </td>
                         {expenses
-                          .filter(exp => exp.associationId === selectedAssociation?.id && exp.month === currentMonth)
+                          .filter(exp => exp.associationId === association?.id && exp.month === currentMonth)
                           .map(expense => (
                             <td key={expense.id} className="px-3 py-3 font-bold text-sm bg-blue-50">
                               {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
