@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Building2, Calculator, Plus, CheckCircle, XCircle, ArrowLeft, Settings, AlertCircle } from "lucide-react";
+import { Building2, Calculator, Plus, CheckCircle, XCircle, ArrowLeft, Settings, AlertCircle, Home, ClipboardList, Menu, X } from "lucide-react";
 import { useAssociationData } from "./useFirestore";
 import { useAuth } from "./AuthContext";
 import jsPDF from 'jspdf';
@@ -153,8 +153,11 @@ React.useEffect(() => {
   console.log('- blocks count:', blocks?.length);
   console.log('- stairs count:', stairs?.length);
   console.log('- apartments count:', apartments?.length);
+  
 
   const [currentView, setCurrentView] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
   const [showInitialBalances, setShowInitialBalances] = useState(false);
   const [showAdjustBalances, setShowAdjustBalances] = useState(false);
@@ -174,14 +177,13 @@ React.useEffect(() => {
   // State-uri noi pentru editarea apartamentelor
   const [editingApartment, setEditingApartment] = useState(null);
   const [editingApartmentData, setEditingApartmentData] = useState({});
-
   const [newAssociation, setNewAssociation] = useState({ name: "", address: "", bankAccount: "", administrator: "", president: "", censor: "" });
   const [newBlock, setNewBlock] = useState({ name: "" });
   const [newStair, setNewStair] = useState({ name: "", blockId: "" });
   const [newApartment, setNewApartment] = useState({ number: "", persons: "", stairId: "", owner: "", surface: "", apartmentType: "", heatingSource: "" });
   const [newExpense, setNewExpense] = useState({ name: "", amount: "", distributionType: "", isUnitBased: false, unitPrice: "", billAmount: "" });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
-const [initialBalances, setInitialBalances] = useState({});
+  const [initialBalances, setInitialBalances] = useState({});
 
 
 
@@ -392,6 +394,272 @@ const deleteCurrentAssociationData = async () => {
   }
 };
 
+
+
+// ✅ COMPONENTA SIDEBAR REPARATĂ
+const Sidebar = () => (
+  <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+  } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
+    
+    {/* Header Sidebar cu buton expand/collapse */}
+    <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
+      {sidebarExpanded ? (
+        <div className="flex items-center">
+          <Building2 className="w-8 h-8 mr-2 text-white" />
+          <div>
+            <h1 className="text-lg font-bold text-white">BlocApp</h1>
+            <p className="text-xs text-blue-100">v2.0</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full">
+          <Building2 className="w-8 h-8 text-white" />
+        </div>
+      )}
+      
+      {/* Buton expand/collapse pentru desktop */}
+      <button
+        onClick={() => setSidebarExpanded(!sidebarExpanded)}
+        className="hidden lg:block p-1 rounded-md hover:bg-blue-700 transition-colors ml-2"
+        title={sidebarExpanded ? "Micșorează meniul" : "Mărește meniul"}
+      >
+        {sidebarExpanded ? (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        )}
+      </button>
+      
+      {/* Buton închidere pentru mobile */}
+      <button
+        onClick={() => setSidebarOpen(false)}
+        className="lg:hidden p-1 rounded-md hover:bg-blue-700"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+
+    {/* Meniu Navigare */}
+    <nav className="flex-1 mt-6">
+      <div className="px-2 space-y-1">
+        {/* Tabel întreținere (fostul Dashboard) */}
+        <button
+          onClick={() => handleNavigation("dashboard")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "dashboard"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Home className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Tabel întreținere</div>
+              <div className="text-xs text-gray-500">Prezentare generală</div>
+            </div>
+          )}
+          
+          {/* Tooltip pentru modul collapsed */}
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Tabel întreținere
+            </div>
+          )}
+        </button>
+
+        {/* Calcul întreținere */}
+        <button
+          onClick={() => handleNavigation("maintenance")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "maintenance"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Calculator className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Calcul întreținere</div>
+              <div className="text-xs text-gray-500">Cheltuieli și calcule</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Calcul întreținere
+            </div>
+          )}
+        </button>
+
+        {/* Configurare */}
+        <button
+          onClick={() => handleNavigation("setup")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "setup"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Settings className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Configurare</div>
+              <div className="text-xs text-gray-500">Blocuri, scări, apartamente</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Configurare
+            </div>
+          )}
+        </button>
+      </div>
+
+{/* Separator și Informații asociație - doar când este expandat */}
+{sidebarExpanded && (
+  <>
+    <div className="mx-4 my-6 border-t border-gray-200"></div>
+
+    {/* Informații asociație */}
+    {association && (
+      <div className="px-4 space-y-3">
+        <div className="bg-gray-50 rounded-lg p-3">
+          <div className="text-sm font-medium text-gray-800 truncate">
+            {association.name}
+          </div>
+          <div className="text-xs text-gray-600 mt-1">
+            {getAssociationApartments().length} apartamente
+          </div>
+          <div className="text-xs text-gray-600">
+            {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+          </div>
+        </div>
+
+        {/* Butoane de ștergere */}
+        <div className="space-y-2">
+          <button
+            onClick={deleteCurrentAssociationData}
+            className="w-full bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium flex items-center justify-center"
+            title={`Șterge doar "${association.name}"`}
+          >
+            🏢 Șterge "{association.name.length > 15 ? association.name.substring(0, 15) + '...' : association.name}"
+          </button>
+          
+          <button
+            onClick={deleteAllBlocAppData}
+            className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
+            title="Șterge toate datele aplicației"
+          >
+            🗑️ Șterge TOATE datele
+          </button>
+          
+          <div className="text-xs text-gray-500 text-center mt-2">
+            ⚠️ Development tools
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+)}
+
+
+
+    </nav>
+
+    {/* Footer cu utilizatorul - absolute bottom */}
+    <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
+      {sidebarExpanded ? (
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+            {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="ml-3 flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {userProfile?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+            </div>
+            <div className="text-xs text-gray-500 truncate">
+              Administrator
+            </div>
+          </div>
+<button 
+  onClick={async () => {
+    try {
+      // Importă signOut din firebase/auth dacă nu este deja importat
+      const { signOut } = await import('firebase/auth');
+      const { auth } = await import('./firebase');
+      
+      await signOut(auth);
+      console.log('✅ Utilizator deconectat cu succes');
+      
+      // Opțional: reîncarcă pagina pentru a reseta starea
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ Eroare la deconectare:', error);
+      alert('Eroare la deconectare: ' + error.message);
+    }
+  }}
+  className="text-gray-400 hover:text-red-600 transition-colors" 
+  title="Deconectare"
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
+  </svg>
+</button>
+        </div>
+) : (
+  <div className="flex justify-center group relative">
+    <button
+      onClick={async () => {
+        try {
+          const { signOut } = await import('firebase/auth');
+          const { auth } = await import('./firebase');
+          
+          await signOut(auth);
+          console.log('✅ Utilizator deconectat cu succes');
+          window.location.reload();
+        } catch (error) {
+          console.error('❌ Eroare la deconectare:', error);
+          alert('Eroare la deconectare: ' + error.message);
+        }
+      }}
+      className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors"
+      title="Deconectare"
+    >
+      {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+    </button>
+    
+    {/* Tooltip pentru user */}
+    <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+      Click pentru deconectare - {userProfile?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+    </div>
+  </div>
+)}
+    </div>
+  </div>
+);
+
+
+
+
+
+  // ✅ OVERLAY PENTRU MOBILE
+  const Overlay = () => (
+    sidebarOpen && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        onClick={() => setSidebarOpen(false)}
+      />
+    )
+  );
+
+  
+  
   // Loading state pentru toată aplicația
   if (loading) {
     return (
@@ -422,6 +690,12 @@ const deleteCurrentAssociationData = async () => {
       </div>
     );
   }
+  
+    // ✅ ADAUGĂ ACEASTĂ FUNCȚIE PENTRU NAVIGARE
+  const handleNavigation = (view) => {
+    setCurrentView(view);
+    setSidebarOpen(false); // Închide sidebar-ul pe mobile după selectare
+  };
   
   // Helper pentru a genera lista de luni disponibile
   const getAvailableMonths = () => {
@@ -1171,856 +1445,856 @@ const getAvailableStairs = () => {
 
 // ✅ ÎNLOCUIEȘTE SECȚIUNEA DASHBOARD (if (currentView === "dashboard")) din BlocApp.js cu aceasta:
 
-if (currentView === "dashboard") {
+
+// ✅ LAYOUT PRINCIPAL CU SIDEBAR
   return (
-    <div className={`min-h-screen p-4 ${
-      currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
-        ? "bg-gradient-to-br from-blue-50 to-indigo-100"
-        : "bg-gradient-to-br from-green-50 to-emerald-100"
-    }`}>
-      <div className="max-w-6xl mx-auto">
-        <header className="text-center mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
-            <div className="flex items-center justify-center mb-4">
-              <Building2 className="w-12 h-12 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">BlocApp</h1>
-                {association && (
-                  <div className="flex items-center justify-center mt-1">
-                    <div className="flex items-center space-x-3">
-                      <select
-                        value={currentMonth}
-                        onChange={(e) => setCurrentMonth(e.target.value)}
-                        className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      >
-                        {getAvailableMonths().map(month => (
-                          <option key={month.value} value={month.value}>
-                            {month.label}
-                          </option>
-                        ))}
-                      </select>
-                      {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          LUNA CURENTĂ
-                        </span>
-                      ) : (
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          LUNA URMĂTOARE
-                        </span>
-                      )}
-                      {isMonthReadOnly(currentMonth) ? (
-                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          📋 PUBLICATĂ
-                        </span>
-                      ) : (
-                        <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          🔧 ÎN LUCRU
-                        </span>
-                      )}
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Overlay pentru mobile */}
+      <Overlay />
+      
+      {/* Conținut principal */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+{/* Buton mobile menu - doar pe mobile când sidebar este închis */}
+{!sidebarOpen && (
+  <button
+    onClick={() => setSidebarOpen(true)}
+    className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-blue-600 text-white rounded-lg shadow-lg"
+  >
+    <Menu className="w-6 h-6" />
+  </button>
+)}
+        
+        {/* Zona de conținut */}
+        <main className="flex-1 overflow-y-auto">
+          {/* TOATE VIEW-URILE TALE EXISTENTE */}
+          
+          {/* Dashboard View */}
+          {currentView === "dashboard" && (
+            <div className={`min-h-screen p-4 ${
+              currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
+                ? "bg-gradient-to-br from-blue-50 to-indigo-100"
+                : "bg-gradient-to-br from-green-50 to-emerald-100"
+            }`}>
+              <div className="max-w-6xl mx-auto">
+<header className="mb-8">
+  <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
+    <div className="flex items-center justify-between">
+      {/* Stânga: Numele asociației */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {association?.name || "Nume Asociație"}
+        </h1>
+        <p className="text-gray-600 text-sm mt-1">
+          {association?.address || "Adresa asociației"}
+        </p>
+      </div>
+
+      {/* Dreapta: Status luna și selector */}
+      <div className="flex items-center space-x-4">
+        {/* Selector luna */}
+        <select
+          value={currentMonth}
+          onChange={(e) => setCurrentMonth(e.target.value)}
+          className="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+        >
+          {getAvailableMonths().map(month => (
+            <option key={month.value} value={month.value}>
+              {month.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Status-uri luna */}
+        <div className="flex items-center space-x-2">
+          {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
+            <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+              LUNA CURENTĂ
+            </span>
+          ) : (
+            <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+              LUNA URMĂTOARE
+            </span>
+          )}
+          
+          {isMonthReadOnly(currentMonth) ? (
+            <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
+              📋 PUBLICATĂ
+            </span>
+          ) : (
+            <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+              🔧 ÎN LUCRU
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Informații suplimentare asociație */}
+    {association && getAssociationApartments().length > 0 && (
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <span>
+            {getAssociationApartments().length} apartamente • 
+            {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+          </span>
+          
+          {/* Buton rapid către întreținere */}
+          <button 
+            onClick={() => handleNavigation("maintenance")}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            📊 Calcul Întreținere
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</header>
+
+                {/* Condiție principală: Dacă nu există asociație, afișează creatorul */}
+                {!association && (
+                  <div className="bg-blue-50 border border-blue-200 p-8 rounded-xl mb-8">
+                    <div className="text-center mb-6">
+                      <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Building2 className="w-10 h-10 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-blue-800 mb-2">🎉 Bun venit în BlocApp!</h3>
+                      <p className="text-blue-700 max-w-md mx-auto">
+                        Pentru a începe, trebuie să creezi prima ta asociație de proprietari. 
+                        Această informație se salvează doar o dată.
+                      </p>
+                    </div>
+                    
+                    <div className="max-w-2xl mx-auto">
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <input
+                            value={newAssociation.name}
+                            onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
+                            placeholder="Numele asociației (ex: Asociația Primăverii 12) *"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                          <input
+                            value={newAssociation.address}
+                            onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
+                            placeholder="Adresa completă (ex: Strada Primăverii 12, Sector 1) *"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <input
+                            value={newAssociation.bankAccount}
+                            onChange={(e) => setNewAssociation({...newAssociation, bankAccount: e.target.value})}
+                            placeholder="Cont bancar (opțional)"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                          <input
+                            value={newAssociation.administrator}
+                            onChange={(e) => setNewAssociation({...newAssociation, administrator: e.target.value})}
+                            placeholder="Administrator (opțional)"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <input
+                            value={newAssociation.president}
+                            onChange={(e) => setNewAssociation({...newAssociation, president: e.target.value})}
+                            placeholder="Președinte (opțional)"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                          <input
+                            value={newAssociation.censor}
+                            onChange={(e) => setNewAssociation({...newAssociation, censor: e.target.value})}
+                            placeholder="Cenzor (opțional)"
+                            className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                        </div>
+
+                        <div className="flex justify-center pt-4">
+                          <button 
+                            onClick={handleAddAssociation}
+                            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400 text-lg font-medium"
+                            disabled={!newAssociation.name || !newAssociation.address}
+                          >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Creează Asociația
+                          </button>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="text-xs text-blue-600">
+                            * Câmpurile marcate sunt obligatorii. Restul pot fi completate mai târziu.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-            <p className="text-gray-600">Gestionează ușor întreținerea blocului</p>
-            
-            {/* ✅ BUTOANE DE ȘTERGERE DOAR DACĂ EXISTĂ ASOCIAȚIE */}
-            {association && (
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                <button
-                  onClick={deleteAllBlocAppData}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center"
-                >
-                  🗑️ Șterge TOATE datele
-                </button>
-                
-                <button
-                  onClick={deleteCurrentAssociationData}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium flex items-center"
-                >
-                  🏢 Șterge doar "{association.name}"
-                </button>
-                
-                <div className="text-xs text-gray-500 w-full mt-2">
-                  ⚠️ Butoane pentru development - vor fi eliminate în producție
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
 
-        {/* ✅ CONDIȚIE PRINCIPALĂ: Dacă nu există asociație, afișează creatorul */}
-        {!association && (
-          <div className="bg-blue-50 border border-blue-200 p-8 rounded-xl mb-8">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-10 h-10 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-blue-800 mb-2">🎉 Bun venit în BlocApp!</h3>
-              <p className="text-blue-700 max-w-md mx-auto">
-                Pentru a începe, trebuie să creezi prima ta asociație de proprietari. 
-                Această informație se salvează doar o dată.
-              </p>
-            </div>
-            
-            <div className="max-w-2xl mx-auto">
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    value={newAssociation.name}
-                    onChange={(e) => setNewAssociation({...newAssociation, name: e.target.value})}
-                    placeholder="Numele asociației (ex: Asociația Primăverii 12) *"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                  <input
-                    value={newAssociation.address}
-                    onChange={(e) => setNewAssociation({...newAssociation, address: e.target.value})}
-                    placeholder="Adresa completă (ex: Strada Primăverii 12, Sector 1) *"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    value={newAssociation.bankAccount}
-                    onChange={(e) => setNewAssociation({...newAssociation, bankAccount: e.target.value})}
-                    placeholder="Cont bancar (opțional)"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                  <input
-                    value={newAssociation.administrator}
-                    onChange={(e) => setNewAssociation({...newAssociation, administrator: e.target.value})}
-                    placeholder="Administrator (opțional)"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    value={newAssociation.president}
-                    onChange={(e) => setNewAssociation({...newAssociation, president: e.target.value})}
-                    placeholder="Președinte (opțional)"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                  <input
-                    value={newAssociation.censor}
-                    onChange={(e) => setNewAssociation({...newAssociation, censor: e.target.value})}
-                    placeholder="Cenzor (opțional)"
-                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-center pt-4">
-                  <button 
-                    onClick={handleAddAssociation}
-                    className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400 text-lg font-medium"
-                    disabled={!newAssociation.name || !newAssociation.address}
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Creează Asociația
-                  </button>
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-xs text-blue-600">
-                    * Câmpurile marcate sunt obligatorii. Restul pot fi completate mai târziu.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ DACĂ EXISTĂ ASOCIAȚIE FĂRĂ APARTAMENTE */}
-        {association && getAssociationApartments().length === 0 && (
-          <div className="bg-green-50 border border-green-200 p-6 rounded-xl mb-8">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Asociația "{association.name}" a fost creată!</h3>
-            <p className="text-green-700 mb-4">
-              Acum să adaugăm structura: blocurile, scările și apartamentele.
-            </p>
-            <button 
-              onClick={() => setCurrentView("setup")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
-            >
-              📋 Configurează Blocurile și Apartamentele
-            </button>
-          </div>
-        )}
-
-        {/* ✅ DACĂ EXISTĂ ASOCIAȚIE CU APARTAMENTE - DASHBOARD NORMAL */}
-        {association && getAssociationApartments().length > 0 && (
-          <>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100 mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">📍 {association.name}</h3>
-                  <p className="text-gray-600">{association.address}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {getAssociationApartments().length} apartamente • 
-                    {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
-                  </p>
-                </div>
-                <div className="flex space-x-3">
-                  <button 
-                    onClick={() => setCurrentView("maintenance")}
-                    className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium text-lg"
-                  >
-                    📊 Tabel Întreținere
-                  </button>
-                  <button 
-                    onClick={() => setCurrentView("setup")}
-                    className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-                  >
-                    <Settings className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-6 gap-4 mb-8 overflow-x-auto">
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-green-600">{blocks.filter(b => b.associationId === association.id).length}</div>
-                <div className="text-sm text-gray-600">Blocuri</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-purple-600">
-                  {stairs.filter(s => blocks.some(b => b.id === s.blockId && b.associationId === association.id)).length}
-                </div>
-                <div className="text-sm text-gray-600">Scări</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-orange-600">{getAssociationApartments().length}</div>
-                <div className="text-sm text-gray-600">Apartamente</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-teal-600">{getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)}</div>
-                <div className="text-sm text-gray-600">Persoane</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-blue-600">
-                  {expenses.filter(e => e.associationId === association.id && e.month === currentMonth).length}
-                </div>
-                <div className="text-sm text-gray-600">Cheltuieli {currentMonth}</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-                <div className="text-2xl font-bold text-emerald-600">
-                  {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(0)}
-                </div>
-                <div className="text-sm text-gray-600">Încasări RON</div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">📝 Activitate Recentă</h3>
-              {maintenanceData.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span>Tabel întreținere pentru {maintenanceData.length} apartamente</span>
-                    <span className="text-green-600 font-medium">
-                      Total: {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)} RON
-                    </span>
+                {/* Dacă există asociație fără apartamente */}
+                {association && getAssociationApartments().length === 0 && (
+                  <div className="bg-green-50 border border-green-200 p-6 rounded-xl mb-8">
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Asociația "{association.name}" a fost creată!</h3>
+                    <p className="text-green-700 mb-4">
+                      Acum să adaugăm structura: blocurile, scările și apartamentele.
+                    </p>
+                    <button 
+                      onClick={() => handleNavigation("setup")}
+                      className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+                    >
+                      📋 Configurează Blocurile și Apartamentele
+                    </button>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                    <span>Plăți înregistrate: {maintenanceData.filter(d => d.paid).length} / {maintenanceData.length}</span>
-                    <span className="text-blue-600 font-medium">
-                      Încasat: {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)} RON
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-600">Adaugă cheltuieli pentru a genera primul tabel de întreținere.</p>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-// Setup View - SECȚIUNEA COMPLETĂ din originalul tău
-if (currentView === "setup") {
-  const associationBlocks = blocks.filter(block => block.associationId === association?.id);
-const availableStairs = getAvailableStairs();
-  const allApartments = getAssociationApartments();
+                )}
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 gap-4">
-          <h2 className="text-2xl font-bold text-gray-800">⚙️ Configurare Asociație</h2>
-          <button 
-            onClick={() => setCurrentView("dashboard")}
-            className="w-full lg:w-auto bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center justify-center"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Înapoi
-          </button>
-        </div>
+                {/* Dacă există asociație cu apartamente - dashboard normal */}
+                {association && getAssociationApartments().length > 0 && (
+                  <>
 
-        {/* Linia 1: Date Asociație (50%) + Blocuri (25%) + Scări (25%) */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          {/* Date Asociație (50% = 2 coloane din 4) */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-blue-50 border-b">
-              <h3 className="text-lg font-semibold">📋 Date Asociație</h3>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Numele asociației *</label>
-                  <input
-                    value={association?.name || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ name: e.target.value });
-                      }
-                    }}
-                    placeholder="ex: Asociația Primăverii 12"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Adresa completă *</label>
-                  <input
-                    value={association?.address || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ address: e.target.value });
-                      }
-                    }}
-                    placeholder="Strada, numărul, sectorul"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Cont bancar</label>
-                  <input
-                    value={association?.bankAccount || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ bankAccount: e.target.value });
-                      }
-                    }}
-                    placeholder="RO49 AAAA 1B31..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
-                  <input
-                    value={association?.administrator || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ administrator: e.target.value });
-                      }
-                    }}
-                    placeholder="Numele administratorului"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Președinte</label>
-                  <input
-                    value={association?.president || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ president: e.target.value });
-                      }
-                    }}
-                    placeholder="Numele președintelui"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Cenzor</label>
-                  <input
-                    value={association?.censor || ""}
-                    onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ censor: e.target.value });
-                      }
-                    }}
-                    placeholder="Numele cenzorului"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-gray-600 flex justify-between">
-                <span><strong>Creat:</strong> {association?.createdAt}</span>
-                <span className="text-gray-500">* Câmpurile marcate sunt obligatorii</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Blocuri (25% = 1 coloană din 4) */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-green-50 border-b">
-              <h3 className="text-lg font-semibold">🏠 Blocuri ({associationBlocks.length})</h3>
-            </div>
-            <div className="p-4">
-              <div className="flex gap-2 mb-4">
-                <input
-                  value={newBlock.name}
-                  onChange={(e) => setNewBlock({...newBlock, name: e.target.value})}
-                  placeholder="ex: Bloc B4"
-                  className="flex-1 p-2 border rounded-lg text-sm"
-                />
-                <button 
-                  onClick={handleAddBlock}
-                  className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-sm"
-                  disabled={!newBlock.name}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {associationBlocks.map(block => (
-                  <div key={block.id} className="p-2 bg-gray-50 rounded text-sm">
-                    {block.name} ({stairs.filter(s => s.blockId === block.id).length} scări)
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Scări (25% = 1 coloană din 4) */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-purple-50 border-b">
-              <h3 className="text-lg font-semibold">🔼 Scări ({availableStairs.length})</h3>
-            </div>
-            <div className="p-4">
-              <div className="space-y-2 mb-4">
-<select 
-  value={newStair.blockId}
-  onChange={(e) => {
-    console.log('🔄 Selectare bloc - value:', e.target.value, 'type:', typeof e.target.value);
-    setNewStair({...newStair, blockId: e.target.value}); // păstrez ca string
-  }}
-  className="w-full p-2 border rounded-lg text-sm"
->
-  <option value="">Selectează bloc</option>
-  {associationBlocks.map(block => (
-    <option key={block.id} value={block.id}>{block.name}</option>
-  ))}
-</select>
-                <div className="flex gap-2">
-                  <input
-                    value={newStair.name}
-                    onChange={(e) => setNewStair({...newStair, name: e.target.value})}
-                    placeholder="ex: Scara A"
-                    className="flex-1 p-2 border rounded-lg text-sm"
-                  />
-                  <button 
-                    onClick={handleAddStair}
-                    className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 text-sm"
-                    disabled={!newStair.name || !newStair.blockId}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-{stairs.filter(stair => 
-  blocks.some(block => block.id === stair.blockId && block.associationId === association?.id)
-).map(stair => {
-                  const block = blocks.find(b => b.id === stair.blockId);
-                  return (
-                    <div key={stair.id} className="p-2 bg-gray-50 rounded text-sm">
-                      {block?.name} - {stair.name} ({apartments.filter(a => a.stairId === stair.id).length} apt)
+                    <div className="grid grid-cols-6 gap-4 mb-8 overflow-x-auto">
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-green-600">{blocks.filter(b => b.associationId === association.id).length}</div>
+                        <div className="text-sm text-gray-600">Blocuri</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {stairs.filter(s => blocks.some(b => b.id === s.blockId && b.associationId === association.id)).length}
+                        </div>
+                        <div className="text-sm text-gray-600">Scări</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-orange-600">{getAssociationApartments().length}</div>
+                        <div className="text-sm text-gray-600">Apartamente</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-teal-600">{getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)}</div>
+                        <div className="text-sm text-gray-600">Persoane</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {expenses.filter(e => e.associationId === association.id && e.month === currentMonth).length}
+                        </div>
+                        <div className="text-sm text-gray-600">Cheltuieli {currentMonth}</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
+                        <div className="text-2xl font-bold text-emerald-600">
+                          {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(0)}
+                        </div>
+                        <div className="text-sm text-gray-600">Încasări RON</div>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Linia 2: Apartamente (50%) + Cheltuieli (50%) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-{/* Apartamente (50%) - SECȚIUNEA COMPLETĂ cu editare */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-orange-50 border-b">
-              <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
-            </div>
-            <div className="p-4">
-              <div className="space-y-2 mb-4">
-                <select 
-                  value={newApartment.stairId}
-                  onChange={(e) => {
-                    console.log('🔄 Selectare scară - value:', e.target.value, 'type:', typeof e.target.value);
-                    setNewApartment({...newApartment, stairId: e.target.value});
-                  }}
-                  className="w-full p-2 border rounded-lg text-sm"
-                >
-                  <option value="">Selectează scara</option>
-                  {availableStairs.map(stair => {
-                    const block = blocks.find(b => b.id === stair.blockId);
-                    return (
-                      <option key={stair.id} value={stair.id}>
-                        {block?.name} - {stair.name}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {/* Prima linie: Nr apt + Nume proprietar */}
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    value={newApartment.number}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "" || /^\d+$/.test(value)) {
-                        setNewApartment({...newApartment, number: value});
-                      }
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Nr apartament *"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                  <input
-                    value={newApartment.owner}
-                    onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
-                    placeholder="Nume proprietar *"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                </div>
-
-                {/* A doua linie: Nr persoane + Tip apartament */}
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    value={newApartment.persons}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "" || /^\d+$/.test(value)) {
-                        setNewApartment({...newApartment, persons: value});
-                      }
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Nr persoane *"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                  <select
-                    value={newApartment.apartmentType}
-                    onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
-                    className="w-full p-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Tip apartament</option>
-                    <option value="Garsoniera">Garsoniera</option>
-                    <option value="2 camere">2 camere</option>
-                    <option value="3 camere">3 camere</option>
-                    <option value="4 camere">4 camere</option>
-                    <option value="5 camere">5 camere</option>
-                    <option value="Penthouse">Penthouse</option>
-                  </select>
-                </div>
-
-                {/* A treia linie: Suprafața + Sursă încălzire */}
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    value={newApartment.surface}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                        setNewApartment({...newApartment, surface: value.replace(',', '.')});
-                      }
-                    }}
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="Suprafață mp"
-                    className="w-full p-2 border rounded-lg text-sm"
-                  />
-                  <select
-                    value={newApartment.heatingSource}
-                    onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
-                    className="w-full p-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Sursă încălzire</option>
-                    <option value="Termoficare">Termoficare</option>
-                    <option value="Centrala proprie">Centrală proprie</option>
-                    <option value="Centrala bloc">Centrală bloc</option>
-                    <option value="Debransat">Debranșat</option>
-                  </select>
-                </div>
-
-                {/* Buton adăugare */}
-                <button 
-                  onClick={handleAddApartment}
-                  className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
-                  disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adaugă Apartament
-                </button>
-              </div>
-              
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {allApartments.map(apartment => {
-                  const stair = stairs.find(s => s.id === apartment.stairId);
-                  const block = blocks.find(b => b.id === stair?.blockId);
-                  const isEditing = editingApartment === apartment.id;
-                  
-                  return (
-                    <div key={apartment.id} className={`p-3 rounded text-sm ${isEditing ? "bg-blue-50 border-2 border-blue-200" : "bg-gray-50"}`}>
-                      {isEditing ? (
-                        // Modul de editare
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4">📝 Activitate Recentă</h3>
+                      {maintenanceData.length > 0 ? (
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-blue-600">Editare Apartament {apartment.number}</span>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => saveApartmentEdit(apartment.id)}
-                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                                disabled={!editingApartmentData.owner || !editingApartmentData.persons}
-                              >
-                                Salvează
-                              </button>
-                              <button
-                                onClick={() => cancelApartmentEdit()}
-                                className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
-                              >
-                                Anulează
-                              </button>
-                            </div>
+                          <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span>Tabel întreținere pentru {maintenanceData.length} apartamente</span>
+                            <span className="text-green-600 font-medium">
+                              Total: {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)} RON
+                            </span>
                           </div>
-                          
-                          {/* Editare proprietar și persoane */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              value={editingApartmentData.owner}
-                              onChange={(e) => setEditingApartmentData({...editingApartmentData, owner: e.target.value})}
-                              placeholder="Nume proprietar *"
-                              className="w-full p-2 border rounded-lg text-sm"
-                            />
-                            <input
-                              value={editingApartmentData.persons}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === "" || /^\d+$/.test(value)) {
-                                  setEditingApartmentData({...editingApartmentData, persons: value});
-                                }
-                              }}
-                              type="text"
-                              inputMode="numeric"
-                              placeholder="Nr persoane *"
-                              className="w-full p-2 border rounded-lg text-sm"
-                            />
+                          <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <span>Plăți înregistrate: {maintenanceData.filter(d => d.paid).length} / {maintenanceData.length}</span>
+                            <span className="text-blue-600 font-medium">
+                              Încasat: {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)} RON
+                            </span>
                           </div>
-                          
-                          {/* Editare tip apartament și suprafață */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <select
-                              value={editingApartmentData.apartmentType || ""}
-                              onChange={(e) => setEditingApartmentData({...editingApartmentData, apartmentType: e.target.value})}
-                              className="w-full p-2 border rounded-lg text-sm"
-                            >
-                              <option value="">Tip apartament</option>
-                              <option value="Garsoniera">Garsoniera</option>
-                              <option value="2 camere">2 camere</option>
-                              <option value="3 camere">3 camere</option>
-                              <option value="4 camere">4 camere</option>
-                              <option value="5 camere">5 camere</option>
-                              <option value="Penthouse">Penthouse</option>
-                            </select>
-                            <input
-                              value={editingApartmentData.surface || ""}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                                  setEditingApartmentData({...editingApartmentData, surface: value.replace(',', '.')});
-                                }
-                              }}
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="Suprafață mp"
-                              className="w-full p-2 border rounded-lg text-sm"
-                            />
-                          </div>
-                          
-                          {/* Editare sursă încălzire */}
-                          <select
-                            value={editingApartmentData.heatingSource || ""}
-                            onChange={(e) => setEditingApartmentData({...editingApartmentData, heatingSource: e.target.value})}
-                            className="w-full p-2 border rounded-lg text-sm"
-                          >
-                            <option value="">Sursă încălzire</option>
-                            <option value="Termoficare">Termoficare</option>
-                            <option value="Centrala proprie">Centrală proprie</option>
-                            <option value="Centrala bloc">Centrală bloc</option>
-                            <option value="Debransat">Debranșat</option>
-                          </select>
                         </div>
                       ) : (
-                        // Modul de afișare
-                        <>
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
-                              <div className="text-gray-600">
-                                {block?.name} - {stair?.name} • {apartment.persons} pers
-                                {apartment.surface && ` • ${apartment.surface} mp`}
-                                {apartment.apartmentType && ` • ${apartment.apartmentType}`}
-                              </div>
-                              {apartment.heatingSource && (
-                                <div className="text-xs text-blue-600 mt-1">
-                                  🔥 {apartment.heatingSource}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => startEditingApartment(apartment)}
-                                className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                                title="Editează apartamentul"
-                              >
-                                Editează
-                              </button>
-                              <button
-                                onClick={() => handleDeleteApartment(apartment.id)}
-                                className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-                                title="Șterge apartamentul"
-                              >
-                                Șterge
-                              </button>
-                            </div>
-                          </div>
-                        </>
+                        <p className="text-gray-600">Adaugă cheltuieli pentru a genera primul tabel de întreținere.</p>
                       )}
                     </div>
-                  );
-                })}
+                  </>
+                )}
+              
+			  
+			  </div>
+            </div>
+          )}
+
+{/* Setup View */}
+{currentView === "setup" && (
+  (() => {
+    const associationBlocks = blocks.filter(block => block.associationId === association?.id);
+    const availableStairs = getAvailableStairs();
+    const allApartments = getAssociationApartments();
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 gap-4">
+            <h2 className="text-2xl font-bold text-gray-800">⚙️ Configurare Asociație</h2>
+            <button 
+              onClick={() => handleNavigation("dashboard")}
+              className="w-full lg:w-auto bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center justify-center"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Înapoi
+            </button>
+          </div>
+
+          {/* Linia 1: Date Asociație (50%) + Blocuri (25%) + Scări (25%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            {/* Date Asociație (50% = 2 coloane din 4) */}
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-lg">
+              <div className="p-4 bg-blue-50 border-b">
+                <h3 className="text-lg font-semibold">📋 Date Asociație</h3>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Numele asociației *</label>
+                    <input
+                      value={association?.name || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ name: e.target.value });
+                        }
+                      }}
+                      placeholder="ex: Asociația Primăverii 12"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Adresa completă *</label>
+                    <input
+                      value={association?.address || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ address: e.target.value });
+                        }
+                      }}
+                      placeholder="Strada, numărul, sectorul"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Cont bancar</label>
+                    <input
+                      value={association?.bankAccount || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ bankAccount: e.target.value });
+                        }
+                      }}
+                      placeholder="RO49 AAAA 1B31..."
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
+                    <input
+                      value={association?.administrator || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ administrator: e.target.value });
+                        }
+                      }}
+                      placeholder="Numele administratorului"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Președinte</label>
+                    <input
+                      value={association?.president || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ president: e.target.value });
+                        }
+                      }}
+                      placeholder="Numele președintelui"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Cenzor</label>
+                    <input
+                      value={association?.censor || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ censor: e.target.value });
+                        }
+                      }}
+                      placeholder="Numele cenzorului"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-gray-600 flex justify-between">
+                  <span><strong>Creat:</strong> {association?.createdAt}</span>
+                  <span className="text-gray-500">* Câmpurile marcate sunt obligatorii</span>
+                </div>
               </div>
             </div>
-          </div>
-          {/* Cheltuieli (50%) - SECȚIUNEA COMPLETĂ */}
-          <div className="bg-white rounded-xl shadow-lg">
-            <div className="p-4 bg-red-50 border-b">
-              <h3 className="text-lg font-semibold">💰 Cheltuieli ({getAssociationExpenseTypes().length})</h3>
-            </div>
-            <div className="p-4">
-              <div className="space-y-3 mb-4">
-                <div className="flex gap-2">
+
+            {/* Blocuri (25% = 1 coloană din 4) */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 bg-green-50 border-b">
+                <h3 className="text-lg font-semibold">🏠 Blocuri ({associationBlocks.length})</h3>
+              </div>
+              <div className="p-4">
+                <div className="flex gap-2 mb-4">
                   <input
-                    value={newCustomExpense.name}
-                    onChange={(e) => setNewCustomExpense({...newCustomExpense, name: e.target.value})}
-                    placeholder="ex: Deratizare"
+                    value={newBlock.name}
+                    onChange={(e) => setNewBlock({...newBlock, name: e.target.value})}
+                    placeholder="ex: Bloc B4"
                     className="flex-1 p-2 border rounded-lg text-sm"
                   />
                   <button 
-                    onClick={handleAddCustomExpense}
-                    className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
-                    disabled={!newCustomExpense.name}
+                    onClick={handleAddBlock}
+                    className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-sm"
+                    disabled={!newBlock.name}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Configurează cheltuială:</label>
-                  <select 
-                    value={selectedExpenseForConfig || ""}
-                    onChange={(e) => setSelectedExpenseForConfig(e.target.value)}
-                    className="w-full p-2 border rounded-lg text-sm mb-2"
-                  >
-                    <option value="">Selectează cheltuiala</option>
-                    {getAssociationExpenseTypes().map(expenseType => (
-                      <option key={expenseType.name} value={expenseType.name}>
-                        {expenseType.name}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {selectedExpenseForConfig && (
-                    <div className="space-y-2">
-                      <select
-                        value={getExpenseConfig(selectedExpenseForConfig).distributionType}
-                        onChange={(e) => updateExpenseConfig(selectedExpenseForConfig, { distributionType: e.target.value })}
-                        className="w-full p-2 border rounded-lg text-sm"
-                      >
-                        <option value="apartment">Pe apartament (egal)</option>
-                        <option value="individual">Pe apartament (individual)</option>
-                        <option value="person">Pe persoană</option>
-                        <option value="consumption">Pe consum (mc/Gcal/kWh)</option>
-                      </select>
-                      
-                      {allApartments.length > 0 && (
-                        <div className="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded">
-                          <div className="text-xs font-medium text-gray-600 mb-1">Participarea apartamentelor:</div>
-                          {allApartments.map(apartment => {
-                            const participation = getApartmentParticipation(apartment.id, selectedExpenseForConfig);
-                            return (
-                              <div key={apartment.id} className="flex items-center gap-2 text-sm">
-                                <span className="w-16">Apt {apartment.number}</span>
-                                <select
-                                  value={participation.type}
-                                  onChange={(e) => {
-                                    const type = e.target.value;
-                                    if (type === "integral" || type === "excluded") {
-                                      setApartmentParticipation(apartment.id, selectedExpenseForConfig, type);
-                                    } else {
-                                      setApartmentParticipation(apartment.id, selectedExpenseForConfig, type, participation.value || (type === "percentage" ? 50 : 0));
-                                    }
-                                  }}
-                                  className="p-1 border rounded text-xs"
-                                >
-                                  <option value="integral">Integral</option>
-                                  <option value="percentage">Procent</option>
-                                  <option value="fixed">Sumă fixă</option>
-                                  <option value="excluded">Exclus</option>
-                                </select>
-                                {(participation.type === "percentage" || participation.type === "fixed") && (
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={participation.value || ""}
-                                    onChange={(e) => setApartmentParticipation(apartment.id, selectedExpenseForConfig, participation.type, parseFloat(e.target.value) || 0)}
-                                    placeholder={participation.type === "percentage" ? "%" : "RON"}
-                                    className="w-16 p-1 border rounded text-xs"
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {associationBlocks.map(block => (
+                    <div key={block.id} className="p-2 bg-gray-50 rounded text-sm">
+                      {block.name} ({stairs.filter(s => s.blockId === block.id).length} scări)
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
-              
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                <div className="text-xs text-gray-600 mb-2">Cheltuieli active pentru {currentMonth}:</div>
-                {getAssociationExpenseTypes().map(expenseType => {
-                  const config = getExpenseConfig(expenseType.name);
-                  const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                  const isDefault = defaultExpenseTypes.find(def => def.name === expenseType.name);
-                  
-                  return (
-                    <div key={expenseType.name} className={`p-2 rounded text-sm ${isCustom ? "bg-red-50" : "bg-blue-50"} flex items-center justify-between`}>
-                      <div className="flex-1">
-                        <div className="font-medium">{expenseType.name}</div>
-                        <div className="text-xs text-gray-600">
-                          {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
-                           config.distributionType === "individual" ? "Pe apartament (individual)" :
-                           config.distributionType === "person" ? "Pe persoană" : 
-                           (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
-                        </div>
+            </div>
+
+            {/* Scări (25% = 1 coloană din 4) */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 bg-purple-50 border-b">
+                <h3 className="text-lg font-semibold">🔼 Scări ({availableStairs.length})</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-2 mb-4">
+                  <select 
+                    value={newStair.blockId}
+                    onChange={(e) => {
+                      console.log('🔄 Selectare bloc - value:', e.target.value, 'type:', typeof e.target.value);
+                      setNewStair({...newStair, blockId: e.target.value}); // păstrez ca string
+                    }}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Selectează bloc</option>
+                    {associationBlocks.map(block => (
+                      <option key={block.id} value={block.id}>{block.name}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <input
+                      value={newStair.name}
+                      onChange={(e) => setNewStair({...newStair, name: e.target.value})}
+                      placeholder="ex: Scara A"
+                      className="flex-1 p-2 border rounded-lg text-sm"
+                    />
+                    <button 
+                      onClick={handleAddStair}
+                      className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 text-sm"
+                      disabled={!newStair.name || !newStair.blockId}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {stairs.filter(stair => 
+                    blocks.some(block => block.id === stair.blockId && block.associationId === association?.id)
+                  ).map(stair => {
+                    const block = blocks.find(b => b.id === stair.blockId);
+                    return (
+                      <div key={stair.id} className="p-2 bg-gray-50 rounded text-sm">
+                        {block?.name} - {stair.name} ({apartments.filter(a => a.stairId === stair.id).length} apt)
                       </div>
-                      <div className="flex gap-1">
-                        {isDefault && (
-                          <button
-                            onClick={() => toggleExpenseStatus(expenseType.name, true)}
-                            className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
-                            title="Elimină pentru această lună"
-                          >
-                            Elimină
-                          </button>
-                        )}
-                        {isCustom && (
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Linia 2: Apartamente (50%) + Cheltuieli (50%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Apartamente (50%) - SECȚIUNEA COMPLETĂ cu editare */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 bg-orange-50 border-b">
+                <h3 className="text-lg font-semibold">👥 Apartamente ({allApartments.length})</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-2 mb-4">
+                  <select 
+                    value={newApartment.stairId}
+                    onChange={(e) => {
+                      console.log('🔄 Selectare scară - value:', e.target.value, 'type:', typeof e.target.value);
+                      setNewApartment({...newApartment, stairId: e.target.value});
+                    }}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Selectează scara</option>
+                    {availableStairs.map(stair => {
+                      const block = blocks.find(b => b.id === stair.blockId);
+                      return (
+                        <option key={stair.id} value={stair.id}>
+                          {block?.name} - {stair.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {/* Prima linie: Nr apt + Nume proprietar */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={newApartment.number}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^\d+$/.test(value)) {
+                          setNewApartment({...newApartment, number: value});
+                        }
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Nr apartament *"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                    <input
+                      value={newApartment.owner}
+                      onChange={(e) => setNewApartment({...newApartment, owner: e.target.value})}
+                      placeholder="Nume proprietar *"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                  </div>
+
+                  {/* A doua linie: Nr persoane + Tip apartament */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={newApartment.persons}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^\d+$/.test(value)) {
+                          setNewApartment({...newApartment, persons: value});
+                        }
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Nr persoane *"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                    <select
+                      value={newApartment.apartmentType}
+                      onChange={(e) => setNewApartment({...newApartment, apartmentType: e.target.value})}
+                      className="w-full p-2 border rounded-lg text-sm"
+                    >
+                      <option value="">Tip apartament</option>
+                      <option value="Garsoniera">Garsoniera</option>
+                      <option value="2 camere">2 camere</option>
+                      <option value="3 camere">3 camere</option>
+                      <option value="4 camere">4 camere</option>
+                      <option value="5 camere">5 camere</option>
+                      <option value="Penthouse">Penthouse</option>
+                    </select>
+                  </div>
+
+                  {/* A treia linie: Suprafața + Sursă încălzire */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={newApartment.surface}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
+                          setNewApartment({...newApartment, surface: value.replace(',', '.')});
+                        }
+                      }}
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Suprafață mp"
+                      className="w-full p-2 border rounded-lg text-sm"
+                    />
+                    <select
+                      value={newApartment.heatingSource}
+                      onChange={(e) => setNewApartment({...newApartment, heatingSource: e.target.value})}
+                      className="w-full p-2 border rounded-lg text-sm"
+                    >
+                      <option value="">Sursă încălzire</option>
+                      <option value="Termoficare">Termoficare</option>
+                      <option value="Centrala proprie">Centrală proprie</option>
+                      <option value="Centrala bloc">Centrală bloc</option>
+                      <option value="Debransat">Debranșat</option>
+                    </select>
+                  </div>
+
+                  {/* Buton adăugare */}
+                  <button 
+                    onClick={handleAddApartment}
+                    className="w-full bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 text-sm flex items-center justify-center"
+                    disabled={!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adaugă Apartament
+                  </button>
+                </div>
+                
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {allApartments.map(apartment => {
+                    const stair = stairs.find(s => s.id === apartment.stairId);
+                    const block = blocks.find(b => b.id === stair?.blockId);
+                    const isEditing = editingApartment === apartment.id;
+                    
+                    return (
+                      <div key={apartment.id} className={`p-3 rounded text-sm ${isEditing ? "bg-blue-50 border-2 border-blue-200" : "bg-gray-50"}`}>
+                        {isEditing ? (
+                          // Modul de editare
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-blue-600">Editare Apartament {apartment.number}</span>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => saveApartmentEdit(apartment.id)}
+                                  className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                  disabled={!editingApartmentData.owner || !editingApartmentData.persons}
+                                >
+                                  Salvează
+                                </button>
+                                <button
+                                  onClick={() => cancelApartmentEdit()}
+                                  className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
+                                >
+                                  Anulează
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Editare proprietar și persoane */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                value={editingApartmentData.owner}
+                                onChange={(e) => setEditingApartmentData({...editingApartmentData, owner: e.target.value})}
+                                placeholder="Nume proprietar *"
+                                className="w-full p-2 border rounded-lg text-sm"
+                              />
+                              <input
+                                value={editingApartmentData.persons}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "" || /^\d+$/.test(value)) {
+                                    setEditingApartmentData({...editingApartmentData, persons: value});
+                                  }
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Nr persoane *"
+                                className="w-full p-2 border rounded-lg text-sm"
+                              />
+                            </div>
+                            
+                            {/* Editare tip apartament și suprafață */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <select
+                                value={editingApartmentData.apartmentType || ""}
+                                onChange={(e) => setEditingApartmentData({...editingApartmentData, apartmentType: e.target.value})}
+                                className="w-full p-2 border rounded-lg text-sm"
+                              >
+                                <option value="">Tip apartament</option>
+                                <option value="Garsoniera">Garsoniera</option>
+                                <option value="2 camere">2 camere</option>
+                                <option value="3 camere">3 camere</option>
+                                <option value="4 camere">4 camere</option>
+                                <option value="5 camere">5 camere</option>
+                                <option value="Penthouse">Penthouse</option>
+                              </select>
+                              <input
+                                value={editingApartmentData.surface || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
+                                    setEditingApartmentData({...editingApartmentData, surface: value.replace(',', '.')});
+                                  }
+                                }}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="Suprafață mp"
+                                className="w-full p-2 border rounded-lg text-sm"
+                              />
+                            </div>
+                            
+                            {/* Editare sursă încălzire */}
+                            <select
+                              value={editingApartmentData.heatingSource || ""}
+                              onChange={(e) => setEditingApartmentData({...editingApartmentData, heatingSource: e.target.value})}
+                              className="w-full p-2 border rounded-lg text-sm"
+                            >
+                              <option value="">Sursă încălzire</option>
+                              <option value="Termoficare">Termoficare</option>
+                              <option value="Centrala proprie">Centrală proprie</option>
+                              <option value="Centrala bloc">Centrală bloc</option>
+                              <option value="Debransat">Debranșat</option>
+                            </select>
+                          </div>
+                        ) : (
+                          // Modul de afișare
                           <>
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium">Apt {apartment.number} - {apartment.owner}</div>
+                                <div className="text-gray-600">
+                                  {block?.name} - {stair?.name} • {apartment.persons} pers
+                                  {apartment.surface && ` • ${apartment.surface} mp`}
+                                  {apartment.apartmentType && ` • ${apartment.apartmentType}`}
+                                </div>
+                                {apartment.heatingSource && (
+                                  <div className="text-xs text-blue-600 mt-1">
+                                    🔥 {apartment.heatingSource}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => startEditingApartment(apartment)}
+                                  className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                                  title="Editează apartamentul"
+                                >
+                                  Editează
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteApartment(apartment.id)}
+                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                  title="Șterge apartamentul"
+                                >
+                                  Șterge
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            {/* Cheltuieli (50%) - SECȚIUNEA COMPLETĂ */}
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-4 bg-red-50 border-b">
+                <h3 className="text-lg font-semibold">💰 Cheltuieli ({getAssociationExpenseTypes().length})</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3 mb-4">
+                  <div className="flex gap-2">
+                    <input
+                      value={newCustomExpense.name}
+                      onChange={(e) => setNewCustomExpense({...newCustomExpense, name: e.target.value})}
+                      placeholder="ex: Deratizare"
+                      className="flex-1 p-2 border rounded-lg text-sm"
+                    />
+                    <button 
+                      onClick={handleAddCustomExpense}
+                      className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
+                      disabled={!newCustomExpense.name}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Configurează cheltuială:</label>
+                    <select 
+                      value={selectedExpenseForConfig || ""}
+                      onChange={(e) => setSelectedExpenseForConfig(e.target.value)}
+                      className="w-full p-2 border rounded-lg text-sm mb-2"
+                    >
+                      <option value="">Selectează cheltuiala</option>
+                      {getAssociationExpenseTypes().map(expenseType => (
+                        <option key={expenseType.name} value={expenseType.name}>
+                          {expenseType.name}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {selectedExpenseForConfig && (
+                      <div className="space-y-2">
+                        <select
+                          value={getExpenseConfig(selectedExpenseForConfig).distributionType}
+                          onChange={(e) => updateExpenseConfig(selectedExpenseForConfig, { distributionType: e.target.value })}
+                          className="w-full p-2 border rounded-lg text-sm"
+                        >
+                          <option value="apartment">Pe apartament (egal)</option>
+                          <option value="individual">Pe apartament (individual)</option>
+                          <option value="person">Pe persoană</option>
+                          <option value="consumption">Pe consum (mc/Gcal/kWh)</option>
+                        </select>
+                        
+                        {allApartments.length > 0 && (
+                          <div className="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded">
+                            <div className="text-xs font-medium text-gray-600 mb-1">Participarea apartamentelor:</div>
+                            {allApartments.map(apartment => {
+                              const participation = getApartmentParticipation(apartment.id, selectedExpenseForConfig);
+                              return (
+                                <div key={apartment.id} className="flex items-center gap-2 text-sm">
+                                  <span className="w-16">Apt {apartment.number}</span>
+                                  <select
+                                    value={participation.type}
+                                    onChange={(e) => {
+                                      const type = e.target.value;
+                                      if (type === "integral" || type === "excluded") {
+                                        setApartmentParticipation(apartment.id, selectedExpenseForConfig, type);
+                                      } else {
+                                        setApartmentParticipation(apartment.id, selectedExpenseForConfig, type, participation.value || (type === "percentage" ? 50 : 0));
+                                      }
+                                    }}
+                                    className="p-1 border rounded text-xs"
+                                  >
+                                    <option value="integral">Integral</option>
+                                    <option value="percentage">Procent</option>
+                                    <option value="fixed">Sumă fixă</option>
+                                    <option value="excluded">Exclus</option>
+                                  </select>
+                                  {(participation.type === "percentage" || participation.type === "fixed") && (
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={participation.value || ""}
+                                      onChange={(e) => setApartmentParticipation(apartment.id, selectedExpenseForConfig, participation.type, parseFloat(e.target.value) || 0)}
+                                      placeholder={participation.type === "percentage" ? "%" : "RON"}
+                                      className="w-16 p-1 border rounded text-xs"
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="text-xs text-gray-600 mb-2">Cheltuieli active pentru {currentMonth}:</div>
+                  {getAssociationExpenseTypes().map(expenseType => {
+                    const config = getExpenseConfig(expenseType.name);
+                    const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
+                    const isDefault = defaultExpenseTypes.find(def => def.name === expenseType.name);
+                    
+                    return (
+                      <div key={expenseType.name} className={`p-2 rounded text-sm ${isCustom ? "bg-red-50" : "bg-blue-50"} flex items-center justify-between`}>
+                        <div className="flex-1">
+                          <div className="font-medium">{expenseType.name}</div>
+                          <div className="text-xs text-gray-600">
+                            {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
+                             config.distributionType === "individual" ? "Pe apartament (individual)" :
+                             config.distributionType === "person" ? "Pe persoană" : 
+                             (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {isDefault && (
                             <button
                               onClick={() => toggleExpenseStatus(expenseType.name, true)}
                               className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
@@ -2028,49 +2302,16 @@ const availableStairs = getAvailableStairs();
                             >
                               Elimină
                             </button>
-                            <button
-                              onClick={() => {
-                                deleteCustomExpense(expenseType.name);
-                              }}
-                              className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-                              title="Șterge definitiv cheltuiala"
-                            >
-                              Șterge
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                {getDisabledExpenseTypes().length > 0 && (
-                  <>
-                    <div className="text-xs text-gray-600 mb-2 mt-4 pt-2 border-t">Cheltuieli dezactivate pentru {currentMonth}:</div>
-                    {getDisabledExpenseTypes().map(expenseType => {
-                      const config = getExpenseConfig(expenseType.name);
-                      const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                      
-                      return (
-                        <div key={expenseType.name} className="p-2 rounded text-sm bg-gray-50 flex items-center justify-between opacity-60">
-                          <div className="flex-1">
-                            <div className="font-medium line-through">{expenseType.name}</div>
-                            <div className="text-xs text-gray-600">
-                              {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
-                               config.distributionType === "individual" ? "Pe apartament (individual)" :
-                               config.distributionType === "person" ? "Pe persoană" : 
-                               (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => toggleExpenseStatus(expenseType.name, false)}
-                              className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                              title="Reactivează pentru această lună"
-                            >
-                              Reactivează
-                            </button>
-                            {isCustom && (
+                          )}
+                          {isCustom && (
+                            <>
+                              <button
+                                onClick={() => toggleExpenseStatus(expenseType.name, true)}
+                                className="bg-gray-400 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
+                                title="Elimină pentru această lună"
+                              >
+                                Elimină
+                              </button>
                               <button
                                 onClick={() => {
                                   deleteCustomExpense(expenseType.name);
@@ -2080,48 +2321,87 @@ const availableStairs = getAvailableStairs();
                               >
                                 Șterge
                               </button>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
-                      );
-                    })}
-                  </>
-                )}
+                      </div>
+                    );
+                  })}
+                  
+                  {getDisabledExpenseTypes().length > 0 && (
+                    <>
+                      <div className="text-xs text-gray-600 mb-2 mt-4 pt-2 border-t">Cheltuieli dezactivate pentru {currentMonth}:</div>
+                      {getDisabledExpenseTypes().map(expenseType => {
+                        const config = getExpenseConfig(expenseType.name);
+                        const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
+                        
+                        return (
+                          <div key={expenseType.name} className="p-2 rounded text-sm bg-gray-50 flex items-center justify-between opacity-60">
+                            <div className="flex-1">
+                              <div className="font-medium line-through">{expenseType.name}</div>
+                              <div className="text-xs text-gray-600">
+                                {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
+                                 config.distributionType === "individual" ? "Pe apartament (individual)" :
+                                 config.distributionType === "person" ? "Pe persoană" : 
+                                 (expenseType.name === "Apă caldă" || expenseType.name === "Apă rece" || expenseType.name === "Canal") ? "Pe consum (mc)" : "Pe consum (mc/Gcal)"}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => toggleExpenseStatus(expenseType.name, false)}
+                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                title="Reactivează pentru această lună"
+                              >
+                                Reactivează
+                              </button>
+                              {isCustom && (
+                                <button
+                                  onClick={() => {
+                                    deleteCustomExpense(expenseType.name);
+                                  }}
+                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                  title="Șterge definitiv cheltuiala"
+                                >
+                                  Șterge
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+
+          {allApartments.length > 0 && (
+            <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-xl text-center">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Configurare Completă!</h3>
+              <p className="text-green-700 mb-4">
+                Ai configurat {allApartments.length} apartamente. Acum poți începe să gestionezi întreținerea.
+              </p>
+              <button 
+                onClick={() => handleNavigation("dashboard")}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+              >
+                Mergi la Dashboard
+              </button>
+            </div>
+          )}
         </div>
-
-        {allApartments.length > 0 && (
-          <div className="mt-6 bg-green-50 border border-green-200 p-6 rounded-xl text-center">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Configurare Completă!</h3>
-            <p className="text-green-700 mb-4">
-              Ai configurat {allApartments.length} apartamente. Acum poți începe să gestionezi întreținerea.
-            </p>
-            <button 
-              onClick={() => setCurrentView("dashboard")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-            >
-              Mergi la Dashboard
-            </button>
-          </div>
-        )}
       </div>
-    </div>
-  );
-}
+    );
+  })()
+)}
 
-  // Maintenance View - SECȚIUNEA COMPLETĂ din originalul tău
-// Maintenance View - SECȚIUNEA COMPLETĂ cu Export PDF
-  if (currentView === "maintenance") {
+{/* Maintenance View */}
+{currentView === "maintenance" && (
+  (() => {
     const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
 
     // ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER
-// ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER - VERSIUNEA CORECTATĂ
-// ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER
-// ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER (VERSIUNE MANUALĂ)
-// ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER - VERSIUNE PROFESIONALĂ
-// ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER - VERSIUNE PROFESIONALĂ
     const exportPDFAvizier = () => {
       try {
         const doc = new jsPDF();
@@ -2403,7 +2683,7 @@ const availableStairs = getAvailableStairs();
         alert('Eroare la generarea PDF-ului: ' + error.message);
       }
     };
-	
+
     return (
       <div className={`min-h-screen p-4 ${
         currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
@@ -2557,7 +2837,7 @@ const availableStairs = getAvailableStairs();
 
                 {/* Buton Înapoi */}
                 <button 
-                  onClick={() => setCurrentView("dashboard")}
+                  onClick={() => handleNavigation("dashboard")}
                   className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center text-sm font-medium shadow-md whitespace-nowrap"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -2757,40 +3037,40 @@ const availableStairs = getAvailableStairs();
                     Anulează
                   </button>
 
-<button
-  onClick={async () => {
-    try {
-      // Salvează local
-      adjustModalData.forEach(apartmentData => {
-        setApartmentBalance(apartmentData.apartmentId, {
-          restante: Math.round(apartmentData.restanteAjustate * 100) / 100,
-          penalitati: Math.round(apartmentData.penalitatiAjustate * 100) / 100
-        });
-      });
-      
-      // Salvează în Firestore
-      await saveBalanceAdjustments(currentMonth, adjustModalData);
-      
-      setShowAdjustBalances(false);
-      setAdjustModalData([]);
-      
-      const key = `${association?.id}-${currentMonth}`;
-      setMonthlyTables(prev => {
-        const newTables = { ...prev };
-        delete newTables[key];
-        return newTables;
-      });
-      
-      alert('✅ Ajustările au fost salvate cu succes!');
-    } catch (error) {
-      console.error('❌ Eroare la salvarea ajustărilor:', error);
-      alert('❌ Eroare la salvarea ajustărilor: ' + error.message);
-    }
-  }}
-  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
->
-  Salvează Ajustări
-</button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        // Salvează local
+                        adjustModalData.forEach(apartmentData => {
+                          setApartmentBalance(apartmentData.apartmentId, {
+                            restante: Math.round(apartmentData.restanteAjustate * 100) / 100,
+                            penalitati: Math.round(apartmentData.penalitatiAjustate * 100) / 100
+                          });
+                        });
+                        
+                        // Salvează în Firestore
+                        await saveBalanceAdjustments(currentMonth, adjustModalData);
+                        
+                        setShowAdjustBalances(false);
+                        setAdjustModalData([]);
+                        
+                        const key = `${association?.id}-${currentMonth}`;
+                        setMonthlyTables(prev => {
+                          const newTables = { ...prev };
+                          delete newTables[key];
+                          return newTables;
+                        });
+                        
+                        alert('✅ Ajustările au fost salvate cu succes!');
+                      } catch (error) {
+                        console.error('❌ Eroare la salvarea ajustărilor:', error);
+                        alert('❌ Eroare la salvarea ajustărilor: ' + error.message);
+                      }
+                    }}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Salvează Ajustări
+                  </button>
                 </div>
               </div>
             </div>
@@ -3686,6 +3966,12 @@ const availableStairs = getAvailableStairs();
         </div>
       </div>
     );
-  }
-  return null;
+  })()
+)}
+
+
+        </main>
+      </div>
+    </div>
+  );
 }
