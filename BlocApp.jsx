@@ -3956,7 +3956,7 @@ const getAvailableStairs = () => {
                   return a.id.localeCompare(b.id);
                 }).map(block => {
                   const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
-                  const isExpanded = expandedBlocks[block.id] !== false; // Default true pentru auto-expand
+                  const isExpanded = expandedBlocks[block.id] ?? (associationBlocks.length <= 3); // Auto-expand dacă ≤ 3 blocuri
 
                   return (
                     <div key={block.id} className="border border-gray-200 rounded-lg">
@@ -3967,7 +3967,7 @@ const getAvailableStairs = () => {
                             onClick={() => {
                               setExpandedBlocks(prev => ({
                                 ...prev,
-                                [block.id]: !prev[block.id]
+                                [block.id]: !isExpanded
                               }));
                             }}
                             className="text-blue-600 hover:text-blue-800 text-xl"
@@ -4034,9 +4034,12 @@ const getAvailableStairs = () => {
                               setEditingItem({ type: 'block', id: block.id });
                               setEditingData({ name: block.name });
                             }}
-                            className="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600"
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title={`Editează blocul ${block.name}`}
                           >
-                            📝 Editează
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                           </button>
                           <button
                             onClick={() => {
@@ -4044,18 +4047,24 @@ const getAvailableStairs = () => {
                                 deleteBlock(block.id);
                               }
                             }}
-                            className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700"
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title={`Șterge blocul ${block.name}`}
                           >
-                            🗑️ Șterge
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                           <button
                             onClick={() => {
                               setShowAddForm({ type: 'stair', parentId: block.id });
                               setEditingItem(null);
                             }}
-                            className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700"
+                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                            title={`Adaugă scară în ${block.name}`}
                           >
-                            ➕ Scară
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
                           </button>
                         </div>
                       </div>
@@ -4074,7 +4083,7 @@ const getAvailableStairs = () => {
                                 return a.id.localeCompare(b.id);
                               }).map(currentStair => {
                                 const stairApartments = associationApartments.filter(apt => apt.stairId === currentStair.id);
-                                const isStairExpanded = expandedStairs[currentStair.id] !== false;
+                                const isStairExpanded = expandedStairs[currentStair.id] ?? (associationStairs.length <= 5);
                                 
                                 return (
                                   <div key={currentStair.id} className="ml-6 border-l-2 border-purple-200 pl-4">
@@ -4084,7 +4093,7 @@ const getAvailableStairs = () => {
                                           onClick={() => {
                                             setExpandedStairs(prev => ({
                                               ...prev,
-                                              [currentStair.id]: !prev[currentStair.id]
+                                              [currentStair.id]: !isStairExpanded
                                             }));
                                           }}
                                           className="text-purple-600 hover:text-purple-800"
@@ -4150,9 +4159,12 @@ const getAvailableStairs = () => {
                                             setEditingItem({ type: 'stair', id: currentStair.id });
                                             setEditingData({ name: currentStair.name });
                                           }}
-                                          className="bg-purple-500 text-white px-2 py-1 rounded text-sm hover:bg-purple-600"
+                                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                                          title={`Editează ${currentStair.name}`}
                                         >
-                                          📝 Editează
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
                                         </button>
                                         <button
                                           onClick={() => {
@@ -4160,18 +4172,24 @@ const getAvailableStairs = () => {
                                               deleteStair(currentStair.id);
                                             }
                                           }}
-                                          className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
+                                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                          title={`Șterge ${currentStair.name}`}
                                         >
-                                          🗑️ Șterge
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
                                         </button>
                                         <button
                                           onClick={() => {
                                             setShowAddForm({ type: 'apartment', parentId: currentStair.id });
                                             setEditingItem(null);
                                           }}
-                                          className="bg-orange-600 text-white px-2 py-1 rounded text-sm hover:bg-orange-700"
+                                          className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+                                          title={`Adaugă apartament în ${currentStair.name}`}
                                         >
-                                          ➕ Apartament
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                          </svg>
                                         </button>
                                       </div>
                                     </div>
@@ -4190,7 +4208,7 @@ const getAvailableStairs = () => {
                                           }
                                           return a.id.localeCompare(b.id);
                                         }).map(apartment => (
-                                          <div key={apartment.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                          <div key={apartment.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:bg-orange-100 transition-colors">
                                             {editingItem?.type === 'apartment' && editingItem?.id === apartment.id ? (
                                               // FORM EDITARE APARTAMENT COMPLET
                                               <div className="space-y-4">
@@ -4316,36 +4334,61 @@ const getAvailableStairs = () => {
                                                 </div>
                                               </div>
                                             ) : (
-                                              // AFIȘARE NORMALĂ APARTAMENT
-                                              <div className="flex items-center justify-between">
+                                              // AFIȘARE NORMALĂ APARTAMENT - LAYOUT PE DOUĂ RÂNDURI
+                                              <div className="flex items-start justify-between">
                                                 <div className="flex-1">
-                                                  <div className="flex items-center space-x-3 mb-2">
+                                                  {/* Rândul 1: Doar număr apartament și proprietar */}
+                                                  <div className="mb-2">
                                                     <span className="font-medium text-gray-800 text-lg">
                                                       👥 Apt {apartment.number} - {apartment.owner}
                                                     </span>
-                                                    <span className="text-sm text-gray-600 bg-orange-200 px-2 py-1 rounded-full">
+                                                  </div>
+                                                  
+                                                  {/* Rândul 2: Toate informațiile cu dimensiuni fixe */}
+                                                  <div className="flex flex-wrap items-center gap-2">
+                                                    {/* Numărul de persoane - lățime fixă */}
+                                                    <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
                                                       {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
                                                     </span>
-                                                  </div>
-                                                  <div className="flex flex-wrap items-center gap-2">
-                                                    {apartment.apartmentType && (
-                                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+
+                                                    {/* Tipul apartamentului - lățime fixă */}
+                                                    {apartment.apartmentType ? (
+                                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
                                                         🏠 {apartment.apartmentType}
                                                       </span>
-                                                    )}
-                                                    {apartment.surface && (
-                                                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                                        📐 {apartment.surface} mp
+                                                    ) : (
+                                                      <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
+                                                        🏠 -
                                                       </span>
                                                     )}
-                                                    {apartment.heatingSource && (
-                                                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+
+                                                    {/* Suprafața - lățime fixă */}
+                                                    {apartment.surface ? (
+                                                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
+                                                        📐 {apartment.surface} mp
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
+                                                        📐 - mp
+                                                      </span>
+                                                    )}
+
+                                                    {/* Sursa de încălzire - lățime fixă */}
+                                                    {apartment.heatingSource ? (
+                                                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
                                                         🔥 {apartment.heatingSource}
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
+                                                        🔥 -
                                                       </span>
                                                     )}
                                                   </div>
                                                 </div>
-                                                <div className="flex items-center space-x-2">
+
+                                                {/* Butoane acțiuni - doar iconițe */}
+                                                <div className="flex items-center space-x-1 ml-4">
+                                                  {/* Buton editare - întotdeauna prezent */}
                                                   <button
                                                     onClick={() => {
                                                       setEditingItem({ type: 'apartment', id: apartment.id });
@@ -4357,20 +4400,42 @@ const getAvailableStairs = () => {
                                                         heatingSource: apartment.heatingSource || ''
                                                       });
                                                     }}
-                                                    className="bg-orange-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-orange-600"
+                                                    className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors group relative"
+                                                    title={`Editează apartamentul ${apartment.number}`}
                                                   >
-                                                    📝 Editează
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
                                                   </button>
-                                                  <button
-                                                    onClick={() => {
-                                                      if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?`)) {
-                                                        deleteApartment(apartment.id);
+
+                                                  {/* Buton ștergere - doar pentru ultimul apartament din scară */}
+                                                  {(() => {
+                                                    const stairApts = stairApartments.sort((a, b) => {
+                                                      const numberDiff = a.number - b.number;
+                                                      if (numberDiff !== 0) return numberDiff;
+                                                      if (a.createdAt && b.createdAt) {
+                                                        return new Date(a.createdAt) - new Date(b.createdAt);
                                                       }
-                                                    }}
-                                                    className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700"
-                                                  >
-                                                    🗑️ Șterge
-                                                  </button>
+                                                      return a.id.localeCompare(b.id);
+                                                    });
+                                                    const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
+                                                    
+                                                    return isLastApartment && (
+                                                      <button
+                                                        onClick={() => {
+                                                          if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
+                                                            deleteApartment(apartment.id);
+                                                          }
+                                                        }}
+                                                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors group relative"
+                                                        title={`Șterge apartamentul ${apartment.number} (ultimul adăugat)`}
+                                                      >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                      </button>
+                                                    );
+                                                  })()}
                                                 </div>
                                               </div>
                                             )}
@@ -4692,7 +4757,6 @@ const getAvailableStairs = () => {
     </div>
   </div>
 )}
-
 
 
 {/* Expenses View - Configurare cheltuieli */}
