@@ -1,0 +1,301 @@
+import React from 'react';
+import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building } from 'lucide-react';
+
+const Sidebar = ({ 
+  sidebarOpen, 
+  setSidebarOpen, 
+  sidebarExpanded, 
+  setSidebarExpanded,
+  currentView,
+  handleNavigation,
+  association,
+  getAssociationApartments,
+  deleteCurrentAssociationData,
+  deleteAllBlocAppData,
+  userProfile,
+  activeUser
+}) => (
+  <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+  } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
+    
+    {/* Header Sidebar cu buton expand/collapse */}
+    <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
+      {sidebarExpanded ? (
+        <div className="flex items-center">
+          <Building2 className="w-8 h-8 mr-2 text-white" />
+          <div>
+            <h1 className="text-lg font-bold text-white">BlocApp</h1>
+            <p className="text-xs text-blue-100">v2.0</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full">
+          <Building2 className="w-8 h-8 text-white" />
+        </div>
+      )}
+      
+      {/* Buton expand/collapse pentru desktop */}
+      <button
+        onClick={() => setSidebarExpanded(!sidebarExpanded)}
+        className="hidden lg:block p-1 rounded-md hover:bg-blue-700 transition-colors ml-2"
+        title={sidebarExpanded ? "Micșorează meniul" : "Mărește meniul"}
+      >
+        {sidebarExpanded ? (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        )}
+      </button>
+      
+      {/* Buton închidere pentru mobile */}
+      <button
+        onClick={() => setSidebarOpen(false)}
+        className="lg:hidden p-1 rounded-md hover:bg-blue-700"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+
+    {/* Meniu Navigare */}
+    <nav className="flex-1 mt-6">
+      <div className="px-2 space-y-1">
+        {/* Tabel întreținere */}
+        <button
+          onClick={() => handleNavigation("dashboard")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "dashboard"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <FileText className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Tabel întreținere</div>
+              <div className="text-xs text-gray-500">Întreţinere luna curentă</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Tabel întreținere
+            </div>
+          )}
+        </button>
+
+        {/* Calcul întreținere */}
+        <button
+          onClick={() => handleNavigation("maintenance")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "maintenance"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Calculator className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Calcul întreținere</div>
+              <div className="text-xs text-gray-500">Calculează întreţinerea curentă</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Calcul întreținere
+            </div>
+          )}
+        </button>
+
+        {/* Apartamente */}
+        <button
+          onClick={() => handleNavigation("setup")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "setup"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Building className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Apartamente</div>
+              <div className="text-xs text-gray-500">Blocuri, scări, apartamente</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Apartamente
+            </div>
+          )}
+        </button>
+
+        {/* Cheltuieli */}
+        <button
+          onClick={() => handleNavigation("expenses")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "expenses"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Wallet className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Configurare cheltuieli</div>
+              <div className="text-xs text-gray-500">Cheltuieli & furnizori</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Configurare cheltuieli
+            </div>
+          )}
+        </button>
+
+        {/* Date Asociație */}
+        <button
+          onClick={() => handleNavigation("association")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "association"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Users className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Date Asociație</div>
+              <div className="text-xs text-gray-500">Informații generale</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Date Asociație
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* Separator și Informații asociație */}
+      {sidebarExpanded && (
+        <>
+          <div className="mx-4 my-6 border-t border-gray-200"></div>
+
+          {/* Informații asociație */}
+          {association && (
+            <div className="px-4 space-y-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-medium text-gray-800 truncate">
+                  {association.name}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {getAssociationApartments().length} apartamente
+                </div>
+                <div className="text-xs text-gray-600">
+                  {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+                </div>
+              </div>
+
+              {/* Butoane de ștergere */}
+              <div className="space-y-2">
+                <button
+                  onClick={deleteCurrentAssociationData}
+                  className="w-full bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium flex items-center justify-center"
+                  title={`Șterge doar "${association.name}"`}
+                >
+                  🏢 Șterge "{association.name.length > 15 ? association.name.substring(0, 15) + '...' : association.name}"
+                </button>
+                
+                <button
+                  onClick={deleteAllBlocAppData}
+                  className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
+                  title="Șterge toate datele aplicației"
+                >
+                  🗑️ Șterge TOATE datele
+                </button>
+                
+                <div className="text-xs text-gray-500 text-center mt-2">
+                  ⚠️ Development tools
+                </div>
+                <div className="text-sm text-gray-700 text-center mt-2 font-medium">
+                  Salut Liviu
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </nav>
+
+    {/* Footer cu utilizatorul */}
+    <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
+      {sidebarExpanded ? (
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+            {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="ml-3 flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-900 truncate">
+  {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+</div>
+            <div className="text-xs text-gray-500 truncate">
+              Administrator
+            </div>
+          </div>
+          <button 
+            onClick={async () => {
+              try {
+                const { signOut } = await import('firebase/auth');
+                const { auth } = await import('../../firebase');
+                await signOut(auth);
+                window.location.reload();
+              } catch (error) {
+                console.error('❌ Eroare la deconectare:', error);
+              }
+            }}
+            className="text-gray-400 hover:text-red-600 transition-colors" 
+            title="Deconectare"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3v1" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <div className="flex justify-center group relative">
+          <button
+            onClick={async () => {
+              try {
+                const { signOut } = await import('firebase/auth');
+                const { auth } = await import('../../firebase');
+                await signOut(auth);
+                window.location.reload();
+              } catch (error) {
+                console.error('❌ Eroare la deconectare:', error);
+              }
+            }}
+            className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors"
+            title="Deconectare"
+          >
+            {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+          </button>
+          
+<div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+  Click pentru deconectare - {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+</div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+export default Sidebar;

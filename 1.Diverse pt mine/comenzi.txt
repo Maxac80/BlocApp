@@ -1,0 +1,8 @@
+Start server
+npm start
+
+/init ca sa creeze claude.md
+
+
+
+
