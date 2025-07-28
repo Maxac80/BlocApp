@@ -9,7 +9,7 @@ import { useExpenseManagement } from './hooks/useExpenseManagement';
 import { useNavigationAndUI } from './hooks/useNavigationAndUI';
 import { useMonthManagement } from './hooks/useMonthManagement';
 import { useDataOperations } from './hooks/useDataOperations';
-import { useAuth } from "./context/AuthContext";
+import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 
 // Components
 import Sidebar from './components/common/Sidebar';
@@ -18,12 +18,14 @@ import {
   AssociationView, 
   ExpensesView, 
   DashboardView, 
-  MaintenanceView 
+  MaintenanceView,
+  ProfileView,
+  TutorialsView
 } from './components/views';
 
 export default function BlocApp() {
-  const { userProfile, user, currentUser } = useAuth();
-  const activeUser = user || currentUser;
+  const { userProfile, currentUser } = useAuthEnhanced();
+  const activeUser = currentUser;
   
   // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE
   const {
@@ -349,6 +351,7 @@ useEffect(() => {
               handleNavigation={handleNavigation}
               expenses={expenses}
               maintenanceData={maintenanceData}
+              userProfile={userProfile}
             />
           )}
 
@@ -475,6 +478,25 @@ useEffect(() => {
               stairs={stairs}
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
+              userProfile={userProfile}
+            />
+          )}
+
+          {/* Profile View */}
+          {currentView === "profile" && (
+            <ProfileView
+              association={association}
+              updateAssociation={updateAssociation}
+              userProfile={userProfile}
+              currentUser={currentUser}
+            />
+          )}
+
+          {/* Tutorials View */}
+          {currentView === "tutorials" && (
+            <TutorialsView
+              association={association}
+              updateAssociation={updateAssociation}
             />
           )}
 

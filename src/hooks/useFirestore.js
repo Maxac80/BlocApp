@@ -9,14 +9,14 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthEnhanced } from "../context/AuthContextEnhanced";
 import { db } from "../firebase";
 
 export const useAssociationData = () => {
-  const { user, userProfile, currentUser } = useAuth();
+  const { userProfile, currentUser } = useAuthEnhanced();
 
-  // Determină utilizatorul activ (user sau currentUser, oricare este disponibil)
-  const activeUser = user || currentUser;
+  // Determină utilizatorul activ
+  const activeUser = currentUser;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -276,7 +276,6 @@ export const useAssociationData = () => {
   // Încărcare automată a datelor când utilizatorul se autentifică
   useEffect(() => {
     console.log("🔄 useEffect triggered");
-    console.log("- user:", user?.uid);
     console.log("- currentUser:", currentUser?.uid);
     console.log("- activeUser:", activeUser?.uid);
     console.log("- userProfile:", userProfile?.role);
@@ -303,7 +302,7 @@ export const useAssociationData = () => {
         // 1. Încarcă asociația utilizatorului
         const associationQuery = query(
           collection(db, "associations"),
-          where("userId", "==", activeUser.uid)
+          where("adminId", "==", activeUser.uid)
         );
         const associationSnapshot = await getDocs(associationQuery);
 
@@ -359,7 +358,7 @@ export const useAssociationData = () => {
     try {
       const associationData = {
         ...data,
-        userId: activeUser.uid,
+        adminId: activeUser.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

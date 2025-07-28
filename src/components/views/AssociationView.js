@@ -1,6 +1,7 @@
 import React from 'react';
-import {Building2, Plus } from 'lucide-react';
+import {Building2, Plus, User, Globe, CreditCard } from 'lucide-react';
 import { AddressForm } from '../forms';
+import { judeteRomania } from '../../data/counties';
 
 const AssociationView = ({
   association,
@@ -11,7 +12,8 @@ const AssociationView = ({
   blocks,
   stairs,
   getAssociationApartments,
-  handleNavigation
+  handleNavigation,
+  userProfile
 }) => {
 return (
   <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 p-4">
@@ -21,7 +23,8 @@ return (
         <p className="text-gray-600 text-sm mt-1">Informații complete pentru înregistrarea legală</p>
       </div>
 
-        {!association && (
+        {/* Condiție principală: Dacă nu există asociație și utilizatorul nu a trecut prin onboarding */}
+        {!association && !userProfile?.metadata?.onboardingCompleted && (
           <div className="bg-blue-50 border border-blue-200 p-8 rounded-xl mb-8">
             <div className="text-center mb-6">
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -65,8 +68,38 @@ return (
           </div>
         )}
 
+        {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
+        {!association && userProfile?.metadata?.onboardingCompleted && (
+          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-8">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+              🔄 Se încarcă datele asociației...
+            </h3>
+            <p className="text-yellow-700 mb-4">
+              Asociația ta a fost creată în timpul configurării inițiale. Dacă nu se încarcă în câteva secunde, încearcă să reîmprospătezi pagina.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 font-medium"
+            >
+              🔄 Reîmprospătează Pagina
+            </button>
+          </div>
+        )}
+
         {association && (
           <div className="space-y-6">
+            {/* Notificare pentru date precompletate din wizard */}
+            {association.source === 'onboarding' && (
+              <div className="bg-green-50 border border-green-200 p-4 rounded-xl mb-6">
+                <p className="text-green-800 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Datele asociației au fost precompletate din configurarea inițială. Poți completa sau modifica orice informație.
+                </p>
+              </div>
+            )}
+            
             <div className="bg-white rounded-xl shadow-lg">
               <div className="p-6 bg-blue-50 border-b border-blue-100">
                 <h3 className="text-xl font-semibold text-blue-800">📋 Date de Identificare</h3>
@@ -139,26 +172,102 @@ return (
                 <p className="text-green-600 text-sm mt-1">Adresa juridică oficială a asociației</p>
               </div>
               <div className="p-6">
-                <AddressForm
-                  value={{
-                    judet: association?.sediu_judet || "",
-                    oras: association?.sediu_oras || "", 
-                    strada: association?.sediu_strada || "",
-                    numar: association?.sediu_numar || ""
-                  }}
-                  onChange={(newAddress) => {
-                    if (association) {
-                      updateAssociation({ 
-                        sediu_judet: newAddress.judet,
-                        sediu_oras: newAddress.oras,
-                        sediu_strada: newAddress.strada,
-                        sediu_numar: newAddress.numar,
-                        address: `${newAddress.strada} ${newAddress.numar}, ${newAddress.oras}, ${newAddress.judet}`.trim()
-                      });
-                    }
-                  }}
-                  required={true}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Strada *</label>
+                    <input
+                      type="text"
+                      value={association?.sediu_strada || association?.address?.street || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            sediu_strada: e.target.value,
+                            address: { ...association.address, street: e.target.value }
+                          });
+                        }
+                      }}
+                      placeholder="ex: Strada Primăverii"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Numărul *</label>
+                    <input
+                      type="text"
+                      value={association?.sediu_numar || association?.address?.number || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            sediu_numar: e.target.value,
+                            address: { ...association.address, number: e.target.value }
+                          });
+                        }
+                      }}
+                      placeholder="123A"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cod poștal</label>
+                    <input
+                      type="text"
+                      value={association?.address?.zipCode || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            address: { ...association.address, zipCode: e.target.value }
+                          });
+                        }
+                      }}
+                      placeholder="123456"
+                      maxLength="6"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Orașul *</label>
+                    <input
+                      type="text"
+                      value={association?.sediu_oras || association?.address?.city || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            sediu_oras: e.target.value,
+                            address: { ...association.address, city: e.target.value }
+                          });
+                        }
+                      }}
+                      placeholder="București"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Județul *</label>
+                    <select
+                      value={association?.sediu_judet || association?.address?.county || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            sediu_judet: e.target.value,
+                            address: { ...association.address, county: e.target.value }
+                          });
+                        }
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option value="">Selectează județul</option>
+                      {judeteRomania.map(county => (
+                        <option key={county.cod} value={county.nume}>
+                          {county.nume}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -173,10 +282,13 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email asociație *</label>
                     <input
                       type="email"
-                      value={association?.email || ""}
+                      value={association?.email || association?.contact?.email || ""}
                       onChange={(e) => {
                         if (association) {
-                          updateAssociation({ email: e.target.value });
+                          updateAssociation({ 
+                            email: e.target.value,
+                            contact: { ...association.contact, email: e.target.value }
+                          });
                         }
                       }}
                       placeholder="ex: contact@asociatiaprimaverii.ro"
@@ -187,15 +299,40 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Telefon asociație</label>
                     <input
                       type="tel"
-                      value={association?.phone || ""}
+                      value={association?.phone || association?.contact?.phone || ""}
                       onChange={(e) => {
                         if (association) {
-                          updateAssociation({ phone: e.target.value });
+                          updateAssociation({ 
+                            phone: e.target.value,
+                            contact: { ...association.contact, phone: e.target.value }
+                          });
                         }
                       }}
                       placeholder="ex: 0212345678"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Website (opțional)</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Globe className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="url"
+                        value={association?.contact?.website || ""}
+                        onChange={(e) => {
+                          if (association) {
+                            updateAssociation({ 
+                              contact: { ...association.contact, website: e.target.value }
+                            });
+                          }
+                        }}
+                        placeholder="https://www.asociatiaprimaverii.ro"
+                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -213,6 +350,95 @@ return (
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg">
+              <div className="p-6 bg-cyan-50 border-b border-cyan-100">
+                <h3 className="text-xl font-semibold text-cyan-800">👤 Administrator Asociație</h3>
+                <p className="text-cyan-600 text-sm mt-1">Informații administrator responsabil</p>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {/* Avatar Administrator */}
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-cyan-200 mr-4">
+                      {association?.adminProfile?.avatarURL ? (
+                        <img 
+                          src={association.adminProfile.avatarURL} 
+                          alt="Avatar administrator" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <User className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {association?.adminProfile?.firstName && association?.adminProfile?.lastName
+                          ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
+                          : association?.administrator || 'Administrator'
+                        }
+                      </h4>
+                      <p className="text-gray-600">
+                        {association?.adminProfile?.companyName || 'Companie nespecificată'}
+                      </p>
+                      {association?.adminProfile?.phone && (
+                        <p className="text-sm text-gray-500 flex items-center mt-1">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          {association.adminProfile.phone}
+                        </p>
+                      )}
+                      {association?.adminProfile?.email && (
+                        <p className="text-sm text-gray-500 flex items-center mt-1">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          {association.adminProfile.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => handleNavigation('profile')}
+                    className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Editează Profil
+                  </button>
+                </div>
+                
+                {/* Informații rapide */}
+                {(association?.adminProfile?.position || association?.adminProfile?.experience || association?.adminProfile?.licenseNumber) && (
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      {association?.adminProfile?.position && (
+                        <div>
+                          <span className="text-gray-500">Funcția:</span>
+                          <p className="font-medium">{association.adminProfile.position}</p>
+                        </div>
+                      )}
+                      {association?.adminProfile?.experience && (
+                        <div>
+                          <span className="text-gray-500">Experiența:</span>
+                          <p className="font-medium">{association.adminProfile.experience} ani</p>
+                        </div>
+                      )}
+                      {association?.adminProfile?.licenseNumber && (
+                        <div>
+                          <span className="text-gray-500">Nr. licență:</span>
+                          <p className="font-medium">{association.adminProfile.licenseNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -239,7 +465,10 @@ return (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Administrator</label>
                     <input
-                      value={association?.administrator || ""}
+                      value={association?.administrator || 
+                             (association?.adminProfile?.firstName && association?.adminProfile?.lastName 
+                              ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}` 
+                              : "")}
                       onChange={(e) => {
                         if (association) {
                           updateAssociation({ administrator: e.target.value });
@@ -274,28 +503,50 @@ return (
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cont bancar principal *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Banca *</label>
                     <input
-                      value={association?.bankAccount || ""}
+                      value={association?.bank || association?.bankAccountData?.bank || ""}
                       onChange={(e) => {
                         if (association) {
-                          updateAssociation({ bankAccount: e.target.value });
+                          updateAssociation({ 
+                            bank: e.target.value,
+                            bankAccountData: { ...association.bankAccountData, bank: e.target.value }
+                          });
+                        }
+                      }}
+                      placeholder="ex: BCR, BRD, ING Bank"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">IBAN *</label>
+                    <input
+                      value={association?.bankAccount || association?.bankAccountData?.iban || ""}
+                      onChange={(e) => {
+                        if (association) {
+                          updateAssociation({ 
+                            bankAccount: e.target.value,
+                            bankAccountData: { ...association.bankAccountData, iban: e.target.value }
+                          });
                         }
                       }}
                       placeholder="RO49 AAAA 1B31..."
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Banca *</label>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Numele contului</label>
                     <input
-                      value={association?.bank || ""}
+                      value={association?.bankAccountData?.accountName || ""}
                       onChange={(e) => {
                         if (association) {
-                          updateAssociation({ bank: e.target.value });
+                          updateAssociation({ 
+                            bankAccountData: { ...association.bankAccountData, accountName: e.target.value }
+                          });
                         }
                       }}
-                      placeholder="ex: BCR, BRD, ING Bank"
+                      placeholder="Asociația de Proprietari..."
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     />
                   </div>

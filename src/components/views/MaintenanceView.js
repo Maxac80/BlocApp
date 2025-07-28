@@ -125,7 +125,10 @@ const MaintenanceView = ({
           // ===== INFORMAȚII ASOCIAȚIE =====
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
-          doc.text(fixRomanianText(association?.address) || "Adresa asociatiei", 105, 43, { align: "center" });
+          const addressString = association?.address ? 
+            `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
+            : "Adresa asociatiei";
+          doc.text(fixRomanianText(addressString), 105, 43, { align: "center" });
           
           const apartmentCount = getAssociationApartments().length;
           const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);

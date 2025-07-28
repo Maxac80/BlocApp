@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building } from 'lucide-react';
+import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building, BookOpen } from 'lucide-react';
 
 const Sidebar = ({ 
   sidebarOpen, 
@@ -183,6 +183,54 @@ const Sidebar = ({
             </div>
           )}
         </button>
+
+        {/* Profil Administrator */}
+        <button
+          onClick={() => handleNavigation("profile")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "profile"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <User className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Profil Administrator</div>
+              <div className="text-xs text-gray-500">Date personale și setări</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Profil Administrator
+            </div>
+          )}
+        </button>
+
+        {/* Tutoriale */}
+        <button
+          onClick={() => handleNavigation("tutorials")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "tutorials"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <BookOpen className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Tutoriale</div>
+              <div className="text-xs text-gray-500">Ghiduri și învățare</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Tutoriale
+            </div>
+          )}
+        </button>
       </div>
 
       {/* Separator și Informații asociație */}
@@ -227,7 +275,7 @@ const Sidebar = ({
                   ⚠️ Development tools
                 </div>
                 <div className="text-sm text-gray-700 text-center mt-2 font-medium">
-                  Salut Liviu
+                  Salut Liviu :)
                 </div>
               </div>
             </div>
@@ -240,8 +288,16 @@ const Sidebar = ({
     <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
       {sidebarExpanded ? (
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-            {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
+            {association?.adminProfile?.avatarURL ? (
+              <img 
+                src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL} 
+                alt="Avatar" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
+            )}
           </div>
           <div className="ml-3 flex-1 min-w-0">
             <div className="text-sm font-medium text-gray-900 truncate">
@@ -283,10 +339,18 @@ const Sidebar = ({
                 console.error('❌ Eroare la deconectare:', error);
               }
             }}
-            className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors"
-            title="Deconectare"
+            className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors overflow-hidden"
+            title={`Click pentru deconectare - ${userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}`}
           >
-            {userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+            {association?.adminProfile?.avatarURL ? (
+              <img 
+                src={association.adminProfile.avatarURL} 
+                alt="Avatar" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
+            )}
           </button>
           
 <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">

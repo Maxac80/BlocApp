@@ -20,7 +20,9 @@ const DashboardHeader = ({
               {association?.name || "Nume Asociație"}
             </h1>
             <p className="text-gray-600 text-sm mt-1">
-              {association?.address || "Adresa asociației"}
+              {association?.address ? 
+                `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
+                : "Adresa asociației"}
             </p>
           </div>
 

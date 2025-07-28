@@ -30,7 +30,10 @@ const DashboardView = ({
   
   // Data
   expenses,
-  maintenanceData
+  maintenanceData,
+  
+  // User profile
+  userProfile
 }) => {
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   
@@ -51,13 +54,31 @@ const DashboardView = ({
           handleNavigation={handleNavigation}
         />
 
-        {/* Condiție principală: Dacă nu există asociație, afișează creatorul */}
-        {!association && (
+        {/* Condiție principală: Dacă nu există asociație și utilizatorul nu a trecut prin onboarding */}
+        {!association && !userProfile?.metadata?.onboardingCompleted && (
           <AssociationCreator
             newAssociation={newAssociation}
             setNewAssociation={setNewAssociation}
             handleAddAssociation={handleAddAssociation}
           />
+        )}
+
+        {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
+        {!association && userProfile?.metadata?.onboardingCompleted && (
+          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-8">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+              🔄 Se încarcă datele asociației...
+            </h3>
+            <p className="text-yellow-700 mb-4">
+              Asociația ta a fost creată în timpul configurării inițiale. Dacă nu se încarcă în câteva secunde, încearcă să reîmprospătezi pagina.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 font-medium"
+            >
+              🔄 Reîmprospătează Pagina
+            </button>
+          </div>
         )}
 
         {/* Dacă există asociație fără apartamente */}

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(npm run build:*)",
+      "Bash(find:*)",
+      "Bash(claude config set:*)",
+      "Bash(claude --model sonnet)"
+    ],
+    "deny": []
+  }
+}

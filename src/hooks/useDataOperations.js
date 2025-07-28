@@ -66,7 +66,11 @@ export const useDataOperations = ({
         'disabledExpenses',
         'initialBalances',
         'users',
-        'test'
+        'test',
+        'audit_logs',
+        'login_attempts',
+        'onboarding_progress',
+        'user_profiles'
       ];
 
       // Șterge toate colecțiile în paralel pentru viteză
