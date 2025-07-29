@@ -5,7 +5,10 @@
       "Bash(npm run build:*)",
       "Bash(find:*)",
       "Bash(claude config set:*)",
-      "Bash(claude --model sonnet)"
+      "Bash(claude --model sonnet)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, ChevronLeft, ChevronRight, Check, ExternalLink, BookOpen, Video, FileText } from 'lucide-react';
+import { Play, Check, ExternalLink, BookOpen, Video, FileText } from 'lucide-react';
 
 /**
  * 🎓 TUTORIAL STEP - TUTORIAL INTERACTIV ȘI RESURSE
@@ -237,7 +237,11 @@ export default function TutorialStep({ stepData, onUpdateData }) {
               <div className="bg-gray-900 rounded-lg mb-6 relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button 
-                    onClick={() => handleTutorialComplete(currentTut.id)}
+                    onClick={() => {
+                      if (!isCompleted) {
+                        handleTutorialComplete(currentTut.id);
+                      }
+                    }}
                     className="flex items-center justify-center w-16 h-16 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
                   >
                     <Play className="w-8 h-8 text-white ml-1" />
@@ -265,39 +269,6 @@ export default function TutorialStep({ stepData, onUpdateData }) {
                 </ul>
               </div>
 
-              {/* ACȚIUNI TUTORIAL */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setCurrentTutorial(Math.max(0, currentTutorial - 1))}
-                    disabled={currentTutorial === 0}
-                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Anterior
-                  </button>
-                  
-                  <button
-                    onClick={() => setCurrentTutorial(Math.min(tutorials.length - 1, currentTutorial + 1))}
-                    disabled={currentTutorial >= tutorials.length - 1}
-                    className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Următorul
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </button>
-                </div>
-                
-                <button
-                  onClick={() => handleTutorialComplete(currentTut.id)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    isCompleted
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {isCompleted ? 'Completat' : 'Marchează ca vizionat'}
-                </button>
-              </div>
             </div>
           </div>
         </div>

@@ -36,18 +36,28 @@ export default function DocumentsStep({
       tips: 'Scanează în rezoluție bună, textul să fie lizibil'
     },
     {
-      id: 'adminContract',
-      title: 'Contract de administrare',
-      description: 'Contractul semnat cu asociația de proprietari',
+      id: 'adminAttestation',
+      title: 'Atestat Administrator',
+      description: 'Atestat care dovedește calitatea de administrator de condominii',
       required: true,
       icon: FileText,
-      acceptedTypes: ['.pdf', '.doc', '.docx'],
-      maxSize: 10 * 1024 * 1024, // 10MB
-      tips: 'Include toate paginile cu semnături și ștampile'
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Document obligatoriu pentru activitatea de administrare'
     },
     {
-      id: 'certifications',
-      title: 'Certificate/Cursuri',
+      id: 'criminalRecord',
+      title: 'Cazier judiciar',
+      description: 'Cazier care atestă lipsa condamnărilor pentru infracțiuni economico-financiare',
+      required: true,
+      icon: Shield,
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Nu mai vechi de 6 luni, cu apostilă dacă este necesar'
+    },
+    {
+      id: 'professionalCertifications',
+      title: 'Certificate Calificare Profesională',
       description: 'Certificate de competență sau cursuri de specializare',
       required: false,
       icon: FileText,
@@ -56,14 +66,14 @@ export default function DocumentsStep({
       tips: 'Opțional - pot fi adăugate și mai târziu din profil'
     },
     {
-      id: 'businessLicense',
-      title: 'Licență de funcționare',
-      description: 'Licența de funcționare pentru activitatea de administrare',
+      id: 'adminContract',
+      title: 'Contract de administrare',
+      description: 'Contractul semnat cu asociația de proprietari',
       required: false,
       icon: FileText,
-      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
-      maxSize: 5 * 1024 * 1024, // 5MB
-      tips: 'Dacă ai firmă proprie de administrare'
+      acceptedTypes: ['.pdf', '.doc', '.docx'],
+      maxSize: 10 * 1024 * 1024, // 10MB
+      tips: 'Opțional - poate fi adăugat mai târziu când este semnat'
     }
   ];
 

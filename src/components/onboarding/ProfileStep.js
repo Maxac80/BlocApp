@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Phone, MapPin, Building, Calendar, AlertCircle, CheckCircle, Camera } from 'lucide-react';
-import { judeteRomania } from '../../data/counties';
+import { judeteRomania, getOraseByJudet } from '../../data/counties';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useBase64Upload } from '../../hooks/useBase64Upload';
 
@@ -42,11 +42,8 @@ export default function ProfileStep({
     // Date personale - pre-completate din profil
     firstName: stepData.firstName || initialName.firstName || '',
     lastName: stepData.lastName || initialName.lastName || '',
-    cnp: stepData.cnp || '',
     phone: stepData.phone || userProfile?.phone || currentUser?.phoneNumber || '',
     email: stepData.email || userProfile?.email || currentUser?.email || '',
-    birthDate: stepData.birthDate || '',
-    gender: stepData.gender || '',
     
     // Adresă
     address: stepData.address || {
@@ -55,15 +52,13 @@ export default function ProfileStep({
       building: '',
       apartment: '',
       city: '',
-      county: '',
-      zipCode: ''
+      county: ''
     },
     
     // Date profesionale
     professionalInfo: stepData.professionalInfo || {
       companyName: userProfile?.companyName || '',
-      position: userProfile?.position || '',
-      experience: '',
+      position: userProfile?.position || 'Administrator asociație',
       licenseNumber: ''
     },
     
@@ -81,8 +76,8 @@ export default function ProfileStep({
   useEffect(() => {
     const requiredFields = [
       'firstName', 'lastName', 'phone', 
-      'address.city', 'address.county',
-      'professionalInfo.companyName'
+      'address.city', 'address.county', 'address.street', 'address.number',
+      'professionalInfo.position', 'professionalInfo.licenseNumber'
     ];
     
     const completedFields = requiredFields.filter(field => {
@@ -93,6 +88,7 @@ export default function ProfileStep({
     const percentage = Math.round((completedFields.length / requiredFields.length) * 100);
     setCompletionPercentage(percentage);
   }, [formData]);
+
 
   // 🔄 UPDATE PARENT DATA
   useEffect(() => {
@@ -138,31 +134,12 @@ export default function ProfileStep({
     }
     
     // Validare în timp real pentru anumite câmpuri
-    if (path === 'cnp') {
-      validateCNP(value);
-    } else if (path === 'phone') {
+    if (path === 'phone') {
       validatePhone(value);
     }
   };
 
   // ✅ VALIDĂRI SPECIFICE
-  const validateCNP = (cnp) => {
-    if (cnp && cnp.length === 13) {
-      // Validare CNP românesc simplificată
-      if (!/^\d{13}$/.test(cnp)) {
-        setFieldErrors(prev => ({
-          ...prev,
-          cnp: 'CNP-ul trebuie să conțină doar cifre'
-        }));
-      } else {
-        setFieldErrors(prev => ({
-          ...prev,
-          cnp: null
-        }));
-      }
-    }
-  };
-
   const validatePhone = (phone) => {
     if (phone && !/^(\+4|4|0)[0-9]{8,9}$/.test(phone.replace(/\s/g, ''))) {
       setFieldErrors(prev => ({
@@ -338,7 +315,7 @@ export default function ProfileStep({
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prenume *
+                  Prenume <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -353,7 +330,7 @@ export default function ProfileStep({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nume *
+                  Nume <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -368,7 +345,7 @@ export default function ProfileStep({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -384,23 +361,7 @@ export default function ProfileStep({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CNP (opțional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.cnp}
-                  onChange={(e) => handleInputChange('cnp', e.target.value)}
-                  maxLength="13"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="1234567890123"
-                />
-                {renderFieldError('cnp')}
-                {renderFieldSuccess('cnp')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefon *
+                  Telefon <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -412,107 +373,20 @@ export default function ProfileStep({
                 {renderFieldError('phone')}
                 {renderFieldSuccess('phone')}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data nașterii (opțional)
-                </label>
-                <input
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                {renderFieldSuccess('birthDate')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gen (opțional)
-                </label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Selectează</option>
-                  <option value="masculin">Masculin</option>
-                  <option value="feminin">Feminin</option>
-                </select>
-                {renderFieldSuccess('gender')}
-              </div>
             </div>
           </div>
 
-          {/* ADRESĂ */}
+          {/* ADRESA DE DOMICILIU */}
           <div className="bg-white p-6 rounded-xl border border-gray-200">
             <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
               <MapPin className="w-5 h-5 mr-2" />
-              Adresă
+              Adresa de domiciliu
             </h4>
             
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Strada *
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.street}
-                  onChange={(e) => handleInputChange('address.street', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Strada Exemplu"
-                />
-                {renderFieldError('address.street')}
-                {renderFieldSuccess('address.street')}
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Numărul
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.number}
-                  onChange={(e) => handleInputChange('address.number', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="123A"
-                />
-                {renderFieldSuccess('address.number')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Blocul/Apartamentul
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.apartment}
-                  onChange={(e) => handleInputChange('address.apartment', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Ap. 15"
-                />
-                {renderFieldSuccess('address.apartment')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Orașul *
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.city}
-                  onChange={(e) => handleInputChange('address.city', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="București"
-                />
-                {renderFieldError('address.city')}
-                {renderFieldSuccess('address.city')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Județul *
+                  Județul <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.address.county}
@@ -532,17 +406,61 @@ export default function ProfileStep({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Codul poștal
+                  Localitatea <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  value={formData.address.zipCode}
-                  onChange={(e) => handleInputChange('address.zipCode', e.target.value)}
+                  value={formData.address.city}
+                  onChange={(e) => handleInputChange('address.city', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="123456"
-                  maxLength="6"
+                  placeholder="București, Ploiești, etc."
                 />
-                {renderFieldSuccess('address.zipCode')}
+                {renderFieldError('address.city')}
+                {renderFieldSuccess('address.city')}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Strada <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.street}
+                  onChange={(e) => handleInputChange('address.street', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Strada Exemplu"
+                />
+                {renderFieldError('address.street')}
+                {renderFieldSuccess('address.street')}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Numărul <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.number}
+                  onChange={(e) => handleInputChange('address.number', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="123A"
+                />
+                {renderFieldError('address.number')}
+                {renderFieldSuccess('address.number')}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Blocul/Scara/Apartamentul
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.apartment}
+                  onChange={(e) => handleInputChange('address.apartment', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="Ap. 15"
+                />
+                {renderFieldSuccess('address.apartment')}
               </div>
             </div>
           </div>
@@ -557,7 +475,24 @@ export default function ProfileStep({
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Compania/Firma *
+                  Funcția <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.professionalInfo.position}
+                  onChange={(e) => handleInputChange('professionalInfo.position', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  <option value="Administrator asociație">Administrator asociație</option>
+                  <option value="Președinte">Președinte</option>
+                  <option value="Cenzor">Cenzor</option>
+                </select>
+                {renderFieldError('professionalInfo.position')}
+                {renderFieldSuccess('professionalInfo.position')}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Compania/Firma (opțional)
                 </label>
                 <input
                   type="text"
@@ -570,42 +505,9 @@ export default function ProfileStep({
                 {renderFieldSuccess('professionalInfo.companyName')}
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Funcția
-                </label>
-                <input
-                  type="text"
-                  value={formData.professionalInfo.position}
-                  onChange={(e) => handleInputChange('professionalInfo.position', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Administrator asociație"
-                />
-                {renderFieldSuccess('professionalInfo.position')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Experiența (ani)
-                </label>
-                <select
-                  value={formData.professionalInfo.experience}
-                  onChange={(e) => handleInputChange('professionalInfo.experience', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Selectează</option>
-                  <option value="0-1">Sub 1 an</option>
-                  <option value="1-3">1-3 ani</option>
-                  <option value="3-5">3-5 ani</option>
-                  <option value="5-10">5-10 ani</option>
-                  <option value="10+">Peste 10 ani</option>
-                </select>
-                {renderFieldSuccess('professionalInfo.experience')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Număr licență/autorizație
+                  Număr atestat administrator <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -614,6 +516,7 @@ export default function ProfileStep({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="Ex: ADM123456"
                 />
+                {renderFieldError('professionalInfo.licenseNumber')}
                 {renderFieldSuccess('professionalInfo.licenseNumber')}
               </div>
             </div>

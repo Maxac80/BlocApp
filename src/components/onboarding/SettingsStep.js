@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Bell, Globe, Clock, Shield, Mail, MessageSquare } from 'lucide-react';
+import { Settings, Bell, Clock, Shield, Mail, MessageSquare } from 'lucide-react';
 
 /**
  * ⚙️ SETTINGS STEP - CONFIGURARE PREFERINȚE ȘI SETĂRI
@@ -63,74 +63,6 @@ export default function SettingsStep({ stepData, onUpdateData }) {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       
-      {/* SETĂRI GENERALE */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-          <Globe className="w-5 h-5 mr-2" />
-          Setări generale
-        </h4>
-        
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Limba aplicației
-            </label>
-            <select
-              value={settings.language}
-              onChange={(e) => handleSettingChange('language', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ro">Română</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fus orar
-            </label>
-            <select
-              value={settings.timezone}
-              onChange={(e) => handleSettingChange('timezone', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Europe/Bucharest">România (GMT+2/+3)</option>
-              <option value="Europe/London">Londra (GMT+0/+1)</option>
-              <option value="Europe/Berlin">Berlin (GMT+1/+2)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Format dată
-            </label>
-            <select
-              value={settings.dateFormat}
-              onChange={(e) => handleSettingChange('dateFormat', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="dd/MM/yyyy">31/12/2024</option>
-              <option value="MM/dd/yyyy">12/31/2024</option>
-              <option value="yyyy-MM-dd">2024-12-31</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Monedă
-            </label>
-            <select
-              value={settings.currency}
-              onChange={(e) => handleSettingChange('currency', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="RON">Lei (RON)</option>
-              <option value="EUR">Euro (EUR)</option>
-              <option value="USD">Dolari (USD)</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
       {/* NOTIFICĂRI EMAIL */}
       <div className="bg-white p-6 rounded-xl border border-gray-200">

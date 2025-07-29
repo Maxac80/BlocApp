@@ -83,6 +83,7 @@ export function AuthProviderEnhanced({ children }) {
       const basicProfileData = {
         email: email,
         name: userData.name || userData.firstName || '',
+        phone: userData.phone || '',
         role: userRole,
         subscriptionStatus: userRole === 'admin_asociatie' ? 'trial' : null,
         createdAt: new Date().toISOString(),

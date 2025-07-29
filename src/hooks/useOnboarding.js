@@ -31,7 +31,7 @@ export const useOnboarding = () => {
   const onboardingSteps = [
     {
       id: 'welcome',
-      title: 'Bine ai venit în BlocApp!',
+      title: 'Start',
       description: 'Să configurăm contul tău pentru a începe administrarea eficientă',
       icon: '👋',
       required: true,
@@ -39,7 +39,7 @@ export const useOnboarding = () => {
     },
     {
       id: 'profile',
-      title: 'Informații Personale',
+      title: 'Profil Personal',
       description: 'Completează datele tale personale și profesionale',
       icon: '👤',
       required: true,
@@ -55,16 +55,16 @@ export const useOnboarding = () => {
     },
     {
       id: 'documents',
-      title: 'Documente Necesare',
+      title: 'Documente',
       description: 'Încarcă documentele pentru verificarea identității și autorizarea administrării',
       icon: '📄',
       required: true,
       minCompletionForSkip: 50,
-      requiredDocuments: ['idCard', 'adminContract']
+      requiredDocuments: ['idCard', 'adminAttestation', 'criminalRecord']
     },
     {
       id: 'settings',
-      title: 'Preferințe și Setări',
+      title: 'Configurare',
       description: 'Configurează aplicația conform preferințelor tale',
       icon: '⚙️',
       required: false,
@@ -77,7 +77,7 @@ export const useOnboarding = () => {
     },
     {
       id: 'association',
-      title: 'Prima Asociație',
+      title: 'Asociația Mea',
       description: 'Creează prima asociație pentru a începe lucrul',
       icon: '🏢',
       required: false,
@@ -85,7 +85,7 @@ export const useOnboarding = () => {
     },
     {
       id: 'tutorial',
-      title: 'Tutorial Interactiv',
+      title: 'Ghid de Utilizare',
       description: 'Învață să folosești eficient toate funcționalitățile',
       icon: '🎓',
       required: false,

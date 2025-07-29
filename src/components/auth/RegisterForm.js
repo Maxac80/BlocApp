@@ -75,7 +75,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
   // 📊 CALCULARE PROGRESS FORMULAR
   useEffect(() => {
-    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'confirmPassword'];
+    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'confirmPassword', 'phone'];
     const completedFields = requiredFields.filter(field => formData[field].trim()).length;
     const termsAccepted = formData.acceptTerms && formData.acceptPrivacy ? 1 : 0;
     const validPassword = passwordStrength?.isValid ? 1 : 0;
@@ -181,7 +181,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
       errors.confirmPassword = 'Parolele nu se potrivesc';
     }
     
-    if (formData.phone && !/^(\+4|4|0)[0-9]{8,9}$/.test(formData.phone.replace(/\s/g, ''))) {
+    if (!formData.phone.trim()) {
+      errors.phone = 'Numărul de telefon este obligatoriu';
+    } else if (!/^(\+4|4|0)[0-9]{8,9}$/.test(formData.phone.replace(/\s/g, ''))) {
       errors.phone = 'Numărul de telefon nu este valid';
     }
     
@@ -513,10 +515,10 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
               )}
             </div>
 
-            {/* 📱 TELEFON (OPȚIONAL) */}
+            {/* 📱 TELEFON (OBLIGATORIU) */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Telefon (opțional)
+                Telefon *
               </label>
               <input
                 type="tel"
@@ -531,6 +533,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                     : 'border-gray-300 bg-white'
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="0721234567"
+                required
               />
               {validationErrors.phone && (
                 <p className="mt-1 text-xs text-red-600">{validationErrors.phone}</p>
