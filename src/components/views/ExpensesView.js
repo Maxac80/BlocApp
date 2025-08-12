@@ -145,7 +145,7 @@ return (
                     <div className="flex gap-2">
                       {isDefault && (
                         <button
-                          onClick={() => toggleExpenseStatus(expenseType.name, true)}
+                          onClick={() => toggleExpenseStatus(expenseType.name, currentMonth, true)}
                           className="bg-gray-400 text-white px-3 py-2 rounded text-sm hover:bg-red-500"
                           title="Elimină pentru această lună"
                         >
@@ -155,7 +155,7 @@ return (
                       {isCustom && (
                         <>
                           <button
-                            onClick={() => toggleExpenseStatus(expenseType.name, true)}
+                            onClick={() => toggleExpenseStatus(expenseType.name, currentMonth, true)}
                             className="bg-gray-400 text-white px-3 py-2 rounded text-sm hover:bg-red-500"
                             title="Elimină pentru această lună"
                           >
@@ -197,7 +197,7 @@ return (
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => toggleExpenseStatus(expenseType.name, false)}
+                            onClick={() => toggleExpenseStatus(expenseType.name, currentMonth, false)}
                             className="bg-green-500 text-white px-3 py-2 rounded text-sm hover:bg-green-600"
                             title="Reactivează pentru această lună"
                           >

@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { generateExcelTemplate } from '../../utils/excelTemplateGenerator';
+import ExcelUploadModal from '../modals/ExcelUploadModal';
 
 const SetupView = ({
   association,
@@ -29,6 +31,9 @@ const SetupView = ({
   addApartment,
   handleNavigation
 }) => {
+  // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
+  const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
+
   // Verifică dacă toate props-urile necesare sunt disponibile
   if (!association || !blocks || !stairs || !apartments) {
     return (
@@ -59,6 +64,40 @@ const SetupView = ({
   const totalStairs = associationStairs.length;
   const totalApartments = associationApartments.length;
   const totalPersons = associationApartments.reduce((sum, apt) => sum + apt.persons, 0);
+
+  // 📊 FUNCȚIE PENTRU DESCĂRCAREA TEMPLATE-ULUI EXCEL
+  const handleDownloadExcelTemplate = async () => {
+    try {
+      await generateExcelTemplate(association, blocks, stairs);
+    } catch (error) {
+      console.error('❌ Eroare la generarea template-ului Excel:', error);
+      alert('Eroare la generarea template-ului Excel: ' + error.message);
+    }
+  };
+
+  // 📊 FUNCȚIE PENTRU IMPORT ÎN BULK AL APARTAMENTELOR
+  const handleImportApartments = async (apartments) => {
+    console.log('📊 Import apartamente în bulk:', apartments.length);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const apartment of apartments) {
+      try {
+        await addApartment(apartment);
+        successCount++;
+      } catch (error) {
+        console.error(`❌ Eroare la adăugarea apartamentului ${apartment.number}:`, error);
+        errorCount++;
+      }
+    }
+    
+    console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
+    
+    if (errorCount > 0) {
+      throw new Error(`Import parțial: ${successCount} apartamente adăugate, ${errorCount} erori`);
+    }
+  };
 
 return (
   <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
@@ -92,6 +131,32 @@ return (
             </div>
 
             <div className="flex gap-3">
+              {/* Butoane Excel - vizibile doar când nu există apartamente */}
+              {totalApartments === 0 && totalStairs > 0 && (
+                <>
+                  <button
+                    onClick={handleDownloadExcelTemplate}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center text-sm font-medium shadow-lg"
+                    title="Descarcă template Excel pentru import masiv apartamente"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    📊 Template Excel
+                  </button>
+                  <button
+                    onClick={() => setShowExcelUploadModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center text-sm font-medium shadow-lg"
+                    title="Încarcă fișier Excel completat pentru import masiv"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    📤 Încarcă Excel
+                  </button>
+                </>
+              )}
+              
               <div className="relative">
                 <input
                   type="text"
@@ -114,6 +179,44 @@ return (
               )}
             </div>
           </div>
+
+          {/* Mesaj informativ pentru template Excel când nu există apartamente */}
+          {totalApartments === 0 && totalStairs > 0 && !searchTerm && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="text-2xl">📊</div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-blue-800 mb-2">Import masiv cu Excel</h4>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Ai configurate {totalBlocks} {totalBlocks === 1 ? 'bloc' : 'blocuri'} și {totalStairs} {totalStairs === 1 ? 'scară' : 'scări'}. 
+                      Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru a adăuga toate apartamentele deodată.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleDownloadExcelTemplate}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center text-sm font-medium"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Descarcă Template Excel
+                      </button>
+                      <button
+                        onClick={() => setShowExcelUploadModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center text-sm font-medium"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Încarcă Excel Completat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {searchTerm && (
             <div className="mt-4 pt-4 border-t border-gray-200">
@@ -1027,6 +1130,16 @@ return (
           </div>
         </div>
       </div>
+
+      {/* Modal pentru Upload Excel */}
+      <ExcelUploadModal
+        isOpen={showExcelUploadModal}
+        onClose={() => setShowExcelUploadModal(false)}
+        association={association}
+        blocks={blocks}
+        stairs={stairs}
+        onImportApartments={handleImportApartments}
+      />
     </div>
   );
 };

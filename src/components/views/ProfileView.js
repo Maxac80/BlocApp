@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Camera, Phone, Mail, Building, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, Camera, Building, Save, AlertCircle, CheckCircle, MapPin } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useBase64Upload } from '../../hooks/useBase64Upload';
@@ -30,14 +30,14 @@ const ProfileView = ({
     avatarURL: '',
     companyName: '',
     position: '',
-    experience: '',
     licenseNumber: '',
     address: {
       street: '',
       number: '',
+      building: '',
+      apartment: '',
       city: '',
-      county: '',
-      zipCode: ''
+      county: ''
     }
   });
   
@@ -45,33 +45,97 @@ const ProfileView = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  // Încarcă datele existente
+  // Încarcă datele existente - inclusiv din wizard
   useEffect(() => {
     if (association?.adminProfile) {
+      // Verificăm dacă avem date din wizard (structură diferită)
+      const adminData = association.adminProfile;
+      
+      // Adresa poate veni fie ca obiect complet, fie ca proprietăți separate (format vechi)
+      let addressData = {
+        street: '',
+        number: '',
+        building: '',
+        apartment: '',
+        city: '',
+        county: ''
+      };
+      
+      if (adminData.address) {
+        // Format nou din wizard
+        addressData = {
+          street: adminData.address.street || '',
+          number: adminData.address.number || '',
+          building: adminData.address.building || '',
+          apartment: adminData.address.apartment || '',
+          city: adminData.address.city || '',
+          county: adminData.address.county || ''
+        };
+      }
+      
       setFormData({
-        firstName: association.adminProfile.firstName || '',
-        lastName: association.adminProfile.lastName || '',
-        phone: association.adminProfile.phone || '',
-        email: association.adminProfile.email || '',
-        avatarURL: association.adminProfile.avatarURL || '',
-        companyName: association.adminProfile.companyName || '',
-        position: association.adminProfile.position || '',
-        experience: association.adminProfile.experience || '',
-        licenseNumber: association.adminProfile.licenseNumber || '',
-        address: association.adminProfile.address || {
-          street: '',
-          number: '',
-          city: '',
-          county: '',
-          zipCode: ''
-        }
+        firstName: adminData.firstName || '',
+        lastName: adminData.lastName || '',
+        phone: adminData.phone || '',
+        email: adminData.email || currentUser?.email || '',
+        avatarURL: adminData.avatarURL || '',
+        companyName: adminData.companyName || '',
+        position: adminData.position || '',
+        licenseNumber: adminData.licenseNumber || '',
+        address: addressData
       });
+    } else if (currentUser) {
+      // Dacă nu avem date salvate, folosim datele din currentUser
+      setFormData(prev => ({
+        ...prev,
+        email: currentUser.email || prev.email
+      }));
     }
-  }, [association]);
+  }, [association, currentUser]);
+
+  // Validare formulare
+  const validateForm = () => {
+    const errors = {};
+    
+    // Câmpuri obligatorii
+    if (!formData.firstName.trim()) errors.firstName = 'Prenumele este obligatoriu';
+    if (!formData.lastName.trim()) errors.lastName = 'Numele este obligatoriu';
+    if (!formData.phone.trim()) errors.phone = 'Telefonul este obligatoriu';
+    if (!formData.email.trim()) errors.email = 'Email-ul este obligatoriu';
+    
+    // Validare telefon
+    if (formData.phone && !/^(\+4|4|0)[0-9]{8,9}$/.test(formData.phone.replace(/\s/g, ''))) {
+      errors.phone = 'Numărul de telefon nu este valid (ex: 0721234567)';
+    }
+    
+    // Validare email
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Adresa de email nu este validă';
+    }
+    
+    // Adresă obligatorie
+    if (!formData.address.county) errors['address.county'] = 'Județul este obligatoriu';
+    if (!formData.address.city.trim()) errors['address.city'] = 'Localitatea este obligatorie';
+    if (!formData.address.street.trim()) errors['address.street'] = 'Strada este obligatorie';
+    if (!formData.address.number.trim()) errors['address.number'] = 'Numărul este obligatoriu';
+    
+    // Date profesionale obligatorii
+    if (!formData.position) errors.position = 'Funcția este obligatorie';
+    if (!formData.licenseNumber.trim()) errors.licenseNumber = 'Numărul atestatului este obligatoriu';
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Salvare modificări
   const handleSave = async () => {
+    if (!validateForm()) {
+      setSaveMessage('Vă rugăm completați toate câmpurile obligatorii');
+      return;
+    }
+    
     setIsSaving(true);
     setSaveMessage('');
     
@@ -85,6 +149,7 @@ const ProfileView = ({
       
       setIsEditing(false);
       setSaveMessage('Profilul a fost actualizat cu succes!');
+      setValidationErrors({});
       
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
@@ -160,6 +225,14 @@ const ProfileView = ({
       setFormData(prev => ({
         ...prev,
         [field]: value
+      }));
+    }
+    
+    // Șterge eroarea pentru câmpul curent când se modifică
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: null
       }));
     }
   };
@@ -269,19 +342,40 @@ const ProfileView = ({
                     <button
                       onClick={() => {
                         setIsEditing(false);
+                        setValidationErrors({});
                         // Reset la datele originale
                         if (association?.adminProfile) {
+                          const adminData = association.adminProfile;
+                          let addressData = {
+                            street: '',
+                            number: '',
+                            building: '',
+                            apartment: '',
+                            city: '',
+                            county: ''
+                          };
+                          
+                          if (adminData.address) {
+                            addressData = {
+                              street: adminData.address.street || '',
+                              number: adminData.address.number || '',
+                              building: adminData.address.building || '',
+                              apartment: adminData.address.apartment || '',
+                              city: adminData.address.city || '',
+                              county: adminData.address.county || ''
+                            };
+                          }
+                          
                           setFormData({
-                            firstName: association.adminProfile.firstName || '',
-                            lastName: association.adminProfile.lastName || '',
-                            phone: association.adminProfile.phone || '',
-                            email: association.adminProfile.email || '',
-                            avatarURL: association.adminProfile.avatarURL || '',
-                            companyName: association.adminProfile.companyName || '',
-                            position: association.adminProfile.position || '',
-                            experience: association.adminProfile.experience || '',
-                            licenseNumber: association.adminProfile.licenseNumber || '',
-                            address: association.adminProfile.address || {}
+                            firstName: adminData.firstName || '',
+                            lastName: adminData.lastName || '',
+                            phone: adminData.phone || '',
+                            email: adminData.email || currentUser?.email || '',
+                            avatarURL: adminData.avatarURL || '',
+                            companyName: adminData.companyName || '',
+                            position: adminData.position || '',
+                            licenseNumber: adminData.licenseNumber || '',
+                            address: addressData
                           });
                         }
                       }}
@@ -307,50 +401,205 @@ const ProfileView = ({
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Prenume</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prenume <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="Prenumele tău"
                   />
+                  {validationErrors.firstName && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.firstName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nume</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nume <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="Numele tău"
                   />
+                  {validationErrors.lastName && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.lastName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="email@exemplu.ro"
                   />
+                  {validationErrors.email && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Telefon <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="0721234567"
+                  />
+                  {validationErrors.phone && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Adresa de domiciliu */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
+                <MapPin className="w-5 h-5 mr-2" />
+                Adresa de domiciliu
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Județul <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.address.county}
+                    onChange={(e) => handleInputChange('address.county', e.target.value)}
+                    disabled={!isEditing}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors['address.county'] ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Selectează județul</option>
+                    {judeteRomania.map(county => (
+                      <option key={county.cod} value={county.nume}>
+                        {county.nume}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors['address.county'] && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors['address.county']}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Localitatea <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.city}
+                    onChange={(e) => handleInputChange('address.city', e.target.value)}
+                    disabled={!isEditing}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors['address.city'] ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="București, Ploiești, etc."
+                  />
+                  {validationErrors['address.city'] && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors['address.city']}
+                    </p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Strada <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.street}
+                    onChange={(e) => handleInputChange('address.street', e.target.value)}
+                    disabled={!isEditing}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors['address.street'] ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Strada Exemplu"
+                  />
+                  {validationErrors['address.street'] && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors['address.street']}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Numărul <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.number}
+                    onChange={(e) => handleInputChange('address.number', e.target.value)}
+                    disabled={!isEditing}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors['address.number'] ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="123A"
+                  />
+                  {validationErrors['address.number'] && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors['address.number']}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Blocul/Scara/Apartamentul</label>
+                  <input
+                    type="text"
+                    value={formData.address.apartment}
+                    onChange={(e) => handleInputChange('address.apartment', e.target.value)}
+                    disabled={!isEditing}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    placeholder="Ap. 15"
                   />
                 </div>
               </div>
@@ -365,56 +614,62 @@ const ProfileView = ({
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Compania</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Funcția <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.position}
+                    onChange={(e) => handleInputChange('position', e.target.value)}
+                    disabled={!isEditing}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.position ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Selectează funcția</option>
+                    <option value="Administrator asociație">Administrator asociație</option>
+                    <option value="Președinte">Președinte</option>
+                    <option value="Cenzor">Cenzor</option>
+                  </select>
+                  {validationErrors.position && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.position}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Compania/Firma (opțional)</label>
                   <input
                     type="text"
                     value={formData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     disabled={!isEditing}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="SC Admin Bloc SRL"
+                    placeholder="Ex: SC Admin Bloc SRL"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Funcția</label>
-                  <input
-                    type="text"
-                    value={formData.position}
-                    onChange={(e) => handleInputChange('position', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="Administrator asociație"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Experiența</label>
-                  <select
-                    value={formData.experience}
-                    onChange={(e) => handleInputChange('experience', e.target.value)}
-                    disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                  >
-                    <option value="">Selectează</option>
-                    <option value="0-1">Sub 1 an</option>
-                    <option value="1-3">1-3 ani</option>
-                    <option value="3-5">3-5 ani</option>
-                    <option value="5-10">5-10 ani</option>
-                    <option value="10+">Peste 10 ani</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nr. licență/autorizație</label>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Număr atestat administrator <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.licenseNumber}
                     onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="ADM123456"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                      validationErrors.licenseNumber ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Ex: ADM123456"
                   />
+                  {validationErrors.licenseNumber && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {validationErrors.licenseNumber}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -423,6 +678,7 @@ const ProfileView = ({
             <div className="bg-gray-50 rounded-xl p-6">
               <h4 className="font-medium text-gray-800 mb-3">ℹ️ Informații</h4>
               <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Câmpurile marcate cu <span className="text-red-500">*</span> sunt obligatorii</li>
                 <li>• Avatarul tău apare în sidebar și în documentele generate</li>
                 <li>• Datele personale sunt folosite pentru semnarea documentelor</li>
                 <li>• Informațiile profesionale ajută la validarea calității de administrator</li>

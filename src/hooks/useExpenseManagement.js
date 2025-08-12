@@ -239,10 +239,10 @@ export const useExpenseManagement = ({
   }, [expenses, updateMonthlyExpense]);
 
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
-  const handleDeleteCustomExpense = useCallback(async (expenseId, expenseName) => {
+  const handleDeleteCustomExpense = useCallback(async (expenseName) => {
     if (window.confirm(`Ești sigur că vrei să ștergi cheltuiala personalizată "${expenseName}"?`)) {
       try {
-        await deleteCustomExpense(expenseId);
+        await deleteCustomExpense(expenseName);
         return true;
       } catch (error) {
         console.error('❌ Eroare la ștergerea cheltuielii personalizate:', error);

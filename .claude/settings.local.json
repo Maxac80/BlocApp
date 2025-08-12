@@ -8,7 +8,9 @@
       "Bash(claude --model sonnet)",
       "Bash(taskkill:*)",
       "Bash(cmd /c:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

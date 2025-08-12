@@ -461,7 +461,7 @@ useEffect(() => {
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
               toggleExpenseStatus={toggleExpenseStatus}
-              deleteCustomExpense={deleteCustomExpense}
+              deleteCustomExpense={handleDeleteCustomExpense}
               handleNavigation={handleNavigation}
             />
           )}

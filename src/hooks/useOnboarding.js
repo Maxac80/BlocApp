@@ -398,7 +398,16 @@ export const useOnboarding = () => {
           companyName: profileStepData.professionalInfo?.companyName || '',
           position: profileStepData.professionalInfo?.position || '',
           experience: profileStepData.professionalInfo?.experience || '',
-          licenseNumber: profileStepData.professionalInfo?.licenseNumber || ''
+          licenseNumber: profileStepData.professionalInfo?.licenseNumber || '',
+          // Adaugă datele de adresă din ProfileStep
+          address: {
+            street: profileStepData.address?.street || '',
+            number: profileStepData.address?.number || '',
+            building: profileStepData.address?.building || '',
+            apartment: profileStepData.address?.apartment || '',
+            city: profileStepData.address?.city || '',
+            county: profileStepData.address?.county || ''
+          }
         } : {},
         
         adminId: userId,
