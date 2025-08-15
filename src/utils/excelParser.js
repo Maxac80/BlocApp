@@ -192,8 +192,13 @@ const parseStairSheet = (worksheet, sheetName) => {
         apartmentType: row['Tip_Apartament'] || null,
         surface: row['Suprafata_mp'] ? parseFloat(row['Suprafata_mp']) : null,
         heatingSource: row['Sursa_Incalzire'] || null,
-        initialDebt: row['Restanta_RON'] ? parseFloat(row['Restanta_RON']) : 0,
-        initialPenalties: row['Penalitati_RON'] ? parseFloat(row['Penalitati_RON']) : 0
+        // Mapare solduri inițiale în structura corectă
+        initialBalance: {
+          restante: row['Restanta_RON'] ? parseFloat(row['Restanta_RON']) : 0,
+          penalitati: row['Penalitati_RON'] ? parseFloat(row['Penalitati_RON']) : 0,
+          setupMonth: new Date().toISOString().slice(0, 7),
+          createdAt: new Date().toISOString()
+        }
       };
       
       apartments.push(apartment);

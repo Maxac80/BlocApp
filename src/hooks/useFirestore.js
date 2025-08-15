@@ -456,6 +456,13 @@ export const useAssociationData = () => {
     try {
       const apartmentData = {
         ...data,
+        // Adaugă solduri inițiale dacă sunt furnizate, altfel valori default
+        initialBalance: data.initialBalance || {
+          restante: 0,
+          penalitati: 0,
+          setupMonth: new Date().toISOString().slice(0, 7), // Format YYYY-MM
+          createdAt: new Date().toISOString()
+        },
         createdAt: new Date().toISOString(),
       };
 
@@ -506,6 +513,38 @@ export const useAssociationData = () => {
       console.log("✅ Apartament șters și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la ștergerea apartamentului:", err);
+      throw err;
+    }
+  };
+
+  // Funcție pentru actualizarea în masă a soldurilor inițiale
+  const updateInitialBalances = async (balancesData) => {
+    if (!association) throw new Error("Nu există asociație");
+
+    try {
+      const updatePromises = balancesData.map(async ({ apartmentId, restante, penalitati }) => {
+        const updateData = {
+          initialBalance: {
+            restante: parseFloat(restante) || 0,
+            penalitati: parseFloat(penalitati) || 0,
+            setupMonth: new Date().toISOString().slice(0, 7),
+            createdAt: new Date().toISOString()
+          },
+          updatedAt: new Date().toISOString()
+        };
+        
+        return updateDoc(doc(db, "apartments", apartmentId), updateData);
+      });
+
+      await Promise.all(updatePromises);
+      
+      // Reîncarcă apartamentele pentru sincronizare
+      await loadApartments(association.id);
+
+      console.log("✅ Solduri inițiale actualizate pentru", balancesData.length, "apartamente");
+      return true;
+    } catch (err) {
+      console.error("❌ Eroare la actualizarea soldurilor inițiale:", err);
       throw err;
     }
   };
@@ -681,6 +720,7 @@ export const useAssociationData = () => {
     addApartment,
     updateApartment,
     deleteApartment,
+    updateInitialBalances,
     addCustomExpense,
     deleteCustomExpense,
     addMonthlyExpense,

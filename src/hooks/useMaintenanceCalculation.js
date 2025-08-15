@@ -136,6 +136,11 @@ export const useMaintenanceCalculation = ({
         const stair = stairs.find((s) => s.id === apartment.stairId);
         const block = blocks.find((b) => b.id === stair?.blockId);
 
+        // Calculează soldurile totale incluzând soldurile inițiale
+        const initialBalance = apartment.initialBalance || { restante: 0, penalitati: 0 };
+        const totalRestante = balance.restante + initialBalance.restante;
+        const totalPenalitati = balance.penalitati + initialBalance.penalitati;
+
         return {
           apartmentId: apartment.id,
           apartment: apartment.number,
@@ -144,13 +149,18 @@ export const useMaintenanceCalculation = ({
           blockName: block?.name || "",
           stairName: stair?.name || "",
           currentMaintenance: Math.round(currentMaintenance * 100) / 100,
-          restante: Math.round(balance.restante * 100) / 100,
-          totalMaintenance: Math.round((currentMaintenance + balance.restante) * 100) / 100,
-          penalitati: Math.round(balance.penalitati * 100) / 100,
+          restante: Math.round(totalRestante * 100) / 100,
+          totalMaintenance: Math.round((currentMaintenance + totalRestante) * 100) / 100,
+          penalitati: Math.round(totalPenalitati * 100) / 100,
           totalDatorat:
-            Math.round((currentMaintenance + balance.restante + balance.penalitati) * 100) / 100,
+            Math.round((currentMaintenance + totalRestante + totalPenalitati) * 100) / 100,
           paid: false,
           expenseDetails: expenseDetails,
+          // Adaugă informații despre soldurile inițiale pentru debugging
+          initialBalance: {
+            restante: initialBalance.restante,
+            penalitati: initialBalance.penalitati
+          }
         };
       })
       .sort((a, b) => a.apartment - b.apartment);
