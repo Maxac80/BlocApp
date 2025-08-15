@@ -12,6 +12,7 @@ const MaintenanceSummary = ({
   shouldShowAdjustButton,
   hasInitialBalances,
   publishMonth,
+  unpublishMonth,
   onAdjustBalances,
   exportPDFAvizier,
   maintenanceData,
@@ -121,17 +122,6 @@ return (
           </button>
         </div>
 
-        {/* Buton Export PDF Avizier */}
-        {maintenanceData.length > 0 && (
-          <button 
-            onClick={exportPDFAvizier}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center text-sm font-medium shadow-md whitespace-nowrap"
-            title="Exportă PDF pentru avizier (fără nume proprietari)"
-          >
-            📄 Export PDF Avizier
-          </button>
-        )}
-
         {/* Buton Publică Luna */}
         {shouldShowPublishButton(currentMonth) && (
           <button 
@@ -139,6 +129,17 @@ return (
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center text-sm font-medium shadow-md whitespace-nowrap"
           >
             📋 Publică Luna
+          </button>
+        )}
+        
+        {/* Buton Depublică Luna (doar pentru lunile publicate) */}
+        {isMonthReadOnly(currentMonth) && (
+          <button 
+            onClick={() => unpublishMonth(currentMonth)}
+            className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 flex items-center text-sm font-medium shadow-md whitespace-nowrap"
+            title="Folosește doar în cazuri excepționale!"
+          >
+            🔓 Depublică
           </button>
         )}
 

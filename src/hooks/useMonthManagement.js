@@ -45,6 +45,9 @@ export const useMonthManagement = () => {
 
   // Funcții pentru gestionarea statusurilor lunilor
   const getMonthStatus = useCallback((month) => {
+    if (!monthStatuses || typeof monthStatuses !== 'object') {
+      return "in_lucru";
+    }
     return monthStatuses[month] || "in_lucru";
   }, [monthStatuses]);
 
@@ -72,9 +75,85 @@ export const useMonthManagement = () => {
     return monthObj?.type || "historic";
   }, [availableMonths]);
 
-  // Funcția pentru publicarea unei luni
-  const publishMonth = useCallback((month) => {
+  // Funcția pentru publicarea unei luni cu validări
+  const publishMonth = useCallback((month, association, expenses, hasInitialBalances, getAssociationApartments) => {
+    console.log('🔍 PublishMonth called with:', {
+      month,
+      association: association?.id,
+      hasExpenses: !!expenses,
+      expensesLength: expenses?.length,
+      hasInitialBalances,
+      hasGetApartments: !!getAssociationApartments
+    });
+    
+    // 1. Verificare solduri inițiale
+    const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    if (month === currentMonthStr && typeof hasInitialBalances === 'boolean' && !hasInitialBalances) {
+      alert("⚠️ Nu poți publica luna fără să setezi soldurile inițiale!");
+      return false;
+    }
+    
+    // 2. Verificare consumuri pentru cheltuielile pe consum
+    let hasIncompleteConsumption = false;
+    
+    if (expenses && association && getAssociationApartments) {
+      const monthExpenses = expenses.filter(exp => 
+        exp.associationId === association.id && exp.month === month
+      );
+      
+      const consumptionExpenses = monthExpenses.filter(exp => 
+        exp.distributionType === "consumption"
+      );
+      
+      const apartments = getAssociationApartments();
+      
+      for (const expense of consumptionExpenses) {
+        for (const apartment of apartments) {
+          const consumption = expense.consumption?.[apartment.id];
+          if (!consumption || parseFloat(consumption) === 0) {
+            hasIncompleteConsumption = true;
+            break;
+          }
+        }
+        if (hasIncompleteConsumption) break;
+      }
+    }
+    
+    if (hasIncompleteConsumption) {
+      const continuePublish = window.confirm(
+        "⚠️ ATENȚIE: Există consumuri necompletate!\n\n" +
+        "Unele apartamente au consumuri lipsă sau 0.\n" +
+        "Dorești să continui cu publicarea?"
+      );
+      if (!continuePublish) return false;
+    }
+    
+    // 3. Confirmare finală
+    const confirmPublish = window.confirm(
+      `📋 Confirmare publicare - ${month}\n\n` +
+      "După publicare:\n" +
+      "• Luna devine read-only (nu mai poți modifica)\n" +
+      "• Soldurile vor fi transferate automat în luna următoare\n" +
+      "• Se va genera PDF-ul pentru avizier\n\n" +
+      "Ești sigur că vrei să publici?"
+    );
+    
+    if (!confirmPublish) return false;
+    
+    // Setează statusul ca publicat
     setMonthStatus(month, "afisata");
+    
+    // Salvează data și ora publicării
+    const publishData = {
+      month: month,
+      publishedAt: new Date().toISOString(),
+      publishedBy: association?.administrator || "Administrator", // În viitor va fi user-ul logat
+    };
+    
+    // Salvăm în localStorage pentru istoric (temporar, până implementăm Firebase)
+    const publishHistory = JSON.parse(localStorage.getItem('publishHistory') || '[]');
+    publishHistory.push(publishData);
+    localStorage.setItem('publishHistory', JSON.stringify(publishHistory));
     
     // Dacă publicăm a doua lună, generăm a treia
     const currentDate = new Date();
@@ -100,6 +179,46 @@ export const useMonthManagement = () => {
       
       setMonthStatus(thirdMonthStr, "in_lucru");
     }
+    
+    return true; // Publicare reușită
+  }, [setMonthStatus]);
+
+  // Funcția pentru depublicarea unei luni (cazuri excepționale)
+  const unpublishMonth = useCallback((month) => {
+    // Verificare confirmare multiplă pentru siguranță
+    const firstConfirm = window.confirm(
+      `⚠️ ATENȚIE: Depublicare luna ${month}\n\n` +
+      "Această acțiune va permite editarea din nou a lunii publicate.\n" +
+      "Folosește această opțiune DOAR în cazuri excepționale!\n\n" +
+      "Dorești să continui?"
+    );
+    
+    if (!firstConfirm) return false;
+    
+    const secondConfirm = window.confirm(
+      "⚠️ CONFIRMARE FINALĂ\n\n" +
+      "Ești ABSOLUT SIGUR că vrei să depublici luna?\n" +
+      "Această acțiune poate afecta calculele și soldurile!"
+    );
+    
+    if (!secondConfirm) return false;
+    
+    // Schimbă statusul înapoi la "in_lucru"
+    setMonthStatus(month, "in_lucru");
+    
+    // Adaugă în istoric că luna a fost depublicată
+    const unpublishData = {
+      month: month,
+      unpublishedAt: new Date().toISOString(),
+      action: "unpublished"
+    };
+    
+    const publishHistory = JSON.parse(localStorage.getItem('publishHistory') || '[]');
+    publishHistory.push(unpublishData);
+    localStorage.setItem('publishHistory', JSON.stringify(publishHistory));
+    
+    alert(`✅ Luna ${month} a fost depublicată.\n\nPoți edita din nou datele lunii.`);
+    return true;
   }, [setMonthStatus]);
 
   // Helper pentru a lista lunile disponibile
@@ -197,6 +316,7 @@ export const useMonthManagement = () => {
     getMonthStatus,
     setMonthStatus,
     publishMonth,
+    unpublishMonth,
     
     // Helper functions
     getMonthType,

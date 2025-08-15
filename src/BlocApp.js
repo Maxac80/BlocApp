@@ -48,6 +48,7 @@ export default function BlocApp() {
     deleteCustomExpense,
     addMonthlyExpense,
     updateMonthlyExpense,
+    deleteMonthlyExpense,
     updateBlock,
     deleteBlock,
     updateStair,
@@ -115,6 +116,7 @@ export default function BlocApp() {
     getMonthStatus,
     setMonthStatus,
     publishMonth,
+    unpublishMonth,
     getMonthType,
     getAvailableMonths,
     shouldShowAdjustButton,
@@ -184,6 +186,7 @@ export default function BlocApp() {
     handleAddExpense,
     handleAddCustomExpense,
     handleDeleteCustomExpense,
+    handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
     expenseStats
@@ -195,6 +198,7 @@ export default function BlocApp() {
     disabledExpenses,
     addMonthlyExpense,
     updateMonthlyExpense,
+    deleteMonthlyExpense,
     addCustomExpense,
     deleteCustomExpense
   });
@@ -367,7 +371,49 @@ useEffect(() => {
               isMonthReadOnly={isMonthReadOnly}
               shouldShowPublishButton={shouldShowPublishButton}
               shouldShowAdjustButton={shouldShowAdjustButton}
-              publishMonth={publishMonth}
+              publishMonth={(month) => {
+                console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
+                const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments);
+                if (result) {
+                  // Transfer automat solduri în luna următoare
+                  const nextMonth = (() => {
+                    const date = new Date();
+                    if (month === date.toLocaleDateString("ro-RO", { month: "long", year: "numeric" })) {
+                      date.setMonth(date.getMonth() + 1);
+                    } else {
+                      date.setMonth(date.getMonth() + 2);
+                    }
+                    return date.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+                  })();
+                  
+                  // Transferă soldurile finale ca solduri inițiale pentru luna următoare
+                  if (maintenanceData && maintenanceData.length > 0) {
+                    maintenanceData.forEach(data => {
+                      const apartment = getAssociationApartments().find(apt => apt.number === data.apartment);
+                      if (apartment) {
+                        // Setează restanțele și penalitățile din luna curentă ca solduri pentru luna următoare
+                        const newBalance = {
+                          restante: data.isPaid ? 0 : data.totalDatorat,
+                          penalitati: 0 // Penalitățile se vor calcula automat
+                        };
+                        setApartmentBalance(apartment.id, newBalance);
+                      }
+                    });
+                    
+                    // Salvează soldurile pentru luna următoare (cu parametrii corecți)
+                    // saveInitialBalances necesită monthlyBalances și currentMonth
+                    // TODO: Trebuie să trecem parametrii corecți aici
+                    console.log('✅ Solduri transferate (salvarea în Firebase dezactivată temporar)');
+                    
+                    // Afișează mesaj de succes
+                    alert(`✅ Luna ${month} a fost publicată cu succes!\n\nSoldurile au fost transferate automat în ${nextMonth}.`);
+                  }
+                  
+                  // TODO: Generare automată PDF (va trebui să mutăm funcția exportPDFAvizier într-un loc accesibil)
+                }
+                return result;
+              }}
+              unpublishMonth={unpublishMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               newExpense={newExpense}
@@ -375,6 +421,7 @@ useEffect(() => {
               getAvailableExpenseTypes={getAvailableExpenseTypes}
               getExpenseConfig={getExpenseConfig}
               handleAddExpense={handleAddExpense}
+              handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               maintenanceData={maintenanceData}

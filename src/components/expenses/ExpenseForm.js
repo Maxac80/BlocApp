@@ -5,6 +5,7 @@ const ExpenseForm = ({
   newExpense,
   setNewExpense,
   availableExpenseTypes,
+  associationExpenses,
   getExpenseConfig,
   handleAddExpense,
   isMonthReadOnly,
@@ -43,7 +44,7 @@ const ExpenseForm = ({
             <p className="text-purple-700 font-medium">Nu se pot adăuga cheltuieli noi pentru lunile publicate</p>
             <p className="text-purple-600 text-sm mt-2">Poți doar înregistra încasări pentru această lună</p>
           </div>
-        ) : (
+        ) : associationExpenses.length === 0 ? (
           <div className="text-center py-8 bg-orange-50 border-2 border-orange-200 rounded-xl">
             <div className="mb-4">
               <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -58,6 +59,22 @@ const ExpenseForm = ({
             <h3 className="text-lg font-bold text-orange-800 mb-2">Nu există cheltuieli active configurate</h3>
             <p className="text-orange-700 font-medium">Toate cheltuielile au fost dezactivate pentru această lună</p>
             <p className="text-orange-600 text-sm mt-2">Mergi la Configurare Asociație → Cheltuieli pentru a reactiva cheltuielile necesare</p>
+          </div>
+        ) : (
+          <div className="text-center py-8 bg-green-50 border-2 border-green-200 rounded-xl">
+            <div className="mb-4">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-4xl">✅</span>
+              </div>
+              <div className="mb-2">
+                <span className="bg-green-600 text-white text-sm font-bold px-4 py-2 rounded-full">
+                  ✅ TOATE CHELTUIELILE ADĂUGATE
+                </span>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-green-800 mb-2">Toate cheltuielile disponibile au fost adăugate</h3>
+            <p className="text-green-700 font-medium">Ai adăugat toate cheltuielile configurate pentru această lună</p>
+            <p className="text-green-600 text-sm mt-2">Poți modifica cheltuielile existente sau configura cheltuieli noi</p>
           </div>
         )
       ) : isMonthReadOnly(currentMonth) ? (

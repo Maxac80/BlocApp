@@ -19,6 +19,7 @@ export const useExpenseManagement = ({
   disabledExpenses,
   addMonthlyExpense,
   updateMonthlyExpense,
+  deleteMonthlyExpense,
   addCustomExpense,
   deleteCustomExpense
 }) => {
@@ -120,12 +121,8 @@ export const useExpenseManagement = ({
     
     const allAvailableExpenses = getAssociationExpenseTypes();
     
-    // Permite re-adăugarea pentru cheltuielile pe consum și individuale
-    const usedExpenseNames = associationExpenses.filter(exp => {
-      const config = getExpenseConfig(exp.name);
-      // Exclude doar cheltuielile care NU sunt pe consum și NU sunt individuale
-      return config.distributionType !== "consumption" && config.distributionType !== "individual";
-    }).map(exp => exp.name);
+    // Exclude toate cheltuielile deja adăugate pentru această lună
+    const usedExpenseNames = associationExpenses.map(exp => exp.name);
     
     return allAvailableExpenses.filter(expenseType => 
       !usedExpenseNames.includes(expenseType.name)
@@ -253,6 +250,42 @@ export const useExpenseManagement = ({
     return false;
   }, [deleteCustomExpense]);
 
+  // 🗑️ ȘTERGEREA CHELTUIELILOR LUNARE - NOU
+  const handleDeleteMonthlyExpense = useCallback(async (expenseId) => {
+    const expense = expenses.find(exp => exp.id === expenseId);
+    if (!expense) return false;
+    
+    // Verifică dacă cheltuiala are consumuri
+    const hasConsumption = expense.consumption && Object.keys(expense.consumption).length > 0 && 
+                           Object.values(expense.consumption).some(val => parseFloat(val) > 0);
+    
+    // Verifică dacă cheltuiala are sume individuale
+    const hasIndividualAmounts = expense.individualAmounts && Object.keys(expense.individualAmounts).length > 0 && 
+                                 Object.values(expense.individualAmounts).some(val => parseFloat(val) > 0);
+    
+    let confirmMessage = `Ești sigur că vrei să ștergi cheltuiala "${expense.name}"?`;
+    
+    if (hasConsumption || hasIndividualAmounts) {
+      confirmMessage = `⚠️ ATENȚIE: Cheltuiala "${expense.name}" are ${
+        hasConsumption ? 'consumuri introduse' : ''
+      }${hasConsumption && hasIndividualAmounts ? ' și ' : ''}${
+        hasIndividualAmounts ? 'sume individuale setate' : ''
+      }!\n\nDacă ștergi această cheltuială, toate datele vor fi pierdute.\n\nEști sigur că vrei să continui?`;
+    }
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        await deleteMonthlyExpense(expenseId);
+        return true;
+      } catch (error) {
+        console.error('❌ Eroare la ștergerea cheltuielii lunare:', error);
+        alert('Eroare la ștergerea cheltuielii lunare: ' + error.message);
+        return false;
+      }
+    }
+    return false;
+  }, [expenses, deleteMonthlyExpense]);
+
   // 📊 STATISTICI CHELTUIELI - OPTIMIZAT
   const expenseStats = useMemo(() => {
     if (!association?.id) return null;
@@ -312,6 +345,7 @@ export const useExpenseManagement = ({
     handleAddExpense,
     handleAddCustomExpense,
     handleDeleteCustomExpense,
+    handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
     

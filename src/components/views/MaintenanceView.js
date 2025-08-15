@@ -1,9 +1,9 @@
 // src/components/views/MaintenanceView.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Calculator, Plus } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
-import { ExpenseConfigModal, AdjustBalancesModal, InitialBalancesModal } from '../modals';
+import { ExpenseConfigModal, AdjustBalancesModal, InitialBalancesModal, PaymentModal } from '../modals';
 import jsPDF from 'jspdf';
 
 const MaintenanceView = ({
@@ -20,6 +20,7 @@ const MaintenanceView = ({
   shouldShowPublishButton,
   shouldShowAdjustButton,
   publishMonth,
+  unpublishMonth,
   getAvailableMonths,
   
   // Expenses
@@ -29,6 +30,7 @@ const MaintenanceView = ({
   getAvailableExpenseTypes,
   getExpenseConfig,
   handleAddExpense,
+  handleDeleteMonthlyExpense,
   updateExpenseConsumption,
   updateExpenseIndividualAmount,
   
@@ -71,6 +73,23 @@ const MaintenanceView = ({
   // Navigation
   handleNavigation
 }) => {
+  // State pentru modalul de plăți
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState(null);
+
+  // Handler pentru deschiderea modalului de plăți
+  const handleOpenPaymentModal = (apartmentData) => {
+    setSelectedApartment(apartmentData);
+    setShowPaymentModal(true);
+  };
+
+  // Handler pentru salvarea plății
+  const handleSavePayment = (paymentData) => {
+    console.log('💰 Salvare plată:', paymentData);
+    // TODO: Implementează logica de salvare în Firebase
+    alert(`✅ Plată înregistrată: ${paymentData.total.toFixed(2)} lei pentru Ap. ${selectedApartment.apartmentNumber}`);
+  };
+
   // ✅ PRELUAREA EXACTĂ A LOGICII DIN ORIGINALUL BlocApp.js
   return (
     (() => {
@@ -100,99 +119,38 @@ const MaintenanceView = ({
               .replace(/Ț/g, 'T');
           };
           
-          // ===== HEADER PRINCIPAL =====
-          doc.setFontSize(18);
-          doc.setFont("helvetica", "bold");
-          doc.text(fixRomanianText("ASOCIAȚIA DE PROPRIETARI"), 105, 15, { align: "center" });
-          
-          doc.setFontSize(16);
-          doc.text(fixRomanianText(association?.name?.toUpperCase()) || "NUME ASOCIATIE", 105, 23, { align: "center" });
-          
-          // Linie decorativă sub titlu
-          doc.setLineWidth(0.5);
-          doc.line(30, 27, 180, 27);
-          
-          // ===== INFORMAȚII RESPONSABILI =====
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "normal");
-          
-          // Poziționare responsabili pe 3 coloane
-          const responsabiliY = 35;
-          doc.text(fixRomanianText(`Presedinte: ${association?.president || "_____________"}`), 20, responsabiliY);
-          doc.text(fixRomanianText(`Administrator: ${association?.administrator || "_____________"}`), 105, responsabiliY, { align: "center" });
-          doc.text(fixRomanianText(`Cenzor: ${association?.censor || "_____________"}`), 190, responsabiliY, { align: "right" });
-          
-          // ===== INFORMAȚII ASOCIAȚIE =====
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
-          const addressString = association?.address ? 
-            `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
-            : "Adresa asociatiei";
-          doc.text(fixRomanianText(addressString), 105, 43, { align: "center" });
-          
-          const apartmentCount = getAssociationApartments().length;
-          const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
-          doc.text(`${apartmentCount} apartamente • ${personCount} persoane`, 105, 50, { align: "center" });
-          
-          // ===== INFORMAȚII LUNĂ =====
+          // ===== PAGINA 1 - TABEL =====
+          // Header aliniat stânga cu numele asociației
           doc.setFontSize(14);
           doc.setFont("helvetica", "bold");
-          doc.text(fixRomanianText(`INTRETINERE LUNA ${currentMonth.toUpperCase()}`), 105, 62, { align: "center" });
+          doc.text(fixRomanianText(association?.name?.toUpperCase()) || "NUME ASOCIATIE", 20, 25);
           
-          // ===== INFORMAȚII IMPORTANTE =====
-          doc.setFontSize(9);
+          // Document description - intretinere și consum (centrat)
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "normal");
+          doc.text(fixRomanianText("Document cumulativ reprezentand"), 105, 35, { align: "center" });
+          
+          // Calculez luna anterioară pentru consum
+          const getCurrentMonthDate = () => {
+            const monthNames = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", 
+                              "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+            const parts = currentMonth.split(" ");
+            const monthName = parts[0];
+            const year = parseInt(parts[1]);
+            const monthIndex = monthNames.indexOf(monthName.toLowerCase());
+            return { monthIndex, year };
+          };
+          
+          const getPreviousMonth = () => {
+            const { monthIndex, year } = getCurrentMonthDate();
+            const prevDate = new Date(year, monthIndex - 1);
+            return prevDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+          };
+          
           doc.setFont("helvetica", "bold");
-          doc.text(fixRomanianText("ATENTIE!!! Incasarile se fac pana pe data de 20 ale lunii in curs (pentru luna anterioara)"), 105, 70, { align: "center" });
+          doc.text(fixRomanianText(`Intretinere luna ${currentMonth.toUpperCase()} consum luna ${getPreviousMonth().toUpperCase()}`), 105, 42, { align: "center" });
           
-          // ===== INFORMAȚII CONT BANCAR =====
-          let currentY = 80;
-          if (association?.bankAccount) {
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "normal");
-            doc.text(fixRomanianText("Plata intretinerii poate fi efectuata si prin transfer bancar:"), 105, currentY, { align: "center" });
-            currentY += 5;
-            
-            doc.setFont("helvetica", "bold");
-            doc.text(fixRomanianText(`Beneficiar: ${association?.name}`), 105, currentY, { align: "center" });
-            currentY += 5;
-            doc.text(`Cont IBAN: ${association?.bankAccount}`, 105, currentY, { align: "center" });
-            currentY += 5;
-            
-            doc.setFont("helvetica", "normal");
-            doc.text(fixRomanianText("Va rog sa mentionati in detaliile platii numarul apartamentului!"), 105, currentY, { align: "center" });
-            currentY += 10;
-          }
-
-          // ===== PREȚURI UTILITĂȚI =====
-          const consumExpenses = associationExpenses.filter(exp => 
-            getExpenseConfig(exp.name).distributionType === "consumption"
-          );
-          
-          if (consumExpenses.length > 0) {
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
-            doc.text(fixRomanianText("PRETURI UTILITATI:"), 20, currentY);
-            currentY += 6;
-            
-            doc.setFont("helvetica", "normal");
-            const pricesPerRow = 3; // Câte prețuri pe rând
-            let col = 0;
-            
-            consumExpenses.forEach((expense, index) => {
-              const unit = expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
-              const x = 20 + (col * 60); // Spațiere coloane
-              doc.text(fixRomanianText(`${expense.name}: ${expense.unitPrice} lei/${unit}`), x, currentY);
-              
-              col++;
-              if (col >= pricesPerRow) {
-                col = 0;
-                currentY += 5;
-              }
-            });
-            
-            if (col > 0) currentY += 5;
-            currentY += 5;
-          }
+          let currentY = 55;
 
           // ===== TABEL PRINCIPAL PROFESIONAL =====
           doc.setFontSize(8);
@@ -329,25 +287,288 @@ const MaintenanceView = ({
             if (i < colWidths.length) x += colWidths[i];
           }
           
-          currentY += rowHeight + 10;
+          currentY += rowHeight + 15;
+          
+          // ===== INFORMAȚII RESPONSABILI (SUB TABEL) =====
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          
+          // Poziționare responsabili pe 3 coloane - Administrator primul
+          doc.text(fixRomanianText(`Administrator: ${association?.administrator || "_____________"}`), 20, currentY);
+          doc.text(fixRomanianText(`Presedinte: ${association?.president || "_____________"}`), 105, currentY, { align: "center" });
+          doc.text(fixRomanianText(`Cenzor: ${association?.censor || "_____________"}`), 190, currentY, { align: "right" });
+          
+          // ===== PAGINA 2 - INFORMAȚII =====
+          doc.addPage();
+          
+          // Header pagina 2 - același format ca pagina 1
+          doc.setFontSize(14);
+          doc.setFont("helvetica", "bold");
+          doc.text(fixRomanianText(association?.name?.toUpperCase()) || "NUME ASOCIATIE", 20, 25);
+          
+          // Document description - centrat
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "normal");
+          doc.text(fixRomanianText("Baza de calcul"), 105, 35, { align: "center" });
+          
+          doc.setFont("helvetica", "bold");
+          doc.text(fixRomanianText(`Intretinere luna ${currentMonth.toUpperCase()} consum luna ${getPreviousMonth().toUpperCase()}`), 105, 42, { align: "center" });
+          
+          // Adresa
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          const addressString = association?.address ? 
+            `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
+            : "Adresa asociatiei";
+          doc.text(fixRomanianText(`Adresa: ${addressString}`), 105, 52, { align: "center" });
+          
+          // Număr apartamente și persoane
+          const apartmentCount = getAssociationApartments().length;
+          const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
+          doc.text(`${apartmentCount} apartamente • ${personCount} persoane`, 105, 58, { align: "center" });
+          
+          // Linie decorativă
+          doc.setLineWidth(0.5);
+          doc.line(30, 62, 180, 62);
+          
+          currentY = 72;
+          
+          // ===== TABEL DETALIAT CHELTUIELI =====
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(fixRomanianText("DETALIU CHELTUIELI SI MOD DE CALCUL"), 105, currentY, { align: "center" });
+          currentY += 8;
+          
+          // Configurare tabel cheltuieli
+          doc.setFontSize(8);
+          const expenseTableStartX = 15;
+          const expenseTableWidth = 180;
+          const expenseColWidths = [45, 35, 30, 35, 35]; // Cheltuiala, Mod împărțire, Valoare factură, Cost/unitate, Observații
+          const expenseRowHeight = 6;
+          
+          // Header tabel
+          doc.setFillColor(220, 220, 220);
+          doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight, 'F');
+          
+          doc.setFont("helvetica", "bold");
+          const expenseHeaders = [
+            'Cheltuiala',
+            'Mod impartire',
+            'Valoare factura',
+            'Cost/unitate',
+            'Observatii'
+          ];
+          
+          x = expenseTableStartX + 1;
+          expenseHeaders.forEach((header, i) => {
+            const centerX = x + (expenseColWidths[i] / 2);
+            doc.text(fixRomanianText(header), centerX, currentY + 4, { align: "center" });
+            x += expenseColWidths[i];
+          });
+          
+          // Contur header
+          doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.3);
+          doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight);
+          
+          // Linii verticale header
+          x = expenseTableStartX;
+          for (let i = 0; i <= expenseColWidths.length; i++) {
+            doc.line(x, currentY, x, currentY + expenseRowHeight);
+            if (i < expenseColWidths.length) x += expenseColWidths[i];
+          }
+          
+          currentY += expenseRowHeight;
+          
+          // Rânduri cu date cheltuieli
+          doc.setFont("helvetica", "normal");
+          const totalApartments = getAssociationApartments().length;
+          const totalPersons = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
+          
+          associationExpenses.forEach((expense, index) => {
+            const config = getExpenseConfig(expense.name);
+            
+            // Fundal alternativ
+            if (index % 2 === 1) {
+              doc.setFillColor(248, 248, 248);
+              doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight, 'F');
+            }
+            
+            // Calculez cost per unitate și observații
+            let modImpartire = "";
+            let costPerUnit = "";
+            let observatii = "";
+            let valoareFactura = "";
+            
+            if (config.distributionType === "apartment") {
+              modImpartire = "Pe apartament";
+              valoareFactura = `${expense.amount} RON`;
+              if (totalApartments > 0) {
+                costPerUnit = `${(expense.amount / totalApartments).toFixed(2)} RON/ap`;
+                observatii = `${totalApartments} apartamente`;
+              }
+            } else if (config.distributionType === "person") {
+              modImpartire = "Pe persoana";
+              valoareFactura = `${expense.amount} RON`;
+              if (totalPersons > 0) {
+                costPerUnit = `${(expense.amount / totalPersons).toFixed(2)} RON/pers`;
+                observatii = `${totalPersons} persoane`;
+              }
+            } else if (config.distributionType === "consumption") {
+              modImpartire = "Pe consum";
+              valoareFactura = `${expense.billAmount} RON`;
+              const unit = expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
+              costPerUnit = `${expense.unitPrice} RON/${unit}`;
+              const totalConsum = Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+              observatii = `${totalConsum.toFixed(2)} ${unit}`;
+            } else if (config.distributionType === "individual") {
+              modImpartire = "Sume individuale";
+              valoareFactura = `${expense.amount} RON`;
+              costPerUnit = "Variabil";
+              observatii = "Vezi detaliu";
+            }
+            
+            const rowData = [
+              fixRomanianText(expense.name),
+              fixRomanianText(modImpartire),
+              valoareFactura,
+              costPerUnit,
+              fixRomanianText(observatii)
+            ];
+            
+            x = expenseTableStartX + 1;
+            rowData.forEach((cell, i) => {
+              if (i === 0) {
+                // Prima coloană aliniată la stânga
+                doc.text(cell, x + 2, currentY + 4);
+              } else {
+                // Restul centrate
+                const centerX = x + (expenseColWidths[i] / 2);
+                doc.text(cell, centerX, currentY + 4, { align: "center" });
+              }
+              x += expenseColWidths[i];
+            });
+            
+            // Contur rând
+            doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight);
+            
+            // Linii verticale
+            x = expenseTableStartX;
+            for (let i = 0; i <= expenseColWidths.length; i++) {
+              doc.line(x, currentY, x, currentY + expenseRowHeight);
+              if (i < expenseColWidths.length) x += expenseColWidths[i];
+            }
+            
+            currentY += expenseRowHeight;
+          });
+          
+          // Rând total
+          doc.setFillColor(200, 200, 200);
+          doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight, 'F');
+          doc.setFont("helvetica", "bold");
+          
+          const totalAmount = associationExpenses.reduce((sum, expense) => {
+            return sum + (expense.isUnitBased ? expense.billAmount : expense.amount);
+          }, 0);
+          
+          const expenseTotalData = [
+            'TOTAL',
+            '',
+            `${totalAmount.toFixed(2)} RON`,
+            '',
+            ''
+          ];
+          
+          x = expenseTableStartX + 1;
+          expenseTotalData.forEach((cell, i) => {
+            if (i === 0 || i === 2) {
+              if (i === 0) {
+                doc.text(cell, x + 2, currentY + 4);
+              } else {
+                const centerX = x + (expenseColWidths[i] / 2);
+                doc.text(cell, centerX, currentY + 4, { align: "center" });
+              }
+            }
+            x += expenseColWidths[i];
+          });
+          
+          // Contur total
+          doc.setLineWidth(0.5);
+          doc.rect(expenseTableStartX, currentY, expenseTableWidth, expenseRowHeight);
+          
+          // Linii verticale total
+          x = expenseTableStartX;
+          for (let i = 0; i <= expenseColWidths.length; i++) {
+            doc.line(x, currentY, x, currentY + expenseRowHeight);
+            if (i < expenseColWidths.length) x += expenseColWidths[i];
+          }
+          
+          currentY += expenseRowHeight + 10;
+          
+          // ===== PREȚURI UTILITĂȚI =====
+          const consumExpenses = associationExpenses.filter(exp => 
+            getExpenseConfig(exp.name).distributionType === "consumption"
+          );
+          
+          if (consumExpenses.length > 0) {
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text(fixRomanianText("PRETURI UTILITATI:"), 105, currentY, { align: "center" });
+            currentY += 8;
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            
+            consumExpenses.forEach((expense) => {
+              const unit = expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
+              doc.text(fixRomanianText(`${expense.name}: ${expense.unitPrice} lei/${unit}`), 105, currentY, { align: "center" });
+              currentY += 6;
+            });
+            
+            currentY += 10;
+          }
+          
+          // ===== INFORMAȚII IMPORTANTE (PLĂȚI) =====
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(fixRomanianText("ATENTIE!"), 105, currentY, { align: "center" });
+          currentY += 6;
+          
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(fixRomanianText("Incasarile se fac pana pe data de 20 ale lunii in curs"), 105, currentY, { align: "center" });
+          currentY += 5;
+          doc.text(fixRomanianText("(pentru luna anterioara)"), 105, currentY, { align: "center" });
+          currentY += 10;
+          
+          // ===== INFORMAȚII CONT BANCAR =====
+          if (association?.bankAccount) {
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(fixRomanianText("Plata intretinerii poate fi efectuata si prin transfer bancar:"), 105, currentY, { align: "center" });
+            currentY += 8;
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(fixRomanianText(`Beneficiar: ${association?.name}`), 105, currentY, { align: "center" });
+            currentY += 6;
+            doc.text(`Cont IBAN: ${association?.bankAccount}`, 105, currentY, { align: "center" });
+            currentY += 8;
+            
+            doc.setFont("helvetica", "bold");
+            doc.text(fixRomanianText("IMPORTANT: Mentionati numarul apartamentului in detaliile platii!"), 105, currentY, { align: "center" });
+            currentY += 10;
+          }
           
           // ===== FOOTER INFORMATIV =====
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(8);
-          
-          if (association?.bankAccount) {
-            doc.text(fixRomanianText("Pentru plati online, folositi OBLIGATORIU numarul apartamentului in detaliile transferului!"), 105, currentY, { align: "center" });
-            currentY += 5;
-          }
-          
+          doc.setFontSize(10);
           doc.text(fixRomanianText("Pentru intrebari contactati administratorul asociatiei."), 105, currentY, { align: "center" });
-          currentY += 8;
           
           // ===== FOOTER DOCUMENT =====
           const pageHeight = doc.internal.pageSize.height;
           doc.setFontSize(7);
           doc.setTextColor(100, 100, 100); // Gri pentru footer
-          doc.text(fixRomanianText(`Document generat automat la: ${new Date().toLocaleDateString("ro-RO")} ${new Date().toLocaleTimeString("ro-RO")}`), 105, pageHeight - 8, { align: "center" });
+          doc.text(fixRomanianText(`Document generat automat la: ${new Date().toLocaleDateString("ro-RO")} ${new Date().toLocaleTimeString("ro-RO")}`), 105, pageHeight - 10, { align: "center" });
           
           // ===== SALVARE PDF =====
           const fileName = `Avizier_${association?.name?.replace(/\s+/g, '_')}_${currentMonth.replace(/\s+/g, '_')}.pdf`;
@@ -386,6 +607,7 @@ const MaintenanceView = ({
   shouldShowAdjustButton={shouldShowAdjustButton}
   hasInitialBalances={hasInitialBalances}
   publishMonth={publishMonth}
+  unpublishMonth={unpublishMonth}
   onAdjustBalances={() => {
     const modalData = getAssociationApartments().map(apartment => {
       const balance = getApartmentBalance(apartment.id);
@@ -493,36 +715,50 @@ const MaintenanceView = ({
   deleteCustomExpense={deleteCustomExpense}
 />
 
-          <div className="grid lg:grid-cols-3 gap-6 mb-6">
-
-<ExpenseForm
-  newExpense={newExpense}
-  setNewExpense={setNewExpense}
-  availableExpenseTypes={getAvailableExpenseTypes()}
-  getExpenseConfig={getExpenseConfig}
-  handleAddExpense={handleAddExpense}
-  isMonthReadOnly={isMonthReadOnly}
+{/* Payment Modal */}
+<PaymentModal
+  showPaymentModal={showPaymentModal}
+  setShowPaymentModal={setShowPaymentModal}
   currentMonth={currentMonth}
-  setShowExpenseConfig={setShowExpenseConfig}
+  selectedApartment={selectedApartment}
+  onSavePayment={handleSavePayment}
 />
 
-<ExpenseList
-  associationExpenses={associationExpenses}
-  currentMonth={currentMonth}
-  getExpenseConfig={getExpenseConfig}
-  getAssociationApartments={getAssociationApartments}
-/>
+          {/* Adaugă Cheltuială - pe întreaga lățime */}
+          <div className="mb-6">
+            <ExpenseForm
+              newExpense={newExpense}
+              setNewExpense={setNewExpense}
+              availableExpenseTypes={getAvailableExpenseTypes()}
+              associationExpenses={associationExpenses}
+              getExpenseConfig={getExpenseConfig}
+              handleAddExpense={handleAddExpense}
+              isMonthReadOnly={isMonthReadOnly}
+              currentMonth={currentMonth}
+              setShowExpenseConfig={setShowExpenseConfig}
+            />
+          </div>
 
-<ConsumptionInput
-  associationExpenses={associationExpenses}
-  getExpenseConfig={getExpenseConfig}
-  getAssociationApartments={getAssociationApartments}
-  updateExpenseConsumption={updateExpenseConsumption}
-  updateExpenseIndividualAmount={updateExpenseIndividualAmount}
-  isMonthReadOnly={isMonthReadOnly}
-  currentMonth={currentMonth}
-/>
+          {/* Cheltuieli și Consumuri - pe 2 coloane */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-6">
+            <ExpenseList
+              associationExpenses={associationExpenses}
+              currentMonth={currentMonth}
+              getExpenseConfig={getExpenseConfig}
+              getAssociationApartments={getAssociationApartments}
+              handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
+              isMonthReadOnly={isMonthReadOnly}
+            />
 
+            <ConsumptionInput
+              associationExpenses={associationExpenses}
+              getExpenseConfig={getExpenseConfig}
+              getAssociationApartments={getAssociationApartments}
+              updateExpenseConsumption={updateExpenseConsumption}
+              updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+              isMonthReadOnly={isMonthReadOnly}
+              currentMonth={currentMonth}
+            />
           </div>
 
           {maintenanceData.length > 0 ? (
@@ -567,20 +803,23 @@ const MaintenanceView = ({
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    {/* Buton Export PDF Avizier */}
-                    {maintenanceData.length > 0 && (
+                    {/* Buton Export PDF - doar pentru Tabel Simplificat */}
+                    {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && (
                       <button 
                         onClick={exportPDFAvizier}
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
                         title="Exportă PDF pentru avizier (fără nume proprietari)"
                       >
-                        📄 Export PDF Avizier
+                        📄 Export PDF
                       </button>
                     )}
-                    <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Export PDF Detaliat
-                    </button>
+                    {/* Buton Export PDF Detaliat - doar pentru Tabel Detaliat */}
+                    {maintenanceData.length > 0 && activeMaintenanceTab === "detailed" && (
+                      <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Export PDF Detaliat
+                      </button>
+                    )}
                   </div>
                 </div>
                 
@@ -612,8 +851,9 @@ const MaintenanceView = ({
   {activeMaintenanceTab === "simple" ? (
     <MaintenanceTableSimple
       maintenanceData={maintenanceData}
-      isMonthReadOnly={isMonthReadOnly}
+      isMonthReadOnly={isMonthReadOnly(currentMonth)}
       togglePayment={togglePayment}
+      onOpenPaymentModal={handleOpenPaymentModal}
     />
   ) : (
     <MaintenanceTableDetailed

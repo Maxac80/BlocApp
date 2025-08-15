@@ -126,7 +126,10 @@ export const useMaintenanceCalculation = ({
           }
 
           currentMaintenance += apartmentCost;
-          expenseDetails[expense.name] = Math.round(apartmentCost * 100) / 100;
+          // Adaugă în expenseDetails doar dacă valoarea este diferită de 0
+          if (apartmentCost > 0) {
+            expenseDetails[expense.name] = Math.round(apartmentCost * 100) / 100;
+          }
         });
 
         const balance = getApartmentBalance(apartment.id);

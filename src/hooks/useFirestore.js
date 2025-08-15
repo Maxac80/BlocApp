@@ -605,6 +605,66 @@ export const useAssociationData = () => {
     }
   };
 
+  const deleteMonthlyExpense = async (expenseId) => {
+    if (!association) throw new Error("Nu există asociație");
+
+    try {
+      await deleteDoc(doc(db, "expenses", expenseId));
+
+      // Reîncarcă cheltuielile pentru sincronizare
+      await loadExpenses(association.id);
+
+      console.log("✅ Cheltuială lunară ștearsă și date reîncărcate");
+    } catch (err) {
+      console.error("❌ Eroare la ștergerea cheltuielii lunare:", err);
+      throw err;
+    }
+  };
+
+  // Funcție pentru curățarea cheltuielilor invalide
+  const cleanupInvalidExpenses = async () => {
+    if (!association) throw new Error("Nu există asociație");
+
+    try {
+      const expensesQuery = query(
+        collection(db, "expenses"),
+        where("associationId", "==", association.id)
+      );
+      const expensesSnapshot = await getDocs(expensesQuery);
+      
+      let deletedCount = 0;
+      
+      for (const docSnapshot of expensesSnapshot.docs) {
+        const expense = docSnapshot.data();
+        
+        // Verifică dacă cheltuiala este invalidă
+        const isInvalid = 
+          (!expense.amount || expense.amount === 0) && 
+          (!expense.billAmount || expense.billAmount === 0) &&
+          (!expense.individualAmounts || Object.keys(expense.individualAmounts).length === 0 || 
+           Object.values(expense.individualAmounts).every(val => !val || val === 0)) &&
+          (!expense.consumption || Object.keys(expense.consumption).length === 0 || 
+           Object.values(expense.consumption).every(val => !val || val === 0));
+        
+        if (isInvalid) {
+          await deleteDoc(doc(db, "expenses", docSnapshot.id));
+          deletedCount++;
+          console.log(`🗑️ Șters cheltuială invalidă: ${expense.name} din ${expense.month}`);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        await loadExpenses(association.id);
+        console.log(`✅ Curățate ${deletedCount} cheltuieli invalide`);
+      }
+      
+      return deletedCount;
+    } catch (err) {
+      console.error("❌ Eroare la curățarea cheltuielilor invalide:", err);
+      throw err;
+    }
+  };
+
   return {
     loading,
     error,
@@ -625,6 +685,8 @@ export const useAssociationData = () => {
     deleteCustomExpense,
     addMonthlyExpense,
     updateMonthlyExpense,
+    deleteMonthlyExpense,
+    cleanupInvalidExpenses,
     updateBlock,
     deleteBlock,
     updateStair,
