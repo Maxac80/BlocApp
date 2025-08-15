@@ -410,15 +410,54 @@ const MaintenanceView = ({
 
 
 
-{!hasInitialBalances && getAssociationApartments().length > 0 && currentMonth === currentMonthStr && !isMonthReadOnly(currentMonth) && (
-  <InitialBalancesModal
-    showInitialBalances={showInitialBalances}
-    setShowInitialBalances={setShowInitialBalances}
-    getAssociationApartments={getAssociationApartments}
-    getApartmentBalance={getApartmentBalance}
-    setApartmentBalance={setApartmentBalance}
-    saveInitialBalances={saveInitialBalances}
-  />
+{/* Secțiune pentru gestionarea soldurilor inițiale - vizibilă permanent */}
+{getAssociationApartments().length > 0 && currentMonth === currentMonthStr && (
+  <div className="mb-6">
+    <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold flex items-center">
+            {hasInitialBalances ? (
+              <>
+                <span className="text-green-800">✅ Solduri Inițiale Configurate</span>
+              </>
+            ) : (
+              <>
+                <span className="text-yellow-800">⚡ Configurare Solduri Inițiale</span>
+              </>
+            )}
+          </h3>
+          <p className={`text-sm mt-1 ${hasInitialBalances ? 'text-green-700' : 'text-yellow-700'}`}>
+            {hasInitialBalances 
+              ? 'Soldurile inițiale sunt configurate. Puteți vizualiza sau modifica valorile.'
+              : 'Este prima utilizare a aplicației. Introduceți soldurile existente din luna anterioară.'}
+          </p>
+        </div>
+        <button
+          onClick={() => setShowInitialBalances(!showInitialBalances)}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            hasInitialBalances 
+              ? 'bg-green-600 text-white hover:bg-green-700' 
+              : 'bg-yellow-600 text-white hover:bg-yellow-700'
+          }`}
+        >
+          {showInitialBalances ? "Închide" : hasInitialBalances ? "Vizualizează/Editează" : "Configurează Solduri"}
+        </button>
+      </div>
+      
+      {/* Modal pentru solduri inițiale - afișat doar când showInitialBalances este true */}
+      {showInitialBalances && (
+        <InitialBalancesModal
+          showInitialBalances={showInitialBalances}
+          setShowInitialBalances={setShowInitialBalances}
+          getAssociationApartments={getAssociationApartments}
+          getApartmentBalance={getApartmentBalance}
+          setApartmentBalance={setApartmentBalance}
+          saveInitialBalances={saveInitialBalances}
+        />
+      )}
+    </div>
+  </div>
 )}
 
 <AdjustBalancesModal

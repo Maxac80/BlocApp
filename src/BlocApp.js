@@ -441,6 +441,8 @@ useEffect(() => {
               addStair={addStair}
               addApartment={addApartment}
               handleNavigation={handleNavigation}
+              setApartmentBalance={setApartmentBalance}
+              saveInitialBalances={saveInitialBalances}
             />
           )}
 

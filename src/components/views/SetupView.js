@@ -29,7 +29,9 @@ const SetupView = ({
   addBlock,
   addStair,
   addApartment,
-  handleNavigation
+  handleNavigation,
+  setApartmentBalance,
+  saveInitialBalances
 }) => {
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
@@ -81,18 +83,79 @@ const SetupView = ({
     
     let successCount = 0;
     let errorCount = 0;
+    let apartmentsWithBalances = [];
     
+    // 1. Adaugă apartamentele
     for (const apartment of apartments) {
       try {
-        await addApartment(apartment);
+        const newApartment = await addApartment(apartment);
         successCount++;
+        
+        // Verifică dacă apartamentul are solduri inițiale
+        if ((apartment.initialDebt && apartment.initialDebt > 0) || 
+            (apartment.initialPenalties && apartment.initialPenalties > 0)) {
+          apartmentsWithBalances.push({
+            apartmentId: newApartment.id || `${apartment.stairId}-${apartment.number}`,
+            restante: apartment.initialDebt || 0,
+            penalitati: apartment.initialPenalties || 0,
+            apartmentNumber: apartment.number,
+            owner: apartment.owner
+          });
+        }
       } catch (error) {
         console.error(`❌ Eroare la adăugarea apartamentului ${apartment.number}:`, error);
         errorCount++;
       }
     }
     
-    console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
+    // 2. Dacă există apartamente cu solduri inițiale, le populez automat
+    if (apartmentsWithBalances.length > 0 && setApartmentBalance && saveInitialBalances) {
+      console.log(`💰 Populez automat soldurile inițiale pentru ${apartmentsWithBalances.length} apartamente`);
+      
+      try {
+        // Setează soldurile pentru fiecare apartament
+        apartmentsWithBalances.forEach(apt => {
+          setApartmentBalance(apt.apartmentId, {
+            restante: apt.restante,
+            penalitati: apt.penalitati
+          });
+        });
+        
+        // Construiește obiectul pentru salvare (similar cu InitialBalancesModal)
+        const currentMonth = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+        const monthKey = `${association.id}-${currentMonth}`;
+        const monthlyBalances = {
+          [monthKey]: {}
+        };
+        
+        apartmentsWithBalances.forEach(apt => {
+          monthlyBalances[monthKey][apt.apartmentId] = {
+            restante: apt.restante,
+            penalitati: apt.penalitati
+          };
+        });
+        
+        // Salvează soldurile inițiale
+        await saveInitialBalances(monthlyBalances, currentMonth);
+        
+        console.log(`✅ Solduri inițiale salvate automat pentru:`, 
+          apartmentsWithBalances.map(apt => `Ap.${apt.apartmentNumber} (${apt.restante} RON + ${apt.penalitati} RON)`).join(', ')
+        );
+        
+        // Notificare pentru utilizator
+        alert(`✅ Import reușit!\n\n` +
+              `📊 ${successCount} apartamente adăugate\n` +
+              `💰 ${apartmentsWithBalances.length} apartamente cu solduri inițiale populate automat\n\n` +
+              `Soldurile sunt acum disponibile în pagina de calcul întreținere.`);
+        
+      } catch (balanceError) {
+        console.error('❌ Eroare la salvarea soldurilor inițiale:', balanceError);
+        alert(`⚠️ Apartamentele au fost importate cu succes, dar soldurile inițiale nu au putut fi salvate automat.\n\n` +
+              `Vă rugăm să configurați manual soldurile în pagina de calcul întreținere.`);
+      }
+    } else {
+      console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
+    }
     
     if (errorCount > 0) {
       throw new Error(`Import parțial: ${successCount} apartamente adăugate, ${errorCount} erori`);
