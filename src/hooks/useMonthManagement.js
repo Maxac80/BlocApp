@@ -1,5 +1,5 @@
 // hooks/useMonthManagement.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 export const useMonthManagement = () => {
   const [monthStatuses, setMonthStatuses] = useState({});
@@ -70,10 +70,27 @@ export const useMonthManagement = () => {
     if (month === currentMonthStr) return "current";
     if (month === nextMonthStr) return "next";
     
-    // Pentru lunile viitoare
-    const monthObj = availableMonths.find(m => m.value === month);
-    return monthObj?.type || "historic";
-  }, [availableMonths]);
+    // Pentru a determina dacă luna este în viitor sau în trecut, parsăm data
+    try {
+      // Extragem luna și anul din string-ul în format românesc
+      const [monthName, year] = month.split(' ');
+      const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 
+                         'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+      const monthIndex = monthNames.indexOf(monthName);
+      
+      if (monthIndex !== -1) {
+        const monthDate = new Date(parseInt(year), monthIndex, 1);
+        const currentDateFirstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        
+        if (monthDate > nextMonthDate) return "future";
+        if (monthDate < currentDateFirstDay) return "historic";
+      }
+    } catch (error) {
+      console.warn('Error parsing month:', month, error);
+    }
+    
+    return "historic"; // Default fallback
+  }, []);
 
   // Funcția pentru publicarea unei luni cu validări
   const publishMonth = useCallback((month, association, expenses, hasInitialBalances, getAssociationApartments) => {
@@ -156,7 +173,6 @@ export const useMonthManagement = () => {
     localStorage.setItem('publishHistory', JSON.stringify(publishHistory));
     
     // Dacă publicăm a doua lună, generăm a treia
-    const currentDate = new Date();
     const nextMonthDate = new Date();
     nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
     const nextMonthStr = nextMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
@@ -221,10 +237,104 @@ export const useMonthManagement = () => {
     return true;
   }, [setMonthStatus]);
 
-  // Helper pentru a lista lunile disponibile
-  const getAvailableMonths = useCallback(() => {
-    return availableMonths;
-  }, [availableMonths]);
+  // Helper pentru a lista lunile disponibile cu istoric complet
+  const getAvailableMonths = useCallback((expenses = []) => {
+    // Generăm o listă de luni relevante (doar curentă, următoare și istoric existent)
+    const months = [];
+    const currentDate = new Date();
+    
+    // Helper function pentru formatarea lunii cu prima literă mare
+    const formatMonth = (date) => {
+      const monthStr = date.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+      return monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
+    };
+
+    // Luna următoare
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+    const nextMonthStr = nextMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    months.push({
+      value: nextMonthStr,
+      label: formatMonth(nextMonthDate),
+      type: "next"
+    });
+    
+    // Luna curentă
+    const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    months.push({
+      value: currentMonthStr,
+      label: formatMonth(currentDate),
+      type: "current"
+    });
+    
+    // Adăugăm doar lunile care au date în BlocApp (istoric existent)
+    // Verificăm din expenses, monthStatuses și publishHistory
+    const existingMonths = new Set();
+    
+    // 1. Luni cu cheltuieli existente
+    if (expenses && Array.isArray(expenses)) {
+      expenses.forEach(expense => {
+        if (expense.month && expense.month !== currentMonthStr && expense.month !== nextMonthStr) {
+          existingMonths.add(expense.month);
+        }
+      });
+    }
+    
+    // 2. Luni cu status setat (publicate sau în lucru)
+    if (monthStatuses && typeof monthStatuses === 'object') {
+      Object.keys(monthStatuses).forEach(month => {
+        if (month !== currentMonthStr && month !== nextMonthStr) {
+          existingMonths.add(month);
+        }
+      });
+    }
+    
+    // 3. Luni din istoricul publicărilor
+    try {
+      const publishHistory = JSON.parse(localStorage.getItem('publishHistory') || '[]');
+      publishHistory.forEach(entry => {
+        if (entry.month && entry.month !== currentMonthStr && entry.month !== nextMonthStr) {
+          existingMonths.add(entry.month);
+        }
+      });
+    } catch (error) {
+      console.warn('Error reading publish history:', error);
+    }
+    
+    // Adăugăm lunile existente sortate (cele mai recente primul)
+    const existingMonthsArray = Array.from(existingMonths).sort((a, b) => {
+      try {
+        const [monthA, yearA] = a.split(' ');
+        const [monthB, yearB] = b.split(' ');
+        const dateA = new Date(parseInt(yearA), getMonthIndex(monthA), 1);
+        const dateB = new Date(parseInt(yearB), getMonthIndex(monthB), 1);
+        return dateB - dateA; // Descrescător (recente primul)
+      } catch {
+        return 0;
+      }
+    });
+    
+    existingMonthsArray.forEach(month => {
+      // Formatăm și lunile istorice cu prima literă mare
+      const formattedLabel = month.charAt(0).toUpperCase() + month.slice(1);
+      months.push({
+        value: month,
+        label: formattedLabel,
+        type: "historic"
+      });
+    });
+    
+    return months;
+  }, [monthStatuses]);
+  
+  // Helper pentru conversie nume lună în index
+  const getMonthIndex = (monthName) => {
+    const months = [
+      'ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+      'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'
+    ];
+    return months.indexOf(monthName.toLowerCase());
+  };
 
   // Helper pentru a determina dacă butonul "Ajustări Solduri" trebuie să apară
   const shouldShowAdjustButton = useCallback((month) => {

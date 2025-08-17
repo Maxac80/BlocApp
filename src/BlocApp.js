@@ -9,6 +9,7 @@ import { useExpenseManagement } from './hooks/useExpenseManagement';
 import { useNavigationAndUI } from './hooks/useNavigationAndUI';
 import { useMonthManagement } from './hooks/useMonthManagement';
 import { useDataOperations } from './hooks/useDataOperations';
+import { useVersioning } from './hooks/useVersioning';
 import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 
 // Components
@@ -123,6 +124,19 @@ export default function BlocApp() {
     shouldShowPublishButton,
     isMonthReadOnly
   } = useMonthManagement();
+
+  // 🔥 HOOK PENTRU VERSIONING ȘI ISTORIC
+  const {
+    versionHistory,
+    currentVersion,
+    isLoadingVersion,
+    saveVersion,
+    loadVersion,
+    getAvailableVersions,
+    hasVersion,
+    exportHistory,
+    importHistory
+  } = useVersioning();
 
   // 🔥 HOOK PENTRU CALCULUL ÎNTREȚINERII
   const {
@@ -324,7 +338,9 @@ useEffect(() => {
       <Overlay />
       
       {/* Conținut principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out ${
+        sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
+      }`}>
         {/* Buton mobile menu */}
         {!sidebarOpen && (
           <button
@@ -336,7 +352,7 @@ useEffect(() => {
         )}
         
         {/* Zona de conținut */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-scroll">
           
           {/* Dashboard View */}
           {currentView === "dashboard" && (
@@ -355,6 +371,11 @@ useEffect(() => {
               handleNavigation={handleNavigation}
               expenses={expenses}
               maintenanceData={maintenanceData}
+              getAvailableVersions={getAvailableVersions}
+              loadVersion={loadVersion}
+              exportHistory={exportHistory}
+              importHistory={importHistory}
+              isLoadingVersion={isLoadingVersion}
               userProfile={userProfile}
             />
           )}
@@ -375,6 +396,23 @@ useEffect(() => {
                 console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
                 const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments);
                 if (result) {
+                  // Salvează versiunea în sistemul de versioning
+                  const versionData = {
+                    maintenanceData: maintenanceData || [],
+                    expenses: expenses.filter(exp => exp.associationId === association?.id && exp.month === month),
+                    expenseConfigs: {}, // TODO: Adaugă configurațiile de cheltuieli
+                    initialBalances: {}, // TODO: Adaugă soldurile inițiale
+                    associationId: association?.id,
+                    associationName: association?.name,
+                    publishedBy: userProfile?.email || 'Administrator'
+                  };
+                  
+                  const versionResult = saveVersion(month, versionData);
+                  if (versionResult.success) {
+                    console.log(`✅ Versiunea pentru ${month} a fost salvată:`, versionResult.version);
+                  } else {
+                    console.error(`❌ Eroare la salvarea versiunii pentru ${month}:`, versionResult.error);
+                  }
                   // Transfer automat solduri în luna următoare
                   const nextMonth = (() => {
                     const date = new Date();
@@ -466,6 +504,12 @@ useEffect(() => {
               stairs={stairs}
               apartments={apartments}
               getAssociationApartments={getAssociationApartments}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly}
+              handleNavigation={handleNavigation}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               expandedBlocks={expandedBlocks}
@@ -487,7 +531,6 @@ useEffect(() => {
               addBlock={addBlock}
               addStair={addStair}
               addApartment={addApartment}
-              handleNavigation={handleNavigation}
               setApartmentBalance={setApartmentBalance}
               saveInitialBalances={saveInitialBalances}
             />
@@ -496,7 +539,14 @@ useEffect(() => {
           {/* Expenses View */}
           {currentView === "expenses" && (
             <ExpensesView
+              association={association}
               currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly}
+              getAssociationApartments={getAssociationApartments}
+              handleNavigation={handleNavigation}
               newCustomExpense={newCustomExpense}
               setNewCustomExpense={setNewCustomExpense}
               handleAddCustomExpense={handleAddCustomExpense}
@@ -505,13 +555,11 @@ useEffect(() => {
               getAssociationExpenseTypes={getAssociationExpenseTypes}
               getExpenseConfig={getExpenseConfig}
               updateExpenseConfig={updateExpenseConfig}
-              getAssociationApartments={getAssociationApartments}
               getApartmentParticipation={getApartmentParticipation}
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
               toggleExpenseStatus={toggleExpenseStatus}
               deleteCustomExpense={handleDeleteCustomExpense}
-              handleNavigation={handleNavigation}
             />
           )}
 
@@ -528,6 +576,11 @@ useEffect(() => {
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
               userProfile={userProfile}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly}
             />
           )}
 
@@ -538,6 +591,13 @@ useEffect(() => {
               updateAssociation={updateAssociation}
               userProfile={userProfile}
               currentUser={currentUser}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly}
+              getAssociationApartments={getAssociationApartments}
+              handleNavigation={handleNavigation}
             />
           )}
 

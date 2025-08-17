@@ -1,14 +1,17 @@
 // src/components/dashboard/DashboardHeader.js
 import React from 'react';
+import { History } from 'lucide-react';
 
 const DashboardHeader = ({
   association,
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
+  expenses = [],
   isMonthReadOnly,
   getAssociationApartments,
-  handleNavigation
+  handleNavigation,
+  onShowVersionHistory
 }) => {
   return (
     <header className="mb-8">
@@ -24,17 +27,36 @@ const DashboardHeader = ({
                 `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
                 : "Adresa asociației"}
             </p>
+            {/* Informații apartamente și persoane */}
+            {association && getAssociationApartments().length > 0 && (
+              <p className="text-gray-500 text-xs mt-1">
+                {getAssociationApartments().length} apartamente • 
+                {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+              </p>
+            )}
           </div>
 
           {/* Dreapta: Status luna și selector */}
           <div className="flex items-center space-x-4">
+            {/* Buton istoric versiuni */}
+            {onShowVersionHistory && (
+              <button
+                onClick={onShowVersionHistory}
+                className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center"
+                title="Istoric versiuni publicate"
+              >
+                <History className="w-4 h-4 mr-2" />
+                Istoric
+              </button>
+            )}
+
             {/* Selector luna */}
             <select
               value={currentMonth}
               onChange={(e) => setCurrentMonth(e.target.value)}
               className="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             >
-              {getAvailableMonths().map(month => (
+              {getAvailableMonths(expenses).map(month => (
                 <option key={month.value} value={month.value}>
                   {month.label}
                 </option>
@@ -65,26 +87,6 @@ const DashboardHeader = ({
             </div>
           </div>
         </div>
-
-        {/* Informații suplimentare asociație */}
-        {association && getAssociationApartments().length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                {getAssociationApartments().length} apartamente • 
-                {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
-              </span>
-              
-              {/* Buton rapid către întreținere */}
-              <button 
-                onClick={() => handleNavigation("maintenance")}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                📊 Calcul Întreținere
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

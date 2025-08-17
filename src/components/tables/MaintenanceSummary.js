@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Settings, Plus } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 const MaintenanceSummary = ({
   association,
@@ -21,77 +21,7 @@ const MaintenanceSummary = ({
 }) => {
 return (
   <div className="mb-6">
-    {/* Prima secțiune - Header cu dropdown */}
-    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">📊 Tabel Întreținere - {association?.name}</h2>
-        {association && getAssociationApartments().length > 0 && (
-          <p className="text-sm text-gray-600 mt-1">
-            {(() => {
-              const associationBlocks = blocks.filter(block => block.associationId === association.id);
-              const associationStairs = stairs.filter(stair => 
-                associationBlocks.some(block => block.id === stair.blockId)
-              );
-              const apartmentCount = getAssociationApartments().length;
-              const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
-              
-              let structureText = "";
-              if (associationBlocks.length === 1 && associationStairs.length === 1) {
-                structureText = `${associationBlocks[0].name} - ${associationStairs[0].name}`;
-              } else if (associationBlocks.length === 1) {
-                structureText = `${associationBlocks[0].name} - ${associationStairs.length} scări`;
-              } else {
-                structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
-              }
-              
-              return `${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
-            })()}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          <select
-            value={currentMonth}
-            onChange={(e) => setCurrentMonth(e.target.value)}
-            className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          >
-            <option value={new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })}>
-              Luna: {new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })}
-            </option>
-            <option value={(() => {
-              const nextMonth = new Date();
-              nextMonth.setMonth(nextMonth.getMonth() + 1);
-              return nextMonth.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-            })()}>
-              Luna: {(() => {
-                const nextMonth = new Date();
-                nextMonth.setMonth(nextMonth.getMonth() + 1);
-                return nextMonth.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-              })()}
-            </option>
-          </select>
-          {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              LUNA CURENTĂ
-            </span>
-          ) : (
-            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              LUNA URMĂTOARE
-            </span>
-          )}
-          {isMonthReadOnly(currentMonth) ? (
-            <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              📋 PUBLICATĂ
-            </span>
-          ) : (
-            <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              🔧 ÎN LUCRU
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-
-    {/* A doua secțiune - Butoanele (mutate mai jos) */}
+    {/* Butoanele pentru acțiuni */}
     <div className="bg-white rounded-lg p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
         {/* Tab-uri pentru luni */}

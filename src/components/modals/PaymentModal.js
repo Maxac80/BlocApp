@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XCircle } from 'lucide-react';
+import { generateDetailedReceipt } from '../../utils/receiptGenerator';
 
 const PaymentModal = ({
   showPaymentModal,
@@ -179,6 +180,46 @@ const PaymentModal = ({
       month: currentMonth
     };
 
+    // Întreabă utilizatorul dacă dorește chitanță
+    const generateReceipt = window.confirm(
+      `✅ Plată înregistrată: ${totalIncasat.toFixed(2)} lei pentru Ap. ${selectedApartment.apartmentNumber}\n\n` +
+      `Doriți să generați chitanța PDF?`
+    );
+
+    if (generateReceipt) {
+      try {
+        // Pregătește datele pentru chitanță
+        const apartmentData = {
+          apartmentNumber: selectedApartment.apartmentNumber,
+          owner: selectedApartment.owner,
+          totalDatorat: selectedApartment.totalDatorat,
+          restante: selectedApartment.restante,
+          intretinere: selectedApartment.intretinere,
+          penalitati: selectedApartment.penalitati,
+          initialBalance: selectedApartment.initialBalance
+        };
+
+        const associationData = {
+          name: selectedApartment.associationName || "Asociația Proprietarilor",
+          address: selectedApartment.associationAddress || ""
+        };
+
+        // Generează chitanța
+        const result = generateDetailedReceipt(payment, apartmentData, associationData);
+        
+        if (result.success) {
+          alert(`✅ Chitanța a fost generată: ${result.fileName}`);
+        } else {
+          alert(`❌ Eroare la generarea chitanței: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Eroare la generarea chitanței:', error);
+        alert('❌ Eroare la generarea chitanței. Verificați consola pentru detalii.');
+      }
+    } else {
+      alert(`✅ Plată înregistrată: ${totalIncasat.toFixed(2)} lei pentru Ap. ${selectedApartment.apartmentNumber}`);
+    }
+
     onSavePayment(payment);
     setShowPaymentModal(false);
   };
@@ -210,20 +251,45 @@ const PaymentModal = ({
           <div className="mb-6">
             <h4 className="font-semibold text-gray-800 mb-3">📊 SITUAȚIA CURENTĂ:</h4>
             <div className="space-y-2 text-sm">
+              {/* Afișează breakdown-ul restanțelor dacă există solduri inițiale */}
+              {selectedApartment.initialBalance && (selectedApartment.initialBalance.restante > 0) && (
+                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-yellow-800">✓ Restanțe anterioare (până în {new Date().toLocaleDateString('ro-RO', {month: 'long', year: 'numeric'})}):</span>
+                    <span className="font-semibold text-yellow-700">
+                      {selectedApartment.initialBalance.restante.toFixed(2)} lei
+                    </span>
+                  </div>
+                  {(selectedApartment.restante - selectedApartment.initialBalance.restante) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-yellow-800">✓ Restanțe post-BlocApp:</span>
+                      <span className="font-semibold text-yellow-700">
+                        {(selectedApartment.restante - selectedApartment.initialBalance.restante).toFixed(2)} lei
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Total restanțe (dacă nu există breakdown sau există restanțe suplimentare) */}
               {selectedApartment.restante > 0 && (
                 <div className="flex justify-between">
-                  <span>Restanțe:</span>
+                  <span>
+                    {selectedApartment.initialBalance?.restante > 0 ? 'Total restanțe:' : 'Restanțe:'}
+                  </span>
                   <span className="font-semibold text-red-600">
                     {selectedApartment.restante.toFixed(2)} lei
                   </span>
                 </div>
               )}
+              
               <div className="flex justify-between">
                 <span>Întreținere curentă:</span>
                 <span className="font-semibold text-blue-600">
                   {selectedApartment.intretinere.toFixed(2)} lei
                 </span>
               </div>
+              
               {selectedApartment.restante > 0 && (
                 <div className="flex justify-between">
                   <span>Total întreținere:</span>
@@ -232,14 +298,38 @@ const PaymentModal = ({
                   </span>
                 </div>
               )}
+              
+              {/* Afișează breakdown-ul penalităților dacă există solduri inițiale */}
+              {selectedApartment.initialBalance && (selectedApartment.initialBalance.penalitati > 0) && (
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-orange-800">✓ Penalități anterioare:</span>
+                    <span className="font-semibold text-orange-700">
+                      {selectedApartment.initialBalance.penalitati.toFixed(2)} lei
+                    </span>
+                  </div>
+                  {(selectedApartment.penalitati - selectedApartment.initialBalance.penalitati) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-orange-800">✓ Penalități post-BlocApp:</span>
+                      <span className="font-semibold text-orange-700">
+                        {(selectedApartment.penalitati - selectedApartment.initialBalance.penalitati).toFixed(2)} lei
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {selectedApartment.penalitati > 0 && (
                 <div className="flex justify-between">
-                  <span>Penalități:</span>
+                  <span>
+                    {selectedApartment.initialBalance?.penalitati > 0 ? 'Total penalități:' : 'Penalități:'}
+                  </span>
                   <span className="font-semibold text-orange-600">
                     {selectedApartment.penalitati.toFixed(2)} lei
                   </span>
                 </div>
               )}
+              
               <div className="flex justify-between border-t pt-2 font-bold">
                 <span>Total datorat:</span>
                 <span className="text-gray-800">

@@ -1,9 +1,17 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
+import DashboardHeader from '../dashboard/DashboardHeader';
 
 const ExpensesView = ({
+  association,
   currentMonth,
+  setCurrentMonth,
+  getAvailableMonths,
+  expenses,
+  isMonthReadOnly,
+  getAssociationApartments,
+  handleNavigation,
   newCustomExpense,
   setNewCustomExpense,
   handleAddCustomExpense,
@@ -12,20 +20,35 @@ const ExpensesView = ({
   getAssociationExpenseTypes,
   getExpenseConfig,
   updateExpenseConfig,
-  getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
   getDisabledExpenseTypes,
   toggleExpenseStatus,
-  deleteCustomExpense,
-  handleNavigation
+  deleteCustomExpense
 }) => {
+const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+
 return (
-  <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4">
+  <div className={`min-h-screen p-4 ${
+    currentMonth === currentMonthStr
+      ? "bg-gradient-to-br from-indigo-50 to-blue-100"
+      : "bg-gradient-to-br from-green-50 to-emerald-100"
+  }`}>
     <div className="max-w-6xl mx-auto">
+      <DashboardHeader
+        association={association}
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+        getAvailableMonths={getAvailableMonths}
+        expenses={expenses}
+        isMonthReadOnly={isMonthReadOnly}
+        getAssociationApartments={getAssociationApartments}
+        handleNavigation={handleNavigation}
+      />
+
+      {/* Page Title */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">💰 Configurare Cheltuieli</h2>
-        <p className="text-gray-600 text-sm mt-1">Gestionare tipuri cheltuieli și configurare distribuție</p>
+        <h1 className="text-2xl font-bold text-gray-900">💰 Configurare cheltuieli</h1>
       </div>
 
         <div className="bg-white rounded-xl shadow-lg">

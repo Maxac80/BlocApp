@@ -4,6 +4,7 @@ import { Calculator, Plus } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, InitialBalancesModal, PaymentModal } from '../modals';
+import DashboardHeader from '../dashboard/DashboardHeader';
 import jsPDF from 'jspdf';
 
 const MaintenanceView = ({
@@ -591,51 +592,63 @@ const MaintenanceView = ({
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
             : "bg-gradient-to-br from-green-50 to-emerald-100"
         }`}>
-          <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        <DashboardHeader
+          association={association}
+          currentMonth={currentMonth}
+          setCurrentMonth={setCurrentMonth}
+          getAvailableMonths={getAvailableMonths}
+          expenses={expenses}
+          isMonthReadOnly={isMonthReadOnly}
+          getAssociationApartments={getAssociationApartments}
+          handleNavigation={handleNavigation}
+        />
+
+        {/* Page Title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">📊 Calcul întreținere</h1>
+        </div>
+
+        <MaintenanceSummary
+          association={association}
+          blocks={blocks}
+          stairs={stairs}
+          currentMonth={currentMonth}
+          setCurrentMonth={setCurrentMonth}
+          isMonthReadOnly={isMonthReadOnly}
+          shouldShowPublishButton={shouldShowPublishButton}
+          shouldShowAdjustButton={shouldShowAdjustButton}
+          hasInitialBalances={hasInitialBalances}
+          publishMonth={publishMonth}
+          unpublishMonth={unpublishMonth}
+          onAdjustBalances={() => {
+            const modalData = getAssociationApartments().map(apartment => {
+              const balance = getApartmentBalance(apartment.id);
+              return {
+                apartmentId: apartment.id,
+                apartmentNumber: apartment.number,
+                owner: apartment.owner,
+                restanteCurente: balance.restante,
+                penalitatiCurente: balance.penalitati,
+                restanteAjustate: balance.restante,
+                penalitatiAjustate: balance.penalitati
+              };
+            });
+            setAdjustModalData(modalData);
+            setShowAdjustBalances(true);
+          }}
+          exportPDFAvizier={exportPDFAvizier}
+          maintenanceData={maintenanceData}
+          handleNavigation={handleNavigation}
+          getAssociationApartments={getAssociationApartments}
+        />
 
 
 
-
-<MaintenanceSummary
-  association={association}
-  blocks={blocks}
-  stairs={stairs}
-  currentMonth={currentMonth}
-  setCurrentMonth={setCurrentMonth}
-  isMonthReadOnly={isMonthReadOnly}
-  shouldShowPublishButton={shouldShowPublishButton}
-  shouldShowAdjustButton={shouldShowAdjustButton}
-  hasInitialBalances={hasInitialBalances}
-  publishMonth={publishMonth}
-  unpublishMonth={unpublishMonth}
-  onAdjustBalances={() => {
-    const modalData = getAssociationApartments().map(apartment => {
-      const balance = getApartmentBalance(apartment.id);
-      return {
-        apartmentId: apartment.id,
-        apartmentNumber: apartment.number,
-        owner: apartment.owner,
-        restanteCurente: balance.restante,
-        penalitatiCurente: balance.penalitati,
-        restanteAjustate: balance.restante,
-        penalitatiAjustate: balance.penalitati
-      };
-    });
-    setAdjustModalData(modalData);
-    setShowAdjustBalances(true);
-  }}
-  exportPDFAvizier={exportPDFAvizier}
-  maintenanceData={maintenanceData}
-  handleNavigation={handleNavigation}
-  getAssociationApartments={getAssociationApartments}
-/>
-
-
-
-{/* Secțiune pentru gestionarea soldurilor inițiale - vizibilă permanent */}
-{getAssociationApartments().length > 0 && currentMonth === currentMonthStr && (
-  <div className="mb-6">
-    <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+        {/* Secțiune pentru gestionarea soldurilor inițiale - vizibilă permanent */}
+        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && (
+          <div className="mb-6">
+            <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold flex items-center">
@@ -847,22 +860,22 @@ const MaintenanceView = ({
                 </div>
               </div>
               
-<div className="overflow-x-auto">
-  {activeMaintenanceTab === "simple" ? (
-    <MaintenanceTableSimple
-      maintenanceData={maintenanceData}
-      isMonthReadOnly={isMonthReadOnly(currentMonth)}
-      togglePayment={togglePayment}
-      onOpenPaymentModal={handleOpenPaymentModal}
-    />
-  ) : (
-    <MaintenanceTableDetailed
-      maintenanceData={maintenanceData}
-      expenses={expenses}
-      association={association}
-    />
-  )}
-</div>
+              <div className="overflow-x-auto">
+                {activeMaintenanceTab === "simple" ? (
+                  <MaintenanceTableSimple
+                    maintenanceData={maintenanceData}
+                    isMonthReadOnly={isMonthReadOnly(currentMonth)}
+                    togglePayment={togglePayment}
+                    onOpenPaymentModal={handleOpenPaymentModal}
+                  />
+                ) : (
+                  <MaintenanceTableDetailed
+                    maintenanceData={maintenanceData}
+                    expenses={expenses}
+                    association={association}
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-lg p-8 text-center">
@@ -871,9 +884,61 @@ const MaintenanceView = ({
               <p className="text-gray-600">Adaugă cheltuieli lunare pentru a genera tabelul de întreținere.</p>
             </div>
           )}
-        </div>
+        )}
+
+        {/* Modals */}
+        {showInitialBalances && (
+          <InitialBalancesModal
+            isOpen={showInitialBalances}
+            onClose={() => setShowInitialBalances(false)}
+            getAssociationApartments={getAssociationApartments}
+            getApartmentBalance={getApartmentBalance}
+            setApartmentBalance={setApartmentBalance}
+            saveInitialBalances={saveInitialBalances}
+            currentMonth={currentMonth}
+          />
+        )}
+
+        {showAdjustBalances && adjustModalData && (
+          <AdjustBalancesModal
+            isOpen={showAdjustBalances}
+            onClose={() => setShowAdjustBalances(false)}
+            modalData={adjustModalData}
+            setModalData={setAdjustModalData}
+            saveBalanceAdjustments={saveBalanceAdjustments}
+            currentMonth={currentMonth}
+          />
+        )}
+
+        {showExpenseConfig && selectedExpenseForConfig && (
+          <ExpenseConfigModal
+            isOpen={showExpenseConfig}
+            onClose={() => setShowExpenseConfig(false)}
+            expenseType={selectedExpenseForConfig}
+            newCustomExpense={newCustomExpense}
+            setNewCustomExpense={setNewCustomExpense}
+            handleAddCustomExpense={handleAddCustomExpense}
+            getAssociationExpenseTypes={getAssociationExpenseTypes}
+            updateExpenseConfig={updateExpenseConfig}
+            getExpenseConfig={getExpenseConfig}
+            getApartmentParticipation={getApartmentParticipation}
+            setApartmentParticipation={setApartmentParticipation}
+            getAssociationApartments={getAssociationApartments}
+            getDisabledExpenseTypes={getDisabledExpenseTypes}
+            toggleExpenseStatus={toggleExpenseStatus}
+            deleteCustomExpense={deleteCustomExpense}
+            isMonthReadOnly={isMonthReadOnly}
+            currentMonth={currentMonth}
+            setMonthlyTables={setMonthlyTables}
+          />
+        )}
+
+        <PaymentModal
+          association={association}
+        />
       </div>
-      );
+    </div>
+  );
     })()
   );
 };

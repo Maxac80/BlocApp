@@ -16,7 +16,7 @@ const AdjustBalancesModal = ({
 
   const handleSave = async () => {
     try {
-      // Salvează local
+      // Salvează local (solduri curente pentru luna actuală)
       adjustModalData.forEach(apartmentData => {
         setApartmentBalance(apartmentData.apartmentId, {
           restante: Math.round(apartmentData.restanteAjustate * 100) / 100,
@@ -24,12 +24,17 @@ const AdjustBalancesModal = ({
         });
       });
       
-      // Salvează în Firestore
+      // Salvează în Firestore pentru soldurile curente
       await saveBalanceAdjustments(currentMonth, adjustModalData);
+      
+      // TODO: Dacă se dorește modificarea și a soldurilor inițiale în Firebase,
+      // se poate adăuga aici logică pentru updateInitialBalances
+      // Momentan ajustăm doar soldurile curente ale lunii
       
       setShowAdjustBalances(false);
       setAdjustModalData([]);
       
+      // Invalidează cache-ul tabelelor pentru recalculare
       const key = `${association?.id}-${currentMonth}`;
       setMonthlyTables(prev => {
         const newTables = { ...prev };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {Building2, Plus, User, Globe, CreditCard } from 'lucide-react';
 import { AddressForm } from '../forms';
 import { judeteRomania } from '../../data/counties';
+import DashboardHeader from '../dashboard/DashboardHeader';
 
 const AssociationView = ({
   association,
@@ -13,7 +14,12 @@ const AssociationView = ({
   stairs,
   getAssociationApartments,
   handleNavigation,
-  userProfile
+  userProfile,
+  currentMonth,
+  setCurrentMonth,
+  getAvailableMonths,
+  expenses,
+  isMonthReadOnly
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
 
@@ -31,12 +37,29 @@ const AssociationView = ({
       }
     }
   }, [association?.sediu_judet, association?.address?.county, association]);
+const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+
 return (
-  <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 p-4">
+  <div className={`min-h-screen p-4 ${
+    currentMonth === currentMonthStr
+      ? "bg-gradient-to-br from-indigo-50 to-blue-100"
+      : "bg-gradient-to-br from-green-50 to-emerald-100"
+  }`}>
     <div className="max-w-6xl mx-auto">
+      <DashboardHeader
+        association={association}
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+        getAvailableMonths={getAvailableMonths}
+        expenses={expenses}
+        isMonthReadOnly={isMonthReadOnly}
+        getAssociationApartments={getAssociationApartments}
+        handleNavigation={handleNavigation}
+      />
+
+      {/* Page Title */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">🏢 Date Asociație</h2>
-        <p className="text-gray-600 text-sm mt-1">Informații complete pentru înregistrarea legală</p>
+        <h1 className="text-2xl font-bold text-gray-900">🏛️ Date asociație</h1>
       </div>
 
         {/* Condiție principală: Dacă nu există asociație și utilizatorul nu a trecut prin onboarding */}

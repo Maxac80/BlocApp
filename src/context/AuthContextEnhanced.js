@@ -8,7 +8,7 @@ import {
   sendEmailVerification,
   reload
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useSecurity } from '../hooks/useSecurity';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -503,6 +503,23 @@ export function AuthProviderEnhanced({ children }) {
 
     return unsubscribe;
   }, []);
+
+  // Listener în timp real pentru profilul utilizatorului
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (doc) => {
+      if (doc.exists()) {
+        const profileData = doc.data();
+        console.log('🔄 UserProfile actualizat în timp real:', profileData);
+        setUserProfile(profileData);
+      }
+    }, (error) => {
+      console.error('❌ Error listening to user profile:', error);
+    });
+
+    return () => unsubscribeProfile();
+  }, [currentUser?.uid]);
 
   // Cleanup la dismount
   useEffect(() => {

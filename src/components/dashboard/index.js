@@ -3,3 +3,4 @@ export { default as AssociationCreator } from './AssociationCreator';
 export { default as StatisticsCards } from './StatisticsCards';
 export { default as RecentActivity } from './RecentActivity';
 export { default as DashboardHeader } from './DashboardHeader';
+export { default as DashboardMaintenanceTable } from './DashboardMaintenanceTable';

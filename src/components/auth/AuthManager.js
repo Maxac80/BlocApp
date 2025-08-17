@@ -101,17 +101,19 @@ export default function AuthManager({ onAuthComplete }) {
   const handleOnboardingComplete = (result) => {
     console.log('✅ Onboarding complete:', result);
     
-    // Setează needsOnboarding pe false pentru a ieși din wizard
+    // Afișează mesajul de succes pentru o scurtă perioadă
     setCurrentFlow('completed');
     
-    // Redirecționează către aplicația principală
-    if (onAuthComplete) {
-      console.log('Calling onAuthComplete with:', { onboardingCompleted: true, ...result });
-      onAuthComplete({ 
-        onboardingCompleted: true,
-        ...result 
-      });
-    }
+    // Redirecționează către aplicația principală după un delay scurt
+    setTimeout(() => {
+      if (onAuthComplete) {
+        console.log('Calling onAuthComplete with:', { onboardingCompleted: true, ...result });
+        onAuthComplete({ 
+          onboardingCompleted: true,
+          ...result 
+        });
+      }
+    }, 1500); // 1.5 secunde pentru a afișa mesajul de succes
   };
 
   // ⏭️ HANDLE ONBOARDING SKIP
@@ -205,6 +207,19 @@ export default function AuthManager({ onAuthComplete }) {
       <ResetPasswordForm
         onSwitchToLogin={switchToLogin}
       />
+    );
+  }
+
+  // ✅ ONBOARDING COMPLETED FLOW - Afișează un mesaj de loading în timpul tranziției
+  if (currentFlow === 'completed') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Configurarea s-a finalizat cu succes!</p>
+          <p className="text-sm text-gray-500 mt-2">Te redirectăm către aplicație...</p>
+        </div>
+      </div>
     );
   }
 

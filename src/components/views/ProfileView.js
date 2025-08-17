@@ -3,6 +3,10 @@ import { User, Camera, Building, Save, AlertCircle, CheckCircle, MapPin } from '
 import { judeteRomania } from '../../data/counties';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useBase64Upload } from '../../hooks/useBase64Upload';
+import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import DashboardHeader from '../dashboard/DashboardHeader';
 
 /**
  * 👤 PROFILE VIEW - EDITAREA PROFILULUI ADMINISTRATORULUI
@@ -17,9 +21,16 @@ const ProfileView = ({
   association,
   updateAssociation,
   userProfile,
-  currentUser
+  currentUser,
+  currentMonth,
+  setCurrentMonth,
+  getAvailableMonths,
+  expenses,
+  isMonthReadOnly,
+  getAssociationApartments,
+  handleNavigation
 }) => {
-  const { uploadAdminAvatar, isUploading } = useFileUpload();
+  const { isUploading } = useFileUpload();
   const { uploadAvatarBase64, isUploading: isUploadingBase64, getPreviewUrl } = useBase64Upload();
   
   const [formData, setFormData] = useState({
@@ -140,12 +151,26 @@ const ProfileView = ({
     setSaveMessage('');
     
     try {
+      // 1. Actualizează asociația
       await updateAssociation({
         adminProfile: {
           ...association.adminProfile,
           ...formData
         }
       });
+      
+      // 2. Actualizează userProfile în Firestore pentru ca Sidebar să se actualizeze
+      if (currentUser?.uid) {
+        const userProfileUpdates = {
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          email: formData.email,
+          updatedAt: new Date().toISOString()
+        };
+        
+        await updateDoc(doc(db, 'users', currentUser.uid), userProfileUpdates);
+        console.log('✅ UserProfile actualizat în Firestore pentru Sidebar');
+      }
       
       setIsEditing(false);
       setSaveMessage('Profilul a fost actualizat cu succes!');
@@ -237,18 +262,35 @@ const ProfileView = ({
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">👤 Profil Administrator</h2>
-          <p className="text-gray-600 text-sm mt-1">Gestionează datele tale personale și profesionale</p>
-        </div>
+  const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
-        {/* Mesaj salvare */}
-        {saveMessage && (
+  return (
+    <div className={`min-h-screen p-4 ${
+      currentMonth === currentMonthStr
+        ? "bg-gradient-to-br from-indigo-50 to-blue-100"
+        : "bg-gradient-to-br from-green-50 to-emerald-100"
+    }`}>
+    <div className="max-w-6xl mx-auto">
+      
+      {/* Header */}
+      <DashboardHeader
+        association={association}
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+        getAvailableMonths={getAvailableMonths}
+        expenses={expenses}
+        isMonthReadOnly={isMonthReadOnly}
+        getAssociationApartments={getAssociationApartments}
+        handleNavigation={handleNavigation}
+      />
+
+      {/* Page Title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">👤 Profil Administrator</h1>
+      </div>
+
+      {/* Mesaj salvare */}
+      {saveMessage && (
           <div className={`mb-6 p-4 rounded-lg flex items-center ${
             saveMessage.includes('succes') 
               ? 'bg-green-50 border border-green-200 text-green-800' 

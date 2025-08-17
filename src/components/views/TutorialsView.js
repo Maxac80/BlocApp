@@ -134,8 +134,11 @@ const TutorialsView = ({ association, updateAssociation }) => {
   const isCompleted = completedTutorials.includes(currentTut.id);
   const progressPercentage = (completedTutorials.length / tutorials.length) * 100;
 
+  const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+  // Pentru TutorialsView, folosim mereu luna curentă (albastru) deoarece nu are month selector
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
       <div className="max-w-6xl mx-auto">
         
         {/* Header */}
