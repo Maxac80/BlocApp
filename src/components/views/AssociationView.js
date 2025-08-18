@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {Building2, Plus, User, Globe, CreditCard } from 'lucide-react';
+import {Building2, Plus, User, Globe, CreditCard, Edit, Save, X } from 'lucide-react';
 import { AddressForm } from '../forms';
 import { judeteRomania } from '../../data/counties';
 import DashboardHeader from '../dashboard/DashboardHeader';
@@ -22,11 +22,92 @@ const AssociationView = ({
   isMonthReadOnly
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
+  
+  // State pentru editare Date de Identificare
+  const [isEditingIdentification, setIsEditingIdentification] = useState(false);
+  const [identificationData, setIdentificationData] = useState({
+    name: '',
+    cui: '',
+    registrationNumber: ''
+  });
+
+  // State pentru editare Sediul Social
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [addressData, setAddressData] = useState({
+    sediu_judet: '',
+    sediu_oras: '',
+    sediu_strada: '',
+    sediu_numar: '',
+    sediu_bloc: ''
+  });
+
+  // State pentru editare Contact și Program
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [contactData, setContactData] = useState({
+    email: '',
+    phone: '',
+    website: '',
+    collectionSchedule: ''
+  });
+
+  // State pentru editare Date Financiare
+  const [isEditingFinancial, setIsEditingFinancial] = useState(false);
+  const [financialData, setFinancialData] = useState({
+    bank: '',
+    bankAccount: '',
+    workingFundAccount: ''
+  });
+
+  // State pentru editare Persoane Responsabile
+  const [isEditingResponsible, setIsEditingResponsible] = useState(false);
+  const [responsibleData, setResponsibleData] = useState({
+    president: '',
+    censor: ''
+  });
+
+  // Inițializare toate datele când se încarcă asociația
+  useEffect(() => {
+    if (association) {
+      setIdentificationData({
+        name: association.name || '',
+        cui: association.cui || '',
+        registrationNumber: association.registrationNumber || ''
+      });
+      
+      setAddressData({
+        sediu_judet: association.sediu_judet || association.address?.county || '',
+        sediu_oras: association.sediu_oras || association.address?.city || '',
+        sediu_strada: association.sediu_strada || association.address?.street || '',
+        sediu_numar: association.sediu_numar || association.address?.number || '',
+        sediu_bloc: association.sediu_bloc || association.address?.block || ''
+      });
+      
+      setContactData({
+        email: association.email || association.contact?.email || '',
+        phone: association.phone || association.contact?.phone || '',
+        website: association.contact?.website || '',
+        collectionSchedule: association.collectionSchedule || ''
+      });
+      
+      setFinancialData({
+        bank: association.bank || association.bankAccountData?.bank || '',
+        bankAccount: association.bankAccount || association.bankAccountData?.iban || '',
+        workingFundAccount: association.workingFundAccount || ''
+      });
+      
+      setResponsibleData({
+        president: association.president || '',
+        censor: association.censor || ''
+      });
+    }
+  }, [association]);
 
   // Actualizare orașe bazate pe județ pentru asociația existentă
   useEffect(() => {
     if (association) {
-      const county = association?.sediu_judet || association?.address?.county;
+      const county = isEditingAddress 
+        ? addressData.sediu_judet 
+        : (association?.sediu_judet || association?.address?.county);
       if (county) {
         const judet = judeteRomania.find(j => j.nume === county);
         if (judet) {
@@ -36,7 +117,145 @@ const AssociationView = ({
         setAvailableCities([]);
       }
     }
-  }, [association?.sediu_judet, association?.address?.county, association]);
+  }, [association?.sediu_judet, association?.address?.county, association, addressData.sediu_judet, isEditingAddress]);
+
+  // Handler pentru editarea datelor de identificare
+  const handleEditIdentification = () => {
+    setIsEditingIdentification(true);
+  };
+
+  const handleSaveIdentification = async () => {
+    // Salvare date
+    await updateAssociation({
+      name: identificationData.name,
+      cui: identificationData.cui,
+      registrationNumber: identificationData.registrationNumber
+    });
+    setIsEditingIdentification(false);
+  };
+
+  const handleCancelIdentification = () => {
+    // Resetare la valorile originale
+    setIdentificationData({
+      name: association.name || '',
+      cui: association.cui || '',
+      registrationNumber: association.registrationNumber || ''
+    });
+    setIsEditingIdentification(false);
+  };
+
+  // Handlers pentru Sediul Social
+  const handleEditAddress = () => {
+    setIsEditingAddress(true);
+  };
+
+  const handleSaveAddress = async () => {
+    await updateAssociation({
+      sediu_judet: addressData.sediu_judet,
+      sediu_oras: addressData.sediu_oras,
+      sediu_strada: addressData.sediu_strada,
+      sediu_numar: addressData.sediu_numar,
+      sediu_bloc: addressData.sediu_bloc,
+      address: {
+        county: addressData.sediu_judet,
+        city: addressData.sediu_oras,
+        street: addressData.sediu_strada,
+        number: addressData.sediu_numar,
+        block: addressData.sediu_bloc
+      }
+    });
+    setIsEditingAddress(false);
+  };
+
+  const handleCancelAddress = () => {
+    setAddressData({
+      sediu_judet: association.sediu_judet || association.address?.county || '',
+      sediu_oras: association.sediu_oras || association.address?.city || '',
+      sediu_strada: association.sediu_strada || association.address?.street || '',
+      sediu_numar: association.sediu_numar || association.address?.number || '',
+      sediu_bloc: association.sediu_bloc || association.address?.block || ''
+    });
+    setIsEditingAddress(false);
+  };
+
+  // Handlers pentru Contact și Program
+  const handleEditContact = () => {
+    setIsEditingContact(true);
+  };
+
+  const handleSaveContact = async () => {
+    await updateAssociation({
+      email: contactData.email,
+      phone: contactData.phone,
+      collectionSchedule: contactData.collectionSchedule,
+      contact: {
+        email: contactData.email,
+        phone: contactData.phone,
+        website: contactData.website
+      }
+    });
+    setIsEditingContact(false);
+  };
+
+  const handleCancelContact = () => {
+    setContactData({
+      email: association.email || association.contact?.email || '',
+      phone: association.phone || association.contact?.phone || '',
+      website: association.contact?.website || '',
+      collectionSchedule: association.collectionSchedule || ''
+    });
+    setIsEditingContact(false);
+  };
+
+  // Handlers pentru Date Financiare
+  const handleEditFinancial = () => {
+    setIsEditingFinancial(true);
+  };
+
+  const handleSaveFinancial = async () => {
+    await updateAssociation({
+      bank: financialData.bank,
+      bankAccount: financialData.bankAccount,
+      workingFundAccount: financialData.workingFundAccount,
+      bankAccountData: {
+        bank: financialData.bank,
+        iban: financialData.bankAccount,
+        accountName: association.bankAccountData?.accountName || association.name
+      }
+    });
+    setIsEditingFinancial(false);
+  };
+
+  const handleCancelFinancial = () => {
+    setFinancialData({
+      bank: association.bank || association.bankAccountData?.bank || '',
+      bankAccount: association.bankAccount || association.bankAccountData?.iban || '',
+      workingFundAccount: association.workingFundAccount || ''
+    });
+    setIsEditingFinancial(false);
+  };
+
+  // Handlers pentru Persoane Responsabile
+  const handleEditResponsible = () => {
+    setIsEditingResponsible(true);
+  };
+
+  const handleSaveResponsible = async () => {
+    await updateAssociation({
+      president: responsibleData.president,
+      censor: responsibleData.censor
+    });
+    setIsEditingResponsible(false);
+  };
+
+  const handleCancelResponsible = () => {
+    setResponsibleData({
+      president: association.president || '',
+      censor: association.censor || ''
+    });
+    setIsEditingResponsible(false);
+  };
+
 const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
 return (
@@ -127,49 +346,73 @@ return (
 
         {association && (
           <div className="space-y-6">
-            {/* Notificare pentru date precompletate din wizard */}
-            {association.source === 'onboarding' && (
-              <div className="bg-green-50 border border-green-200 p-4 rounded-xl mb-6">
-                <p className="text-green-800 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Datele asociației au fost precompletate din configurarea inițială. Poți completa sau modifica orice informație.
-                </p>
-              </div>
-            )}
-            
             <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 bg-blue-50 border-b border-blue-100">
-                <h3 className="text-xl font-semibold text-blue-800">📋 Date de Identificare</h3>
-                <p className="text-blue-600 text-sm mt-1">Informații obligatorii pentru înregistrarea legală</p>
+              <div className="p-6 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-blue-800">📋 Date de Identificare</h3>
+                  <p className="text-blue-600 text-sm mt-1">Informații obligatorii pentru înregistrarea legală</p>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditingIdentification ? (
+                    <button
+                      onClick={handleEditIdentification}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editează
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveIdentification}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Salvează
+                      </button>
+                      <button
+                        onClick={handleCancelIdentification}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Anulează
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Denumirea asociației <span className="text-red-500">*</span></label>
                     <input
-                      value={association?.name || ""}
+                      value={isEditingIdentification ? identificationData.name : (association?.name || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ name: e.target.value });
+                        if (isEditingIdentification) {
+                          setIdentificationData({...identificationData, name: e.target.value});
                         }
                       }}
+                      disabled={!isEditingIdentification}
                       placeholder="ex: Asociația Primăverii 12"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingIdentification ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">CUI <span className="text-red-500">*</span></label>
                     <input
-                      value={association?.cui || ""}
+                      value={isEditingIdentification ? identificationData.cui : (association?.cui || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ cui: e.target.value });
+                        if (isEditingIdentification) {
+                          setIdentificationData({...identificationData, cui: e.target.value});
                         }
                       }}
+                      disabled={!isEditingIdentification}
                       placeholder="ex: 12345678"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingIdentification ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                 </div>
@@ -177,45 +420,76 @@ return (
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Nr. înregistrare <span className="text-red-500">*</span></label>
                   <input
-                    value={association?.registrationNumber || ""}
+                    value={isEditingIdentification ? identificationData.registrationNumber : (association?.registrationNumber || "")}
                     onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ registrationNumber: e.target.value });
+                      if (isEditingIdentification) {
+                        setIdentificationData({...identificationData, registrationNumber: e.target.value});
                       }
                     }}
+                    disabled={!isEditingIdentification}
                     placeholder="ex: 123/2024"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      !isEditingIdentification ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                    }`}
                   />
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 bg-green-50 border-b border-green-100">
-                <h3 className="text-xl font-semibold text-green-800">📍 Sediul Social</h3>
-                <p className="text-green-600 text-sm mt-1">Adresa juridică oficială a asociației</p>
+              <div className="p-6 bg-green-50 border-b border-green-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-green-800">📍 Sediul Social</h3>
+                  <p className="text-green-600 text-sm mt-1">Adresa juridică oficială a asociației</p>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditingAddress ? (
+                    <button
+                      onClick={handleEditAddress}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editează
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveAddress}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Salvează
+                      </button>
+                      <button
+                        onClick={handleCancelAddress}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Anulează
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Județul <span className="text-red-500">*</span></label>
                     <select
-                      value={association?.sediu_judet || association?.address?.county || ""}
+                      value={isEditingAddress ? addressData.sediu_judet : (association?.sediu_judet || association?.address?.county || "")}
                       onChange={(e) => {
-                        if (association) {
-                          // Reset orașul când se schimbă județul
-                          updateAssociation({ 
+                        if (isEditingAddress) {
+                          setAddressData({
+                            ...addressData,
                             sediu_judet: e.target.value,
-                            sediu_oras: '', // Reset orașul
-                            address: { 
-                              ...association.address, 
-                              county: e.target.value,
-                              city: '' // Reset orașul în address
-                            }
+                            sediu_oras: '' // Reset orașul când se schimbă județul
                           });
                         }
                       }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      disabled={!isEditingAddress}
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingAddress ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     >
                       <option value="">Selectează județul</option>
                       {judeteRomania.map(county => (
@@ -229,17 +503,16 @@ return (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Orașul <span className="text-red-500">*</span></label>
                     <select
-                      value={association?.sediu_oras || association?.address?.city || ""}
+                      value={isEditingAddress ? addressData.sediu_oras : (association?.sediu_oras || association?.address?.city || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            sediu_oras: e.target.value,
-                            address: { ...association.address, city: e.target.value }
-                          });
+                        if (isEditingAddress) {
+                          setAddressData({...addressData, sediu_oras: e.target.value});
                         }
                       }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      disabled={!association?.sediu_judet && !association?.address?.county}
+                      disabled={!isEditingAddress || !addressData.sediu_judet}
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingAddress ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     >
                       <option value="">
                         {(association?.sediu_judet || association?.address?.county) 
@@ -258,17 +531,17 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Strada <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      value={association?.sediu_strada || association?.address?.street || ""}
+                      value={isEditingAddress ? addressData.sediu_strada : (association?.sediu_strada || association?.address?.street || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            sediu_strada: e.target.value,
-                            address: { ...association.address, street: e.target.value }
-                          });
+                        if (isEditingAddress) {
+                          setAddressData({...addressData, sediu_strada: e.target.value});
                         }
                       }}
+                      disabled={!isEditingAddress}
                       placeholder="ex: Strada Primăverii"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingAddress ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
 
@@ -276,17 +549,17 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Numărul <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      value={association?.sediu_numar || association?.address?.number || ""}
+                      value={isEditingAddress ? addressData.sediu_numar : (association?.sediu_numar || association?.address?.number || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            sediu_numar: e.target.value,
-                            address: { ...association.address, number: e.target.value }
-                          });
+                        if (isEditingAddress) {
+                          setAddressData({...addressData, sediu_numar: e.target.value});
                         }
                       }}
+                      disabled={!isEditingAddress}
                       placeholder="123A"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingAddress ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
 
@@ -294,17 +567,17 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Blocul <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      value={association?.sediu_bloc || association?.address?.block || ""}
+                      value={isEditingAddress ? addressData.sediu_bloc : (association?.sediu_bloc || association?.address?.block || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            sediu_bloc: e.target.value,
-                            address: { ...association.address, block: e.target.value }
-                          });
+                        if (isEditingAddress) {
+                          setAddressData({...addressData, sediu_bloc: e.target.value});
                         }
                       }}
+                      disabled={!isEditingAddress}
                       placeholder="A1, B2, etc."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingAddress ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                 </div>
@@ -312,9 +585,39 @@ return (
             </div>
 
             <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 bg-purple-50 border-b border-purple-100">
-                <h3 className="text-xl font-semibold text-purple-800">📞 Contact și Program</h3>
-                <p className="text-purple-600 text-sm mt-1">Informații de contact și program de funcționare</p>
+              <div className="p-6 bg-purple-50 border-b border-purple-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-purple-800">📞 Contact și Program</h3>
+                  <p className="text-purple-600 text-sm mt-1">Informații de contact și program de funcționare</p>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditingContact ? (
+                    <button
+                      onClick={handleEditContact}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editează
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveContact}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Salvează
+                      </button>
+                      <button
+                        onClick={handleCancelContact}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Anulează
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -322,34 +625,34 @@ return (
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email asociație <span className="text-red-500">*</span></label>
                     <input
                       type="email"
-                      value={association?.email || association?.contact?.email || ""}
+                      value={isEditingContact ? contactData.email : (association?.email || association?.contact?.email || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            email: e.target.value,
-                            contact: { ...association.contact, email: e.target.value }
-                          });
+                        if (isEditingContact) {
+                          setContactData({...contactData, email: e.target.value});
                         }
                       }}
+                      disabled={!isEditingContact}
                       placeholder="ex: contact@asociatiaprimaverii.ro"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingContact ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Telefon asociație</label>
                     <input
                       type="tel"
-                      value={association?.phone || association?.contact?.phone || ""}
+                      value={isEditingContact ? contactData.phone : (association?.phone || association?.contact?.phone || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            phone: e.target.value,
-                            contact: { ...association.contact, phone: e.target.value }
-                          });
+                        if (isEditingContact) {
+                          setContactData({...contactData, phone: e.target.value});
                         }
                       }}
+                      disabled={!isEditingContact}
                       placeholder="ex: 0212345678"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingContact ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   
@@ -361,16 +664,17 @@ return (
                       </div>
                       <input
                         type="url"
-                        value={association?.contact?.website || ""}
+                        value={isEditingContact ? contactData.website : (association?.contact?.website || "")}
                         onChange={(e) => {
-                          if (association) {
-                            updateAssociation({ 
-                              contact: { ...association.contact, website: e.target.value }
-                            });
+                          if (isEditingContact) {
+                            setContactData({...contactData, website: e.target.value});
                           }
                         }}
+                        disabled={!isEditingContact}
                         placeholder="https://www.asociatiaprimaverii.ro"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className={`w-full pl-10 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                          !isEditingContact ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                        }`}
                       />
                     </div>
                   </div>
@@ -379,57 +683,90 @@ return (
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Orarul încasărilor <span className="text-red-500">*</span></label>
                   <textarea
-                    value={association?.collectionSchedule || ""}
+                    value={isEditingContact ? contactData.collectionSchedule : (association?.collectionSchedule || "")}
                     onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ collectionSchedule: e.target.value });
+                      if (isEditingContact) {
+                        setContactData({...contactData, collectionSchedule: e.target.value});
                       }
                     }}
+                    disabled={!isEditingContact}
                     placeholder={`ex:\nLuni: 09:00 - 17:00\nMarți: 09:00 - 17:00\nMiercuri: 09:00 - 17:00\nJoi: 09:00 - 17:00\nVineri: 09:00 - 17:00\nSâmbătă: 09:00 - 12:00`}
                     rows={6}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      !isEditingContact ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                    }`}
                   />
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 bg-indigo-50 border-b border-indigo-100">
-                <h3 className="text-xl font-semibold text-indigo-800">🏦 Date Financiare</h3>
-                <p className="text-indigo-600 text-sm mt-1">Conturi bancare și informații financiare</p>
+              <div className="p-6 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-indigo-800">🏦 Date Financiare</h3>
+                  <p className="text-indigo-600 text-sm mt-1">Conturi bancare și informații financiare</p>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditingFinancial ? (
+                    <button
+                      onClick={handleEditFinancial}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editează
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveFinancial}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Salvează
+                      </button>
+                      <button
+                        onClick={handleCancelFinancial}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Anulează
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Banca <span className="text-red-500">*</span></label>
                     <input
-                      value={association?.bank || association?.bankAccountData?.bank || ""}
+                      value={isEditingFinancial ? financialData.bank : (association?.bank || association?.bankAccountData?.bank || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            bank: e.target.value,
-                            bankAccountData: { ...association.bankAccountData, bank: e.target.value }
-                          });
+                        if (isEditingFinancial) {
+                          setFinancialData({...financialData, bank: e.target.value});
                         }
                       }}
+                      disabled={!isEditingFinancial}
                       placeholder="ex: BCR, BRD, ING Bank"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingFinancial ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">IBAN <span className="text-red-500">*</span></label>
                     <input
-                      value={association?.bankAccount || association?.bankAccountData?.iban || ""}
+                      value={isEditingFinancial ? financialData.bankAccount : (association?.bankAccount || association?.bankAccountData?.iban || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            bankAccount: e.target.value,
-                            bankAccountData: { ...association.bankAccountData, iban: e.target.value }
-                          });
+                        if (isEditingFinancial) {
+                          setFinancialData({...financialData, bankAccount: e.target.value});
                         }
                       }}
+                      disabled={!isEditingFinancial}
                       placeholder="RO49 AAAA 1B31..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingFinancial ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   
@@ -438,14 +775,13 @@ return (
                     <input
                       value={association?.bankAccountData?.accountName || ""}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ 
-                            bankAccountData: { ...association.bankAccountData, accountName: e.target.value }
-                          });
+                        if (isEditingFinancial) {
+                          // Nu modificăm accountName, doar bank și IBAN
                         }
                       }}
+                      disabled={true}
                       placeholder="Asociația de Proprietari..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 outline-none"
                     />
                   </div>
                 </div>
@@ -453,23 +789,56 @@ return (
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cont fond de rulment</label>
                   <input
-                    value={association?.workingFundAccount || ""}
+                    value={isEditingFinancial ? financialData.workingFundAccount : (association?.workingFundAccount || "")}
                     onChange={(e) => {
-                      if (association) {
-                        updateAssociation({ workingFundAccount: e.target.value });
+                      if (isEditingFinancial) {
+                        setFinancialData({...financialData, workingFundAccount: e.target.value});
                       }
                     }}
+                    disabled={!isEditingFinancial}
                     placeholder="RO49 AAAA 1B31... (opțional - dacă aveți cont separat)"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      !isEditingFinancial ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                    }`}
                   />
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg">
-              <div className="p-6 bg-orange-50 border-b border-orange-100">
-                <h3 className="text-xl font-semibold text-orange-800">👥 Persoane Responsabile</h3>
-                <p className="text-orange-600 text-sm mt-1">Conducerea asociației de proprietari</p>
+              <div className="p-6 bg-orange-50 border-b border-orange-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-orange-800">👥 Persoane Responsabile</h3>
+                  <p className="text-orange-600 text-sm mt-1">Conducerea asociației de proprietari</p>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditingResponsible ? (
+                    <button
+                      onClick={handleEditResponsible}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editează
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveResponsible}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Salvează
+                      </button>
+                      <button
+                        onClick={handleCancelResponsible}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Anulează
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -487,27 +856,33 @@ return (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Președinte</label>
                     <input
-                      value={association?.president || ""}
+                      value={isEditingResponsible ? responsibleData.president : (association?.president || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ president: e.target.value });
+                        if (isEditingResponsible) {
+                          setResponsibleData({...responsibleData, president: e.target.value});
                         }
                       }}
+                      disabled={!isEditingResponsible}
                       placeholder="Numele președintelui"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingResponsible ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cenzor</label>
                     <input
-                      value={association?.censor || ""}
+                      value={isEditingResponsible ? responsibleData.censor : (association?.censor || "")}
                       onChange={(e) => {
-                        if (association) {
-                          updateAssociation({ censor: e.target.value });
+                        if (isEditingResponsible) {
+                          setResponsibleData({...responsibleData, censor: e.target.value});
                         }
                       }}
+                      disabled={!isEditingResponsible}
                       placeholder="Numele cenzorului"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        !isEditingResponsible ? 'bg-gray-50 border-gray-200' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                 </div>

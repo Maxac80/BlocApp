@@ -26,7 +26,6 @@ const Sidebar = ({
           <Building2 className="w-8 h-8 mr-2 text-white" />
           <div>
             <h1 className="text-lg font-bold text-white">BlocApp</h1>
-            <p className="text-xs text-blue-100">v2.0</p>
           </div>
         </div>
       ) : (
@@ -233,27 +232,14 @@ const Sidebar = ({
         </button>
       </div>
 
-      {/* Separator și Informații asociație */}
+      {/* Separator și Development Tools */}
       {sidebarExpanded && (
         <>
           <div className="mx-4 my-6 border-t border-gray-200"></div>
 
-          {/* Informații asociație */}
+          {/* Butoane de ștergere */}
           {association && (
             <div className="px-4 space-y-3">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-800 truncate">
-                  {association.name}
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  {getAssociationApartments().length} apartamente
-                </div>
-                <div className="text-xs text-gray-600">
-                  {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
-                </div>
-              </div>
-
-              {/* Butoane de ștergere */}
               <div className="space-y-2">
                 <button
                   onClick={deleteCurrentAssociationData}
@@ -273,9 +259,6 @@ const Sidebar = ({
                 
                 <div className="text-xs text-gray-500 text-center mt-2">
                   ⚠️ Development tools
-                </div>
-                <div className="text-sm text-gray-700 text-center mt-2 font-medium">
-                  Salut Liviu :)
                 </div>
               </div>
             </div>

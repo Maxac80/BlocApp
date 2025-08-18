@@ -271,7 +271,7 @@ return (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
-                  <div className="text-2xl">📊</div>
+                  <div className="text-2xl">📥</div>
                   <div className="flex-1">
                     <h4 className="font-medium text-blue-800 mb-2">Import masiv cu Excel</h4>
                     <p className="text-sm text-blue-700 mb-3">

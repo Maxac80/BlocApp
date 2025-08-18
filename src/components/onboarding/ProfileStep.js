@@ -477,15 +477,12 @@ export default function ProfileStep({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Funcția <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.professionalInfo.position}
-                  onChange={(e) => handleInputChange('professionalInfo.position', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="Administrator asociație">Administrator asociație</option>
-                  <option value="Președinte">Președinte</option>
-                  <option value="Cenzor">Cenzor</option>
-                </select>
+                <input
+                  type="text"
+                  value="Administrator asociație"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                  readOnly
+                />
                 {renderFieldError('professionalInfo.position')}
                 {renderFieldSuccess('professionalInfo.position')}
               </div>

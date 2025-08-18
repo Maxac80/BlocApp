@@ -49,21 +49,23 @@ const InitialBalancesModal = ({
   // Render legacy pentru codul existent
   if (isLegacyMode) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-yellow-800">⚡ Configurare Solduri Inițiale</h3>
-            <p className="text-yellow-700 text-sm">Este prima utilizare a aplicației. Introduceți soldurile existente din luna anterioară.</p>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl max-w-6xl max-h-[90vh] w-full overflow-hidden">
+          <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-800">⚡ Configurare Solduri Inițiale</h3>
+              <p className="text-yellow-700 text-sm">Introduceți soldurile existente din luna anterioară.</p>
+            </div>
+            <button
+              onClick={() => setShowInitialBalances(false)}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+              title="Închide"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
           </div>
-          <button
-            onClick={() => setShowInitialBalances(!showInitialBalances)}
-            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700"
-          >
-            {showInitialBalances ? "Închide" : "Configurează Solduri"}
-          </button>
-        </div>
-        
-        <div className="mt-4 bg-white rounded-lg p-4">
+          
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -133,6 +135,7 @@ const InitialBalancesModal = ({
               Salvează Solduri Inițiale
             </button>
           </div>
+        </div>
         </div>
       </div>
     );

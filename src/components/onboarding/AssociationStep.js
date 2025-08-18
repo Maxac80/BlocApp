@@ -31,6 +31,26 @@ export default function AssociationStep({ stepData, onUpdateData }) {
 
   const [validationErrors, setValidationErrors] = useState({});
   const [availableCities, setAvailableCities] = useState([]);
+  const [previousAssociationName, setPreviousAssociationName] = useState('');
+
+  // Auto-completare Numele contului cu numele asociației când se schimbă numele asociației
+  useEffect(() => {
+    // Actualizează numele contului doar dacă:
+    // 1. Numele contului este gol
+    // 2. SAU numele contului era identic cu numele anterior al asociației (urmărește modificările)
+    if (!associationData.bankAccount.accountName || 
+        associationData.bankAccount.accountName === previousAssociationName) {
+      setAssociationData(prev => ({
+        ...prev,
+        bankAccount: {
+          ...prev.bankAccount,
+          accountName: associationData.name
+        }
+      }));
+    }
+    // Salvează numele curent pentru următoarea comparație
+    setPreviousAssociationName(associationData.name);
+  }, [associationData.name]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -412,6 +432,9 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   placeholder="Asociația de Proprietari..."
                   required
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  💡 Pre-completat cu numele asociației. Modifică doar dacă diferă la bancă.
+                </p>
               </div>
             </div>
           </div>

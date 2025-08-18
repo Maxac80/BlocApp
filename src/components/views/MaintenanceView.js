@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Calculator, Plus } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
-import { ExpenseConfigModal, AdjustBalancesModal, InitialBalancesModal, PaymentModal } from '../modals';
+import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal } from '../modals';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import jsPDF from 'jspdf';
 
@@ -40,6 +40,7 @@ const MaintenanceView = ({
   togglePayment,
   activeMaintenanceTab,
   setActiveMaintenanceTab,
+  forceRecalculate,
   
   // Modals and balances
   showInitialBalances,
@@ -92,12 +93,10 @@ const MaintenanceView = ({
   };
 
   // ✅ PRELUAREA EXACTĂ A LOGICII DIN ORIGINALUL BlocApp.js
-  return (
-    (() => {
-      const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
-
-      // ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER (COPIATĂ EXACT)
-      const exportPDFAvizier = () => {
+  const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
+  
+  // ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER (COPIATĂ EXACT)
+  const exportPDFAvizier = () => {
         try {
           const doc = new jsPDF();
           
@@ -584,9 +583,9 @@ const MaintenanceView = ({
         }
       };
 
-      const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+  const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
-      return (
+  return (
         <div className={`min-h-screen p-4 ${
           currentMonth === currentMonthStr
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
@@ -606,7 +605,7 @@ const MaintenanceView = ({
 
         {/* Page Title */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">📊 Calcul întreținere</h1>
+          <h1 className="text-2xl font-bold text-gray-900">🧮 Calcul întreținere</h1>
         </div>
 
         <MaintenanceSummary
@@ -623,15 +622,21 @@ const MaintenanceView = ({
           unpublishMonth={unpublishMonth}
           onAdjustBalances={() => {
             const modalData = getAssociationApartments().map(apartment => {
-              const balance = getApartmentBalance(apartment.id);
+              // Găsește datele din tabelul de întreținere pentru sincronizare
+              const maintenanceItem = maintenanceData.find(item => item.apartment === apartment.number);
+              
+              // Folosește datele din tabelul de întreținere dacă există, altfel fallback la getApartmentBalance
+              const restanteCurente = maintenanceItem ? maintenanceItem.restante : getApartmentBalance(apartment.id).restante;
+              const penalitatiCurente = maintenanceItem ? maintenanceItem.penalitati : getApartmentBalance(apartment.id).penalitati;
+              
               return {
                 apartmentId: apartment.id,
                 apartmentNumber: apartment.number,
                 owner: apartment.owner,
-                restanteCurente: balance.restante,
-                penalitatiCurente: balance.penalitati,
-                restanteAjustate: balance.restante,
-                penalitatiAjustate: balance.penalitati
+                restanteCurente: restanteCurente,
+                penalitatiCurente: penalitatiCurente,
+                restanteAjustate: restanteCurente,
+                penalitatiAjustate: penalitatiCurente
               };
             });
             setAdjustModalData(modalData);
@@ -645,8 +650,8 @@ const MaintenanceView = ({
 
 
 
-        {/* Secțiune pentru gestionarea soldurilor inițiale - vizibilă permanent */}
-        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && (
+        {/* Secțiune pentru gestionarea soldurilor inițiale - doar pentru luna curentă nepublicată */}
+        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && !isMonthReadOnly(currentMonth) && (
           <div className="mb-6">
             <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
       <div className="flex items-center justify-between">
@@ -669,28 +674,37 @@ const MaintenanceView = ({
           </p>
         </div>
         <button
-          onClick={() => setShowInitialBalances(!showInitialBalances)}
+          onClick={() => {
+            const modalData = getAssociationApartments().map(apartment => {
+              // Găsește datele din tabelul de întreținere pentru sincronizare
+              const maintenanceItem = maintenanceData.find(item => item.apartment === apartment.number);
+              
+              // Folosește datele din tabelul de întreținere dacă există, altfel fallback la getApartmentBalance
+              const restanteCurente = maintenanceItem ? maintenanceItem.restante : getApartmentBalance(apartment.id).restante;
+              const penalitatiCurente = maintenanceItem ? maintenanceItem.penalitati : getApartmentBalance(apartment.id).penalitati;
+              
+              return {
+                apartmentId: apartment.id,
+                apartmentNumber: apartment.number,
+                owner: apartment.owner,
+                restanteCurente: restanteCurente,
+                penalitatiCurente: penalitatiCurente,
+                restanteAjustate: restanteCurente,
+                penalitatiAjustate: penalitatiCurente
+              };
+            });
+            setAdjustModalData(modalData);
+            setShowAdjustBalances(true);
+          }}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             hasInitialBalances 
               ? 'bg-green-600 text-white hover:bg-green-700' 
               : 'bg-yellow-600 text-white hover:bg-yellow-700'
           }`}
         >
-          {showInitialBalances ? "Închide" : hasInitialBalances ? "Vizualizează/Editează" : "Configurează Solduri"}
+          {hasInitialBalances ? "Vizualizează/Editează Solduri" : "Configurează Solduri"}
         </button>
       </div>
-      
-      {/* Modal pentru solduri inițiale - afișat doar când showInitialBalances este true */}
-      {showInitialBalances && (
-        <InitialBalancesModal
-          showInitialBalances={showInitialBalances}
-          setShowInitialBalances={setShowInitialBalances}
-          getAssociationApartments={getAssociationApartments}
-          getApartmentBalance={getApartmentBalance}
-          setApartmentBalance={setApartmentBalance}
-          saveInitialBalances={saveInitialBalances}
-        />
-      )}
     </div>
   </div>
 )}
@@ -705,6 +719,7 @@ const MaintenanceView = ({
   saveBalanceAdjustments={saveBalanceAdjustments}
   association={association}
   setMonthlyTables={setMonthlyTables}
+  forceRecalculate={forceRecalculate}
 />
 
           {/* Modal Configurare Cheltuieli */}
@@ -884,62 +899,10 @@ const MaintenanceView = ({
               <p className="text-gray-600">Adaugă cheltuieli lunare pentru a genera tabelul de întreținere.</p>
             </div>
           )}
-        )}
 
-        {/* Modals */}
-        {showInitialBalances && (
-          <InitialBalancesModal
-            isOpen={showInitialBalances}
-            onClose={() => setShowInitialBalances(false)}
-            getAssociationApartments={getAssociationApartments}
-            getApartmentBalance={getApartmentBalance}
-            setApartmentBalance={setApartmentBalance}
-            saveInitialBalances={saveInitialBalances}
-            currentMonth={currentMonth}
-          />
-        )}
-
-        {showAdjustBalances && adjustModalData && (
-          <AdjustBalancesModal
-            isOpen={showAdjustBalances}
-            onClose={() => setShowAdjustBalances(false)}
-            modalData={adjustModalData}
-            setModalData={setAdjustModalData}
-            saveBalanceAdjustments={saveBalanceAdjustments}
-            currentMonth={currentMonth}
-          />
-        )}
-
-        {showExpenseConfig && selectedExpenseForConfig && (
-          <ExpenseConfigModal
-            isOpen={showExpenseConfig}
-            onClose={() => setShowExpenseConfig(false)}
-            expenseType={selectedExpenseForConfig}
-            newCustomExpense={newCustomExpense}
-            setNewCustomExpense={setNewCustomExpense}
-            handleAddCustomExpense={handleAddCustomExpense}
-            getAssociationExpenseTypes={getAssociationExpenseTypes}
-            updateExpenseConfig={updateExpenseConfig}
-            getExpenseConfig={getExpenseConfig}
-            getApartmentParticipation={getApartmentParticipation}
-            setApartmentParticipation={setApartmentParticipation}
-            getAssociationApartments={getAssociationApartments}
-            getDisabledExpenseTypes={getDisabledExpenseTypes}
-            toggleExpenseStatus={toggleExpenseStatus}
-            deleteCustomExpense={deleteCustomExpense}
-            isMonthReadOnly={isMonthReadOnly}
-            currentMonth={currentMonth}
-            setMonthlyTables={setMonthlyTables}
-          />
-        )}
-
-        <PaymentModal
-          association={association}
-        />
+        {/* All modals are already rendered above in the component, no duplicates needed */}
       </div>
     </div>
-  );
-    })()
   );
 };
 

@@ -244,7 +244,7 @@ const ConsumptionInput = ({
                             </h4>
                             <p className="text-sm text-gray-600">
                               {expenseSettings.distributionType === "individual" ? 
-                                `Sume individuale - Total planificat: ${expense.amount} RON` :
+                                `Sume individuale - Total facturat: ${expense.amount} RON` :
                                 expense.isUnitBased ? 
                                   `${expense.unitPrice} RON/${expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"} | Factură: ${expense.billAmount} RON` :
                                   `${expense.amount} RON total`
@@ -293,7 +293,7 @@ const ConsumptionInput = ({
                                   </div>
                                 </div>
                                 <div className="p-2 bg-green-50 rounded text-center">
-                                  <div className="text-gray-500">Total planificat</div>
+                                  <div className="text-gray-500">Total facturat</div>
                                   <div className="font-medium text-green-600">{expense.amount} RON</div>
                                 </div>
                                 <div className="p-2 bg-orange-50 rounded text-center">
@@ -457,7 +457,7 @@ const ConsumptionInput = ({
                               </div>
                             </div>
                             <div className="p-3 bg-green-50 rounded">
-                              <div className="text-sm text-gray-500">Total planificat</div>
+                              <div className="text-sm text-gray-500">Total facturat</div>
                               <div className="font-bold text-green-600">{expense.amount} RON</div>
                             </div>
                             <div className="p-3 bg-orange-50 rounded">

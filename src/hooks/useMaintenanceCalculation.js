@@ -69,13 +69,18 @@ export const useMaintenanceCalculation = ({
   const setApartmentBalance = useCallback(
     (apartmentId, balance) => {
       const monthKey = `${association?.id}-${currentMonth}`;
-      setMonthlyBalances((prev) => ({
-        ...prev,
-        [monthKey]: {
-          ...prev[monthKey],
-          [apartmentId]: balance,
-        },
-      }));
+      console.log(`💾 setApartmentBalance - apartmentId: ${apartmentId}, balance:`, balance);
+      setMonthlyBalances((prev) => {
+        const newBalances = {
+          ...prev,
+          [monthKey]: {
+            ...prev[monthKey],
+            [apartmentId]: balance,
+          },
+        };
+        console.log('💾 Updated monthlyBalances:', newBalances);
+        return newBalances;
+      });
     },
     [association?.id, currentMonth]
   );
@@ -136,10 +141,28 @@ export const useMaintenanceCalculation = ({
         const stair = stairs.find((s) => s.id === apartment.stairId);
         const block = blocks.find((b) => b.id === stair?.blockId);
 
-        // Calculează soldurile totale incluzând soldurile inițiale
+        // Calculează soldurile totale
         const initialBalance = apartment.initialBalance || { restante: 0, penalitati: 0 };
-        const totalRestante = balance.restante + initialBalance.restante;
-        const totalPenalitati = balance.penalitati + initialBalance.penalitati;
+        
+        // Dacă există solduri ajustate (din modal), le folosim direct - acestea deja înlocuiesc totul
+        // Dacă nu, adunăm soldurile inițiale cu cele curente (comportamentul normal)
+        const hasAdjustedBalances = balance.restante !== 0 || balance.penalitati !== 0;
+        
+        const totalRestante = hasAdjustedBalances 
+          ? balance.restante  // Valorile din modal ÎNLOCUIESC totul
+          : balance.restante + initialBalance.restante;  // Comportament normal - adunare
+          
+        const totalPenalitati = hasAdjustedBalances
+          ? balance.penalitati  // Valorile din modal ÎNLOCUIESC totul  
+          : balance.penalitati + initialBalance.penalitati;  // Comportament normal - adunare
+          
+        console.log(`🧮 Calcul pentru ap. ${apartment.number}:`, {
+          hasAdjustedBalances,
+          balanceFromModal: balance,
+          initialBalance,
+          totalRestante,
+          totalPenalitati
+        });
 
         return {
           apartmentId: apartment.id,
@@ -222,8 +245,8 @@ export const useMaintenanceCalculation = ({
       currentTable.forEach((row) => {
         if (!row.paid) {
           nextMonthBalances[row.apartmentId] = {
-            restante: Math.round(row.totalDatorat * 100) / 100,
-            penalitati: Math.round((row.penalitati + row.totalMaintenance * 0.01) * 100) / 100,
+            restante: Math.round(row.totalMaintenance * 100) / 100,  // Total Întreținere din luna curentă
+            penalitati: Math.round(row.penalitati * 100) / 100,      // Penalitățile existente (fără adăugări)
           };
         } else {
           nextMonthBalances[row.apartmentId] = { restante: 0, penalitati: 0 };
@@ -237,11 +260,31 @@ export const useMaintenanceCalculation = ({
     }
   }, [association?.id, getCurrentMonthTable, calculateMaintenanceWithDetails]);
 
+  // 🔄 FORȚARE RECALCULARE COMPLETĂ
+  const forceRecalculate = useCallback(() => {
+    const key = `${association?.id}-${currentMonth}`;
+    console.log(`🔄 forceRecalculate - Șterg cache pentru cheia: ${key}`);
+    setMonthlyTables(prev => {
+      const newTables = { ...prev };
+      console.log('🔄 Cache înainte de ștergere:', prev);
+      delete newTables[key];
+      console.log('🔄 Cache după ștergere:', newTables);
+      return newTables;
+    });
+  }, [association?.id, currentMonth]);
+
   // 📊 MEMOIZED MAINTENANCE DATA
   const maintenanceData = useMemo(() => {
+    console.log('🔄 useMemo maintenanceData se recalculează pentru:', {
+      associationId: association?.id,
+      currentMonth,
+      monthlyBalancesKeys: Object.keys(monthlyBalances)
+    });
     if (!association?.id || !currentMonth) return [];
-    return calculateMaintenance();
-  }, [association?.id, currentMonth, calculateMaintenance]);
+    const result = calculateMaintenance();
+    console.log('📊 Noul maintenanceData calculat:', result);
+    return result;
+  }, [association?.id, currentMonth, calculateMaintenance, monthlyBalances]);
 
   // 📈 STATISTICI ÎNTREȚINERE
   const maintenanceStats = useMemo(() => {
@@ -291,6 +334,7 @@ export const useMaintenanceCalculation = ({
     // 🎮 Acțiuni
     togglePayment,
     closeCurrentMonth,
+    forceRecalculate,
 
     // 🏠 Utilitare
     getAssociationApartments,

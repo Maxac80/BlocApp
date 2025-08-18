@@ -153,6 +153,7 @@ export default function BlocApp() {
     setMonthlyTables,
     togglePayment,
     closeCurrentMonth,
+    forceRecalculate,
     getAssociationApartments
   } = useMaintenanceCalculation({
     association,
@@ -251,6 +252,31 @@ useEffect(() => {
     autoExpandEntities(blocks, stairs, association.id);
   }
 }, [association?.id]);
+
+// 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI
+useEffect(() => {
+  const loadAdjustments = async () => {
+    if (association?.id) {
+      try {
+        console.log('📋 Încarc ajustările de solduri pentru asociația:', association.id);
+        const adjustments = await loadBalanceAdjustments();
+        
+        // Integrează ajustările în monthlyBalances
+        Object.entries(adjustments).forEach(([monthKey, monthAdjustments]) => {
+          Object.entries(monthAdjustments).forEach(([apartmentId, balance]) => {
+            setApartmentBalance(apartmentId, balance);
+          });
+        });
+        
+        console.log('✅ Ajustări de solduri încărcate și integrate:', Object.keys(adjustments).length, 'luni');
+      } catch (error) {
+        console.error('❌ Eroare la încărcarea ajustărilor de solduri:', error);
+      }
+    }
+  };
+  
+  loadAdjustments();
+}, [association?.id, loadBalanceAdjustments, setApartmentBalance]);
 
 
   // 🔥 OVERLAY PENTRU MOBILE
@@ -394,7 +420,7 @@ useEffect(() => {
               shouldShowAdjustButton={shouldShowAdjustButton}
               publishMonth={(month) => {
                 console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
-                const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments);
+                const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData);
                 if (result) {
                   // Salvează versiunea în sistemul de versioning
                   const versionData = {
@@ -431,8 +457,8 @@ useEffect(() => {
                       if (apartment) {
                         // Setează restanțele și penalitățile din luna curentă ca solduri pentru luna următoare
                         const newBalance = {
-                          restante: data.isPaid ? 0 : data.totalDatorat,
-                          penalitati: 0 // Penalitățile se vor calcula automat
+                          restante: data.isPaid ? 0 : data.totalMaintenance,  // Total Întreținere din luna curentă
+                          penalitati: data.isPaid ? 0 : data.penalitati       // Penalitățile existente
                         };
                         setApartmentBalance(apartment.id, newBalance);
                       }
@@ -466,6 +492,7 @@ useEffect(() => {
               togglePayment={togglePayment}
               activeMaintenanceTab={activeMaintenanceTab}
               setActiveMaintenanceTab={setActiveMaintenanceTab}
+              forceRecalculate={forceRecalculate}
               showInitialBalances={showInitialBalances}
               setShowInitialBalances={setShowInitialBalances}
               showAdjustBalances={showAdjustBalances}

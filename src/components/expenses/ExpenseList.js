@@ -92,9 +92,22 @@ const ExpenseList = ({
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">
-                  {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
-                   config.distributionType === "individual" ? "Pe apartament (individual)" :
-                   config.distributionType === "person" ? "Pe persoană" : "Pe consum"}
+                  {(() => {
+                    const totalApartments = getAssociationApartments().length;
+                    const totalPersons = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
+                    
+                    if (config.distributionType === "apartment" && totalApartments > 0) {
+                      return `Pe apartament (egal) • ${(expense.amount / totalApartments).toFixed(2)} RON/ap`;
+                    } else if (config.distributionType === "individual") {
+                      return "Pe apartament (individual) • Sume individuale";
+                    } else if (config.distributionType === "person" && totalPersons > 0) {
+                      return `Pe persoană • ${(expense.amount / totalPersons).toFixed(2)} RON/pers`;
+                    } else if (config.distributionType === "consumption") {
+                      return `Pe consum • ${expense.unitPrice} RON/${expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}`;
+                    } else {
+                      return "Pe consum";
+                    }
+                  })()}
                 </div>
               </div>
             );

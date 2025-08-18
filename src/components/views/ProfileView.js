@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Camera, Building, Save, AlertCircle, CheckCircle, MapPin } from 'lucide-react';
+import { User, Camera, Building, Save, AlertCircle, CheckCircle, MapPin, FileText, Shield, Upload, Eye, X, Download } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useBase64Upload } from '../../hooks/useBase64Upload';
@@ -49,7 +49,8 @@ const ProfileView = ({
       apartment: '',
       city: '',
       county: ''
-    }
+    },
+    documents: {} // Inițializează cu obiect gol pentru documente
   });
   
   const [isEditing, setIsEditing] = useState(false);
@@ -57,6 +58,83 @@ const ProfileView = ({
   const [saveMessage, setSaveMessage] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [previewDocument, setPreviewDocument] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({});
+
+  // 📋 LISTA DOCUMENTELOR ADMINISTRATORULUI
+  const documents = [
+    {
+      id: 'idCard',
+      title: 'Carte de identitate',
+      description: 'Copie după cartea de identitate (față și verso)',
+      required: true,
+      icon: FileText,
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Scanează în rezoluție bună, textul să fie lizibil'
+    },
+    {
+      id: 'adminAttestation',
+      title: 'Atestat Administrator',
+      description: 'Atestat care dovedește calitatea de administrator de condominii',
+      required: true,
+      icon: FileText,
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Document obligatoriu pentru activitatea de administrare'
+    },
+    {
+      id: 'criminalRecord',
+      title: 'Cazier judiciar',
+      description: 'Cazier care atestă lipsa condamnărilor pentru infracțiuni economico-financiare',
+      required: true,
+      icon: Shield,
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Nu mai vechi de 6 luni, cu apostilă dacă este necesar'
+    },
+    {
+      id: 'professionalCertifications',
+      title: 'Certificate Calificare Profesională',
+      description: 'Certificate de competență sau cursuri de specializare',
+      required: false,
+      icon: FileText,
+      acceptedTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
+      maxSize: 5 * 1024 * 1024, // 5MB
+      tips: 'Opțional - dovezi suplimentare de competență profesională'
+    },
+    {
+      id: 'adminContract',
+      title: 'Contract de administrare',
+      description: 'Contractul semnat cu asociația de proprietari',
+      required: false,
+      icon: FileText,
+      acceptedTypes: ['.pdf', '.doc', '.docx'],
+      maxSize: 10 * 1024 * 1024, // 10MB
+      tips: 'Opțional - contract semnat cu asociația'
+    }
+  ];
+
+  // Scroll to top when ProfileView mounts
+  useEffect(() => {
+    const scrollToTop = () => {
+      // Find the main scroll container (with overflow-y-scroll)
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        mainContainer.scrollTop = 0;
+      } else {
+        // Fallback to window scroll
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    
+    // Immediate scroll
+    scrollToTop();
+    
+    // Additional attempt after a short delay to ensure layout is complete
+    setTimeout(scrollToTop, 100);
+  }, []); // Run only once when component mounts
 
   // Încarcă datele existente - inclusiv din wizard
   useEffect(() => {
@@ -86,6 +164,9 @@ const ProfileView = ({
         };
       }
       
+      // Debugging pentru documente
+      console.log('🔍 DEBUG: Loading admin profile with documents:', adminData.documents);
+      
       setFormData({
         firstName: adminData.firstName || '',
         lastName: adminData.lastName || '',
@@ -93,9 +174,11 @@ const ProfileView = ({
         email: adminData.email || currentUser?.email || '',
         avatarURL: adminData.avatarURL || '',
         companyName: adminData.companyName || '',
-        position: adminData.position || '',
-        licenseNumber: adminData.licenseNumber || '',
-        address: addressData
+        position: adminData.position || adminData.professionalInfo?.position || 'Administrator asociație',
+        licenseNumber: adminData.licenseNumber || adminData.professionalInfo?.licenseNumber || '',
+        address: addressData,
+        // Documentele pot veni din wizard sau din profilul salvat
+        documents: adminData.documents || {}
       });
     } else if (currentUser) {
       // Dacă nu avem date salvate, folosim datele din currentUser
@@ -151,11 +234,12 @@ const ProfileView = ({
     setSaveMessage('');
     
     try {
-      // 1. Actualizează asociația
+      // 1. Actualizează asociația (inclusiv documentele)
       await updateAssociation({
         adminProfile: {
           ...association.adminProfile,
-          ...formData
+          ...formData,
+          documents: formData.documents || {}
         }
       });
       
@@ -236,6 +320,162 @@ const ProfileView = ({
     }
   };
 
+  // 📝 VALIDARE FIȘIER DOCUMENT
+  const validateFile = (file, document) => {
+    const errors = [];
+    
+    // Verificare tip fișier
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!document.acceptedTypes.includes(fileExtension)) {
+      errors.push(`Tip fișier neacceptat. Folosește: ${document.acceptedTypes.join(', ')}`);
+    }
+    
+    // Verificare dimensiune
+    if (file.size > document.maxSize) {
+      const maxSizeMB = Math.round(document.maxSize / 1024 / 1024);
+      errors.push(`Fișierul este prea mare. Dimensiunea maximă: ${maxSizeMB}MB`);
+    }
+    
+    return errors;
+  };
+
+  // 📤 UPLOAD DOCUMENT
+  const handleDocumentUpload = async (file, documentId) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
+    
+    // Validare fișier
+    const validationErrors = validateFile(file, document);
+    if (validationErrors.length > 0) {
+      setSaveMessage(`Eroare document: ${validationErrors[0]}`);
+      return;
+    }
+    
+    setUploadProgress(prev => ({ ...prev, [documentId]: 0 }));
+    
+    try {
+      // Convertire fișier în Base64
+      const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
+      // Simulare upload cu progress
+      for (let progress = 0; progress <= 50; progress += 10) {
+        setUploadProgress(prev => ({ ...prev, [documentId]: progress }));
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Convertește în Base64
+      console.log(`🔄 Converting ${file.name} to Base64...`);
+      const base64Data = await fileToBase64(file);
+      
+      // Continuă progress
+      for (let progress = 60; progress <= 100; progress += 10) {
+        setUploadProgress(prev => ({ ...prev, [documentId]: progress }));
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      // Folosește Base64 direct ca preview URL
+      const previewUrl = base64Data;
+      
+      // Update state cu documentul uploadat
+      setFormData(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          [documentId]: {
+            uploaded: true,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            uploadDate: new Date().toISOString(),
+            previewUrl,
+            base64: base64Data, // Salvăm datele Base64
+            storageType: 'base64', // Marcăm că este salvat în Base64
+            error: null
+          }
+        }
+      }));
+      
+      // Șterge progress după 1 secundă
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[documentId];
+          return newProgress;
+        });
+      }, 1000);
+      
+      setSaveMessage(`Document "${document.title}" încărcat cu succes!`);
+      setTimeout(() => setSaveMessage(''), 3000);
+      
+    } catch (error) {
+      console.error('❌ Error uploading document:', error);
+      setSaveMessage('Nu s-a putut uploada documentul. Te rugăm să încerci din nou.');
+      
+      setUploadProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[documentId];
+        return newProgress;
+      });
+    }
+  };
+
+  // 🗑️ ȘTERGERE DOCUMENT
+  const handleDocumentDelete = (documentId) => {
+    const documentData = formData.documents?.[documentId];
+    if (documentData?.previewUrl) {
+      URL.revokeObjectURL(documentData.previewUrl);
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
+        [documentId]: {
+          uploaded: false,
+          fileName: '',
+          fileSize: 0,
+          fileType: '',
+          uploadDate: null,
+          previewUrl: null,
+          file: null,
+          error: null
+        }
+      }
+    }));
+    
+    setSaveMessage('Document șters cu succes');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
+
+  // 👁️ PREVIEW DOCUMENT
+  const handleDocumentPreview = (documentId) => {
+    const documentData = formData.documents?.[documentId];
+    if (documentData?.previewUrl) {
+      setPreviewDocument({
+        id: documentId,
+        name: documentData.fileName,
+        url: documentData.previewUrl,
+        type: documentData.fileType
+      });
+    }
+  };
+
+  // 🎨 FORMATARE DIMENSIUNE FIȘIER
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
@@ -265,11 +505,13 @@ const ProfileView = ({
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
   return (
-    <div className={`min-h-screen p-4 ${
-      currentMonth === currentMonthStr
-        ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-        : "bg-gradient-to-br from-green-50 to-emerald-100"
-    }`}>
+    <div 
+      id="profile-view-top"
+      className={`p-4 ${
+        currentMonth === currentMonthStr
+          ? "bg-gradient-to-br from-indigo-50 to-blue-100"
+          : "bg-gradient-to-br from-green-50 to-emerald-100"
+      }`}>
     <div className="max-w-6xl mx-auto">
       
       {/* Header */}
@@ -417,7 +659,8 @@ const ProfileView = ({
                             companyName: adminData.companyName || '',
                             position: adminData.position || '',
                             licenseNumber: adminData.licenseNumber || '',
-                            address: addressData
+                            address: addressData,
+                            documents: adminData.documents || {}
                           });
                         }
                       }}
@@ -659,19 +902,12 @@ const ProfileView = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Funcția <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={formData.position}
-                    onChange={(e) => handleInputChange('position', e.target.value)}
-                    disabled={!isEditing}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                      validationErrors.position ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Selectează funcția</option>
-                    <option value="Administrator asociație">Administrator asociație</option>
-                    <option value="Președinte">Președinte</option>
-                    <option value="Cenzor">Cenzor</option>
-                  </select>
+                  <input
+                    type="text"
+                    value="Administrator asociație"
+                    className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                    readOnly
+                  />
                   {validationErrors.position && (
                     <p className="mt-1 text-xs text-red-600 flex items-center">
                       <AlertCircle className="w-3 h-3 mr-1" />
@@ -716,6 +952,166 @@ const ProfileView = ({
               </div>
             </div>
 
+            {/* DOCUMENTE ADMINISTRATOR */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
+              <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Documentele administratorului
+              </h4>
+              
+              <div className="grid gap-4">
+                {documents.map((document) => {
+                  const documentData = formData.documents?.[document.id] || {};
+                  const isUploaded = documentData.uploaded;
+                  const isUploading = uploadProgress[document.id] !== undefined;
+                  
+                  return (
+                    <div 
+                      key={document.id}
+                      className={`
+                        border-2 rounded-lg p-4 transition-all duration-300
+                        ${isUploaded 
+                          ? 'border-green-200 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                        }
+                      `}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start">
+                          <div className={`
+                            p-2 rounded-lg mr-3 flex-shrink-0
+                            ${isUploaded 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-gray-100 text-gray-600'
+                            }
+                          `}>
+                            <document.icon className="w-5 h-5" />
+                          </div>
+                          
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900 flex items-center">
+                              {document.title}
+                              {document.required && <span className="text-red-500 ml-1">*</span>}
+                            </h5>
+                            <p className="text-gray-600 text-sm mt-1">{document.description}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              💡 {document.tips}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* STATUS ICON */}
+                        <div className="flex-shrink-0">
+                          {isUploaded ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : document.required ? (
+                            <AlertCircle className="w-5 h-5 text-orange-500" />
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* UPLOADED FILE INFO */}
+                      {isUploaded && !isUploading && (
+                        <div className="mt-3 p-3 bg-green-100 border border-green-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FileText className="w-4 h-4 text-green-600 mr-2" />
+                              <div>
+                                <p className="text-sm font-medium text-green-900">{documentData.fileName}</p>
+                                <p className="text-xs text-green-700">
+                                  {formatFileSize(documentData.fileSize)} • Uploadat {new Date(documentData.uploadDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={() => handleDocumentPreview(document.id)}
+                                className="p-1 text-green-600 hover:text-green-800 hover:bg-green-200 rounded transition-colors"
+                                title="Previzualizează"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              {isEditing && (
+                                <button
+                                  onClick={() => handleDocumentDelete(document.id)}
+                                  className="p-1 text-red-600 hover:text-red-800 hover:bg-red-200 rounded transition-colors"
+                                  title="Șterge"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* UPLOAD PROGRESS */}
+                      {isUploading && (
+                        <div className="mt-3 p-3 bg-blue-100 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-blue-900 font-medium text-sm">Se uploadează...</span>
+                            <span className="text-blue-700 text-sm">{uploadProgress[document.id]}%</span>
+                          </div>
+                          <div className="w-full bg-blue-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress[document.id]}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* UPLOAD BUTTON */}
+                      {!isUploaded && !isUploading && isEditing && (
+                        <div className="mt-3">
+                          <label className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                            <Upload className="w-4 h-4 mr-2" />
+                            {isUploaded ? 'Schimbă document' : 'Selectează fișierul'}
+                            <input
+                              type="file"
+                              accept={document.acceptedTypes.join(',')}
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  handleDocumentUpload(file, document.id);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {document.acceptedTypes.join(', ')} • Max {Math.round(document.maxSize / 1024 / 1024)}MB
+                          </p>
+                        </div>
+                      )}
+
+                      {!isEditing && !isUploaded && (
+                        <div className="mt-3 text-center py-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                          <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-500">
+                            {document.required ? 'Document obligatoriu' : 'Document opțional'}
+                          </p>
+                          <p className="text-xs text-gray-400">Activează editarea pentru a adăuga</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* INFORMAȚII DOCUMENTE */}
+              <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                <h5 className="font-medium text-blue-900 mb-2">ℹ️ Informații despre documente</h5>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Documentele cu * sunt obligatorii pentru activitatea de administrare</li>
+                  <li>• Toate documentele sunt criptate și stocate în siguranță</li>
+                  <li>• Documentele pot fi vizualizate și descărcate oricând</li>
+                  <li>• Pentru modificări, activează editarea profilului</li>
+                </ul>
+              </div>
+            </div>
+
             {/* Informații generale */}
             <div className="bg-gray-50 rounded-xl p-6">
               <h4 className="font-medium text-gray-800 mb-3">ℹ️ Informații</h4>
@@ -729,6 +1125,48 @@ const ProfileView = ({
             </div>
           </div>
         </div>
+
+        {/* 🖼️ MODAL PREVIEW DOCUMENT */}
+        {previewDocument && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900">{previewDocument.name}</h3>
+                <button
+                  onClick={() => setPreviewDocument(null)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-4 overflow-auto max-h-[calc(90vh-120px)]">
+                {previewDocument.type.startsWith('image/') ? (
+                  <img 
+                    src={previewDocument.url} 
+                    alt={previewDocument.name}
+                    className="w-full h-auto"
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">
+                      Previzualizarea nu este disponibilă pentru acest tip de fișier.
+                    </p>
+                    <a
+                      href={previewDocument.url}
+                      download={previewDocument.name}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-4"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descarcă fișierul
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

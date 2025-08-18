@@ -56,6 +56,22 @@ export const useNavigationAndUI = () => {
   const handleNavigation = (view) => {
     setCurrentView(view);
     setSidebarOpen(false); // Închide sidebar-ul pe mobile după selectare
+    
+    // Scroll to top when navigating to profile page
+    if (view === 'profile') {
+      const scrollMainToTop = () => {
+        const mainContainer = document.querySelector('main');
+        if (mainContainer) {
+          mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          mainContainer.scrollTop = 0;
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+      
+      // Small delay to ensure view change has occurred
+      setTimeout(scrollMainToTop, 50);
+    }
   };
 
   // Auto-expand logic pentru entități puține

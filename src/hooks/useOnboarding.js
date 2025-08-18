@@ -329,9 +329,11 @@ export const useOnboarding = () => {
       // Verifică dacă există date de asociație în stepsCompleted
       const associationStepData = stepsCompleted?.association?.data;
       const profileStepData = stepsCompleted?.profile?.data;
+      const documentsStepData = stepsCompleted?.documents?.data;
       
       console.log('🔍 DEBUG: Found association step data:', !!associationStepData);
       console.log('🔍 DEBUG: Found profile step data:', !!profileStepData);
+      console.log('🔍 DEBUG: Found documents step data:', !!documentsStepData);
       
       if (!associationStepData || associationStepData.skipStep) {
         console.log('📋 Association step was skipped or no data available');
@@ -407,7 +409,15 @@ export const useOnboarding = () => {
             apartment: profileStepData.address?.apartment || '',
             city: profileStepData.address?.city || '',
             county: profileStepData.address?.county || ''
-          }
+          },
+          // Adaugă documentele din DocumentsStep
+          documents: documentsStepData ? {
+            idCard: documentsStepData.idCard || null,
+            adminAttestation: documentsStepData.adminAttestation || null,
+            criminalRecord: documentsStepData.criminalRecord || null,
+            professionalCertifications: documentsStepData.professionalCertifications || null,
+            adminContract: documentsStepData.adminContract || null
+          } : {}
         } : {},
         
         adminId: userId,

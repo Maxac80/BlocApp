@@ -93,21 +93,48 @@ export const useMonthManagement = () => {
   }, []);
 
   // Funcția pentru publicarea unei luni cu validări
-  const publishMonth = useCallback((month, association, expenses, hasInitialBalances, getAssociationApartments) => {
+  const publishMonth = useCallback((month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData = []) => {
     console.log('🔍 PublishMonth called with:', {
       month,
       association: association?.id,
       hasExpenses: !!expenses,
       expensesLength: expenses?.length,
       hasInitialBalances,
-      hasGetApartments: !!getAssociationApartments
+      hasGetApartments: !!getAssociationApartments,
+      maintenanceDataLength: maintenanceData?.length
     });
     
-    // 1. Verificare solduri inițiale
+    // 1. Verificare solduri inițiale cu warning-uri progresive
     const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-    if (month === currentMonthStr && typeof hasInitialBalances === 'boolean' && !hasInitialBalances) {
-      alert("⚠️ Nu poți publica luna fără să setezi soldurile inițiale!");
-      return false;
+    if (month === currentMonthStr) {
+      // Calculează totalul soldurilor pentru verificări
+      const totalRestante = maintenanceData.reduce((sum, data) => sum + (data.restante || 0), 0);
+      const totalPenalitati = maintenanceData.reduce((sum, data) => sum + (data.penalitati || 0), 0);
+      const totalSolduri = totalRestante + totalPenalitati;
+      
+      // Warning puternic dacă totalul soldurilor este 0 (prima utilizare)
+      if (totalSolduri === 0) {
+        const continueWithZeroBalances = window.confirm(
+          "🚨 ATENȚIE MAXIMĂ: Solduri inițiale sunt 0!\n\n" +
+          "Acesta este primul calculator de întreținere pentru această asociație?\n" +
+          "Dacă DA și chiar nu există restanțe anterioare, apasă OK.\n\n" +
+          "Dacă NU și există solduri din luna anterioară care trebuie introduse:\n" +
+          "• Apasă CANCEL\n" +
+          "• Mergi la 'Ajustări Solduri' \n" +
+          "• Introdu soldurile corecte\n" +
+          "• Apoi publică din nou\n\n" +
+          "Continui cu solduri 0?"
+        );
+        if (!continueWithZeroBalances) return false;
+      }
+      // Warning normal dacă nu au fost setate soldurile inițiale
+      else if (typeof hasInitialBalances === 'boolean' && !hasInitialBalances) {
+        const continueWithoutInitialSetup = window.confirm(
+          "💡 Reminder: Configurează soldurile inițiale\n\n" +
+          "Continui cu publicarea?"
+        );
+        if (!continueWithoutInitialSetup) return false;
+      }
     }
     
     // 2. Verificare consumuri pentru cheltuielile pe consum

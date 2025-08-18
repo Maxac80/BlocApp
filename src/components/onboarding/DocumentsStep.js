@@ -146,14 +146,34 @@ export default function DocumentsStep({
     setUploadProgress(prev => ({ ...prev, [documentId]: 0 }));
     
     try {
+      // Convertire fișier în Base64
+      const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
       // Simulare upload cu progress
-      for (let progress = 0; progress <= 100; progress += 10) {
+      for (let progress = 0; progress <= 50; progress += 10) {
         setUploadProgress(prev => ({ ...prev, [documentId]: progress }));
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
-      // Creare URL preview local
-      const previewUrl = URL.createObjectURL(file);
+      // Convertește în Base64
+      console.log(`🔄 Converting ${file.name} to Base64...`);
+      const base64Data = await fileToBase64(file);
+      
+      // Continuă progress
+      for (let progress = 60; progress <= 100; progress += 10) {
+        setUploadProgress(prev => ({ ...prev, [documentId]: progress }));
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      // Creare URL preview local (Base64 poate fi folosit direct ca src)
+      const previewUrl = base64Data;
       
       // Update state cu documentul uploadat
       onUpdateData({
@@ -165,7 +185,8 @@ export default function DocumentsStep({
           fileType: file.type,
           uploadDate: new Date().toISOString(),
           previewUrl,
-          file, // Păstrăm fișierul pentru upload real ulterior
+          base64: base64Data, // Salvăm datele Base64
+          storageType: 'base64', // Marcăm că este salvat în Base64
           error: null
         }
       });
