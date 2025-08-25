@@ -75,7 +75,7 @@ const DashboardHeader = ({
                 </span>
               )}
               
-              {isMonthReadOnly(currentMonth) ? (
+              {isMonthReadOnly ? (
                 <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
                   📋 PUBLICATĂ
                 </span>

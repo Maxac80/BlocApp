@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 /**
  * 🧮 Custom Hook pentru Calculul Întreținerii
@@ -17,10 +19,58 @@ export const useMaintenanceCalculation = ({
   apartments,
   expenses,
   currentMonth,
+  calculateNextMonthBalances, // Funcția din useBalanceManagement
 }) => {
   // 📊 STATE LOCAL PENTRU TABELE ȘI SOLDURI
   const [monthlyTables, setMonthlyTables] = useState({});
   const [monthlyBalances, setMonthlyBalances] = useState({});
+
+  // 🔄 ÎNCARCĂ SOLDURILE PENTRU LUNA CURENTĂ DIN FIREBASE
+  useEffect(() => {
+    const loadCurrentMonthBalances = async () => {
+      if (!association?.id || !currentMonth) return;
+
+      const monthKey = `${association.id}-${currentMonth}`;
+      
+      // Verifică dacă sunt deja încărcate
+      if (monthlyBalances[monthKey]) return;
+
+      try {
+        console.log(`📥 Încarc soldurile pentru luna curentă: ${currentMonth}`);
+        
+        const balancesQuery = query(
+          collection(db, 'initialBalances'),
+          where('associationId', '==', association.id),
+          where('month', '==', currentMonth)
+        );
+        const balancesSnapshot = await getDocs(balancesQuery);
+        
+        const loadedBalances = {};
+        balancesSnapshot.docs.forEach(docSnapshot => {
+          const data = docSnapshot.data();
+          loadedBalances[data.apartmentId] = {
+            restante: data.restante || 0,
+            penalitati: data.penalitati || 0
+          };
+        });
+        
+        if (Object.keys(loadedBalances).length > 0) {
+          console.log(`✅ Solduri încărcate pentru ${currentMonth}:`, Object.keys(loadedBalances).length, 'apartamente');
+          setMonthlyBalances(prev => ({
+            ...prev,
+            [monthKey]: loadedBalances
+          }));
+        } else {
+          console.log(`ℹ️ Nu există solduri salvate pentru ${currentMonth} - pornesc cu 0`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Eroare la încărcarea soldurilor pentru ${currentMonth}:`, error);
+      }
+    };
+
+    loadCurrentMonthBalances();
+  }, [association?.id, currentMonth, monthlyBalances]);
 
   // 🏠 CALCULEAZĂ APARTAMENTELE ASOCIAȚIEI - CA FUNCȚIE
   const getAssociationApartments = useCallback(() => {
@@ -56,9 +106,30 @@ export const useMaintenanceCalculation = ({
     return monthlyTables[key] || null;
   }, [association?.id, currentMonth, monthlyTables]);
 
-  // 💰 GESTIONAREA SOLDURILOR
+  // 🔄 SINCRONIZARE AUTOMATĂ A SOLDURILOR PENTRU LUNA CURENTĂ
+  // DEZACTIVAT - folosim doar solduri 0 pentru luna curentă, fără încărcare din alte surse
+  const syncCurrentMonthBalances = useCallback(() => {
+    if (!association?.id || !currentMonth) return;
+    
+    const monthKey = `${association?.id}-${currentMonth}`;
+    
+    // Verifică dacă avem deja solduri pentru luna curentă
+    if (monthlyBalances[monthKey]) {
+      return; // Deja sunt încărcate
+    }
+    
+    console.log(`🔄 syncCurrentMonthBalances - Inițializez solduri 0 pentru luna curentă: ${currentMonth}`);
+    
+    // Nu mai calculez din luna precedentă - toate soldurile încep cu 0
+    // Soldurile reale vor veni doar din tabelul de întreținere cu încasările efectuate
+    
+  }, [association?.id, currentMonth, monthlyBalances]);
+
+  // 💰 GESTIONAREA SOLDURILOR  
   const getApartmentBalance = useCallback(
     (apartmentId) => {
+      // Returnează soldurile din monthlyBalances pentru luna curentă
+      // Aceste solduri vin doar din transferul din publicarea lunii precedente
       const monthKey = `${association?.id}-${currentMonth}`;
       const monthBalances = monthlyBalances[monthKey] || {};
       return monthBalances[apartmentId] || { restante: 0, penalitati: 0 };
@@ -141,25 +212,13 @@ export const useMaintenanceCalculation = ({
         const stair = stairs.find((s) => s.id === apartment.stairId);
         const block = blocks.find((b) => b.id === stair?.blockId);
 
-        // Calculează soldurile totale
-        const initialBalance = apartment.initialBalance || { restante: 0, penalitati: 0 };
-        
-        // Dacă există solduri ajustate (din modal), le folosim direct - acestea deja înlocuiesc totul
-        // Dacă nu, adunăm soldurile inițiale cu cele curente (comportamentul normal)
-        const hasAdjustedBalances = balance.restante !== 0 || balance.penalitati !== 0;
-        
-        const totalRestante = hasAdjustedBalances 
-          ? balance.restante  // Valorile din modal ÎNLOCUIESC totul
-          : balance.restante + initialBalance.restante;  // Comportament normal - adunare
+        // SIMPLIFICAT - folosim doar solduri 0 + ce vine din publicarea lunii precedente
+        // Nu mai adunăm cu apartment.initialBalance sau alte surse
+        const totalRestante = balance.restante || 0;  // Ce a fost transferat din luna precedentă
+        const totalPenalitati = balance.penalitati || 0;  // Ce a fost transferat din luna precedentă
           
-        const totalPenalitati = hasAdjustedBalances
-          ? balance.penalitati  // Valorile din modal ÎNLOCUIESC totul  
-          : balance.penalitati + initialBalance.penalitati;  // Comportament normal - adunare
-          
-        console.log(`🧮 Calcul pentru ap. ${apartment.number}:`, {
-          hasAdjustedBalances,
-          balanceFromModal: balance,
-          initialBalance,
+        console.log(`🧮 Calcul simplificat pentru ap. ${apartment.number}:`, {
+          balanceFromPreviousMonth: balance,
           totalRestante,
           totalPenalitati
         });
@@ -178,12 +237,8 @@ export const useMaintenanceCalculation = ({
           totalDatorat:
             Math.round((currentMaintenance + totalRestante + totalPenalitati) * 100) / 100,
           paid: false,
-          expenseDetails: expenseDetails,
-          // Adaugă informații despre soldurile inițiale pentru debugging
-          initialBalance: {
-            restante: initialBalance.restante,
-            penalitati: initialBalance.penalitati
-          }
+          expenseDetails: expenseDetails
+          // Nu mai returnăm initialBalance - folosim doar solduri din luna precedentă
         };
       })
       .sort((a, b) => a.apartment - b.apartment);
@@ -232,33 +287,28 @@ export const useMaintenanceCalculation = ({
 
   // 📅 ÎNCHIDEREA LUNII CURENTE
   const closeCurrentMonth = useCallback(() => {
+    console.log('📅 closeCurrentMonth - Folosesc logica din useBalanceManagement');
+    
     const currentTable = getCurrentMonthTable() || calculateMaintenanceWithDetails();
 
-    const nextMonthDate = new Date();
-    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-    const nextMonth = nextMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-
-    if (currentTable && currentTable.length > 0) {
-      const nextMonthKey = `${association?.id}-${nextMonth}`;
-      const nextMonthBalances = {};
-
-      currentTable.forEach((row) => {
-        if (!row.paid) {
-          nextMonthBalances[row.apartmentId] = {
-            restante: Math.round(row.totalMaintenance * 100) / 100,  // Total Întreținere din luna curentă
-            penalitati: Math.round(row.penalitati * 100) / 100,      // Penalitățile existente (fără adăugări)
-          };
-        } else {
-          nextMonthBalances[row.apartmentId] = { restante: 0, penalitati: 0 };
-        }
-      });
-
+    if (currentTable && currentTable.length > 0 && calculateNextMonthBalances) {
+      // Folosim funcția din useBalanceManagement care ia în calcul plățile parțiale
+      const nextMonthBalances = calculateNextMonthBalances(currentTable, currentMonth);
+      
+      console.log('📅 closeCurrentMonth - Solduri calculate pentru luna următoare:', nextMonthBalances);
+      
+      // Actualizăm monthlyBalances cu noile solduri
       setMonthlyBalances((prev) => ({
         ...prev,
-        [nextMonthKey]: nextMonthBalances,
+        ...nextMonthBalances  // nextMonthBalances vine deja cu cheia corectă
       }));
+      
+      return nextMonthBalances;
+    } else {
+      console.warn('📅 closeCurrentMonth - Nu pot calcula soldurile: currentTable sau calculateNextMonthBalances lipsește');
+      return {};
     }
-  }, [association?.id, getCurrentMonthTable, calculateMaintenanceWithDetails]);
+  }, [association?.id, getCurrentMonthTable, calculateMaintenanceWithDetails, currentMonth, calculateNextMonthBalances]);
 
   // 🔄 FORȚARE RECALCULARE COMPLETĂ
   const forceRecalculate = useCallback(() => {

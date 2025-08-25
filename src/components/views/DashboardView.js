@@ -8,6 +8,8 @@ import {
   DashboardMaintenanceTable 
 } from '../dashboard';
 import { PaymentModal, VersionHistoryModal } from '../modals';
+import { useIncasari } from '../../hooks/useIncasari';
+import { usePaymentSync } from '../../hooks/usePaymentSync';
 
 const DashboardView = ({
   // Association data
@@ -46,6 +48,16 @@ const DashboardView = ({
 }) => {
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   
+  // Hook-uri pentru gestionarea încasărilor
+  const { addIncasare } = useIncasari(association, currentMonth);
+  
+  // Hook pentru sincronizarea plăților cu tabelul de întreținere
+  const { 
+    getUpdatedMaintenanceData, 
+    getApartmentPayments,
+    getPaymentStats 
+  } = usePaymentSync(association, currentMonth);
+  
   // State pentru modalul de plăți
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
@@ -53,17 +65,43 @@ const DashboardView = ({
   // State pentru modalul de versioning
   const [showVersionHistory, setShowVersionHistory] = useState(false);
 
+  // Calculează datele actualizate pentru afișare în tabel
+  const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
     setSelectedApartment(apartmentData);
     setShowPaymentModal(true);
   };
 
-  // Handler pentru salvarea plății
-  const handleSavePayment = (paymentData) => {
+  // Handler pentru salvarea plății cu integrare Firestore
+  const handleSavePayment = async (paymentData) => {
     console.log('💰 Salvare plată:', paymentData);
-    // TODO: Implementează logica de salvare în Firebase
-    alert(`✅ Plată înregistrată: ${paymentData.total.toFixed(2)} lei pentru Ap. ${selectedApartment.apartmentNumber}`);
+    
+    if (!selectedApartment) {
+      alert('Eroare: Nu s-a selectat apartamentul');
+      return;
+    }
+    
+    // Salvează încasarea în Firestore
+    const incasareData = {
+      ...paymentData,
+      apartmentNumber: selectedApartment.apartmentNumber,
+      owner: selectedApartment.owner,
+      associationName: association?.name || ''
+    };
+    
+    const result = await addIncasare(incasareData);
+    
+    if (result.success) {
+      console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
+      // Tabelul se va actualiza automat prin usePaymentSync
+      setShowPaymentModal(false);
+      alert(`✅ Plată înregistrată cu succes!\nChitanță nr: ${result.receiptNumber}`);
+    } else {
+      console.error('❌ Eroare la salvarea încasării:', result.error);
+      alert(`Eroare la salvarea încasării: ${result.error}`);
+    }
   };
 
   // Funcție simplificată pentru export PDF (pentru Dashboard)
@@ -80,12 +118,12 @@ const DashboardView = ({
   };
   
   return (
-    <div className={`min-h-screen p-4 ${
+    <div className={`min-h-screen p-6 ${
       currentMonth === currentMonthStr
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : "bg-gradient-to-br from-green-50 to-emerald-100"
     }`}>
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         <DashboardHeader
           association={association}
           currentMonth={currentMonth}
@@ -157,15 +195,14 @@ const DashboardView = ({
               getAssociationApartments={getAssociationApartments}
               expenses={expenses}
               currentMonth={currentMonth}
-              maintenanceData={maintenanceData}
+              maintenanceData={updatedMaintenanceData}
             />
 
-            {/* Verifică dacă există cel puțin o lună publicată */}
+            {/* Verifică dacă luna curentă este publicată */}
             {(() => {
-              const availableMonths = getAvailableMonths();
-              const hasPublishedMonth = availableMonths.some(month => isMonthReadOnly(month.value));
+              const isCurrentMonthPublished = isMonthReadOnly;
               
-              if (!hasPublishedMonth) {
+              if (!isCurrentMonthPublished) {
                 return (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
                     <div className="flex items-center mb-4">
@@ -173,15 +210,15 @@ const DashboardView = ({
                         <span className="text-2xl">📊</span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-amber-800">Tabel Întreținere</h3>
-                        <p className="text-amber-700">Va fi disponibil după publicarea primei luni</p>
+                        <h3 className="text-lg font-semibold text-amber-800">Tabel Întreținere - {currentMonth}</h3>
+                        <p className="text-amber-700">Va fi disponibil după publicarea acestei luni</p>
                       </div>
                     </div>
                     <div className="bg-amber-100 rounded-lg p-4 mb-4">
-                      <p className="text-amber-800 font-medium mb-2">📝 Pentru a vedea tabelul de întreținere:</p>
+                      <p className="text-amber-800 font-medium mb-2">📝 Pentru a vedea tabelul de întreținere pentru {currentMonth}:</p>
                       <ol className="text-amber-700 text-sm space-y-1 ml-4">
                         <li>1. Mergi la secțiunea <strong>Întreținere</strong></li>
-                        <li>2. Calculează întreținerea pentru luna curentă</li>
+                        <li>2. Calculează întreținerea pentru {currentMonth}</li>
                         <li>3. Publică luna când este gata</li>
                         <li>4. Tabelul va apărea aici în Dashboard</li>
                       </ol>
@@ -198,18 +235,52 @@ const DashboardView = ({
               
               return (
                 <DashboardMaintenanceTable
-                  maintenanceData={maintenanceData}
+                  maintenanceData={updatedMaintenanceData}
                   currentMonth={currentMonth}
                   isMonthReadOnly={isMonthReadOnly}
                   onOpenPaymentModal={handleOpenPaymentModal}
                   exportPDFAvizier={exportPDFAvizier}
                   handleNavigation={handleNavigation}
+                  association={association}
+                  blocks={blocks}
+                  stairs={stairs}
+                  getAssociationApartments={getAssociationApartments}
+                  expenses={expenses}
                 />
               );
             })()}
 
+            {/* Activitate Recentă - doar pentru luna publicată */}
             <div className="mt-8">
-              <RecentActivity maintenanceData={maintenanceData} />
+              {(() => {
+                const isCurrentMonthPublished = isMonthReadOnly;
+                
+                if (!isCurrentMonthPublished) {
+                  return (
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4">📝 Activitate Recentă - {currentMonth}</h3>
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-3xl">📝</span>
+                        </div>
+                        <p className="text-gray-600 mb-2">Nu există încă activitate pentru această lună</p>
+                        <p className="text-sm text-gray-500">
+                          Activitatea va fi disponibilă după publicarea lunii {currentMonth}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <RecentActivity 
+                    maintenanceData={updatedMaintenanceData} 
+                    association={association}
+                    currentMonth={currentMonth}
+                    getAssociationApartments={getAssociationApartments}
+                  />
+                );
+              })()}
             </div>
           </>
         )}

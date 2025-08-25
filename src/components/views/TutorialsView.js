@@ -138,8 +138,8 @@ const TutorialsView = ({ association, updateAssociation }) => {
   // Pentru TutorialsView, folosim mereu luna curentă (albastru) deoarece nu are month selector
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-6">
+      <div className="w-full">
         
         {/* Header */}
         <div className="mb-8">

@@ -102,10 +102,10 @@ const ConsumptionInput = ({
 
   return (
     <>
-      <div className="bg-white p-6 rounded-xl shadow-lg">
+      <div className={`p-6 rounded-xl shadow-lg ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">
-            {isMonthReadOnly(currentMonth) ? 
+          <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
+            {isMonthReadOnly ? 
               "📊 Consumuri & Sume (PUBLICATĂ)" :
               "📊 Introducere Consumuri & Sume"
             }
@@ -116,8 +116,8 @@ const ConsumptionInput = ({
               className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm"
               title="Deschide editorul complet"
             >
-              {isMonthReadOnly(currentMonth) ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-              {isMonthReadOnly(currentMonth) ? "Vezi" : "Editează"}
+              {isMonthReadOnly ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+              {isMonthReadOnly ? "Vezi" : "Editează"}
             </button>
           )}
         </div>
@@ -193,7 +193,7 @@ const ConsumptionInput = ({
           <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
             <div className="p-6 bg-green-50 border-b flex items-center justify-between">
               <h3 className="text-xl font-semibold">
-                📊 {isMonthReadOnly(currentMonth) ? 'Vizualizare' : 'Editare'} Consumuri & Sume - {currentMonth}
+                📊 {isMonthReadOnly ? 'Vizualizare' : 'Editare'} Consumuri & Sume - {currentMonth}
               </h3>
               <button
                 onClick={() => setShowConsumptionModal(false)}
@@ -228,7 +228,7 @@ const ConsumptionInput = ({
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <h4 className="text-lg font-semibold text-indigo-600 flex items-center">
-                              {isMonthReadOnly(currentMonth) && (
+                              {isMonthReadOnly && (
                                 <span className="bg-gray-400 text-white text-xs px-2 py-1 rounded mr-2">🔒 PUBLICATĂ</span>
                               )}
                               {expense.name}
@@ -343,7 +343,7 @@ const ConsumptionInput = ({
                                       Apt {apartment.number}
                                       {hasBlankField && <span className="text-red-500 ml-1">⚠️</span>}
                                     </span>
-                                    {isMonthReadOnly(currentMonth) ? (
+                                    {isMonthReadOnly ? (
                                       <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-600">
                                         {expense.individualAmounts?.[apartment.id] || "0"} RON
                                       </div>
@@ -377,7 +377,7 @@ const ConsumptionInput = ({
                                       Apt {apartment.number}
                                       {hasBlankField && <span className="text-red-500 ml-1">⚠️</span>}
                                     </span>
-                                    {isMonthReadOnly(currentMonth) ? (
+                                    {isMonthReadOnly ? (
                                       <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-600">
                                         {expense.consumption[apartment.id] || "0"} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
                                       </div>

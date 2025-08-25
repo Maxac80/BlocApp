@@ -21,7 +21,8 @@ import {
   DashboardView, 
   MaintenanceView,
   ProfileView,
-  TutorialsView
+  TutorialsView,
+  AccountingView
 } from './components/views';
 
 export default function BlocApp() {
@@ -123,7 +124,7 @@ export default function BlocApp() {
     shouldShowAdjustButton,
     shouldShowPublishButton,
     isMonthReadOnly
-  } = useMonthManagement();
+  } = useMonthManagement(association?.id);
 
   // 🔥 HOOK PENTRU VERSIONING ȘI ISTORIC
   const {
@@ -137,6 +138,23 @@ export default function BlocApp() {
     exportHistory,
     importHistory
   } = useVersioning();
+
+  // 🔥 HOOK PENTRU GESTIONAREA SOLDURILOR
+  const {
+    hasInitialBalances,
+    setHasInitialBalances,
+    disabledExpenses,
+    setDisabledExpenses,
+    initialBalances,
+    setInitialBalances,
+    loadInitialBalances,
+    saveInitialBalances,
+    saveBalanceAdjustments,
+    loadBalanceAdjustments,
+    calculateNextMonthBalances,
+    toggleExpenseStatus,
+    saveDisabledExpenses
+  } = useBalanceManagement(association);
 
   // 🔥 HOOK PENTRU CALCULUL ÎNTREȚINERII
   const {
@@ -162,24 +180,8 @@ export default function BlocApp() {
     apartments,
     expenses,
     currentMonth,
+    calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
   });
-
-  // 🔥 HOOK PENTRU GESTIONAREA SOLDURILOR
-  const {
-    hasInitialBalances,
-    setHasInitialBalances,
-    disabledExpenses,
-    setDisabledExpenses,
-    initialBalances,
-    setInitialBalances,
-    loadInitialBalances,
-    saveInitialBalances,
-    saveBalanceAdjustments,
-    loadBalanceAdjustments,
-    calculateNextMonthBalances,
-    toggleExpenseStatus,
-    saveDisabledExpenses
-  } = useBalanceManagement(association);
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
   const {
@@ -254,6 +256,8 @@ useEffect(() => {
 }, [association?.id]);
 
 // 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI
+// DEZACTIVAT - folosim doar calculul din tabelul curent, fără încărcări din Firebase
+/*
 useEffect(() => {
   const loadAdjustments = async () => {
     if (association?.id) {
@@ -277,6 +281,7 @@ useEffect(() => {
   
   loadAdjustments();
 }, [association?.id, loadBalanceAdjustments, setApartmentBalance]);
+*/
 
 
   // 🔥 OVERLAY PENTRU MOBILE
@@ -390,7 +395,7 @@ useEffect(() => {
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               newAssociation={newAssociation}
               setNewAssociation={setNewAssociation}
               handleAddAssociation={handleAssociationSubmit}
@@ -415,7 +420,7 @@ useEffect(() => {
               getAssociationApartments={getAssociationApartments}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               shouldShowPublishButton={shouldShowPublishButton}
               shouldShowAdjustButton={shouldShowAdjustButton}
               publishMonth={(month) => {
@@ -439,38 +444,40 @@ useEffect(() => {
                   } else {
                     console.error(`❌ Eroare la salvarea versiunii pentru ${month}:`, versionResult.error);
                   }
-                  // Transfer automat solduri în luna următoare
-                  const nextMonth = (() => {
-                    const date = new Date();
-                    if (month === date.toLocaleDateString("ro-RO", { month: "long", year: "numeric" })) {
-                      date.setMonth(date.getMonth() + 1);
-                    } else {
-                      date.setMonth(date.getMonth() + 2);
-                    }
-                    return date.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-                  })();
+                  // ✅ TRANSFER AUTOMAT SOLDURI - REACTIVAT ȘI REPARAT
+                  console.log('🔄 Începe transferul automat de solduri...');
                   
-                  // Transferă soldurile finale ca solduri inițiale pentru luna următoare
                   if (maintenanceData && maintenanceData.length > 0) {
-                    maintenanceData.forEach(data => {
-                      const apartment = getAssociationApartments().find(apt => apt.number === data.apartment);
-                      if (apartment) {
-                        // Setează restanțele și penalitățile din luna curentă ca solduri pentru luna următoare
-                        const newBalance = {
-                          restante: data.isPaid ? 0 : data.totalMaintenance,  // Total Întreținere din luna curentă
-                          penalitati: data.isPaid ? 0 : data.penalitati       // Penalitățile existente
-                        };
-                        setApartmentBalance(apartment.id, newBalance);
+                    try {
+                      // Calculează soldurile pentru luna următoare folosind logica reparată
+                      const nextMonthBalances = calculateNextMonthBalances(maintenanceData, month);
+                      
+                      console.log('💰 Solduri calculate pentru luna următoare:', nextMonthBalances);
+                      
+                      if (nextMonthBalances && Object.keys(nextMonthBalances).length > 0) {
+                        // Salvează soldurile în Firebase pentru luna următoare
+                        const monthlyBalances = nextMonthBalances; // nextMonthBalances vine cu cheia corectă
+                        const nextMonthKey = Object.keys(nextMonthBalances)[0]; // Ia prima cheie care conține luna
+                        const nextMonth = nextMonthKey.split('-').slice(1).join('-'); // Extrage luna din cheie
+                        
+                        saveInitialBalances(monthlyBalances, nextMonth).then(() => {
+                          console.log(`✅ Soldurile au fost transferate automat în luna următoare: ${nextMonth}`);
+                          alert(`✅ Luna ${month} a fost publicată cu succes!\n\n💰 Soldurile au fost transferate automat în luna următoare.`);
+                        }).catch((error) => {
+                          console.error('❌ Eroare la salvarea soldurilor:', error);
+                          alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
+                        });
+                      } else {
+                        console.log('ℹ️ Nu sunt solduri de transferat (toate plătite integral)');
+                        alert(`✅ Luna ${month} a fost publicată cu succes!`);
                       }
-                    });
-                    
-                    // Salvează soldurile pentru luna următoare (cu parametrii corecți)
-                    // saveInitialBalances necesită monthlyBalances și currentMonth
-                    // TODO: Trebuie să trecem parametrii corecți aici
-                    console.log('✅ Solduri transferate (salvarea în Firebase dezactivată temporar)');
-                    
-                    // Afișează mesaj de succes
-                    alert(`✅ Luna ${month} a fost publicată cu succes!\n\nSoldurile au fost transferate automat în ${nextMonth}.`);
+                    } catch (error) {
+                      console.error('❌ Eroare la transferul soldurilor:', error);
+                      alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
+                    }
+                  } else {
+                    console.log('ℹ️ Nu există date de întreținere pentru transfer');
+                    alert(`✅ Luna ${month} a fost publicată cu succes!`);
                   }
                   
                   // TODO: Generare automată PDF (va trebui să mutăm funcția exportPDFAvizier într-un loc accesibil)
@@ -535,7 +542,7 @@ useEffect(() => {
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               handleNavigation={handleNavigation}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -571,7 +578,7 @@ useEffect(() => {
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
               newCustomExpense={newCustomExpense}
@@ -607,7 +614,7 @@ useEffect(() => {
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
             />
           )}
 
@@ -622,7 +629,7 @@ useEffect(() => {
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
             />
@@ -633,6 +640,20 @@ useEffect(() => {
             <TutorialsView
               association={association}
               updateAssociation={updateAssociation}
+            />
+          )}
+
+          {/* Accounting View */}
+          {currentView === "accounting" && (
+            <AccountingView
+              association={association}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              getAssociationApartments={getAssociationApartments}
+              handleNavigation={handleNavigation}
             />
           )}
 

@@ -5,6 +5,8 @@ import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } 
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal } from '../modals';
 import DashboardHeader from '../dashboard/DashboardHeader';
+import { useIncasari } from '../../hooks/useIncasari';
+import { usePaymentSync } from '../../hooks/usePaymentSync';
 import jsPDF from 'jspdf';
 
 const MaintenanceView = ({
@@ -79,17 +81,48 @@ const MaintenanceView = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
+  // Hook pentru gestionarea încasărilor
+  const { addIncasare } = useIncasari(association, currentMonth);
+  
+  // Hook pentru sincronizarea plăților cu tabelul de întreținere
+  const { 
+    getUpdatedMaintenanceData, 
+    getApartmentPayments,
+    getPaymentStats 
+  } = usePaymentSync(association, currentMonth);
+
+  // Calculează datele actualizate pentru afișare în tabel
+  // Acestea vor reflecta datoriile reale după încasări
+  const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
     setSelectedApartment(apartmentData);
     setShowPaymentModal(true);
   };
 
-  // Handler pentru salvarea plății
-  const handleSavePayment = (paymentData) => {
+  // Handler pentru salvarea plății cu integrare Firestore
+  const handleSavePayment = async (paymentData) => {
     console.log('💰 Salvare plată:', paymentData);
-    // TODO: Implementează logica de salvare în Firebase
-    alert(`✅ Plată înregistrată: ${paymentData.total.toFixed(2)} lei pentru Ap. ${selectedApartment.apartmentNumber}`);
+    
+    // Salvează încasarea în Firestore
+    const incasareData = {
+      ...paymentData,
+      apartmentNumber: selectedApartment.apartmentNumber,
+      owner: selectedApartment.owner,
+      associationName: association.name
+    };
+    
+    const result = await addIncasare(incasareData);
+    
+    if (result.success) {
+      console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
+      // Tabelul se va actualiza automat prin usePaymentSync
+      // Nu mai trebuie să marcăm manual plata - sistemul calculează automat datoriile rămase
+    } else {
+      console.error('❌ Eroare la salvarea încasării:', result.error);
+      alert(`Eroare la salvarea încasării: ${result.error}`);
+    }
   };
 
   // ✅ PRELUAREA EXACTĂ A LOGICII DIN ORIGINALUL BlocApp.js
@@ -586,12 +619,12 @@ const MaintenanceView = ({
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
   return (
-        <div className={`min-h-screen p-4 ${
+        <div className={`min-h-screen p-6 ${
           currentMonth === currentMonthStr
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
             : "bg-gradient-to-br from-green-50 to-emerald-100"
         }`}>
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         <DashboardHeader
           association={association}
           currentMonth={currentMonth}
@@ -622,8 +655,8 @@ const MaintenanceView = ({
           unpublishMonth={unpublishMonth}
           onAdjustBalances={() => {
             const modalData = getAssociationApartments().map(apartment => {
-              // Găsește datele din tabelul de întreținere pentru sincronizare
-              const maintenanceItem = maintenanceData.find(item => item.apartment === apartment.number);
+              // Găsește datele din tabelul de întreținere pentru sincronizare (folosind datele actualizate)
+              const maintenanceItem = updatedMaintenanceData.find(item => item.apartment === apartment.number);
               
               // Folosește datele din tabelul de întreținere dacă există, altfel fallback la getApartmentBalance
               const restanteCurente = maintenanceItem ? maintenanceItem.restante : getApartmentBalance(apartment.id).restante;
@@ -643,7 +676,7 @@ const MaintenanceView = ({
             setShowAdjustBalances(true);
           }}
           exportPDFAvizier={exportPDFAvizier}
-          maintenanceData={maintenanceData}
+          maintenanceData={updatedMaintenanceData}
           handleNavigation={handleNavigation}
           getAssociationApartments={getAssociationApartments}
         />
@@ -651,7 +684,7 @@ const MaintenanceView = ({
 
 
         {/* Secțiune pentru gestionarea soldurilor inițiale - doar pentru luna curentă nepublicată */}
-        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && !isMonthReadOnly(currentMonth) && (
+        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && !isMonthReadOnly && (
           <div className="mb-6">
             <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
       <div className="flex items-center justify-between">
@@ -789,12 +822,15 @@ const MaintenanceView = ({
             />
           </div>
 
-          {maintenanceData.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="p-4 bg-indigo-50 border-b">
+          {updatedMaintenanceData.length > 0 ? (
+            <div className={`rounded-xl shadow-lg overflow-hidden ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
+              <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-purple-100' : 'bg-indigo-50'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold">🧾 Tabel Întreținere - {currentMonth}</h3>
+                    <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
+                      🧾 Tabel Întreținere - {currentMonth} 
+                      {isMonthReadOnly && <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>}
+                    </h3>
                     {association && getAssociationApartments().length > 0 && (
                       <p className="text-sm text-gray-600 mt-1">
                         {(() => {
@@ -819,7 +855,7 @@ const MaintenanceView = ({
                       </p>
                     )}
                     <div className="flex items-center space-x-2 mt-1">
-                      {isMonthReadOnly(currentMonth) ? (
+                      {isMonthReadOnly ? (
                         <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                           📋 PUBLICATĂ
                         </span>
@@ -842,7 +878,7 @@ const MaintenanceView = ({
                       </button>
                     )}
                     {/* Buton Export PDF Detaliat - doar pentru Tabel Detaliat */}
-                    {maintenanceData.length > 0 && activeMaintenanceTab === "detailed" && (
+                    {updatedMaintenanceData.length > 0 && activeMaintenanceTab === "detailed" && (
                       <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
                         <Plus className="w-4 h-4 mr-2" />
                         Export PDF Detaliat
@@ -878,16 +914,18 @@ const MaintenanceView = ({
               <div className="overflow-x-auto">
                 {activeMaintenanceTab === "simple" ? (
                   <MaintenanceTableSimple
-                    maintenanceData={maintenanceData}
-                    isMonthReadOnly={isMonthReadOnly(currentMonth)}
+                    maintenanceData={updatedMaintenanceData}
+                    isMonthReadOnly={isMonthReadOnly}
                     togglePayment={togglePayment}
                     onOpenPaymentModal={handleOpenPaymentModal}
                   />
                 ) : (
                   <MaintenanceTableDetailed
-                    maintenanceData={maintenanceData}
+                    maintenanceData={updatedMaintenanceData}
                     expenses={expenses}
                     association={association}
+                    isMonthReadOnly={isMonthReadOnly}
+                    onOpenPaymentModal={handleOpenPaymentModal}
                   />
                 )}
               </div>

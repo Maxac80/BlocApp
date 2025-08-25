@@ -507,12 +507,12 @@ const ProfileView = ({
   return (
     <div 
       id="profile-view-top"
-      className={`p-4 ${
+      className={`min-h-screen p-6 ${
         currentMonth === currentMonthStr
           ? "bg-gradient-to-br from-indigo-50 to-blue-100"
           : "bg-gradient-to-br from-green-50 to-emerald-100"
       }`}>
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       
       {/* Header */}
       <DashboardHeader

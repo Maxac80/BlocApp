@@ -16,7 +16,7 @@ const ExpenseForm = ({
     <div className="bg-white p-6 rounded-xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">💰 Adaugă Cheltuială Lunară</h3>
-        {!isMonthReadOnly(currentMonth) && (
+        {!isMonthReadOnly && (
           <button
             onClick={() => setShowExpenseConfig(true)}
             className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 flex items-center text-sm"
@@ -28,7 +28,7 @@ const ExpenseForm = ({
       </div>
       
       {availableExpenseTypes.length === 0 ? (
-        isMonthReadOnly(currentMonth) ? (
+        isMonthReadOnly ? (
           <div className="text-center py-8 bg-purple-50 border-2 border-purple-200 rounded-xl">
             <div className="mb-4">
               <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -77,7 +77,7 @@ const ExpenseForm = ({
             <p className="text-green-600 text-sm mt-2">Poți modifica cheltuielile existente sau configura cheltuieli noi</p>
           </div>
         )
-      ) : isMonthReadOnly(currentMonth) ? (
+      ) : isMonthReadOnly ? (
         <div className="text-center py-8 bg-purple-50 border-2 border-purple-200 rounded-xl">
           <div className="mb-4">
             <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">

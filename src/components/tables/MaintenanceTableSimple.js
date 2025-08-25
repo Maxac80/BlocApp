@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
+import PaymentStatusDetail from '../common/PaymentStatusDetail';
 
 const MaintenanceTableSimple = ({ 
   maintenanceData, 
@@ -9,7 +10,7 @@ const MaintenanceTableSimple = ({
 }) => {
   return (
     <table className="w-full">
-      <thead className="bg-gray-50">
+      <thead className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
         <tr>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Apartament</th>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Proprietar</th>
@@ -41,21 +42,17 @@ const MaintenanceTableSimple = ({
             {isMonthReadOnly && (
               <>
                 <td className="px-3 py-3">
-                  {data.paid ? (
-                    <span className="flex items-center text-green-600">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Plătit
-                    </span>
-                  ) : (
-                    <span className="flex items-center text-red-600">
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Restant
-                    </span>
-                  )}
+                  <PaymentStatusDetail
+                    paymentStatus={data.paymentStatus}
+                    isPaid={data.isPaid}
+                    isPartiallyPaid={data.isPartiallyPaid}
+                    paymentInfo={data.paymentInfo}
+                    apartmentData={data}
+                  />
                 </td>
                 <td className="px-3 py-3">
                   <button 
-                    onClick={() => onOpenPaymentModal && onOpenPaymentModal({
+                    onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
                       apartmentId: data.apartmentId,
                       apartmentNumber: data.apartment,
                       owner: data.owner,
@@ -64,7 +61,13 @@ const MaintenanceTableSimple = ({
                       penalitati: data.penalitati,
                       totalDatorat: data.totalDatorat
                     })}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-md"
+                    disabled={!data.paymentInfo?.canReceivePayment}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
+                      data.paymentInfo?.canReceivePayment
+                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
                   >
                     💰 Încasează
                   </button>

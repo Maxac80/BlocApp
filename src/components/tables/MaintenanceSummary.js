@@ -63,7 +63,7 @@ return (
         )}
         
         {/* Buton Depublică Luna (doar pentru lunile publicate) */}
-        {isMonthReadOnly(currentMonth) && (
+        {isMonthReadOnly && (
           <button 
             onClick={() => unpublishMonth(currentMonth)}
             className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 flex items-center text-sm font-medium shadow-md whitespace-nowrap"
@@ -74,7 +74,7 @@ return (
         )}
 
         {/* Buton Ajustări Solduri */}
-        {shouldShowAdjustButton(currentMonth) && (
+        {shouldShowAdjustButton(currentMonth) && !isMonthReadOnly && (
           (currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? hasInitialBalances : true)
         ) && (
           <button 

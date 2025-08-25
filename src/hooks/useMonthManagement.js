@@ -1,12 +1,69 @@
 // hooks/useMonthManagement.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 
-export const useMonthManagement = () => {
+export const useMonthManagement = (associationId) => {
   const [monthStatuses, setMonthStatuses] = useState({});
   const [availableMonths, setAvailableMonths] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(
     new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
   );
+  const [loadingStatus, setLoadingStatus] = useState(false);
+
+  // Încarcă statusurile din Firebase la montarea componentei
+  useEffect(() => {
+    if (!associationId) return;
+
+    setLoadingStatus(true);
+    const statusDocRef = doc(db, 'monthStatuses', associationId);
+    
+    const unsubscribe = onSnapshot(
+      statusDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setMonthStatuses(data.statuses || {});
+        }
+        setLoadingStatus(false);
+      },
+      (error) => {
+        console.error('Eroare la încărcarea statusurilor:', error);
+        setLoadingStatus(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [associationId]);
+
+  // Salvează statusurile în Firebase
+  const saveStatusToFirebase = useCallback(async (month, status) => {
+    if (!associationId) return false;
+    
+    try {
+      const statusDocRef = doc(db, 'monthStatuses', associationId);
+      const updatedStatuses = {
+        ...monthStatuses,
+        [month]: {
+          status: status,
+          updatedAt: new Date().toISOString(),
+          ...(status === 'afisata' ? { publishedAt: new Date().toISOString() } : {})
+        }
+      };
+
+      await setDoc(statusDocRef, {
+        associationId: associationId,
+        statuses: updatedStatuses,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+
+      console.log(`✅ Status salvat în Firebase pentru ${month}: ${status}`);
+      return true;
+    } catch (error) {
+      console.error('Eroare la salvarea statusului în Firebase:', error);
+      return false;
+    }
+  }, [associationId, monthStatuses]);
 
   // Helper pentru a genera luna următoare
   const getNextMonth = useCallback((date) => {
@@ -48,15 +105,32 @@ export const useMonthManagement = () => {
     if (!monthStatuses || typeof monthStatuses !== 'object') {
       return "in_lucru";
     }
-    return monthStatuses[month] || "in_lucru";
+    
+    const monthData = monthStatuses[month];
+    
+    // Dacă este obiect (format nou din Firebase), returnează statusul
+    if (monthData && typeof monthData === 'object' && monthData.status) {
+      return monthData.status;
+    }
+    
+    // Dacă este string direct (pentru compatibilitate)
+    if (typeof monthData === 'string') {
+      return monthData;
+    }
+    
+    return "in_lucru";
   }, [monthStatuses]);
 
-  const setMonthStatus = useCallback((month, status) => {
+  const setMonthStatus = useCallback(async (month, status) => {
+    // Actualizează state-ul local imediat
     setMonthStatuses(prev => ({
       ...prev,
       [month]: status
     }));
-  }, []);
+    
+    // Salvează și în Firebase
+    await saveStatusToFirebase(month, status);
+  }, [saveStatusToFirebase]);
 
   // Helper pentru a determina tipul lunii
   const getMonthType = useCallback((month) => {
@@ -93,7 +167,7 @@ export const useMonthManagement = () => {
   }, []);
 
   // Funcția pentru publicarea unei luni cu validări
-  const publishMonth = useCallback((month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData = []) => {
+  const publishMonth = useCallback(async (month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData = []) => {
     console.log('🔍 PublishMonth called with:', {
       month,
       association: association?.id,
@@ -184,8 +258,8 @@ export const useMonthManagement = () => {
     
     if (!confirmPublish) return false;
     
-    // Setează statusul ca publicat
-    setMonthStatus(month, "afisata");
+    // Setează statusul ca publicat (salvează și în Firebase)
+    await setMonthStatus(month, "afisata");
     
     // Salvează data și ora publicării
     const publishData = {
@@ -220,14 +294,14 @@ export const useMonthManagement = () => {
         return updated;
       });
       
-      setMonthStatus(thirdMonthStr, "in_lucru");
+      await setMonthStatus(thirdMonthStr, "in_lucru");
     }
     
     return true; // Publicare reușită
   }, [setMonthStatus]);
 
   // Funcția pentru depublicarea unei luni (cazuri excepționale)
-  const unpublishMonth = useCallback((month) => {
+  const unpublishMonth = useCallback(async (month) => {
     // Verificare confirmare multiplă pentru siguranță
     const firstConfirm = window.confirm(
       `⚠️ ATENȚIE: Depublicare luna ${month}\n\n` +
@@ -246,8 +320,8 @@ export const useMonthManagement = () => {
     
     if (!secondConfirm) return false;
     
-    // Schimbă statusul înapoi la "in_lucru"
-    setMonthStatus(month, "in_lucru");
+    // Schimbă statusul înapoi la "in_lucru" (salvează și în Firebase)
+    await setMonthStatus(month, "in_lucru");
     
     // Adaugă în istoric că luna a fost depublicată
     const unpublishData = {
@@ -400,7 +474,8 @@ export const useMonthManagement = () => {
 
   // Helper pentru a determina dacă luna este read-only
   const isMonthReadOnly = useCallback((month) => {
-    return getMonthStatus(month) === "afisata";
+    const status = getMonthStatus(month);
+    return status === "afisata";
   }, [getMonthStatus]);
 
   // Funcție pentru adăugarea unei luni noi

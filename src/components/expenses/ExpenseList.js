@@ -44,9 +44,11 @@ const ExpenseList = ({
 
   return (
     <>
-      <div className="bg-white p-6 rounded-xl shadow-lg">
+      <div className={`p-6 rounded-xl shadow-lg ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">📋 Cheltuieli {currentMonth}</h3>
+          <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
+            📋 Cheltuieli {currentMonth} {isMonthReadOnly && <span className="text-sm bg-purple-100 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>}
+          </h3>
           <div className="flex items-center gap-3">
             <div className="text-right text-sm">
               <div className="text-gray-600">
@@ -166,7 +168,7 @@ const ExpenseList = ({
                               `${expense.amount} RON`
                             }
                           </span>
-                          {!isMonthReadOnly(currentMonth) && handleDeleteMonthlyExpense && (
+                          {!isMonthReadOnly && handleDeleteMonthlyExpense && (
                             <button
                               onClick={() => {
                                 handleDeleteMonthlyExpense(expense.id);

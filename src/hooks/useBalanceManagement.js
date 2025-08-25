@@ -18,11 +18,14 @@ export const useBalanceManagement = (association) => {
   const [initialBalances, setInitialBalances] = useState({});
 
   // 🔄 ÎNCĂRCAREA CONFIGURĂRILOR LA SCHIMBAREA ASOCIAȚIEI
+  // DEZACTIVAT - folosim doar calculul din tabelul curent
+  /*
   useEffect(() => {
     if (association?.id) {
       loadInitialBalances();
     }
   }, [association?.id]);
+  */
 
   // 📥 ÎNCĂRCAREA SOLDURILOR ȘI CONFIGURĂRILOR DIN FIRESTORE
   const loadInitialBalances = useCallback(async () => {
@@ -98,10 +101,11 @@ export const useBalanceManagement = (association) => {
       const monthKey = `${association.id}-${currentMonthStr}`;
       const currentBalances = monthlyBalances[monthKey] || {};
       
-      // Șterge soldurile existente pentru această asociație
+      // Șterge doar soldurile pentru această lună specifică, nu toate
       const existingBalancesQuery = query(
         collection(db, 'initialBalances'),
-        where('associationId', '==', association.id)
+        where('associationId', '==', association.id),
+        where('month', '==', currentMonthStr)
       );
       const existingSnapshot = await getDocs(existingBalancesQuery);
       
@@ -115,6 +119,7 @@ export const useBalanceManagement = (association) => {
         return addDoc(collection(db, 'initialBalances'), {
           associationId: association.id,
           apartmentId: apartmentId,
+          month: currentMonthStr, // Adăugăm câmpul month pentru filtrare
           restante: balance.restante || 0,
           penalitati: balance.penalitati || 0,
           savedAt: new Date().toISOString()
@@ -315,13 +320,49 @@ export const useBalanceManagement = (association) => {
       const nextMonthBalances = {};
       
       currentTable.forEach(row => {
-        if (!row.paid) {
+        // Folosim datele actualizate din usePaymentSync care reflectă plățile parțiale
+        // Aceste câmpuri sunt deja calculate prin scăderea plăților din sumele inițiale
+        
+        const remainingRestante = row.restante || 0; // Restanțele rămase după plăți
+        const remainingMaintenance = row.currentMaintenance || 0; // Întreținerea rămasă după plăți  
+        const remainingPenalties = row.penalitati || 0; // Penalitățile rămase după plăți
+        
+        // Calculează totalul rămas
+        const totalRemaining = remainingRestante + remainingMaintenance + remainingPenalties;
+        
+        console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
+          totalDatorat: row.totalDatorat,
+          remainingRestante,
+          remainingMaintenance, 
+          remainingPenalties,
+          totalRemaining,
+          isPaid: row.isPaid,
+          isPartiallyPaid: row.isPartiallyPaid,
+          paymentInfo: row.paymentInfo
+        });
+        
+        if (totalRemaining > 0) {
+          // Mai sunt datorii de transferat în luna următoare
+          // Pentru luna următoare, ce rămâne neplătit din luna curentă devine "restanță"
+          const nextMonthRestante = Math.round(totalRemaining * 100) / 100;
+          
+          // Calculăm penalty doar pe întreținerea curentă neplătită (1%)
+          // Nu aplicăm penalty pe restanțe sau penalități existente
+          const penaltyOnCurrentMaintenance = remainingMaintenance > 0 ? (remainingMaintenance * 0.01) : 0;
+          
+          // Penalitățile pentru luna următoare = penalitățile rămase + penalty pe întreținerea neplătită
+          const nextMonthPenalitati = Math.round((remainingPenalties + penaltyOnCurrentMaintenance) * 100) / 100;
+          
           nextMonthBalances[row.apartmentId] = {
-            restante: Math.round(row.totalDatorat * 100) / 100,
-            penalitati: Math.round((row.penalitati + (row.totalMaintenance * 0.01)) * 100) / 100
+            restante: nextMonthRestante,
+            penalitati: nextMonthPenalitati
           };
+          
+          console.log(`✅ Ap.${row.apartment}: Transfer → Restante=${nextMonthRestante}, Penalitati=${nextMonthPenalitati}, PenaltyAdded=${penaltyOnCurrentMaintenance}`);
         } else {
+          // Totul plătit - nu se transferă nimic
           nextMonthBalances[row.apartmentId] = { restante: 0, penalitati: 0 };
+          console.log(`✅ Ap.${row.apartment}: Totul plătit - balante resetate`);
         }
       });
       

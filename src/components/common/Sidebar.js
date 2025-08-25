@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building, BookOpen } from 'lucide-react';
+import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building, BookOpen, Coins } from 'lucide-react';
 
 const Sidebar = ({ 
   sidebarOpen, 
@@ -155,6 +155,30 @@ const Sidebar = ({
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Configurare cheltuieli
+            </div>
+          )}
+        </button>
+
+        {/* Contabilitate */}
+        <button
+          onClick={() => handleNavigation("accounting")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "accounting"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Coins className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Contabilitate</div>
+              <div className="text-xs text-gray-500">Încasări & chitanțe</div>
+            </div>
+          )}
+          
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Contabilitate
             </div>
           )}
         </button>

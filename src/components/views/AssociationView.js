@@ -259,12 +259,12 @@ const AssociationView = ({
 const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
 return (
-  <div className={`min-h-screen p-4 ${
+  <div className={`min-h-screen p-6 ${
     currentMonth === currentMonthStr
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : "bg-gradient-to-br from-green-50 to-emerald-100"
   }`}>
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <DashboardHeader
         association={association}
         currentMonth={currentMonth}
