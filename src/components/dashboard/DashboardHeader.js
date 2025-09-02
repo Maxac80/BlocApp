@@ -1,6 +1,5 @@
 // src/components/dashboard/DashboardHeader.js
 import React from 'react';
-import { History } from 'lucide-react';
 
 const DashboardHeader = ({
   association,
@@ -11,7 +10,7 @@ const DashboardHeader = ({
   isMonthReadOnly,
   getAssociationApartments,
   handleNavigation,
-  onShowVersionHistory
+  getMonthType
 }) => {
   return (
     <header className="mb-8">
@@ -38,18 +37,6 @@ const DashboardHeader = ({
 
           {/* Dreapta: Status luna și selector */}
           <div className="flex items-center space-x-4">
-            {/* Buton istoric versiuni */}
-            {onShowVersionHistory && (
-              <button
-                onClick={onShowVersionHistory}
-                className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm flex items-center"
-                title="Istoric versiuni publicate"
-              >
-                <History className="w-4 h-4 mr-2" />
-                Istoric
-              </button>
-            )}
-
             {/* Selector luna */}
             <select
               value={currentMonth}
@@ -65,22 +52,43 @@ const DashboardHeader = ({
 
             {/* Status-uri luna */}
             <div className="flex items-center space-x-2">
-              {currentMonth === new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" }) ? (
-                <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                  LUNA CURENTĂ
-                </span>
-              ) : (
-                <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                  LUNA URMĂTOARE
-                </span>
-              )}
+              {/* Determinăm tipul lunii folosind funcția dinamică */}
+              {(() => {
+                const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
+                if (monthType === 'current') {
+                  return (
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                      LUNA CURENTĂ
+                    </span>
+                  );
+                } else if (monthType === 'next') {
+                  return (
+                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                      LUNA URMĂTOARE
+                    </span>
+                  );
+                } else if (monthType === 'historic') {
+                  return (
+                    <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                      📚 ISTORIC
+                    </span>
+                  );
+                } else {
+                  // Pentru orice alt tip, afișăm implicit ca luna curentă
+                  return (
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                      LUNA CURENTĂ
+                    </span>
+                  );
+                }
+              })()}
               
               {isMonthReadOnly ? (
-                <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
+                <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
                   📋 PUBLICATĂ
                 </span>
               ) : (
-                <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
                   🔧 ÎN LUCRU
                 </span>
               )}

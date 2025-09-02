@@ -9,7 +9,6 @@ import { useExpenseManagement } from './hooks/useExpenseManagement';
 import { useNavigationAndUI } from './hooks/useNavigationAndUI';
 import { useMonthManagement } from './hooks/useMonthManagement';
 import { useDataOperations } from './hooks/useDataOperations';
-import { useVersioning } from './hooks/useVersioning';
 import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 
 // Components
@@ -123,21 +122,11 @@ export default function BlocApp() {
     getAvailableMonths,
     shouldShowAdjustButton,
     shouldShowPublishButton,
-    isMonthReadOnly
+    isMonthReadOnly,
+    getCurrentActiveMonth,
+    getNextActiveMonth
   } = useMonthManagement(association?.id);
 
-  // 🔥 HOOK PENTRU VERSIONING ȘI ISTORIC
-  const {
-    versionHistory,
-    currentVersion,
-    isLoadingVersion,
-    saveVersion,
-    loadVersion,
-    getAvailableVersions,
-    hasVersion,
-    exportHistory,
-    importHistory
-  } = useVersioning();
 
   // 🔥 HOOK PENTRU GESTIONAREA SOLDURILOR
   const {
@@ -363,6 +352,7 @@ useEffect(() => {
         deleteAllBlocAppData={deleteAllBlocAppData}
         userProfile={userProfile}
         activeUser={activeUser}
+        setCurrentMonth={setCurrentMonth}
       />
       
       {/* Overlay pentru mobile */}
@@ -402,12 +392,8 @@ useEffect(() => {
               handleNavigation={handleNavigation}
               expenses={expenses}
               maintenanceData={maintenanceData}
-              getAvailableVersions={getAvailableVersions}
-              loadVersion={loadVersion}
-              exportHistory={exportHistory}
-              importHistory={importHistory}
-              isLoadingVersion={isLoadingVersion}
               userProfile={userProfile}
+              getMonthType={getMonthType}
             />
           )}
 
@@ -423,27 +409,13 @@ useEffect(() => {
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
               shouldShowPublishButton={shouldShowPublishButton}
               shouldShowAdjustButton={shouldShowAdjustButton}
+              getCurrentActiveMonth={getCurrentActiveMonth}
+              getNextActiveMonth={getNextActiveMonth}
+              getMonthType={getMonthType}
               publishMonth={(month) => {
                 console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
                 const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData);
                 if (result) {
-                  // Salvează versiunea în sistemul de versioning
-                  const versionData = {
-                    maintenanceData: maintenanceData || [],
-                    expenses: expenses.filter(exp => exp.associationId === association?.id && exp.month === month),
-                    expenseConfigs: {}, // TODO: Adaugă configurațiile de cheltuieli
-                    initialBalances: {}, // TODO: Adaugă soldurile inițiale
-                    associationId: association?.id,
-                    associationName: association?.name,
-                    publishedBy: userProfile?.email || 'Administrator'
-                  };
-                  
-                  const versionResult = saveVersion(month, versionData);
-                  if (versionResult.success) {
-                    console.log(`✅ Versiunea pentru ${month} a fost salvată:`, versionResult.version);
-                  } else {
-                    console.error(`❌ Eroare la salvarea versiunii pentru ${month}:`, versionResult.error);
-                  }
                   // ✅ TRANSFER AUTOMAT SOLDURI - REACTIVAT ȘI REPARAT
                   console.log('🔄 Începe transferul automat de solduri...');
                   
@@ -567,6 +539,7 @@ useEffect(() => {
               addApartment={addApartment}
               setApartmentBalance={setApartmentBalance}
               saveInitialBalances={saveInitialBalances}
+              getMonthType={getMonthType}
             />
           )}
 
@@ -594,6 +567,7 @@ useEffect(() => {
               getDisabledExpenseTypes={getDisabledExpenseTypes}
               toggleExpenseStatus={toggleExpenseStatus}
               deleteCustomExpense={handleDeleteCustomExpense}
+              getMonthType={getMonthType}
             />
           )}
 
@@ -615,6 +589,7 @@ useEffect(() => {
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              getMonthType={getMonthType}
             />
           )}
 
@@ -632,6 +607,7 @@ useEffect(() => {
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
+              getMonthType={getMonthType}
             />
           )}
 
@@ -654,6 +630,7 @@ useEffect(() => {
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
+              getMonthType={getMonthType}
             />
           )}
 

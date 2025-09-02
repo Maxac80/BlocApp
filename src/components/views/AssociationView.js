@@ -19,7 +19,8 @@ const AssociationView = ({
   setCurrentMonth,
   getAvailableMonths,
   expenses,
-  isMonthReadOnly
+  isMonthReadOnly,
+  getMonthType
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
   
@@ -257,12 +258,17 @@ const AssociationView = ({
   };
 
 const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
 return (
   <div className={`min-h-screen p-6 ${
-    currentMonth === currentMonthStr
+    monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-      : "bg-gradient-to-br from-green-50 to-emerald-100"
+      : monthType === 'next'
+      ? "bg-gradient-to-br from-green-50 to-emerald-100"
+      : monthType === 'historic'
+      ? "bg-gradient-to-br from-gray-50 to-gray-100"
+      : "bg-gradient-to-br from-indigo-50 to-blue-100"
   }`}>
     <div className="w-full">
       <DashboardHeader
@@ -274,6 +280,7 @@ return (
         isMonthReadOnly={isMonthReadOnly}
         getAssociationApartments={getAssociationApartments}
         handleNavigation={handleNavigation}
+        getMonthType={getMonthType}
       />
 
       {/* Page Title */}

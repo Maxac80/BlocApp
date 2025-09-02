@@ -132,8 +132,87 @@ export const useMonthManagement = (associationId) => {
     await saveStatusToFirebase(month, status);
   }, [saveStatusToFirebase]);
 
-  // Helper pentru a determina tipul lunii
+  // Helper pentru a determina tipul lunii bazat pe statusuri și ordine cronologică
   const getMonthType = useCallback((month) => {
+    // Găsim toate lunile publicate și le sortăm cronologic
+    const publishedMonths = [];
+    const inWorkMonths = [];
+    
+    // Dacă avem statusuri în Firebase, folosim logica complexă
+    if (monthStatuses && Object.keys(monthStatuses).length > 0) {
+      Object.keys(monthStatuses).forEach(m => {
+        const status = typeof monthStatuses[m] === 'object' ? monthStatuses[m].status : monthStatuses[m];
+        if (status === 'afisata') {
+          publishedMonths.push(m);
+        } else if (status === 'in_lucru') {
+          inWorkMonths.push(m);
+        }
+      });
+
+      // Sortăm lunile cronologic
+      const sortMonths = (months) => {
+        return months.sort((a, b) => {
+          try {
+            const [monthA, yearA] = a.split(' ');
+            const [monthB, yearB] = b.split(' ');
+            const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                              'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+            const dateA = new Date(parseInt(yearA), monthNames.indexOf(monthA), 1);
+            const dateB = new Date(parseInt(yearB), monthNames.indexOf(monthB), 1);
+            return dateA - dateB;
+          } catch {
+            return 0;
+          }
+        });
+      };
+
+      const sortedPublished = sortMonths([...publishedMonths]);
+      const sortedInWork = sortMonths([...inWorkMonths]);
+
+      // Determinăm tipul bazat pe logica de business:
+      // 1. Ultima lună publicată este "current"
+      // 2. Prima lună în lucru după ultima publicată este "next"
+      // 3. Restul lunilor publicate sunt "historic"
+      
+      if (sortedPublished.length > 0) {
+        const lastPublished = sortedPublished[sortedPublished.length - 1];
+        
+        // Luna curentă este ultima lună publicată
+        if (month === lastPublished) {
+          return "current";
+        }
+        
+        // Luna următoare este prima lună în lucru după ultima publicată
+        if (sortedInWork.length > 0) {
+          // Găsim prima lună în lucru care e după ultima publicată
+          for (const inWorkMonth of sortedInWork) {
+            if (isMonthAfter(inWorkMonth, lastPublished)) {
+              if (month === inWorkMonth) {
+                return "next";
+              }
+              break;
+            }
+          }
+        }
+        
+        // Toate celelalte luni publicate sunt istoric
+        if (publishedMonths.includes(month)) {
+          return "historic";
+        }
+      } else {
+        // Dacă nu avem luni publicate, prima lună în lucru e "current", a doua e "next"
+        if (sortedInWork.length > 0) {
+          if (month === sortedInWork[0]) {
+            return "current";
+          }
+          if (sortedInWork.length > 1 && month === sortedInWork[1]) {
+            return "next";
+          }
+        }
+      }
+    }
+    
+    // Fallback la logica simplă bazată pe calendarul real
     const currentDate = new Date();
     const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
     
@@ -156,7 +235,6 @@ export const useMonthManagement = (associationId) => {
         const monthDate = new Date(parseInt(year), monthIndex, 1);
         const currentDateFirstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         
-        if (monthDate > nextMonthDate) return "future";
         if (monthDate < currentDateFirstDay) return "historic";
       }
     } catch (error) {
@@ -164,9 +242,24 @@ export const useMonthManagement = (associationId) => {
     }
     
     return "historic"; // Default fallback
-  }, []);
+  }, [monthStatuses]);
 
-  // Funcția pentru publicarea unei luni cu validări
+  // Helper pentru a verifica dacă o lună este după alta
+  const isMonthAfter = (month1, month2) => {
+    try {
+      const [monthName1, year1] = month1.split(' ');
+      const [monthName2, year2] = month2.split(' ');
+      const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                        'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+      const date1 = new Date(parseInt(year1), monthNames.indexOf(monthName1), 1);
+      const date2 = new Date(parseInt(year2), monthNames.indexOf(monthName2), 1);
+      return date1 > date2;
+    } catch {
+      return false;
+    }
+  };
+
+  // Funcția pentru publicarea unei luni cu validări și actualizare tipuri
   const publishMonth = useCallback(async (month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData = []) => {
     console.log('🔍 PublishMonth called with:', {
       month,
@@ -273,32 +366,43 @@ export const useMonthManagement = (associationId) => {
     publishHistory.push(publishData);
     localStorage.setItem('publishHistory', JSON.stringify(publishHistory));
     
-    // Dacă publicăm a doua lună, generăm a treia
-    const nextMonthDate = new Date();
-    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-    const nextMonthStr = nextMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    // După publicare, generăm automat luna următoare dacă e necesar
+    const monthType = getMonthType(month);
     
-    if (month === nextMonthStr) {
-      // Generăm luna următoare
-      const thirdMonthDate = new Date();
-      thirdMonthDate.setMonth(thirdMonthDate.getMonth() + 2);
-      const thirdMonthStr = thirdMonthDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    if (monthType === "next") {
+      // Generăm noua lună următoare
+      const newNextMonth = generateNextMonthFromString(month);
       
-      setAvailableMonths(prev => {
-        const updated = prev.map(m => {
-          if (m.type === "current") return { ...m, type: "historic" };
-          if (m.type === "next") return { ...m, type: "current" };
-          return m;
-        });
-        updated.push({ value: thirdMonthStr, label: thirdMonthStr, type: "next" });
-        return updated;
-      });
-      
-      await setMonthStatus(thirdMonthStr, "in_lucru");
+      if (newNextMonth) {
+        // Verificăm dacă luna nu există deja
+        const existingStatus = getMonthStatus(newNextMonth);
+        if (!existingStatus || existingStatus === "in_lucru") {
+          await setMonthStatus(newNextMonth, "in_lucru");
+          console.log(`✅ Generată noua lună următoare: ${newNextMonth}`);
+        }
+      }
     }
     
     return true; // Publicare reușită
   }, [setMonthStatus]);
+
+  // Helper pentru a genera luna următoare din string
+  const generateNextMonthFromString = (monthStr) => {
+    try {
+      const [monthName, year] = monthStr.split(' ');
+      const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                        'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+      const monthIndex = monthNames.indexOf(monthName);
+      
+      if (monthIndex !== -1) {
+        const nextDate = new Date(parseInt(year), monthIndex + 1, 1);
+        return nextDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+      }
+    } catch (error) {
+      console.error('Error generating next month:', error);
+    }
+    return null;
+  };
 
   // Funcția pentru depublicarea unei luni (cazuri excepționale)
   const unpublishMonth = useCallback(async (month) => {
@@ -504,15 +608,107 @@ export const useMonthManagement = (associationId) => {
     return availableMonths.filter(m => m.type === "historic");
   }, [availableMonths]);
 
-  // Funcție pentru a obține luna curentă activă
+  // Funcție pentru a obține luna curentă activă (ultima publicată sau prima în lucru)
   const getCurrentActiveMonth = useCallback(() => {
-    return availableMonths.find(m => m.type === "current");
-  }, [availableMonths]);
+    // Găsim toate lunile și le categorisim
+    const allMonths = Object.keys(monthStatuses || {});
+    const publishedMonths = [];
+    const inWorkMonths = [];
+    
+    allMonths.forEach(month => {
+      const status = getMonthStatus(month);
+      if (status === 'afisata') {
+        publishedMonths.push(month);
+      } else if (status === 'in_lucru') {
+        inWorkMonths.push(month);
+      }
+    });
+    
+    // Sortăm lunile publicate pentru a găsi ultima
+    if (publishedMonths.length > 0) {
+      const sorted = publishedMonths.sort((a, b) => {
+        try {
+          const [monthA, yearA] = a.split(' ');
+          const [monthB, yearB] = b.split(' ');
+          const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                            'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+          const dateA = new Date(parseInt(yearA), monthNames.indexOf(monthA), 1);
+          const dateB = new Date(parseInt(yearB), monthNames.indexOf(monthB), 1);
+          return dateA - dateB;
+        } catch {
+          return 0;
+        }
+      });
+      
+      const lastPublished = sorted[sorted.length - 1];
+      return { value: lastPublished, label: lastPublished, type: "current" };
+    }
+    
+    // Dacă nu avem luni publicate, returnăm prima lună în lucru
+    if (inWorkMonths.length > 0) {
+      const sorted = inWorkMonths.sort((a, b) => {
+        try {
+          const [monthA, yearA] = a.split(' ');
+          const [monthB, yearB] = b.split(' ');
+          const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                            'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+          const dateA = new Date(parseInt(yearA), monthNames.indexOf(monthA), 1);
+          const dateB = new Date(parseInt(yearB), monthNames.indexOf(monthB), 1);
+          return dateA - dateB;
+        } catch {
+          return 0;
+        }
+      });
+      
+      return { value: sorted[0], label: sorted[0], type: "current" };
+    }
+    
+    // Fallback la luna calendaristică curentă
+    const currentDate = new Date();
+    const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    return { value: currentMonthStr, label: currentMonthStr, type: "current" };
+  }, [monthStatuses, getMonthStatus]);
 
-  // Funcție pentru a obține luna următoare
+  // Funcție pentru a obține luna următoare (prima în lucru după ultima publicată)
   const getNextActiveMonth = useCallback(() => {
-    return availableMonths.find(m => m.type === "next");
-  }, [availableMonths]);
+    const currentMonth = getCurrentActiveMonth();
+    if (!currentMonth) return null;
+    
+    // Găsim toate lunile în lucru
+    const allMonths = Object.keys(monthStatuses || {});
+    const inWorkMonths = [];
+    
+    allMonths.forEach(month => {
+      const status = getMonthStatus(month);
+      if (status === 'in_lucru') {
+        inWorkMonths.push(month);
+      }
+    });
+    
+    // Sortăm și găsim prima lună în lucru după luna curentă
+    const sorted = inWorkMonths.sort((a, b) => {
+      try {
+        const [monthA, yearA] = a.split(' ');
+        const [monthB, yearB] = b.split(' ');
+        const monthNames = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                          'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+        const dateA = new Date(parseInt(yearA), monthNames.indexOf(monthA), 1);
+        const dateB = new Date(parseInt(yearB), monthNames.indexOf(monthB), 1);
+        return dateA - dateB;
+      } catch {
+        return 0;
+      }
+    });
+    
+    // Găsim prima lună în lucru care e după luna curentă
+    for (const month of sorted) {
+      if (isMonthAfter(month, currentMonth.value)) {
+        return { value: month, label: month, type: "next" };
+      }
+    }
+    
+    return null;
+  }, [monthStatuses, getMonthStatus, getCurrentActiveMonth]);
 
   return {
     // State

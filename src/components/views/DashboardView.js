@@ -7,7 +7,7 @@ import {
   DashboardHeader,
   DashboardMaintenanceTable 
 } from '../dashboard';
-import { PaymentModal, VersionHistoryModal } from '../modals';
+import { PaymentModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
 
@@ -23,6 +23,7 @@ const DashboardView = ({
   setCurrentMonth,
   getAvailableMonths,
   isMonthReadOnly,
+  getMonthType,
   
   // Association creation
   newAssociation,
@@ -35,13 +36,6 @@ const DashboardView = ({
   // Data
   expenses,
   maintenanceData,
-  
-  // Versioning
-  getAvailableVersions,
-  loadVersion,
-  exportHistory,
-  importHistory,
-  isLoadingVersion,
   
   // User profile
   userProfile
@@ -62,8 +56,6 @@ const DashboardView = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
-  // State pentru modalul de versioning
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Calculează datele actualizate pentru afișare în tabel
   const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
@@ -117,11 +109,17 @@ const DashboardView = ({
     // TODO: Implementează afișarea datelor versiunii în interfață
   };
   
+  const monthType = getMonthType ? getMonthType(currentMonth) : null;
+
   return (
     <div className={`min-h-screen p-6 ${
-      currentMonth === currentMonthStr
+      monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-        : "bg-gradient-to-br from-green-50 to-emerald-100"
+        : monthType === 'next'
+        ? "bg-gradient-to-br from-green-50 to-emerald-100"
+        : monthType === 'historic'
+        ? "bg-gradient-to-br from-gray-50 to-gray-100"
+        : "bg-gradient-to-br from-indigo-50 to-blue-100"
     }`}>
       <div className="w-full">
         <DashboardHeader
@@ -132,7 +130,7 @@ const DashboardView = ({
           isMonthReadOnly={isMonthReadOnly}
           getAssociationApartments={getAssociationApartments}
           handleNavigation={handleNavigation}
-          onShowVersionHistory={() => setShowVersionHistory(true)}
+          getMonthType={getMonthType}
         />
 
         {/* Page Title */}
@@ -246,6 +244,7 @@ const DashboardView = ({
                   stairs={stairs}
                   getAssociationApartments={getAssociationApartments}
                   expenses={expenses}
+                  isHistoricMonth={monthType === 'historic'}
                 />
               );
             })()}
@@ -295,18 +294,6 @@ const DashboardView = ({
         onSavePayment={handleSavePayment}
       />
 
-      {/* Modal pentru istoric versiuni */}
-      <VersionHistoryModal
-        showVersionHistory={showVersionHistory}
-        setShowVersionHistory={setShowVersionHistory}
-        getAvailableVersions={getAvailableVersions}
-        loadVersion={loadVersion}
-        exportHistory={exportHistory}
-        importHistory={importHistory}
-        isLoadingVersion={isLoadingVersion}
-        onSelectVersion={handleSelectVersion}
-        currentMonth={currentMonth}
-      />
     </div>
   );
 };

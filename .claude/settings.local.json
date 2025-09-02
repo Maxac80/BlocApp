@@ -16,7 +16,9 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "Bash(rm:*)",
-      "Bash(claude doctor)"
+      "Bash(claude doctor)",
+      "Bash(npm test:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

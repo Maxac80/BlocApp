@@ -13,8 +13,21 @@ const Sidebar = ({
   deleteCurrentAssociationData,
   deleteAllBlocAppData,
   userProfile,
-  activeUser
-}) => (
+  activeUser,
+  setCurrentMonth
+}) => {
+  // Funcția pentru a naviga la Dashboard cu luna curentă
+  const handleBlocAppClick = () => {
+    // Setez luna curentă calendaristică
+    const currentDate = new Date();
+    const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    setCurrentMonth(currentMonthStr);
+    
+    // Navighează la Dashboard
+    handleNavigation("dashboard");
+  };
+
+  return (
   <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
   } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
@@ -22,16 +35,24 @@ const Sidebar = ({
     {/* Header Sidebar cu buton expand/collapse */}
     <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
       {sidebarExpanded ? (
-        <div className="flex items-center">
+        <button 
+          onClick={handleBlocAppClick}
+          className="flex items-center hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
+          title="Mergi la Dashboard - luna curentă"
+        >
           <Building2 className="w-8 h-8 mr-2 text-white" />
           <div>
             <h1 className="text-lg font-bold text-white">BlocApp</h1>
           </div>
-        </div>
+        </button>
       ) : (
-        <div className="flex items-center justify-center w-full">
+        <button 
+          onClick={handleBlocAppClick}
+          className="flex items-center justify-center w-full hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
+          title="Mergi la Dashboard - luna curentă"
+        >
           <Building2 className="w-8 h-8 text-white" />
-        </div>
+        </button>
       )}
       
       {/* Buton expand/collapse pentru desktop */}
@@ -367,6 +388,7 @@ const Sidebar = ({
       )}
     </div>
   </div>
-);
+  );
+};
 
 export default Sidebar;

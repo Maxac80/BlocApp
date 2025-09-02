@@ -37,7 +37,8 @@ const SetupView = ({
   addStair,
   addApartment,
   setApartmentBalance,
-  saveInitialBalances
+  saveInitialBalances,
+  getMonthType
 }) => {
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
@@ -170,11 +171,17 @@ const SetupView = ({
 
 const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
+const monthType = getMonthType ? getMonthType(currentMonth) : null;
+
 return (
   <div className={`min-h-screen p-6 ${
-    currentMonth === currentMonthStr
+    monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-      : "bg-gradient-to-br from-green-50 to-emerald-100"
+      : monthType === 'next'
+      ? "bg-gradient-to-br from-green-50 to-emerald-100"
+      : monthType === 'historic'
+      ? "bg-gradient-to-br from-gray-50 to-gray-100"
+      : "bg-gradient-to-br from-indigo-50 to-blue-100"
   }`}>
     <div className="w-full">
       {/* Header cu dropdown luni */}
@@ -187,6 +194,7 @@ return (
         isMonthReadOnly={isMonthReadOnly}
         getAssociationApartments={getAssociationApartments}
         handleNavigation={handleNavigation}
+        getMonthType={getMonthType}
       />
 
       {/* Page Title */}

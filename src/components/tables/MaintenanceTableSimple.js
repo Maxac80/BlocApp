@@ -6,7 +6,8 @@ const MaintenanceTableSimple = ({
   maintenanceData, 
   isMonthReadOnly, 
   togglePayment,
-  onOpenPaymentModal 
+  onOpenPaymentModal,
+  isHistoricMonth = false
 }) => {
   return (
     <table className="w-full">
@@ -23,7 +24,9 @@ const MaintenanceTableSimple = ({
           {isMonthReadOnly && (
             <>
               <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Acțiuni</th>
+              {!isHistoricMonth && (
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Acțiuni</th>
+              )}
             </>
           )}
         </tr>
@@ -50,28 +53,30 @@ const MaintenanceTableSimple = ({
                     apartmentData={data}
                   />
                 </td>
-                <td className="px-3 py-3">
-                  <button 
-                    onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
-                      apartmentId: data.apartmentId,
-                      apartmentNumber: data.apartment,
-                      owner: data.owner,
-                      restante: data.restante,
-                      intretinere: data.currentMaintenance,
-                      penalitati: data.penalitati,
-                      totalDatorat: data.totalDatorat
-                    })}
-                    disabled={!data.paymentInfo?.canReceivePayment}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
-                      data.paymentInfo?.canReceivePayment
-                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
-                  >
-                    💰 Încasează
-                  </button>
-                </td>
+                {!isHistoricMonth && (
+                  <td className="px-3 py-3">
+                    <button 
+                      onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
+                        apartmentId: data.apartmentId,
+                        apartmentNumber: data.apartment,
+                        owner: data.owner,
+                        restante: data.restante,
+                        intretinere: data.currentMaintenance,
+                        penalitati: data.penalitati,
+                        totalDatorat: data.totalDatorat
+                      })}
+                      disabled={!data.paymentInfo?.canReceivePayment}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
+                        data.paymentInfo?.canReceivePayment
+                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
+                    >
+                      💰 Încasează
+                    </button>
+                  </td>
+                )}
               </>
             )}
           </tr>
@@ -85,7 +90,7 @@ const MaintenanceTableSimple = ({
               {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
             </td>
             <td colSpan="2" className="px-3 py-3 font-semibold text-right">TOTAL RESTANȚE:</td>
-            <td colSpan="4" className="px-3 py-3 font-bold text-red-600">
+            <td colSpan={isHistoricMonth ? "3" : "4"} className="px-3 py-3 font-bold text-red-600">
               {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
             </td>
           </tr>

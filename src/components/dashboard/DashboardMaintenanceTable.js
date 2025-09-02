@@ -14,7 +14,8 @@ const DashboardMaintenanceTable = ({
   blocks,
   stairs,
   getAssociationApartments,
-  expenses
+  expenses,
+  isHistoricMonth = false
 }) => {
   const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
   const [searchTerm, setSearchTerm] = useState("");
@@ -161,6 +162,7 @@ const DashboardMaintenanceTable = ({
             isMonthReadOnly={isMonthReadOnly}
             togglePayment={() => {}} // Nu e disponibil în Dashboard
             onOpenPaymentModal={onOpenPaymentModal}
+            isHistoricMonth={isHistoricMonth}
           />
         ) : (
           <MaintenanceTableDetailed
@@ -169,6 +171,7 @@ const DashboardMaintenanceTable = ({
             association={association}
             isMonthReadOnly={isMonthReadOnly}
             onOpenPaymentModal={onOpenPaymentModal}
+            isHistoricMonth={isHistoricMonth}
           />
         )}
       </div>

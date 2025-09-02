@@ -7,7 +7,8 @@ const MaintenanceTableDetailed = ({
   expenses, 
   association,
   isMonthReadOnly,
-  onOpenPaymentModal
+  onOpenPaymentModal,
+  isHistoricMonth = false
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -55,9 +56,11 @@ const MaintenanceTableDetailed = ({
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-700 whitespace-nowrap min-w-[100px]">
                   Status
                 </th>
-                <th className="px-2 py-3 text-center text-xs font-medium text-gray-700 whitespace-nowrap min-w-[100px]">
-                  Acțiuni
-                </th>
+                {!isHistoricMonth && (
+                  <th className="px-2 py-3 text-center text-xs font-medium text-gray-700 whitespace-nowrap min-w-[100px]">
+                    Acțiuni
+                  </th>
+                )}
               </>
             )}
           </tr>
@@ -111,28 +114,30 @@ const MaintenanceTableDetailed = ({
                     apartmentData={data}
                   />
                 </td>
-                <td className="px-2 py-3 text-center">
-                  <button 
-                    onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
-                      apartmentId: data.apartmentId,
-                      apartmentNumber: data.apartment,
-                      owner: data.owner,
-                      restante: data.restante,
-                      intretinere: data.currentMaintenance,
-                      penalitati: data.penalitati,
-                      totalDatorat: data.totalDatorat
-                    })}
-                    disabled={!data.paymentInfo?.canReceivePayment}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
-                      data.paymentInfo?.canReceivePayment
-                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
-                  >
-                    💰 Încasează
-                  </button>
-                </td>
+                {!isHistoricMonth && (
+                  <td className="px-2 py-3 text-center">
+                    <button 
+                      onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
+                        apartmentId: data.apartmentId,
+                        apartmentNumber: data.apartment,
+                        owner: data.owner,
+                        restante: data.restante,
+                        intretinere: data.currentMaintenance,
+                        penalitati: data.penalitati,
+                        totalDatorat: data.totalDatorat
+                      })}
+                      disabled={!data.paymentInfo?.canReceivePayment}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
+                        data.paymentInfo?.canReceivePayment
+                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
+                    >
+                      💰 Încasează
+                    </button>
+                  </td>
+                )}
               </>
             )}
           </tr>
