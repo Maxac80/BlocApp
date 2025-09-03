@@ -27,13 +27,25 @@ const currentActiveMonth = getCurrentActiveMonth();
 const nextActiveMonth = getNextActiveMonth();
 const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
+// Verificăm dacă avem ceva de afișat
+const hasContent = 
+  (currentActiveMonth && nextActiveMonth && monthType !== 'historic') ||
+  shouldShowPublishButton(currentMonth) ||
+  (isMonthReadOnly && monthType !== 'historic') ||
+  (shouldShowAdjustButton(currentMonth) && !isMonthReadOnly);
+
+// Nu afișăm nimic dacă nu avem conținut
+if (!hasContent) {
+  return null;
+}
+
 return (
   <div className="mb-6">
     {/* Butoanele pentru acțiuni */}
     <div className="bg-white rounded-lg p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
-        {/* Tab-uri pentru luni - doar dacă avem ambele luni */}
-        {currentActiveMonth && nextActiveMonth && (
+        {/* Tab-uri pentru luni - doar dacă avem ambele luni ȘI nu suntem în istoric */}
+        {currentActiveMonth && nextActiveMonth && monthType !== 'historic' && (
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button 
               onClick={() => setCurrentMonth(currentActiveMonth.value)}
@@ -68,8 +80,8 @@ return (
           </button>
         )}
         
-        {/* Buton Depublică Luna (doar pentru lunile publicate) */}
-        {isMonthReadOnly && (
+        {/* Buton Depublică Luna (doar pentru lunile publicate curente, nu pentru istorice) */}
+        {isMonthReadOnly && monthType !== 'historic' && (
           <button 
             onClick={() => unpublishMonth(currentMonth)}
             className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 flex items-center text-sm font-medium shadow-md whitespace-nowrap"

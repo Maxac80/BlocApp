@@ -8,7 +8,8 @@ const ConsumptionInput = ({
   updateExpenseConsumption,
   updateExpenseIndividualAmount,
   isMonthReadOnly,
-  currentMonth
+  currentMonth,
+  monthType
 }) => {
   const [showConsumptionModal, setShowConsumptionModal] = useState(false);
   const [expandedExpenses, setExpandedExpenses] = useState({});
@@ -102,10 +103,24 @@ const ConsumptionInput = ({
 
   return (
     <>
-      <div className={`p-6 rounded-xl shadow-lg ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
+      <div className={`p-6 rounded-xl shadow-lg ${
+        monthType === 'historic' 
+          ? 'bg-gray-50 border-2 border-gray-300' 
+          : isMonthReadOnly 
+          ? 'bg-purple-50 border-2 border-purple-200' 
+          : 'bg-white'
+      }`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
-            {isMonthReadOnly ? 
+          <h3 className={`text-lg font-semibold ${
+            monthType === 'historic' 
+              ? 'text-gray-800' 
+              : isMonthReadOnly 
+              ? 'text-purple-800' 
+              : ''
+          }`}>
+            {monthType === 'historic' ?
+              "📊 Consumuri & Sume (ARHIVATĂ)" :
+              isMonthReadOnly ? 
               "📊 Consumuri & Sume (PUBLICATĂ)" :
               "📊 Introducere Consumuri & Sume"
             }
@@ -161,7 +176,9 @@ const ConsumptionInput = ({
               const isPartiallyCompleted = completedForExpense > 0;
               
               return (
-                <div key={expense.id} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                <div key={expense.id} className={`p-3 rounded-lg flex items-center justify-between ${
+                  monthType === 'historic' ? 'bg-gray-200' : 'bg-gray-50'
+                }`}>
                   <div>
                     <span className="font-medium">{expense.name}</span>
                     <span className="text-sm text-gray-600 ml-2">

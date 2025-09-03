@@ -809,6 +809,7 @@ const MaintenanceView = ({
               isMonthReadOnly={isMonthReadOnly}
               currentMonth={currentMonth}
               setShowExpenseConfig={setShowExpenseConfig}
+              monthType={monthType}
             />
           </div>
 
@@ -821,6 +822,7 @@ const MaintenanceView = ({
               getAssociationApartments={getAssociationApartments}
               handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
               isMonthReadOnly={isMonthReadOnly}
+              monthType={monthType}
             />
 
             <ConsumptionInput
@@ -831,17 +833,36 @@ const MaintenanceView = ({
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               isMonthReadOnly={isMonthReadOnly}
               currentMonth={currentMonth}
+              monthType={monthType}
             />
           </div>
 
           {updatedMaintenanceData.length > 0 ? (
-            <div className={`rounded-xl shadow-lg overflow-hidden ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
-              <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-purple-100' : 'bg-indigo-50'}`}>
+            <div className={`rounded-xl shadow-lg overflow-hidden ${
+              monthType === 'historic' 
+                ? 'bg-gray-50 border-2 border-gray-300' 
+                : isMonthReadOnly 
+                ? 'bg-purple-50 border-2 border-purple-200' 
+                : 'bg-white'
+            }`}>
+              <div className={`p-4 border-b ${
+                monthType === 'historic'
+                  ? 'bg-gray-100'
+                  : isMonthReadOnly 
+                  ? 'bg-purple-100' 
+                  : 'bg-indigo-50'
+              }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
+                    <h3 className={`text-lg font-semibold ${
+                      monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-purple-800' : ''
+                    }`}>
                       🧾 Tabel Întreținere - {currentMonth} 
-                      {isMonthReadOnly && <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>}
+                      {monthType === 'historic' ? (
+                        <span className="text-sm bg-gray-200 px-2 py-1 rounded-full ml-2">(ARHIVATĂ)</span>
+                      ) : isMonthReadOnly ? (
+                        <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>
+                      ) : null}
                     </h3>
                     {association && getAssociationApartments().length > 0 && (
                       <p className="text-sm text-gray-600 mt-1">
@@ -867,7 +888,11 @@ const MaintenanceView = ({
                       </p>
                     )}
                     <div className="flex items-center space-x-2 mt-1">
-                      {isMonthReadOnly ? (
+                      {monthType === 'historic' ? (
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          📚 ARHIVATĂ
+                        </span>
+                      ) : isMonthReadOnly ? (
                         <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                           📋 PUBLICATĂ
                         </span>

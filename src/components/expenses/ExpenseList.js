@@ -7,7 +7,8 @@ const ExpenseList = ({
   getExpenseConfig,
   getAssociationApartments,
   handleDeleteMonthlyExpense,
-  isMonthReadOnly
+  isMonthReadOnly,
+  monthType
 }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
 
@@ -44,10 +45,26 @@ const ExpenseList = ({
 
   return (
     <>
-      <div className={`p-6 rounded-xl shadow-lg ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
+      <div className={`p-6 rounded-xl shadow-lg ${
+        monthType === 'historic' 
+          ? 'bg-gray-50 border-2 border-gray-300' 
+          : isMonthReadOnly 
+          ? 'bg-purple-50 border-2 border-purple-200' 
+          : 'bg-white'
+      }`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
-            📋 Cheltuieli {currentMonth} {isMonthReadOnly && <span className="text-sm bg-purple-100 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>}
+          <h3 className={`text-lg font-semibold ${
+            monthType === 'historic' 
+              ? 'text-gray-800' 
+              : isMonthReadOnly 
+              ? 'text-purple-800' 
+              : ''
+          }`}>
+            📋 Cheltuieli {currentMonth} {monthType === 'historic' ? (
+              <span className="text-sm bg-gray-200 px-2 py-1 rounded-full ml-2">(ARHIVATĂ)</span>
+            ) : isMonthReadOnly ? (
+              <span className="text-sm bg-purple-100 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>
+            ) : null}
           </h3>
           <div className="flex items-center gap-3">
             <div className="text-right text-sm">
@@ -83,10 +100,14 @@ const ExpenseList = ({
             const config = getExpenseConfig(expense.name);
             
             return (
-              <div key={expense.id} className="p-3 bg-gray-50 rounded-lg">
+              <div key={expense.id} className={`p-3 rounded-lg ${
+                monthType === 'historic' ? 'bg-gray-200' : 'bg-gray-50'
+              }`}>
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{expense.name}</span>
-                  <span className="text-indigo-600 font-bold">
+                  <span className={`font-bold ${
+                    monthType === 'historic' ? 'text-gray-700' : 'text-indigo-600'
+                  }`}>
                     {expense.isUnitBased ? 
                       `${expense.billAmount} RON` :
                       `${expense.amount} RON`

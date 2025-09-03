@@ -10,12 +10,13 @@ const ExpenseForm = ({
   handleAddExpense,
   isMonthReadOnly,
   currentMonth,
-  setShowExpenseConfig
+  setShowExpenseConfig,
+  monthType
 }) => {
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">💰 Adaugă Cheltuială Lunară</h3>
+        <h3 className="text-lg font-semibold">💰 Adaugă Cheltuială</h3>
         {!isMonthReadOnly && (
           <button
             onClick={() => setShowExpenseConfig(true)}
@@ -29,21 +30,45 @@ const ExpenseForm = ({
       
       {availableExpenseTypes.length === 0 ? (
         isMonthReadOnly ? (
-          <div className="text-center py-8 bg-purple-50 border-2 border-purple-200 rounded-xl">
-            <div className="mb-4">
-              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-4xl">🔒</span>
-              </div>
-              <div className="mb-2">
-                <span className="bg-purple-600 text-white text-sm font-bold px-4 py-2 rounded-full">
-                  📋 LUNĂ PUBLICATĂ
-                </span>
+          monthType === 'historic' ? (
+            <div className="py-4 px-6 bg-gray-50 border-2 border-gray-300 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">📚</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        LUNĂ ISTORICĂ
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800">Aceasta este o lună arhivată</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Nu se mai pot face modificări • Datele sunt doar pentru consultare</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <h3 className="text-lg font-bold text-purple-800 mb-2">Luna este publicată și afișată proprietarilor</h3>
-            <p className="text-purple-700 font-medium">Nu se pot adăuga cheltuieli noi pentru lunile publicate</p>
-            <p className="text-purple-600 text-sm mt-2">Poți doar înregistra încasări pentru această lună</p>
-          </div>
+          ) : (
+            <div className="py-4 px-6 bg-purple-50 border-2 border-purple-200 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">🔒</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        LUNĂ PUBLICATĂ
+                      </span>
+                      <span className="text-sm font-semibold text-purple-800">Luna este publicată și afișată proprietarilor</span>
+                    </div>
+                    <p className="text-sm text-purple-600">Nu se pot adăuga cheltuieli noi • Poți doar înregistra încasări</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
         ) : associationExpenses.length === 0 ? (
           <div className="text-center py-8 bg-orange-50 border-2 border-orange-200 rounded-xl">
             <div className="mb-4">
@@ -78,21 +103,45 @@ const ExpenseForm = ({
           </div>
         )
       ) : isMonthReadOnly ? (
-        <div className="text-center py-8 bg-purple-50 border-2 border-purple-200 rounded-xl">
-          <div className="mb-4">
-            <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-4xl">🔒</span>
-            </div>
-            <div className="mb-2">
-              <span className="bg-purple-600 text-white text-sm font-bold px-4 py-2 rounded-full">
-                📋 LUNĂ PUBLICATĂ
-              </span>
+        monthType === 'historic' ? (
+          <div className="py-4 px-6 bg-gray-50 border-2 border-gray-300 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      LUNĂ ISTORICĂ
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800">Aceasta este o lună arhivată</span>
+                  </div>
+                  <p className="text-sm text-gray-600">Nu se mai pot face modificări • Datele sunt doar pentru consultare</p>
+                </div>
+              </div>
             </div>
           </div>
-          <h3 className="text-lg font-bold text-purple-800 mb-2">Luna este publicată și afișată proprietarilor</h3>
-          <p className="text-purple-700 font-medium">Nu se pot adăuga cheltuieli noi pentru lunile publicate</p>
-          <p className="text-purple-600 text-sm mt-2">Poți doar înregistra încasări pentru această lună</p>
-        </div>
+        ) : (
+          <div className="py-4 px-6 bg-purple-50 border-2 border-purple-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🔒</span>
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      LUNĂ PUBLICATĂ
+                    </span>
+                    <span className="text-sm font-semibold text-purple-800">Luna este publicată și afișată proprietarilor</span>
+                  </div>
+                  <p className="text-sm text-purple-600">Nu se pot adăuga cheltuieli noi • Poți doar înregistra încasări</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       ) : (
         <div className="space-y-4">
           <select 

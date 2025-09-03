@@ -69,8 +69,8 @@ const DashboardHeader = ({
                   );
                 } else if (monthType === 'historic') {
                   return (
-                    <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
-                      📚 ISTORIC
+                    <span className="bg-gray-600 text-white text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                      LUNĂ ISTORICĂ
                     </span>
                   );
                 } else {
@@ -83,15 +83,28 @@ const DashboardHeader = ({
                 }
               })()}
               
-              {isMonthReadOnly ? (
-                <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
-                  📋 PUBLICATĂ
-                </span>
-              ) : (
-                <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
-                  🔧 ÎN LUCRU
-                </span>
-              )}
+              {(() => {
+                const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
+                if (monthType === 'historic' && isMonthReadOnly) {
+                  return (
+                    <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                      📚 ARHIVATĂ
+                    </span>
+                  );
+                } else if (isMonthReadOnly) {
+                  return (
+                    <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                      📋 PUBLICATĂ
+                    </span>
+                  );
+                } else {
+                  return (
+                    <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                      🔧 ÎN LUCRU
+                    </span>
+                  );
+                }
+              })()}
             </div>
           </div>
         </div>
