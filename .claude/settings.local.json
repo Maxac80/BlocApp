@@ -18,7 +18,8 @@
       "Bash(rm:*)",
       "Bash(claude doctor)",
       "Bash(npm test:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
