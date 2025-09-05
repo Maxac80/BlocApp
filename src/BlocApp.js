@@ -10,6 +10,8 @@ import { useNavigationAndUI } from './hooks/useNavigationAndUI';
 import { useMonthManagement } from './hooks/useMonthManagement';
 import { useDataOperations } from './hooks/useDataOperations';
 import { useAuthEnhanced } from "./context/AuthContextEnhanced";
+import useExpenseConfigurations from './hooks/useExpenseConfigurations';
+import useInvoices from './hooks/useInvoices';
 
 // Components
 import Sidebar from './components/common/Sidebar';
@@ -208,6 +210,37 @@ export default function BlocApp() {
     addCustomExpense,
     deleteCustomExpense
   });
+
+  // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI
+  const {
+    configurations: expenseConfigurations,
+    loading: configLoading,
+    getExpenseConfig: getFirestoreExpenseConfig,
+    updateExpenseConfig: updateFirestoreExpenseConfig,
+    fixFirestoreConfigurations
+  } = useExpenseConfigurations(association?.id);
+
+  // 🔧 Corectează configurațiile greșite din Firestore o singură dată
+  React.useEffect(() => {
+    if (association?.id && !configLoading && Object.keys(expenseConfigurations).length > 0) {
+      fixFirestoreConfigurations();
+    }
+  }, [association?.id, configLoading, expenseConfigurations, fixFirestoreConfigurations]);
+
+  // 🧾 HOOK PENTRU FACTURI
+  const {
+    invoices,
+    loading: invoicesLoading,
+    addInvoice,
+    updateInvoice,
+    deleteInvoice,
+    markInvoiceAsPaid,
+    markInvoiceAsUnpaid,
+    getInvoicesByMonth,
+    getUnpaidInvoices,
+    getOverdueInvoices,
+    getInvoiceStats
+  } = useInvoices(association?.id);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
@@ -462,8 +495,8 @@ useEffect(() => {
               newExpense={newExpense}
               setNewExpense={setNewExpense}
               getAvailableExpenseTypes={getAvailableExpenseTypes}
-              getExpenseConfig={getExpenseConfig}
-              handleAddExpense={handleAddExpense}
+              getExpenseConfig={getFirestoreExpenseConfig}
+              handleAddExpense={() => handleAddExpense(addInvoice)}
               handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
@@ -560,8 +593,8 @@ useEffect(() => {
               selectedExpenseForConfig={selectedExpenseForConfig}
               setSelectedExpenseForConfig={setSelectedExpenseForConfig}
               getAssociationExpenseTypes={getAssociationExpenseTypes}
-              getExpenseConfig={getExpenseConfig}
-              updateExpenseConfig={updateExpenseConfig}
+              getExpenseConfig={getFirestoreExpenseConfig}
+              updateExpenseConfig={updateFirestoreExpenseConfig}
               getApartmentParticipation={getApartmentParticipation}
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
@@ -631,6 +664,12 @@ useEffect(() => {
               getAssociationApartments={getAssociationApartments}
               handleNavigation={handleNavigation}
               getMonthType={getMonthType}
+              // Props pentru facturi
+              invoices={invoices}
+              getInvoicesByMonth={getInvoicesByMonth}
+              getInvoiceStats={getInvoiceStats}
+              markInvoiceAsPaid={markInvoiceAsPaid}
+              markInvoiceAsUnpaid={markInvoiceAsUnpaid}
             />
           )}
 

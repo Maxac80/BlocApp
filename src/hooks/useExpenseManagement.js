@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { defaultExpenseTypes } from '../data/expenseTypes';
 
 /**
@@ -32,7 +32,9 @@ export const useExpenseManagement = ({
     distributionType: "",
     isUnitBased: false,
     unitPrice: "",
-    billAmount: ""
+    billAmount: "",
+    invoiceData: null,
+    pdfFile: null
   });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
 
@@ -45,7 +47,11 @@ export const useExpenseManagement = ({
     const defaultExpense = defaultExpenseTypes.find(exp => exp.name === expenseType);
     const customExpense = customExpenses.find(exp => exp.name === expenseType);
     return {
-      distributionType: defaultExpense?.defaultDistribution || customExpense?.defaultDistribution || "apartment"
+      distributionType: defaultExpense?.defaultDistribution || customExpense?.defaultDistribution || "apartment",
+      supplierId: null,
+      supplierName: '',
+      contractNumber: '',
+      contactPerson: ''
     };
   }, [association?.id, expenseConfig, customExpenses]);
 
@@ -53,7 +59,10 @@ export const useExpenseManagement = ({
     const key = `${association?.id}-${expenseType}`;
     setExpenseConfig(prev => ({
       ...prev,
-      [key]: config
+      [key]: {
+        ...prev[key],
+        ...config
+      }
     }));
   }, [association?.id]);
 
@@ -129,8 +138,8 @@ export const useExpenseManagement = ({
     );
   }, [association?.id, expenses, currentMonth, getAssociationExpenseTypes, getExpenseConfig]);
 
-  // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT
-  const handleAddExpense = useCallback(async () => {
+  // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
+  const handleAddExpense = useCallback(async (addInvoiceFn = null) => {
     if (!newExpense.name || !association) {
       return false;
     }
@@ -156,7 +165,10 @@ export const useExpenseManagement = ({
     }
     
     try {
-      await addMonthlyExpense({
+      console.log('💰 Adaug cheltuiala:', newExpense.name);
+      
+      // 1. Adaugă cheltuiala lunară
+      const expenseData = {
         name: newExpense.name,
         amount: isConsumptionBased ? 0 : parseFloat(newExpense.amount || 0),
         distributionType: expenseSettings.distributionType,
@@ -166,16 +178,61 @@ export const useExpenseManagement = ({
         consumption: {},
         individualAmounts: {},
         month: currentMonth
-      });
+      };
       
-      // Reset form
+      const expenseId = await addMonthlyExpense(expenseData);
+      
+      // 2. Dacă avem detalii factură, salvăm și factura
+      if (newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn) {
+        console.log('🧾 Salvez factura asociată:', newExpense.invoiceData.invoiceNumber);
+        console.log('📄 Date factură:', newExpense.invoiceData);
+        console.log('📎 Fișier PDF:', newExpense.pdfFile?.name || 'Nu există PDF');
+        
+        const invoiceData = {
+          expenseId: expenseId,
+          supplierId: expenseSettings.supplierId || null,
+          supplierName: expenseSettings.supplierName || 'Fără furnizor',
+          expenseType: newExpense.name,
+          invoiceNumber: newExpense.invoiceData.invoiceNumber,
+          invoiceDate: newExpense.invoiceData.invoiceDate,
+          dueDate: newExpense.invoiceData.dueDate,
+          amount: parseFloat(newExpense.amount || newExpense.billAmount || 0),
+          vatAmount: 0,
+          totalAmount: parseFloat(newExpense.amount || newExpense.billAmount || 0),
+          notes: newExpense.invoiceData.notes || '',
+          month: currentMonth
+        };
+        
+        try {
+          await addInvoiceFn(invoiceData, newExpense.pdfFile);
+          console.log('✅ Factură salvată cu succes');
+        } catch (invoiceError) {
+          console.warn('⚠️ Cheltuiala a fost salvată, dar factura nu a putut fi salvată:', invoiceError);
+          
+          // Afișează eroarea utilizatorului
+          if (invoiceError.message.includes('permisiunea')) {
+            alert('⚠️ Cheltuiala a fost salvată, dar nu s-a putut uploada PDF-ul.\n\nMotiv: Nu ai permisiunea să uploadezi fișiere.\nVerifică autentificarea Firebase.');
+          } else if (invoiceError.message.includes('CORS')) {
+            alert('⚠️ Cheltuiala a fost salvată, dar nu s-a putut uploada PDF-ul.\n\nMotiv: Problemă CORS cu Firebase Storage.\nContactează administratorul.');
+          } else {
+            alert(`⚠️ Cheltuiala a fost salvată, dar nu s-a putut uploada PDF-ul.\n\nMotiv: ${invoiceError.message}`);
+          }
+          
+          // Nu oprim procesul pentru că cheltuiala a fost salvată cu succes
+        }
+      }
+      
+      // 3. Reset form
+      console.log('🔄 Resetez forma completă după adăugarea cheltuielii');
       setNewExpense({
         name: "",
         amount: "",
         distributionType: "",
         isUnitBased: false,
         unitPrice: "",
-        billAmount: ""
+        billAmount: "",
+        invoiceData: null,
+        pdfFile: null
       });
       
       return true;

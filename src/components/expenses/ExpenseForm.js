@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Settings, FileText, Upload, X } from 'lucide-react';
 
 const ExpenseForm = ({
   newExpense,
@@ -13,6 +13,67 @@ const ExpenseForm = ({
   setShowExpenseConfig,
   monthType
 }) => {
+  const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceNumber: '',
+    invoiceDate: '',
+    dueDate: '',
+    notes: ''
+  });
+  const [pdfFile, setPdfFile] = useState(null);
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      setPdfFile(file);
+    } else {
+      alert('Te rog selectează doar fișiere PDF');
+      event.target.value = '';
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setPdfFile(null);
+    document.getElementById('pdf-upload').value = '';
+  };
+
+  const resetInvoiceData = () => {
+    setInvoiceData({
+      invoiceNumber: '',
+      invoiceDate: '',
+      dueDate: '',
+      notes: ''
+    });
+    setPdfFile(null);
+    setShowInvoiceDetails(false);
+    // Resetează și input-ul de file
+    const fileInput = document.getElementById('pdf-upload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  // Resetează toate datele formei când se resetează newExpense  
+  React.useEffect(() => {
+    // Doar resetează datele locale când newExpense.name devine gol
+    if (newExpense.name === "" && (invoiceData.invoiceNumber || pdfFile || showInvoiceDetails)) {
+      console.log('🔄 Resetez datele locale ale facturii după reset newExpense');
+      resetInvoiceData();
+    }
+  }, [newExpense.name]); // Doar dependența necesară
+
+  // Transmite datele facturii în props pentru ca părinte să le folosească
+  React.useEffect(() => {
+    // Doar actualiza când există date de factură și nu e în reset
+    if (setNewExpense && newExpense.name && showInvoiceDetails) {
+      console.log('📤 Actualizez newExpense cu datele facturii');
+      setNewExpense(prev => ({
+        ...prev,
+        invoiceData: invoiceData,
+        pdfFile: pdfFile
+      }));
+    }
+  }, [invoiceData, pdfFile, showInvoiceDetails, newExpense.name]); // Fără isResetting
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
@@ -226,6 +287,139 @@ const ExpenseForm = ({
                 placeholder="Suma totală (RON)"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
               />
+            </div>
+          )}
+
+          {/* Secțiunea Factură (opțională) */}
+          {newExpense.name && (
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">Detalii Factură</span>
+                  <span className="text-xs text-gray-500">(opțional)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('🖱️ Click pe butonul Adaugă factură, showInvoiceDetails:', showInvoiceDetails);
+                    setShowInvoiceDetails(!showInvoiceDetails);
+                    console.log('🔄 Schimbat showInvoiceDetails la:', !showInvoiceDetails);
+                  }}
+                  className={`px-3 py-1 rounded-md text-xs font-medium ${
+                    showInvoiceDetails 
+                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {showInvoiceDetails ? 'Ascunde' : 'Adaugă factură'}
+                </button>
+              </div>
+
+              {showInvoiceDetails && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border">
+                  {/* Furnizor info */}
+                  {getExpenseConfig(newExpense.name).supplierName && (
+                    <div className="text-sm text-blue-700 font-medium">
+                      🏢 Furnizor: {getExpenseConfig(newExpense.name).supplierName}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Număr factură
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceData.invoiceNumber}
+                        onChange={(e) => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})}
+                        placeholder="ex: FAC-2024-001234"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data facturii
+                      </label>
+                      <input
+                        type="date"
+                        value={invoiceData.invoiceDate}
+                        onChange={(e) => setInvoiceData({...invoiceData, invoiceDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data scadență
+                      </label>
+                      <input
+                        type="date"
+                        value={invoiceData.dueDate}
+                        onChange={(e) => setInvoiceData({...invoiceData, dueDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        PDF factură
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="pdf-upload"
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        {pdfFile ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="flex-1 px-3 py-2 bg-green-100 border border-green-300 rounded-lg text-sm text-green-800 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              {pdfFile.name}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleRemoveFile}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
+                              title="Elimină fișier"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('pdf-upload').click()}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm text-gray-600 flex items-center justify-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" />
+                            Selectează PDF
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Observații
+                    </label>
+                    <textarea
+                      value={invoiceData.notes}
+                      onChange={(e) => setInvoiceData({...invoiceData, notes: e.target.value})}
+                      placeholder="Observații sau detalii suplimentare despre factură..."
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           

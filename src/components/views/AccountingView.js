@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receipt, CreditCard, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
 import DashboardHeader from '../dashboard/DashboardHeader';
@@ -15,7 +15,13 @@ const AccountingView = ({
   isMonthReadOnly,
   getAssociationApartments,
   handleNavigation,
-  getMonthType
+  getMonthType,
+  // Props pentru facturi
+  invoices,
+  getInvoicesByMonth,
+  getInvoiceStats,
+  markInvoiceAsPaid,
+  markInvoiceAsUnpaid
 }) => {
   const apartments = getAssociationApartments();
   const {
@@ -27,6 +33,7 @@ const AccountingView = ({
     deleteIncasare
   } = useIncasari(association, currentMonth);
 
+  const [activeTab, setActiveTab] = useState('incasari'); // 'incasari' sau 'facturi'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, paid, unpaid
   const [selectedIncasare, setSelectedIncasare] = useState(null);
@@ -34,6 +41,35 @@ const AccountingView = ({
 
   // Obține statisticile
   const stats = getIncasariStats(apartments);
+  
+  // Statistici facturi pentru luna curentă
+  const monthlyInvoices = getInvoicesByMonth ? getInvoicesByMonth(currentMonth) : [];
+  const invoiceStats = getInvoiceStats ? getInvoiceStats() : {
+    total: 0,
+    paid: 0,
+    unpaid: 0,
+    overdue: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+    unpaidAmount: 0
+  };
+
+  // DEBUG: Log pentru facturile din luna curentă
+  console.log('🔍 AccountingView DEBUG:', {
+    currentMonth,
+    currentMonthType: typeof currentMonth,
+    totalInvoices: invoices?.length || 0,
+    monthlyInvoicesCount: monthlyInvoices.length,
+    getInvoicesByMonthExists: !!getInvoicesByMonth,
+    allInvoicesMonths: invoices?.map(inv => inv.month) || [],
+    monthlyInvoices: monthlyInvoices.map(inv => ({
+      id: inv.id,
+      month: inv.month,
+      invoiceNumber: inv.invoiceNumber,
+      supplierName: inv.supplierName
+    })),
+    invoiceStats
+  });
 
   // Filtrează și sortează încasările
   const filteredIncasari = incasari
@@ -49,6 +85,21 @@ const AccountingView = ({
       return matchesSearch;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  // Filtrează facturile 
+  const filteredInvoices = monthlyInvoices.filter(invoice => {
+    const matchesSearch = 
+      invoice.supplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.expenseType?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = 
+      filterStatus === 'all' || 
+      (filterStatus === 'paid' && invoice.isPaid) ||
+      (filterStatus === 'unpaid' && !invoice.isPaid);
+
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate));
 
   // Obține apartamentele care nu au plătit
   const unpaidApartments = apartments.filter(apt => 
@@ -164,6 +215,64 @@ const AccountingView = ({
     }
   };
 
+  // Funcție pentru marcarea facturii ca plătită/neplătită
+  const toggleInvoicePaymentStatus = async (invoiceId, currentStatus) => {
+    try {
+      if (currentStatus) {
+        await markInvoiceAsUnpaid(invoiceId);
+      } else {
+        await markInvoiceAsPaid(invoiceId, {
+          paymentMethod: 'Transfer bancar',
+          notes: `Plată înregistrată din contabilitate la ${new Date().toLocaleDateString('ro-RO')}`
+        });
+      }
+    } catch (error) {
+      console.error('Eroare la actualizarea statusului plată:', error);
+      alert('Eroare la actualizarea statusului plată: ' + error.message);
+    }
+  };
+
+  // Funcție pentru descărcarea PDF-ului Base64
+  const handleDownloadPDF = (invoice) => {
+    try {
+      console.log('📄 Descarcă PDF pentru factura:', invoice.invoiceNumber);
+      
+      let base64Data = invoice.pdfUrl;
+      let fileName = `Factura_${invoice.invoiceNumber}.pdf`;
+      
+      // Dacă avem pdfData cu informații complete
+      if (invoice.pdfData && invoice.pdfData.base64) {
+        base64Data = invoice.pdfData.base64;
+        fileName = invoice.pdfData.fileName || fileName;
+      }
+      
+      if (!base64Data) {
+        alert('PDF-ul nu este disponibil pentru această factură.');
+        return;
+      }
+      
+      // Verifică dacă Base64 are header-ul corect
+      let cleanBase64 = base64Data;
+      if (!base64Data.startsWith('data:')) {
+        cleanBase64 = `data:application/pdf;base64,${base64Data}`;
+      }
+      
+      // Creează link pentru download
+      const link = document.createElement('a');
+      link.href = cleanBase64;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ PDF descărcat:', fileName);
+      
+    } catch (error) {
+      console.error('❌ Eroare la descărcarea PDF-ului:', error);
+      alert('Eroare la descărcarea PDF-ului: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -208,157 +317,180 @@ const AccountingView = ({
           getMonthType={getMonthType}
         />
 
-        {/* Page Title */}
         <div className="mb-6">
-          <div className="flex items-center space-x-3">
-            <Coins className="w-8 h-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Contabilitate</h1>
-              <p className="text-sm text-gray-600">Istoric încasări și chitanțe</p>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
         </div>
 
-        {/* Statistici */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Încasat</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.totalAmount.toFixed(2)} lei
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-blue-500 opacity-50" />
+        <div className="bg-white rounded-xl shadow-lg">
+          <div className="border-b">
+            <div className="flex">
+              <button
+                onClick={() => setActiveTab('incasari')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'incasari'
+                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Receipt className="w-5 h-5" />
+                Încasări ({stats.totalCount || filteredIncasari.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('facturi')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'facturi'
+                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                Facturi ({invoiceStats.total})
+              </button>
             </div>
           </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Apartamente Plătite</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.paidApartments} / {stats.totalApartments}
-                </p>
-              </div>
-              <FileText className="w-8 h-8 text-green-500 opacity-50" />
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Procent Încasare</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.percentagePaid}%
-                </p>
-              </div>
-              <div className="w-12 h-12">
-                <svg className="transform -rotate-90 w-12 h-12">
-                  <circle
-                    cx="24"
-                    cy="24"
-                    r="20"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                    className="text-gray-200"
-                  />
-                  <circle
-                    cx="24"
-                    cy="24"
-                    r="20"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 20}`}
-                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - stats.percentagePaid / 100)}`}
-                    className="text-yellow-500"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Apartamente Restante</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {stats.unpaidApartments}
-                </p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-red-500 opacity-50" />
-            </div>
-          </div>
-        </div>
 
-        {/* Bara de căutare și filtre */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Caută după număr apartament, proprietar sau număr chitanță..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <div className="p-6">
+            {activeTab === 'incasari' && (
+              <div className="space-y-6">
+                {/* Statistici Încasări */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Încasat</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {stats.totalAmount.toFixed(2)} lei
+                  </p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-blue-500 opacity-50" />
+              </div>
+            </div>
           
-          <button
-            onClick={generateMonthlyReport}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-          >
-            <Download className="w-5 h-5" />
-            <span>Raport PDF</span>
-          </button>
-        </div>
-      </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Apartamente Plătite</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {stats.paidApartments} / {stats.totalApartments}
+                        </p>
+                      </div>
+                      <FileText className="w-8 h-8 text-green-500 opacity-50" />
+                    </div>
+                  </div>
+          
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Procent Încasare</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {stats.percentagePaid}%
+                        </p>
+                      </div>
+                      <div className="w-12 h-12">
+                        <svg className="transform -rotate-90 w-12 h-12">
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="20"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                            className="text-gray-200"
+                          />
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="20"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                            strokeDasharray={`${2 * Math.PI * 20}`}
+                            strokeDashoffset={`${2 * Math.PI * 20 * (1 - stats.percentagePaid / 100)}`}
+                            className="text-yellow-500"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-red-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Apartamente Restante</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {stats.unpaidApartments}
+                        </p>
+                      </div>
+                      <AlertCircle className="w-8 h-8 text-red-500 opacity-50" />
+                    </div>
+                  </div>
+                </div>
 
-      {/* Tabel încasări */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ap.
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Proprietar
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Restanțe
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Întreținere
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Penalități
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nr. Chitanță
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acțiuni
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredIncasari.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
-                    Nu există încasări înregistrate pentru {currentMonth}
-                  </td>
-                </tr>
-              ) : (
+                {/* Bara de căutare și filtre pentru încasări */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Caută după număr apartament, proprietar sau număr chitanță..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={generateMonthlyReport}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Raport PDF</span>
+                  </button>
+                </div>
+
+                {/* Tabel Încasări */}
+                <div className="bg-gray-50 rounded-lg border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ap.
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Proprietar
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Restanțe
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Întreținere
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Penalități
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nr. Chitanță
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acțiuni
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredIncasari.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
+                              Nu există încasări înregistrate pentru {currentMonth}
+                            </td>
+                          </tr>
+                        ) : (
                 filteredIncasari.map((incasare) => {
                   const apartment = apartments.find(apt => apt.id === incasare.apartmentId);
                   return (
@@ -410,31 +542,228 @@ const AccountingView = ({
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-      {/* Lista apartamente neplătite */}
-      {unpaidApartments.length > 0 && (
-        <div className="mt-6 bg-red-50 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-red-800 mb-3">
-            Apartamente care nu au plătit ({unpaidApartments.length})
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            {unpaidApartments.map(apt => (
-              <div key={apt.id} className="bg-white px-3 py-2 rounded border border-red-200">
-                <span className="font-medium">Ap. {apt.number}</span>
-                {apt.owner && (
-                  <div className="text-xs text-gray-600 truncate">{apt.owner}</div>
+                {/* Lista apartamente neplătite pentru încasări */}
+                {unpaidApartments.length > 0 && (
+                  <div className="mt-6 bg-red-50 rounded-lg p-4 border">
+                    <h3 className="text-lg font-semibold text-red-800 mb-3">
+                      Apartamente care nu au plătit ({unpaidApartments.length})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      {unpaidApartments.map(apt => (
+                        <div key={apt.id} className="bg-white px-3 py-2 rounded border border-red-200">
+                          <span className="font-medium">Ap. {apt.number}</span>
+                          {apt.owner && (
+                            <div className="text-xs text-gray-600 truncate">{apt.owner}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            ))}
+            )}
+
+            {activeTab === 'facturi' && (
+              <div className="space-y-6">
+                {/* Statistici Facturi */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Facturi</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {invoiceStats.totalAmount.toFixed(2)} lei
+                        </p>
+                      </div>
+                      <FileText className="w-8 h-8 text-orange-500 opacity-50" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Facturi Plătite</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {invoiceStats.paid} / {invoiceStats.total}
+                        </p>
+                      </div>
+                      <CheckCircle className="w-8 h-8 text-green-500 opacity-50" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Neplătite</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {invoiceStats.unpaidAmount.toFixed(2)} lei
+                        </p>
+                      </div>
+                      <XCircle className="w-8 h-8 text-yellow-500 opacity-50" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-red-500">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Restante</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                          {invoiceStats.overdue}
+                        </p>
+                      </div>
+                      <Calendar className="w-8 h-8 text-red-500 opacity-50" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bara de căutare și filtre pentru facturi */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Caută după furnizor, număr factură sau tip cheltuială..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Toate facturile</option>
+                    <option value="paid">Plătite</option>
+                    <option value="unpaid">Neplătite</option>
+                  </select>
+                  
+                  <button
+                    onClick={generateMonthlyReport}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Raport PDF</span>
+                  </button>
+                </div>
+
+                {/* Tabel Facturi */}
+                <div className="bg-gray-50 rounded-lg border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Furnizor
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nr. Factură
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tip Cheltuială
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sumă
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data Factură
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Scadență
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acțiuni
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredInvoices.length === 0 ? (
+                          <tr>
+                            <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                              Nu există facturi înregistrate pentru {currentMonth}
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredInvoices.map((invoice) => {
+                            const isOverdue = !invoice.isPaid && new Date(invoice.dueDate) < new Date();
+                            return (
+                              <tr key={invoice.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {invoice.supplierName || 'Fără furnizor'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {invoice.invoiceNumber}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {invoice.expenseType}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                                  {invoice.totalAmount.toFixed(2)} lei
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                                  {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}
+                                </td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                  isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'
+                                }`}>
+                                  {new Date(invoice.dueDate).toLocaleDateString('ro-RO')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    invoice.isPaid 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : isOverdue 
+                                        ? 'bg-red-100 text-red-800' 
+                                        : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {invoice.isPaid ? '✅ Plătită' : isOverdue ? '🔴 Scadentă' : '⏳ Neplătită'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center space-x-2">
+                                  {invoice.pdfUrl && (
+                                    <button
+                                      onClick={() => handleDownloadPDF(invoice)}
+                                      className="text-blue-600 hover:text-blue-900"
+                                      title="Descarcă PDF"
+                                    >
+                                      <FileText className="w-5 h-5" />
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => toggleInvoicePaymentStatus(invoice.id, invoice.isPaid)}
+                                    className={`${
+                                      invoice.isPaid 
+                                        ? 'text-red-600 hover:text-red-900' 
+                                        : 'text-green-600 hover:text-green-900'
+                                    }`}
+                                    title={invoice.isPaid ? 'Marchează ca neplătită' : 'Marchează ca plătită'}
+                                  >
+                                    {invoice.isPaid ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
 
       {/* Modal detalii încasare */}
       {showReceiptModal && selectedIncasare && (
@@ -518,6 +847,7 @@ const AccountingView = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

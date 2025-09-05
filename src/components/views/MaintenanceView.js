@@ -7,6 +7,7 @@ import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal } from '../modals
 import DashboardHeader from '../dashboard/DashboardHeader';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
+import useInvoices from '../../hooks/useInvoices';
 import jsPDF from 'jspdf';
 
 const MaintenanceView = ({
@@ -86,6 +87,14 @@ const MaintenanceView = ({
 
   // Hook pentru gestionarea încasărilor
   const { addIncasare } = useIncasari(association, currentMonth);
+  
+  // Hook pentru gestionarea facturilor
+  const { addInvoice } = useInvoices(association?.id);
+  
+  // Wrapper pentru handleAddExpense care include și addInvoice
+  const handleAddExpenseWithInvoice = async () => {
+    return await handleAddExpense(addInvoice);
+  };
   
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
   const { 
@@ -805,7 +814,7 @@ const MaintenanceView = ({
               availableExpenseTypes={getAvailableExpenseTypes()}
               associationExpenses={associationExpenses}
               getExpenseConfig={getExpenseConfig}
-              handleAddExpense={handleAddExpense}
+              handleAddExpense={handleAddExpenseWithInvoice}
               isMonthReadOnly={isMonthReadOnly}
               currentMonth={currentMonth}
               setShowExpenseConfig={setShowExpenseConfig}
