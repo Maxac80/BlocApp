@@ -88,11 +88,52 @@ const MaintenanceView = ({
   // Hook pentru gestionarea încasărilor
   const { addIncasare } = useIncasari(association, currentMonth);
   
-  // Hook pentru gestionarea facturilor
-  const { addInvoice } = useInvoices(association?.id);
+  // Hook pentru gestionarea facturilor cu suport complet pentru distribuție parțială
+  const { 
+    addInvoice, 
+    updateInvoiceDistribution,
+    getPartiallyDistributedInvoices,
+    getInvoiceByNumber,
+    syncSuppliersForExpenseType
+  } = useInvoices(association?.id);
   
-  // Wrapper pentru handleAddExpense care include și addInvoice
+  // Debug: Verifică dacă funcțiile sunt disponibile
+  console.log('🔧 MaintenanceView functions check:', {
+    hasAddInvoice: !!addInvoice,
+    hasGetPartiallyDistributedInvoices: !!getPartiallyDistributedInvoices,
+    hasGetInvoiceByNumber: !!getInvoiceByNumber,
+    associationId: association?.id
+  });
+  
+  // Wrapper îmbunătățit pentru handleAddExpense care gestionează facturi parțiale
   const handleAddExpenseWithInvoice = async () => {
+    console.log('🚀 handleAddExpenseWithInvoice called', {
+      hasInvoiceData: !!newExpense.invoiceData,
+      invoiceNumber: newExpense.invoiceData?.invoiceNumber,
+      selectedExistingInvoice: newExpense.invoiceData?.selectedExistingInvoiceId
+    });
+    // Verifică dacă este o distribuție parțială din factură existentă
+    if (newExpense.invoiceData?.selectedExistingInvoiceId) {
+      // Actualizează distribuția facturii existente
+      const distributionData = {
+        month: currentMonth,
+        amount: parseFloat(newExpense.invoiceData.currentDistribution),
+        expenseId: null, // Va fi setat după ce se creează expense-ul
+        notes: `Distribuție pentru ${newExpense.name}`
+      };
+      
+      try {
+        await updateInvoiceDistribution(
+          newExpense.invoiceData.selectedExistingInvoiceId, 
+          distributionData
+        );
+        console.log('✅ Distribuție parțială actualizată pentru factura existentă');
+      } catch (error) {
+        console.error('❌ Eroare la actualizarea distribuției:', error);
+      }
+    }
+    
+    // Apelează handler-ul original cu funcția addInvoice modificată
     return await handleAddExpense(addInvoice);
   };
   
@@ -778,23 +819,15 @@ const MaintenanceView = ({
 
           {/* Modal Configurare Cheltuieli */}
 <ExpenseConfigModal
-  showExpenseConfig={showExpenseConfig}
-  setShowExpenseConfig={setShowExpenseConfig}
-  currentMonth={currentMonth}
-  newCustomExpense={newCustomExpense}
-  setNewCustomExpense={setNewCustomExpense}
-  handleAddCustomExpense={handleAddCustomExpense}
-  selectedExpenseForConfig={selectedExpenseForConfig}
-  setSelectedExpenseForConfig={setSelectedExpenseForConfig}
-  getAssociationExpenseTypes={getAssociationExpenseTypes}
-  getExpenseConfig={getExpenseConfig}
+  isOpen={showExpenseConfig}
+  onClose={() => setShowExpenseConfig(false)}
+  expenseName={selectedExpenseForConfig}
+  expenseConfig={selectedExpenseForConfig ? getExpenseConfig(selectedExpenseForConfig) : null}
   updateExpenseConfig={updateExpenseConfig}
   getAssociationApartments={getAssociationApartments}
   getApartmentParticipation={getApartmentParticipation}
   setApartmentParticipation={setApartmentParticipation}
-  getDisabledExpenseTypes={getDisabledExpenseTypes}
-  toggleExpenseStatus={toggleExpenseStatus}
-  deleteCustomExpense={deleteCustomExpense}
+  associationId={association?.id}
 />
 
 {/* Payment Modal */}
@@ -818,7 +851,12 @@ const MaintenanceView = ({
               isMonthReadOnly={isMonthReadOnly}
               currentMonth={currentMonth}
               setShowExpenseConfig={setShowExpenseConfig}
+              setSelectedExpenseForConfig={setSelectedExpenseForConfig}
               monthType={monthType}
+              // Funcții noi pentru facturi parțiale
+              getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
+              getInvoiceByNumber={getInvoiceByNumber}
+              syncSuppliersForExpenseType={syncSuppliersForExpenseType}
             />
           </div>
 

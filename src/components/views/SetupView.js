@@ -99,12 +99,12 @@ const SetupView = ({
         successCount++;
         
         // Verifică dacă apartamentul are solduri inițiale
-        if ((apartment.initialDebt && apartment.initialDebt > 0) || 
-            (apartment.initialPenalties && apartment.initialPenalties > 0)) {
+        if ((apartment.initialBalance?.restante && apartment.initialBalance.restante > 0) || 
+            (apartment.initialBalance?.penalitati && apartment.initialBalance.penalitati > 0)) {
           apartmentsWithBalances.push({
             apartmentId: newApartment.id || `${apartment.stairId}-${apartment.number}`,
-            restante: apartment.initialDebt || 0,
-            penalitati: apartment.initialPenalties || 0,
+            restante: apartment.initialBalance.restante || 0,
+            penalitati: apartment.initialBalance.penalitati || 0,
             apartmentNumber: apartment.number,
             owner: apartment.owner
           });

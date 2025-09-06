@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   collection, 
   doc,
+  getDoc,
   addDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
   query,
-  where,
-  orderBy
+  where
 } from 'firebase/firestore';
 // Firebase Storage nu mai este necesar - folosim Base64
 import { db } from '../firebase';
+import useExpenseConfigurations from './useExpenseConfigurations';
 
 /**
  * 🧾 Custom Hook pentru Gestionarea Facturilor
@@ -25,6 +26,9 @@ import { db } from '../firebase';
 const useInvoices = (associationId) => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
+  const { getExpenseConfig } = useExpenseConfigurations(associationId);
 
   // 🔄 ÎNCĂRCAREA FACTURILOR LA SCHIMBAREA ASOCIAȚIEI
   useEffect(() => {
@@ -61,7 +65,9 @@ const useInvoices = (associationId) => {
           id: inv.id,
           month: inv.month,
           invoiceNumber: inv.invoiceNumber,
-          associationId: inv.associationId
+          associationId: inv.associationId,
+          supplierName: inv.supplierName,
+          supplierId: inv.supplierId
         })));
       },
       (error) => {
@@ -74,8 +80,73 @@ const useInvoices = (associationId) => {
     return () => unsubscribe();
   }, [associationId]);
 
-  // ➕ ADĂUGAREA UNEI FACTURI NOI
+  // 📝 ACTUALIZAREA DISTRIBUȚIEI UNEI FACTURI EXISTENTE
+  const updateInvoiceDistribution = useCallback(async (invoiceId, distributionData) => {
+    try {
+      console.log('📝 Actualizez distribuția facturii:', invoiceId);
+      
+      // Obține factura existentă
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      if (!invoice) {
+        throw new Error('Factura nu a fost găsită');
+      }
+      
+      const currentDistribution = parseFloat(distributionData.amount) || 0;
+      const newDistributedAmount = (invoice.distributedAmount || 0) + currentDistribution;
+      const newRemainingAmount = (invoice.totalInvoiceAmount || invoice.totalAmount) - newDistributedAmount;
+      const isFullyDistributed = newRemainingAmount <= 0;
+      
+      console.log('🔍 ACTUALIZARE DISTRIBUȚIE - Date de calcul:', {
+        invoiceId,
+        invoiceNumber: invoice.invoiceNumber,
+        totalInvoiceAmount: invoice.totalInvoiceAmount || invoice.totalAmount,
+        currentDistributedAmount: invoice.distributedAmount || 0,
+        newDistributionAmount: currentDistribution,
+        calculatedNewDistributedAmount: newDistributedAmount,
+        calculatedNewRemainingAmount: newRemainingAmount,
+        isFullyDistributed
+      });
+      
+      // Creează noua intrare în istoric
+      const newDistributionEntry = {
+        month: distributionData.month,
+        amount: currentDistribution,
+        expenseId: distributionData.expenseId || null,
+        expenseType: distributionData.expenseType || null,
+        distributedAt: new Date().toISOString(),
+        notes: distributionData.notes || ''
+      };
+      
+      // Actualizează factura
+      const docRef = doc(db, 'invoices', invoiceId);
+      await updateDoc(docRef, {
+        distributedAmount: newDistributedAmount,
+        remainingAmount: newRemainingAmount,
+        isFullyDistributed: isFullyDistributed,
+        distributionHistory: [...(invoice.distributionHistory || []), newDistributionEntry],
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log('✅ Distribuție actualizată pentru factura:', invoiceId);
+      console.log('📊 Nouă distribuție:', {
+        distributedAmount: newDistributedAmount,
+        remainingAmount: newRemainingAmount,
+        isFullyDistributed: isFullyDistributed
+      });
+      
+      // Așteaptă puțin pentru a permite sincronizarea Firestore înainte de următoarea operație
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la actualizarea distribuției:', error);
+      throw error;
+    }
+  }, [invoices]);
+
+  // ➕ ADĂUGAREA UNEI FACTURI NOI (cu suport pentru distribuție parțială)
   const addInvoice = useCallback(async (invoiceData, pdfFile = null) => {
+    
     if (!associationId) {
       throw new Error('Nu există asociație selectată');
     }
@@ -83,6 +154,107 @@ const useInvoices = (associationId) => {
     try {
       console.log('➕ Adaug factură nouă:', invoiceData);
       console.log('📎 PDF File:', pdfFile?.name || 'Nu există PDF');
+      
+      // 🔍 VERIFICĂ DACĂ FACTURA EXISTĂ DEJA
+      console.log('🔍 CĂUTARE FACTURĂ EXISTENTĂ:', {
+        cautataInvoiceNumber: invoiceData.invoiceNumber,
+        cautataAssociationId: associationId,
+        totalInvoicesInMemory: invoices.length,
+        invoicesNumbers: invoices.map(inv => ({ id: inv.id, invoiceNumber: inv.invoiceNumber, associationId: inv.associationId }))
+      });
+      
+      // Normalizează invoiceNumber pentru comparație (elimină spații și face lowercase)
+      const normalizeInvoiceNumber = (invoiceNum) => {
+        return invoiceNum ? invoiceNum.toString().trim().toLowerCase() : '';
+      };
+      
+      const normalizedSearchNumber = normalizeInvoiceNumber(invoiceData.invoiceNumber);
+      
+      const existingInvoice = invoices.find(inv => {
+        const normalizedExistingNumber = normalizeInvoiceNumber(inv.invoiceNumber);
+        const matchesNumber = normalizedExistingNumber === normalizedSearchNumber;
+        const matchesAssociation = inv.associationId === associationId;
+        
+        console.log('🔍 COMPARING INVOICE:', {
+          existing: { id: inv.id, invoiceNumber: inv.invoiceNumber, normalized: normalizedExistingNumber },
+          searching: { invoiceNumber: invoiceData.invoiceNumber, normalized: normalizedSearchNumber },
+          matchesNumber,
+          matchesAssociation,
+          willMatch: matchesNumber && matchesAssociation
+        });
+        
+        return matchesNumber && matchesAssociation;
+      });
+      
+      if (existingInvoice) {
+        console.log('🔄 Factură existentă găsită, actualizez distribuția:', {
+          id: existingInvoice.id,
+          invoiceNumber: existingInvoice.invoiceNumber,
+          currentDistributedAmount: existingInvoice.distributedAmount,
+          totalAmount: existingInvoice.totalInvoiceAmount || existingInvoice.totalAmount
+        });
+        
+        // Folosește updateInvoiceDistribution pentru factura existentă
+        const currentDistribution = parseFloat(invoiceData.totalAmount) || 0;
+        
+        await updateInvoiceDistribution(existingInvoice.id, {
+          month: invoiceData.month,
+          amount: currentDistribution,
+          expenseId: invoiceData.expenseId || null,
+          expenseType: invoiceData.expenseType || null,
+          notes: invoiceData.distributionNotes || `Distribuție pentru ${invoiceData.expenseType}`
+        });
+        
+        console.log('✅ Distribuție actualizată pentru factura existentă:', existingInvoice.id);
+        return existingInvoice.id;
+      }
+      
+      // 🔧 CORECTARE FURNIZOR: Obține automat furnizorul din configurația de cheltuieli
+      let supplierData = {
+        supplierId: invoiceData.supplierId,
+        supplierName: invoiceData.supplierName
+      };
+      
+      // Dacă nu avem furnizor sau furnizorul este "Fără furnizor" sau string gol sau null, încearcă să-l obții din configurația de cheltuieli
+      const needsSupplierCorrection = !supplierData.supplierId || 
+                                    !supplierData.supplierName || 
+                                    supplierData.supplierName === 'Fără furnizor' ||
+                                    supplierData.supplierName === '' ||
+                                    supplierData.supplierName === null;
+      console.log('🔍 Verificare necesitatea corectării furnizorului:', {
+        supplierId: supplierData.supplierId,
+        supplierName: supplierData.supplierName,
+        needsCorrection: needsSupplierCorrection
+      });
+      
+      if (needsSupplierCorrection) {
+        console.log('⚠️ Furnizor lipsă, încerc să obțin din configurația cheltuielii:', invoiceData.expenseType);
+        
+        try {
+          const expenseConfig = getExpenseConfig(invoiceData.expenseType);
+          console.log('🔎 expenseConfig din getExpenseConfig:', {
+            expenseConfig: expenseConfig,
+            hasConfig: !!expenseConfig,
+            supplierId: expenseConfig?.supplierId,
+            supplierName: expenseConfig?.supplierName,
+            hasValidSupplier: !!(expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName)
+          });
+          
+          if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
+            // 🔥 ACTUALIZEZ supplierData cu datele corecte!
+            supplierData.supplierId = expenseConfig.supplierId;
+            supplierData.supplierName = expenseConfig.supplierName;
+            console.log('✅ Furnizor obținut din configurația cheltuielii:', supplierData);
+          } else {
+            console.warn('⚠️ Nu s-a găsit configurația furnizorului pentru cheltuiala:', invoiceData.expenseType);
+            console.warn('⚠️ expenseConfig details:', expenseConfig);
+          }
+        } catch (configError) {
+          console.warn('⚠️ Eroare la obținerea configurației furnizorului:', configError);
+        }
+      }
+
+      // Supplier data ready pentru salvare
       
       let pdfData = null;
       
@@ -98,30 +270,64 @@ const useInvoices = (associationId) => {
         }
       }
 
+      // Calculează sumele pentru distribuție parțială - PENTRU FACTURĂ NOUĂ
+      const totalInvoiceAmount = parseFloat(invoiceData.totalInvoiceAmount || invoiceData.totalAmount) || 0;
+      const currentDistribution = parseFloat(invoiceData.currentDistribution || invoiceData.totalAmount) || 0;
+      const distributedAmount = currentDistribution; // Pentru factură nouă, distributedAmount = currentDistribution
+      const remainingAmount = totalInvoiceAmount - distributedAmount;
+      const isFullyDistributed = remainingAmount <= 0;
+
+      // Creează istoricul distribuției
+      const distributionEntry = {
+        month: invoiceData.month,
+        amount: currentDistribution,
+        expenseId: invoiceData.expenseId || null,
+        expenseType: invoiceData.expenseType || null,
+        distributedAt: new Date().toISOString(),
+        notes: invoiceData.distributionNotes || ''
+      };
+
       // Creează documentul facturii
-      const docRef = await addDoc(collection(db, 'invoices'), {
+      
+      const dataToSave = {
         associationId,
-        supplierId: invoiceData.supplierId,
-        supplierName: invoiceData.supplierName,
+        supplierId: supplierData.supplierId,
+        supplierName: supplierData.supplierName,
         expenseType: invoiceData.expenseType,
         expenseId: invoiceData.expenseId || null,
         invoiceNumber: invoiceData.invoiceNumber,
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
         month: invoiceData.month,
+        
+        // Sume pentru compatibilitate
         amount: parseFloat(invoiceData.amount) || 0,
         vatAmount: parseFloat(invoiceData.vatAmount) || 0,
         totalAmount: parseFloat(invoiceData.totalAmount) || 0,
+        
+        // NOILE câmpuri pentru distribuție parțială
+        totalInvoiceAmount: totalInvoiceAmount,
+        distributedAmount: distributedAmount,
+        remainingAmount: remainingAmount,
+        isFullyDistributed: isFullyDistributed,
+        distributionHistory: [distributionEntry],
+        
+        // Status plată
         isPaid: false,
         paidDate: null,
         paymentMethod: null,
+        
         // Date PDF - salvate ca Base64 în loc de URL
         pdfUrl: pdfData?.base64 || null, // Pentru compatibilitate cu codul existent
         pdfData: pdfData, // Datele complete Base64
         notes: invoiceData.notes || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      });
+      };
+      
+      // Data ready pentru Firebase
+      
+      const docRef = await addDoc(collection(db, 'invoices'), dataToSave);
 
       console.log('✅ Factură salvată cu ID:', docRef.id);
       console.log('📊 Factură salvată cu datele:', {
@@ -129,17 +335,22 @@ const useInvoices = (associationId) => {
         associationId,
         month: invoiceData.month,
         invoiceNumber: invoiceData.invoiceNumber,
-        supplierName: invoiceData.supplierName,
-        totalAmount: invoiceData.totalAmount,
+        supplierName: supplierData.supplierName,
+        totalInvoiceAmount: totalInvoiceAmount,
+        distributedAmount: distributedAmount,
+        remainingAmount: remainingAmount,
+        isFullyDistributed: isFullyDistributed,
         hasPdfData: !!pdfData
       });
+      
+      // Factură salvată cu succes
       return docRef.id;
       
     } catch (error) {
       console.error('❌ Eroare la salvarea facturii:', error);
       throw error;
     }
-  }, [associationId]);
+  }, [associationId, getExpenseConfig, invoices, updateInvoiceDistribution]);
 
   // 📝 ACTUALIZAREA UNEI FACTURI EXISTENTE
   const updateInvoice = useCallback(async (invoiceId, updates) => {
@@ -275,6 +486,67 @@ const useInvoices = (associationId) => {
     }
   };
 
+  // 🔧 ACTUALIZAREA FURNIZORILOR PENTRU FACTURILE EXISTENTE FĂRĂ FURNIZOR
+  const updateMissingSuppliersForExistingInvoices = useCallback(async (specificExpenseType = null) => {
+    try {
+      console.log('🔧 Verific și actualizez facturile fără furnizor...', specificExpenseType ? `pentru ${specificExpenseType}` : '');
+      
+      const invoicesWithoutSupplier = invoices.filter(invoice => {
+        const hasNoSupplier = !invoice.supplierName || 
+                             invoice.supplierName === 'Fără furnizor' || 
+                             invoice.supplierName === '';
+        
+        // Pentru sincronizare, consideră doar facturile care chiar aparțin acestei cheltuieli
+        const matchesExpenseType = !specificExpenseType || invoice.expenseType === specificExpenseType;
+        
+        // Debug eliminat pentru a reduce clutterul din consolă
+        
+        return hasNoSupplier && matchesExpenseType;
+      });
+      
+      console.log('📊 Facturi găsite fără furnizor:', invoicesWithoutSupplier.length, specificExpenseType ? `pentru ${specificExpenseType}` : '');
+      
+      for (const invoice of invoicesWithoutSupplier) {
+        try {
+          console.log('🔧 Procesez factura:', invoice.id, 'cu cheltuiala:', invoice.expenseType || 'LIPSEȘTE');
+          
+          // Pentru facturile fără expenseType, folosește specificExpenseType pentru configurare
+          const targetExpenseType = invoice.expenseType || specificExpenseType;
+          const expenseConfig = getExpenseConfig(targetExpenseType);
+          
+          if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
+            console.log('✅ Actualizez furnizorul pentru factura:', invoice.id, 'cu:', expenseConfig.supplierName);
+            
+            const docRef = doc(db, 'invoices', invoice.id);
+            const updateData = {
+              supplierId: expenseConfig.supplierId,
+              supplierName: expenseConfig.supplierName,
+              updatedAt: new Date().toISOString()
+            };
+            
+            // Dacă factura nu are expenseType setat, setează-l
+            if (!invoice.expenseType || invoice.expenseType === '') {
+              updateData.expenseType = specificExpenseType;
+              console.log('🔧 Setez și expenseType pentru factura:', invoice.id, 'la:', specificExpenseType);
+            }
+            
+            await updateDoc(docRef, updateData);
+          } else {
+            console.warn('⚠️ Nu s-a găsit configurația furnizorului pentru:', targetExpenseType);
+          }
+        } catch (error) {
+          console.error('❌ Eroare la actualizarea facturii:', invoice.id, error);
+        }
+      }
+      
+      console.log('✅ Actualizare furnizori completă');
+      return invoicesWithoutSupplier.length;
+    } catch (error) {
+      console.error('❌ Eroare la actualizarea furnizorilor:', error);
+      throw error;
+    }
+  }, [invoices, getExpenseConfig]);
+
   // 🔍 FILTRARE ȘI CĂUTARE FACTURI
   const getInvoicesByMonth = useCallback((month) => {
     return invoices.filter(invoice => invoice.month === month);
@@ -293,6 +565,137 @@ const useInvoices = (associationId) => {
     return invoices.filter(invoice => 
       !invoice.isPaid && new Date(invoice.dueDate) < today
     );
+  }, [invoices]);
+  
+  // 🆕 OBȚINE FACTURILE PARȚIAL DISTRIBUITE
+  const getPartiallyDistributedInvoices = useCallback((expenseType = null) => {
+    const filtered = invoices.filter(invoice => {
+      // Logica îmbunătățită pentru facturi parțial distribuite
+      const totalInvoiceAmount = invoice.totalInvoiceAmount || invoice.totalAmount || 0;
+      const distributedAmount = invoice.distributedAmount || 0;
+      const remainingAmount = invoice.remainingAmount ?? (totalInvoiceAmount - distributedAmount);
+      const isNotFullyDistributed = !invoice.isFullyDistributed;
+      
+      // O factură este parțial distribuită dacă:
+      // 1. Are remainingAmount > 0 SAU
+      // 2. Nu este marcată ca complet distribuită ȘI are totalAmount > 0
+      const hasRemaining = remainingAmount > 0 || (isNotFullyDistributed && totalInvoiceAmount > 0);
+      
+      // ÎMBUNĂTĂȚIRE: Match pe expenseType SAU pe furnizor
+      let matchesType = !expenseType || invoice.expenseType === expenseType;
+      
+      // Dacă nu găsim pe expenseType, încearcă matching pe furnizor
+      if (!matchesType && expenseType) {
+        const expenseConfig = getExpenseConfig(expenseType);
+        if (expenseConfig?.supplierName && invoice.supplierName) {
+          // Match doar pe furnizor existent
+          matchesType = expenseConfig.supplierName.toLowerCase().trim() === invoice.supplierName.toLowerCase().trim();
+        }
+      }
+      
+      return hasRemaining && matchesType;
+    });
+    
+    // Debug simplificat - doar pentru probleme
+    if (filtered.length === 0 && expenseType) {
+      console.log('⚠️ Nicio factură găsită pentru:', expenseType);
+    }
+    
+    // Verifică dacă există facturi care au nevoie de sincronizare
+    if (expenseType && filtered.length === 0) {
+      const expenseConfig = getExpenseConfig(expenseType);
+      if (expenseConfig?.supplierName) {
+        const invoicesNeedingSync = invoices.filter(invoice => 
+          invoice.expenseType === expenseType &&
+          (!invoice.supplierName || invoice.supplierName === 'Fără furnizor')
+        );
+        
+        if (invoicesNeedingSync.length > 0) {
+          console.log('⚠️ Găsite', invoicesNeedingSync.length, 'facturi pentru', expenseType, 'care au nevoie de sincronizare furnizor');
+          console.log('💡 Apelează syncSuppliersForExpenseType("' + expenseType + '") pentru a sincroniza');
+        }
+      }
+    }
+
+    // 🔧 CONSOLIDARE FACTURI DUPLICATE
+    // Grupează facturile după invoiceNumber pentru a evita duplicate
+    const consolidatedInvoices = new Map();
+    
+    filtered.forEach(invoice => {
+      const key = invoice.invoiceNumber;
+      if (consolidatedInvoices.has(key)) {
+        // Dacă factura există deja, păstrează cea cu remaining amount mai mare
+        const existing = consolidatedInvoices.get(key);
+        const currentRemaining = invoice.remainingAmount ?? ((invoice.totalInvoiceAmount || invoice.totalAmount || 0) - (invoice.distributedAmount || 0));
+        const existingRemaining = existing.remainingAmount ?? ((existing.totalInvoiceAmount || existing.totalAmount || 0) - (existing.distributedAmount || 0));
+        
+        // Păstrează factura mai recent actualizată (cu data mai recentă)
+        const currentDate = new Date(invoice.updatedAt || invoice.createdAt);
+        const existingDate = new Date(existing.updatedAt || existing.createdAt);
+        
+        if (currentDate > existingDate) {
+          consolidatedInvoices.set(key, invoice);
+        }
+      } else {
+        consolidatedInvoices.set(key, invoice);
+      }
+    });
+    
+    return Array.from(consolidatedInvoices.values());
+  }, [invoices, getExpenseConfig]);
+  
+  // 🛠️ CORECTARE FURNIZORI GREȘIT ATRIBUIȚI
+  const fixIncorrectSuppliers = useCallback(async () => {
+    try {
+      console.log('🛠️ Corectez furnizori greșit atribuiți...');
+      
+      // Găsește facturi care au expenseType diferit de furnizorul lor
+      const problematicInvoices = invoices.filter(invoice => {
+        if (!invoice.expenseType || !invoice.supplierName) return false;
+        
+        const expenseConfig = getExpenseConfig(invoice.expenseType);
+        if (!expenseConfig?.supplierName) return false;
+        
+        // Verifică dacă furnizorul din factură nu corespunde cu cel configurat pentru expenseType
+        return expenseConfig.supplierName.toLowerCase().trim() !== invoice.supplierName.toLowerCase().trim();
+      });
+      
+      console.log('🔍 Facturi cu furnizor incorect:', problematicInvoices.length);
+      
+      for (const invoice of problematicInvoices) {
+        const correctExpenseConfig = getExpenseConfig(invoice.expenseType);
+        
+        console.log('🔧 Corectez factura:', invoice.id, {
+          invoiceNumber: invoice.invoiceNumber,
+          expenseType: invoice.expenseType,
+          currentSupplier: invoice.supplierName,
+          correctSupplier: correctExpenseConfig.supplierName
+        });
+        
+        const docRef = doc(db, 'invoices', invoice.id);
+        await updateDoc(docRef, {
+          supplierId: correctExpenseConfig.supplierId,
+          supplierName: correctExpenseConfig.supplierName,
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      console.log('✅ Corecție furnizori completă');
+      return problematicInvoices.length;
+    } catch (error) {
+      console.error('❌ Eroare la corecția furnizorilor:', error);
+      throw error;
+    }
+  }, [invoices, getExpenseConfig]);
+  
+  // 🔄 SINCRONIZARE AUTOMATĂ FURNIZORI PENTRU UN TIP DE CHELTUIALĂ
+  const syncSuppliersForExpenseType = useCallback(async (expenseType) => {
+    return await updateMissingSuppliersForExistingInvoices(expenseType);
+  }, [updateMissingSuppliersForExistingInvoices]);
+  
+  // 🆕 OBȚINE FACTURA DUPĂ NUMĂR
+  const getInvoiceByNumber = useCallback((invoiceNumber) => {
+    return invoices.find(invoice => invoice.invoiceNumber === invoiceNumber);
   }, [invoices]);
 
   // 📊 STATISTICI FACTURI
@@ -336,6 +739,8 @@ const useInvoices = (associationId) => {
     addInvoice,
     updateInvoice,
     deleteInvoice,
+    updateInvoiceDistribution,
+    updateMissingSuppliersForExistingInvoices,
     
     // ✅ Management plăți
     markInvoiceAsPaid,
@@ -349,7 +754,11 @@ const useInvoices = (associationId) => {
     getInvoicesBySupplier,
     getUnpaidInvoices,
     getOverdueInvoices,
-    getInvoiceStats
+    getPartiallyDistributedInvoices,
+    getInvoiceByNumber,
+    getInvoiceStats,
+    syncSuppliersForExpenseType,
+    fixIncorrectSuppliers
   };
 };
 

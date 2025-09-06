@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receipt, CreditCard, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
+import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import jsPDF from 'jspdf';
@@ -21,7 +22,8 @@ const AccountingView = ({
   getInvoicesByMonth,
   getInvoiceStats,
   markInvoiceAsPaid,
-  markInvoiceAsUnpaid
+  markInvoiceAsUnpaid,
+  updateMissingSuppliersForExistingInvoices
 }) => {
   const apartments = getAssociationApartments();
   const {
@@ -32,6 +34,9 @@ const AccountingView = ({
     generateReceiptNumber,
     deleteIncasare
   } = useIncasari(association, currentMonth);
+
+  // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
+  const { getExpenseConfig } = useExpenseConfigurations(association?.id);
 
   const [activeTab, setActiveTab] = useState('incasari'); // 'incasari' sau 'facturi'
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,10 +71,22 @@ const AccountingView = ({
       id: inv.id,
       month: inv.month,
       invoiceNumber: inv.invoiceNumber,
-      supplierName: inv.supplierName
+      supplierName: inv.supplierName,
+      supplierId: inv.supplierId
     })),
     invoiceStats
   });
+  
+  // DEBUG: Loghează fiecare factură în detaliu
+  monthlyInvoices.forEach(invoice => {
+    console.log(`🧾 Factură ${invoice.invoiceNumber}:`, {
+      supplierName: invoice.supplierName,
+      supplierId: invoice.supplierId,
+      hasSupplierName: !!invoice.supplierName,
+      supplierNameLength: invoice.supplierName?.length
+    });
+  });
+
 
   // Filtrează și sortează încasările
   const filteredIncasari = incasari
@@ -623,6 +640,7 @@ const AccountingView = ({
                   </div>
                 </div>
 
+
                 {/* Bara de căutare și filtre pentru facturi */}
                 <div className="flex flex-col md:flex-row gap-4 mb-6">
                   <div className="flex-1 relative">
@@ -674,6 +692,9 @@ const AccountingView = ({
                             Sumă
                           </th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Distribuție
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Data Factură
                           </th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -690,17 +711,23 @@ const AccountingView = ({
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredInvoices.length === 0 ? (
                           <tr>
-                            <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                            <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
                               Nu există facturi înregistrate pentru {currentMonth}
                             </td>
                           </tr>
                         ) : (
                           filteredInvoices.map((invoice) => {
                             const isOverdue = !invoice.isPaid && new Date(invoice.dueDate) < new Date();
+                            
+                            // 🔥 OBȚINE FURNIZORUL DIN CONFIGURAȚIA CHELTUIELII
+                            const expenseConfig = getExpenseConfig(invoice.expenseType);
+                            const supplierFromConfig = expenseConfig?.supplierName || null;
+                            const finalSupplier = supplierFromConfig || invoice.supplierName || 'Fără furnizor';
+                            
                             return (
                               <tr key={invoice.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {invoice.supplierName || 'Fără furnizor'}
+                                  {finalSupplier}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {invoice.invoiceNumber}
@@ -709,7 +736,102 @@ const AccountingView = ({
                                   {invoice.expenseType}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-                                  {invoice.totalAmount.toFixed(2)} lei
+                                  <div>
+                                    {(invoice.totalInvoiceAmount || invoice.totalAmount).toFixed(2)} lei
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Total factură
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                  {(() => {
+                                    // Calculează valorile pentru distribuție
+                                    const totalInvoice = invoice.totalInvoiceAmount || invoice.totalAmount;
+                                    const distributed = invoice.distributedAmount || 0;
+                                    const remaining = invoice.remainingAmount || 0;
+                                    const isPartial = remaining > 0 || (invoice.totalInvoiceAmount && invoice.totalInvoiceAmount > invoice.totalAmount);
+                                    const percentage = totalInvoice > 0 ? Math.round((distributed / totalInvoice) * 100) : 100;
+                                    
+                                    if (isPartial && remaining > 0) {
+                                      // Distribuție parțială cu detalii
+                                      return (
+                                        <div className="space-y-1">
+                                          <div className="text-xs">
+                                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                                              {percentage}% distribuit
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            {distributed.toFixed(0)} / {totalInvoice.toFixed(0)} lei
+                                          </div>
+                                          <div className="text-xs text-orange-600 font-medium">
+                                            Rămas: {remaining.toFixed(2)} lei
+                                          </div>
+                                          {/* Detalii distribuții */}
+                                          {(() => {
+                                            // Debug logging pentru distribuții
+                                            if (invoice.invoiceNumber === 'Factura 4') {
+                                              console.log('🔍 DEBUG Factura 4 distributionHistory:', {
+                                                invoiceId: invoice.id,
+                                                invoiceNumber: invoice.invoiceNumber,
+                                                distributionHistory: invoice.distributionHistory,
+                                                distributionHistoryLength: invoice.distributionHistory?.length || 0,
+                                                distributedAmount: invoice.distributedAmount,
+                                                remainingAmount: invoice.remainingAmount
+                                              });
+                                            }
+                                            
+                                            return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (
+                                              <div className="mt-2 p-2 bg-gray-50 rounded border text-xs">
+                                                <div className="font-medium text-gray-700 mb-1">Distribuții ({invoice.distributionHistory.length}):</div>
+                                                {invoice.distributionHistory.map((dist, idx) => (
+                                                  <div key={idx} className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600">{dist.expenseType || dist.notes}</span>
+                                                    <span className="font-medium text-blue-600">{dist.amount} lei</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+                                      );
+                                    } else {
+                                      // Distribuție completă cu detalii
+                                      return (
+                                        <div className="space-y-1">
+                                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                            ✅ 100% distribuit
+                                          </span>
+                                          {/* Detalii distribuții */}
+                                          {(() => {
+                                            // Debug logging pentru distribuții
+                                            if (invoice.invoiceNumber === 'Factura 4') {
+                                              console.log('🔍 DEBUG Factura 4 distributionHistory:', {
+                                                invoiceId: invoice.id,
+                                                invoiceNumber: invoice.invoiceNumber,
+                                                distributionHistory: invoice.distributionHistory,
+                                                distributionHistoryLength: invoice.distributionHistory?.length || 0,
+                                                distributedAmount: invoice.distributedAmount,
+                                                remainingAmount: invoice.remainingAmount
+                                              });
+                                            }
+                                            
+                                            return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (
+                                              <div className="mt-2 p-2 bg-gray-50 rounded border text-xs">
+                                                <div className="font-medium text-gray-700 mb-1">Distribuții ({invoice.distributionHistory.length}):</div>
+                                                {invoice.distributionHistory.map((dist, idx) => (
+                                                  <div key={idx} className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600">{dist.expenseType || dist.notes}</span>
+                                                    <span className="font-medium text-blue-600">{dist.amount} lei</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+                                      );
+                                    }
+                                  })()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                                   {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}

@@ -239,7 +239,8 @@ export default function BlocApp() {
     getInvoicesByMonth,
     getUnpaidInvoices,
     getOverdueInvoices,
-    getInvoiceStats
+    getInvoiceStats,
+    updateMissingSuppliersForExistingInvoices
   } = useInvoices(association?.id);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
@@ -525,7 +526,7 @@ useEffect(() => {
               setNewCustomExpense={setNewCustomExpense}
               handleAddCustomExpense={handleAddCustomExpense}
               getAssociationExpenseTypes={getAssociationExpenseTypes}
-              updateExpenseConfig={updateExpenseConfig}
+              updateExpenseConfig={updateFirestoreExpenseConfig}
               getApartmentParticipation={getApartmentParticipation}
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
@@ -670,6 +671,7 @@ useEffect(() => {
               getInvoiceStats={getInvoiceStats}
               markInvoiceAsPaid={markInvoiceAsPaid}
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
+              updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
             />
           )}
 

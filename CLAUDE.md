@@ -32,6 +32,8 @@ CI=true npm test
 - **Styling**: Tailwind CSS 3.4.0
 - **Backend**: Firebase (Firestore for database, Firebase Auth for authentication)
 - **PDF Generation**: jspdf with jspdf-autotable
+- **File Handling**: xlsx for Excel export/import, file-saver for downloads
+- **Icons**: lucide-react
 
 ### Directory Structure
 - `src/components/` - Feature-based component organization
@@ -48,10 +50,11 @@ CI=true npm test
 - `src/firebase.js` - Firebase configuration and initialization
 
 ### Key Architectural Patterns
-1. **Custom Hooks**: Business logic is encapsulated in custom hooks (e.g., `useAssociations`, `useExpenses`)
+1. **Custom Hooks**: Business logic is encapsulated in custom hooks (18+ hooks including `useExpenseManagement`, `useInvoices`, `useMaintenanceCalculation`, `useBalanceManagement`)
 2. **View-based Navigation**: Single-page app with view switching managed through state
 3. **Firebase Integration**: Real-time data synchronization with Firestore
 4. **Context API**: Authentication state managed through AuthContext
+5. **Modular Components**: Feature-based organization with reusable modal and form components
 
 ### Data Model
 The app manages the following main entities:
@@ -61,6 +64,9 @@ The app manages the following main entities:
 - **Apartments**: Individual apartment units
 - **Expenses**: Various expense types (utilities, maintenance)
 - **Maintenance Calculations**: Monthly fee calculations per apartment
+- **Suppliers**: Vendor management
+- **Invoices**: Invoice processing and management
+- **Payment Balances**: Tracking apartment payment status
 
 ### Important Notes
 - The UI and data models are in Romanian (e.g., "bloc" = building, "scara" = stairwell)
@@ -82,3 +88,16 @@ npm test -- --testNamePattern="test name"
 3. **State Management**: Uses React hooks and Context API, no Redux
 4. **Error Handling**: Basic error handling in hooks, could be improved
 5. **Environment Variables**: Not currently used - Firebase config is hardcoded
+6. **File Operations**: Supports Excel import/export and PDF generation for reports
+7. **Real-time Updates**: Leverages Firestore real-time listeners for live data synchronization
+
+## Key Business Logic Hooks
+
+The application's core functionality is divided across specialized hooks:
+- `useExpenseManagement` - Expense tracking and categorization
+- `useInvoices` - Invoice processing and management
+- `useMaintenanceCalculation` - Complex apartment fee calculations
+- `useBalanceManagement` - Payment tracking and balance management
+- `useSuppliers` - Vendor and supplier management
+- `useMonthManagement` - Monthly operations and status tracking
+- `useIncasari` - Payment collection management
