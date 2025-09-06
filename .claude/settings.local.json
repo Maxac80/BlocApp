@@ -19,7 +19,12 @@
       "Bash(claude doctor)",
       "Bash(npm test:*)",
       "Bash(grep:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(/C:\\blocapp\\src\\hooks/**)",
+      "Bash(git log:*)",
+      "Read(/C:\\blocapp\\src\\components\\views/**)",
+      "Bash(netstat:*)",
+      "WebFetch(domain:firebase.google.com)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
