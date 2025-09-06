@@ -18,14 +18,11 @@ export const useBalanceManagement = (association) => {
   const [initialBalances, setInitialBalances] = useState({});
 
   // 🔄 ÎNCĂRCAREA CONFIGURĂRILOR LA SCHIMBAREA ASOCIAȚIEI
-  // DEZACTIVAT - folosim doar calculul din tabelul curent
-  /*
   useEffect(() => {
     if (association?.id) {
       loadInitialBalances();
     }
-  }, [association?.id]);
-  */
+  }, [association?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 📥 ÎNCĂRCAREA SOLDURILOR ȘI CONFIGURĂRILOR DIN FIRESTORE
   const loadInitialBalances = useCallback(async () => {
