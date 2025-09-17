@@ -29,13 +29,13 @@ const AdjustBalancesModal = ({
           penalitati: Math.round(apartmentData.penalitatiAjustate * 100) / 100
         };
         
-        console.log(`💰 Salvez pentru ap. ${apartmentData.apartmentNumber}:`, {
-          vechi: {
-            restante: apartmentData.restanteCurente,
-            penalitati: apartmentData.penalitatiCurente
-          },
-          nou: newBalance
-        });
+        // console.log(`💰 Salvez pentru ap. ${apartmentData.apartmentNumber}:`, {
+        //   vechi: {
+        //     restante: apartmentData.restanteCurente,
+        //     penalitati: apartmentData.penalitatiCurente
+        //   },
+        //   nou: newBalance
+        // });
         
         setApartmentBalance(apartmentData.apartmentId, newBalance);
       });

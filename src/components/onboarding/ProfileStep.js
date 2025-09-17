@@ -163,7 +163,7 @@ export default function ProfileStep({
     
     try {
       // Folosește Base64 pentru avatar (Firebase Storage necesită Blaze Plan)
-      console.log('🔄 Using Base64 upload for avatar...');
+      // console.log('🔄 Using Base64 upload for avatar...');
       
       const base64Result = await uploadAvatarBase64(file);
       
@@ -186,7 +186,7 @@ export default function ProfileStep({
         avatar: null
       }));
       
-      console.log('✅ Avatar uploaded successfully (Base64)');
+      // console.log('✅ Avatar uploaded successfully (Base64)');
       
     } catch (error) {
       console.error('❌ Error uploading avatar:', error);

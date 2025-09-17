@@ -68,7 +68,7 @@ const DashboardView = ({
 
   // Handler pentru salvarea plății cu integrare Firestore
   const handleSavePayment = async (paymentData) => {
-    console.log('💰 Salvare plată:', paymentData);
+    // console.log('💰 Salvare plată:', paymentData);
     
     if (!selectedApartment) {
       alert('Eroare: Nu s-a selectat apartamentul');
@@ -86,7 +86,7 @@ const DashboardView = ({
     const result = await addIncasare(incasareData);
     
     if (result.success) {
-      console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
+      // console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
       // Tabelul se va actualiza automat prin usePaymentSync
       setShowPaymentModal(false);
       alert(`✅ Plată înregistrată cu succes!\nChitanță nr: ${result.receiptNumber}`);
@@ -104,7 +104,7 @@ const DashboardView = ({
 
   // Handler pentru selectarea unei versiuni
   const handleSelectVersion = (month, versionData) => {
-    console.log(`📊 Versiunea selectată: ${month}`, versionData);
+    // console.log(`📊 Versiunea selectată: ${month}`, versionData);
     alert(`📊 Versiunea pentru ${month} a fost încărcată!\n\nStatistici:\n• ${versionData.statistics.totalApartments} apartamente\n• ${versionData.statistics.apartmentePlatite} plătite\n• ${versionData.statistics.apartamenteRestante} restante\n• ${versionData.statistics.totalIncasat.toFixed(2)} lei încasați`);
     // TODO: Implementează afișarea datelor versiunii în interfață
   };

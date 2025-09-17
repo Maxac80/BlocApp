@@ -61,14 +61,14 @@ const useInvoices = (associationId) => {
         setLoading(false);
         
         console.log('✅ Facturi încărcate:', invoicesData.length);
-        console.log('📋 Lista facturilor încărcate:', invoicesData.map(inv => ({
-          id: inv.id,
-          month: inv.month,
-          invoiceNumber: inv.invoiceNumber,
-          associationId: inv.associationId,
-          supplierName: inv.supplierName,
-          supplierId: inv.supplierId
-        })));
+        // console.log('📋 Lista facturilor încărcate:', invoicesData.map(inv => ({
+        //   id: inv.id,
+        //   month: inv.month,
+        //   invoiceNumber: inv.invoiceNumber,
+        //   associationId: inv.associationId,
+        //   supplierName: inv.supplierName,
+        //   supplierId: inv.supplierId
+        // })));
       },
       (error) => {
         console.error('❌ Eroare la încărcarea facturilor:', error);
@@ -96,16 +96,16 @@ const useInvoices = (associationId) => {
       const newRemainingAmount = (invoice.totalInvoiceAmount || invoice.totalAmount) - newDistributedAmount;
       const isFullyDistributed = newRemainingAmount <= 0;
       
-      console.log('🔍 ACTUALIZARE DISTRIBUȚIE - Date de calcul:', {
-        invoiceId,
-        invoiceNumber: invoice.invoiceNumber,
-        totalInvoiceAmount: invoice.totalInvoiceAmount || invoice.totalAmount,
-        currentDistributedAmount: invoice.distributedAmount || 0,
-        newDistributionAmount: currentDistribution,
-        calculatedNewDistributedAmount: newDistributedAmount,
-        calculatedNewRemainingAmount: newRemainingAmount,
-        isFullyDistributed
-      });
+      // console.log('🔍 ACTUALIZARE DISTRIBUȚIE - Date de calcul:', {
+      //   invoiceId,
+      //   invoiceNumber: invoice.invoiceNumber,
+      //   totalInvoiceAmount: invoice.totalInvoiceAmount || invoice.totalAmount,
+      //   currentDistributedAmount: invoice.distributedAmount || 0,
+      //   newDistributionAmount: currentDistribution,
+      //   calculatedNewDistributedAmount: newDistributedAmount,
+      //   calculatedNewRemainingAmount: newRemainingAmount,
+      //   isFullyDistributed
+      // });
       
       // Creează noua intrare în istoric
       const newDistributionEntry = {

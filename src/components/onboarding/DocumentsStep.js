@@ -163,7 +163,7 @@ export default function DocumentsStep({
       }
       
       // Convertește în Base64
-      console.log(`🔄 Converting ${file.name} to Base64...`);
+      // console.log(`🔄 Converting ${file.name} to Base64...`);
       const base64Data = await fileToBase64(file);
       
       // Continuă progress

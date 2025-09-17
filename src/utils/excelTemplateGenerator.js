@@ -276,7 +276,7 @@ const generateStairSheet = (stair, block) => {
  */
 export const generateExcelTemplate = async (association, blocks, stairs) => {
   try {
-    console.log('📊 Generez template Excel pentru asociația:', association.name);
+    // console.log('📊 Generez template Excel pentru asociația:', association.name);
     
     // Verifică că avem date valide
     if (!association || !blocks || !stairs) {
@@ -324,17 +324,17 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
     // 💾 Generează și descarcă fișierul
     const fileName = `Template_Apartamente_${association.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
     
-    console.log(`✅ Template generat cu succes:`, {
-      associatie: association.name,
-      blocuri: associationBlocks.length,
-      scari: stairCount,
-      fileName
-    });
+    // console.log(`✅ Template generat cu succes:`, {
+    //   associatie: association.name,
+    //   blocuri: associationBlocks.length,
+    //   scari: stairCount,
+    //   fileName
+    // });
 
     // Convertește la buffer și descarcă
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     
     saveAs(blob, fileName);

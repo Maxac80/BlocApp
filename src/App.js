@@ -3,6 +3,8 @@ import { AuthProviderEnhanced, useAuthEnhanced } from "./context/AuthContextEnha
 import AuthManager from "./components/auth/AuthManager";
 import BlocApp from "./BlocApp";
 import { AlertCircle } from "lucide-react";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import './services/appCheck'; // Initialize App Check for security
 
 // Componenta principală care decide ce să afișeze
 function AppContent() {
@@ -17,11 +19,11 @@ function AppContent() {
 
   // 🔄 HANDLE AUTH COMPLETE
   const handleAuthComplete = async (result) => {
-    console.log('✅ Auth flow complete:', result);
+    // console.log('✅ Auth flow complete:', result);
     
     // Dacă onboarding-ul s-a completat, forțează reload-ul profilului
     if (result.onboardingCompleted && currentUser) {
-      console.log('🔄 Reloading user profile after onboarding...');
+      // console.log('🔄 Reloading user profile after onboarding...');
       
       // Forțează un reload al paginii după un mic delay pentru a permite actualizarea Firestore
       setTimeout(() => {
@@ -161,11 +163,13 @@ function ProprietarDashboard() {
   );
 }
 
-// App principală
+// App principală cu Error Boundary
 export default function App() {
   return (
-    <AuthProviderEnhanced>
-      <AppContent />
-    </AuthProviderEnhanced>
+    <ErrorBoundary>
+      <AuthProviderEnhanced>
+        <AppContent />
+      </AuthProviderEnhanced>
+    </ErrorBoundary>
   );
 }

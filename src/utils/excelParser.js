@@ -100,8 +100,8 @@ const parseStairSheet = (worksheet, sheetName) => {
     header: 1  // Folosește array-uri în loc de obiecte pentru a avea control mai bun
   });
   
-  console.log(`📋 Parsez sheet-ul: ${sheetName}`);
-  console.log(`Total rânduri găsite: ${data.length}`);
+  // console.log(`📋 Parsez sheet-ul: ${sheetName}`);
+  // console.log(`Total rânduri găsite: ${data.length}`);
   
   const apartments = [];
   const validationErrors = [];
@@ -117,7 +117,7 @@ const parseStairSheet = (worksheet, sheetName) => {
     if (row && row[0] && row[0].toString().includes('Nr_Apt')) {
       headerRowIndex = i;
       headers = row;
-      console.log(`📍 Header găsit la rândul ${i + 1}: ${headers.slice(0, 3).join(', ')}...`);
+      // console.log(`📍 Header găsit la rândul ${i + 1}: ${headers.slice(0, 3).join(', ')}...`);
       break;
     }
   }
@@ -138,12 +138,12 @@ const parseStairSheet = (worksheet, sheetName) => {
     
     if (firstCell.includes('ÎNCEPE COMPLETAREA') || firstCell.includes('✏️')) {
       dataStartIndex = i + 1; // Skip doar acest rând, nu și unul suplimentar
-      console.log(`📝 Am găsit marcajul de început la rândul ${i + 1}, încep să citesc de la ${dataStartIndex + 1}`);
+      // console.log(`📝 Am găsit marcajul de început la rândul ${i + 1}, încep să citesc de la ${dataStartIndex + 1}`);
       break;
     }
   }
   
-  console.log(`🔍 Încep să citesc datele de la rândul ${dataStartIndex + 1}`);
+  // console.log(`🔍 Încep să citesc datele de la rândul ${dataStartIndex + 1}`);
   
   let processedRows = 0;
   let skippedEmpty = 0;
@@ -167,16 +167,16 @@ const parseStairSheet = (worksheet, sheetName) => {
     
     // Skip dacă nu are date esențiale
     if (!row['Nr_Apt*'] && !row['Proprietar*'] && !row['Nr_Persoane*']) {
-      console.log(`⚠️ Rând ${i + 1} sărit - lipsesc date esențiale`);
+      // console.log(`⚠️ Rând ${i + 1} sărit - lipsesc date esențiale`);
       continue;
     }
     
     processedRows++;
-    console.log(`📝 Procesez rândul ${i + 1} (apartament #${processedRows}):`, {
-      'Nr_Apt*': row['Nr_Apt*'],
-      'Proprietar*': row['Proprietar*'],
-      'Nr_Persoane*': row['Nr_Persoane*']
-    });
+    // console.log(`📝 Procesez rândul ${i + 1} (apartament #${processedRows}):`, {
+    //   'Nr_Apt*': row['Nr_Apt*'],
+    //   'Proprietar*': row['Proprietar*'],
+    //   'Nr_Persoane*': row['Nr_Persoane*']
+    // });
     
     // Validează rândul
     const validation = validateApartmentRow(row, i + 2, existingNumbers); // +2 pentru că Excel începe de la 1 și avem header
@@ -205,23 +205,23 @@ const parseStairSheet = (worksheet, sheetName) => {
       existingNumbers.push(apartment.number);
       
       // Log pentru apartamentele adăugate cu succes
-      console.log(`✅ Apartament ${apartment.number} adăugat cu succes`);
+      // console.log(`✅ Apartament ${apartment.number} adăugat cu succes`);
     } else {
       // Log pentru apartamentele cu erori
-      console.log(`❌ Apartament din rândul ${i + 1} nu a fost adăugat. Erori:`, validation.errors);
-      console.log(`   Date rând:`, {
-        'Nr_Apt*': row['Nr_Apt*'],
-        'Proprietar*': row['Proprietar*'],
-        'Nr_Persoane*': row['Nr_Persoane*']
-      });
+      // console.log(`❌ Apartament din rândul ${i + 1} nu a fost adăugat. Erori:`, validation.errors);
+      // console.log(`   Date rând:`, {
+        // 'Nr_Apt*': row['Nr_Apt*'],
+        // 'Proprietar*': row['Proprietar*'],
+        // 'Nr_Persoane*': row['Nr_Persoane*']
+      // });
     }
   }
   
-  console.log(`📊 SUMAR Sheet ${sheetName}:`);
-  console.log(`   • Rânduri procesate: ${processedRows}`);
-  console.log(`   • Rânduri goale sărite: ${skippedEmpty}`);
-  console.log(`   • Apartamente valid adăugate: ${apartments.length}`);
-  console.log(`   • Erori de validare: ${validationErrors.length}`);
+  // console.log(`📊 SUMAR Sheet ${sheetName}:`);
+  // console.log(`   • Rânduri procesate: ${processedRows}`);
+  // console.log(`   • Rânduri goale sărite: ${skippedEmpty}`);
+  // console.log(`   • Apartamente valid adăugate: ${apartments.length}`);
+  // console.log(`   • Erori de validare: ${validationErrors.length}`);
   
   return {
     sheetName,
@@ -236,7 +236,7 @@ const parseStairSheet = (worksheet, sheetName) => {
  */
 export const parseExcelFile = async (file, blocks, stairs) => {
   try {
-    console.log('📊 Parsez fișierul Excel:', file.name);
+    // console.log('📊 Parsez fișierul Excel:', file.name);
     
     // Citește fișierul
     const data = await file.arrayBuffer();
@@ -295,12 +295,12 @@ export const parseExcelFile = async (file, blocks, stairs) => {
       results.message = `Am găsit ${results.totalErrors} erori care trebuie corectate`;
     }
     
-    console.log('✅ Rezultat parsare:', {
-      sheets: results.sheets.length,
-      apartamente: results.totalApartments,
-      erori: results.totalErrors,
-      avertismente: results.totalWarnings
-    });
+    // console.log('✅ Rezultat parsare:', {
+      // sheets: results.sheets.length,
+      // apartamente: results.totalApartments,
+      // erori: results.totalErrors,
+      // avertismente: results.totalWarnings
+    // });
     
     return results;
     

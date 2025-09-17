@@ -138,7 +138,7 @@ const useExpenseConfigurations = (associationId) => {
       // Actualizează state-ul local pentru feedback instant
       setConfigurations(updatedConfigs);
       
-      console.log('✅ Configurație actualizată pentru:', expenseType);
+      // console.log('✅ Configurație actualizată pentru:', expenseType);
     } catch (error) {
       console.error('Error updating expense configuration:', error);
       throw error;
@@ -149,7 +149,7 @@ const useExpenseConfigurations = (associationId) => {
   const fixFirestoreConfigurations = useCallback(async () => {
     if (!associationId) return;
 
-    console.log('🔧 Fixing incorrect Firestore configurations...');
+    // console.log('🔧 Fixing incorrect Firestore configurations...');
     
     const corrections = [
       { name: 'Energie electrică', correctType: 'person' },
@@ -159,7 +159,7 @@ const useExpenseConfigurations = (associationId) => {
     for (const correction of corrections) {
       const currentConfig = configurations[correction.name];
       if (currentConfig && currentConfig.distributionType !== correction.correctType) {
-        console.log(`🔄 Correcting ${correction.name}: ${currentConfig.distributionType} → ${correction.correctType}`);
+        // console.log(`🔄 Correcting ${correction.name}: ${currentConfig.distributionType} → ${correction.correctType}`);
         
         await updateExpenseConfig(correction.name, {
           ...currentConfig,
@@ -168,7 +168,7 @@ const useExpenseConfigurations = (associationId) => {
       }
     }
     
-    console.log('✅ Firestore configurations corrected!');
+    // console.log('✅ Firestore configurations corrected!');
   }, [associationId, configurations, updateExpenseConfig]);
 
   return {

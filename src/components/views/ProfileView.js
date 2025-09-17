@@ -166,7 +166,7 @@ const ProfileView = ({
       }
       
       // Debugging pentru documente
-      console.log('🔍 DEBUG: Loading admin profile with documents:', adminData.documents);
+      // console.log('🔍 DEBUG: Loading admin profile with documents:', adminData.documents);
       
       setFormData({
         firstName: adminData.firstName || '',
@@ -254,7 +254,7 @@ const ProfileView = ({
         };
         
         await updateDoc(doc(db, 'users', currentUser.uid), userProfileUpdates);
-        console.log('✅ UserProfile actualizat în Firestore pentru Sidebar');
+        // console.log('✅ UserProfile actualizat în Firestore pentru Sidebar');
       }
       
       setIsEditing(false);
@@ -282,7 +282,7 @@ const ProfileView = ({
       
       // Skip Firebase Storage pentru acum (necesită Blaze Plan)
       // Folosește direct Base64 pentru avatare
-      console.log('🔄 Using Base64 upload (Firebase Storage requires Blaze Plan)...');
+      // console.log('🔄 Using Base64 upload (Firebase Storage requires Blaze Plan)...');
       
       const base64Result = await uploadAvatarBase64(file);
       avatarData = { 
@@ -295,7 +295,7 @@ const ProfileView = ({
           storageType: 'base64'
         }
       };
-      console.log('✅ Base64 upload successful');
+      // console.log('✅ Base64 upload successful');
       
       setFormData(prev => ({
         ...prev,
@@ -372,7 +372,7 @@ const ProfileView = ({
       }
       
       // Convertește în Base64
-      console.log(`🔄 Converting ${file.name} to Base64...`);
+      // console.log(`🔄 Converting ${file.name} to Base64...`);
       const base64Data = await fileToBase64(file);
       
       // Continuă progress

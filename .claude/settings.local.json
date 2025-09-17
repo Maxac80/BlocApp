@@ -24,7 +24,16 @@
       "Bash(git log:*)",
       "Read(/C:\\blocapp\\src\\components\\views/**)",
       "Bash(netstat:*)",
-      "WebFetch(domain:firebase.google.com)"
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(for file in \"C:\\blocapp\\src\\components\\views\\MaintenanceView.js\" \"C:\\blocapp\\src\\components\\views\\ProfileView.js\" \"C:\\blocapp\\src\\components\\views\\DashboardView.js\")",
+      "Bash(do echo \"Processing $file\")",
+      "Bash(done)",
+      "Bash(copy .env.fixed .env)",
+      "Bash(node:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx serve:*)",
+      "Bash(start http://localhost:3000)",
+      "Bash(del test-sheet-system.js)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

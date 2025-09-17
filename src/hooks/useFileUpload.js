@@ -28,7 +28,7 @@ export const useFileUpload = () => {
       setUploading(prev => ({ ...prev, [uploadId]: true }));
       setUploadProgress(prev => ({ ...prev, [uploadId]: 0 }));
       
-      console.log('🔄 Starting upload for:', uploadId);
+      // console.log('🔄 Starting upload for:', uploadId);
       
       // Upload fișier cu metadata pentru a evita CORS issues
       const metadata = {
@@ -40,13 +40,13 @@ export const useFileUpload = () => {
       };
       
       const snapshot = await uploadBytes(fileRef, file, metadata);
-      console.log('✅ Upload completed:', snapshot.ref.fullPath);
+      // console.log('✅ Upload completed:', snapshot.ref.fullPath);
       
       // Obține URL download cu un mic delay pentru a evita race conditions
       await new Promise(resolve => setTimeout(resolve, 500));
       const downloadURL = await getDownloadURL(snapshot.ref);
       
-      console.log('✅ Download URL obtained:', downloadURL);
+      // console.log('✅ Download URL obtained:', downloadURL);
       
       return {
         url: downloadURL,
@@ -117,7 +117,7 @@ export const useFileUpload = () => {
     try {
       const fileRef = ref(storage, filePath);
       await deleteObject(fileRef);
-      console.log('✅ File deleted successfully:', filePath);
+      // console.log('✅ File deleted successfully:', filePath);
     } catch (error) {
       console.error('❌ Error deleting file:', error);
       throw error;

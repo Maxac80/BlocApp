@@ -31,7 +31,7 @@ export const useDataOperations = ({
       return;
     }
     
-    console.log('🚨 ȘTERGERE COMPLETĂ A DATELOR ÎNCEPUT...');
+    // console.log('🚨 ȘTERGERE COMPLETĂ A DATELOR ÎNCEPUT...');
     
     // Afișează un loading pentru utilizator
     const loadingDiv = document.createElement('div');
@@ -57,7 +57,7 @@ export const useDataOperations = ({
       // Lista completă a colecțiilor care trebuie șterse
       const collectionsToDelete = [
         'expenses',
-        'customExpenses', 
+        'customExpenses',
         'apartments',
         'stairs',
         'blocks',
@@ -70,19 +70,25 @@ export const useDataOperations = ({
         'audit_logs',
         'login_attempts',
         'onboarding_progress',
-        'user_profiles'
+        'user_profiles',
+        'expenseConfigurations',
+        'incasari',
+        'invoices',
+        'monthStatuses',
+        'sheets',
+        'suppliers'
       ];
 
       // Șterge toate colecțiile în paralel pentru viteză
       const deletePromises = collectionsToDelete.map(async (collectionName) => {
         try {
-          console.log(`🗑️ Șterg colecția: ${collectionName}`);
+          // console.log(`🗑️ Șterg colecția: ${collectionName}`);
           
           const collectionRef = collection(db, collectionName);
           const querySnapshot = await getDocs(collectionRef);
           
           if (querySnapshot.empty) {
-            console.log(`📭 Colecția ${collectionName} este goală`);
+            // console.log(`📭 Colecția ${collectionName} este goală`);
             return;
           }
           
@@ -92,7 +98,7 @@ export const useDataOperations = ({
           });
           
           await Promise.all(batch);
-          console.log(`✅ Colecția ${collectionName} ștearsă complet (${batch.length} documente)`);
+          // console.log(`✅ Colecția ${collectionName} ștearsă complet (${batch.length} documente)`);
         } catch (error) {
           console.error(`❌ Eroare la ștergerea colecției ${collectionName}:`, error);
         }
@@ -101,7 +107,7 @@ export const useDataOperations = ({
       // Așteaptă ca toate colecțiile să fie șterse
       await Promise.all(deletePromises);
       
-      console.log('✅ TOATE DATELE AU FOST ȘTERSE!');
+      // console.log('✅ TOATE DATELE AU FOST ȘTERSE!');
       
       // Actualizează mesajul de loading
       loadingDiv.innerHTML = '✅ Date șterse! Resetez aplicația...';
@@ -124,12 +130,12 @@ export const useDataOperations = ({
           const { signOut } = await import('firebase/auth');
           const { auth } = await import('../firebase');
           await signOut(auth);
-          console.log('✅ Utilizator deconectat');
+          // console.log('✅ Utilizator deconectat');
         } catch (authError) {
-          console.log('⚠️ Nu s-a putut deconecta utilizatorul:', authError);
+          // console.log('⚠️ Nu s-a putut deconecta utilizatorul:', authError);
         }
         
-        console.log('🔄 Reîncărcare forțată...');
+        // console.log('🔄 Reîncărcare forțată...');
         
         // Forțează reîncărcarea completă (fără cache)
         window.location.href = window.location.origin + window.location.pathname + '?t=' + Date.now();
@@ -164,7 +170,7 @@ export const useDataOperations = ({
     }
     
     try {
-      console.log('🗑️ Șterg datele asociației:', association.id, association.name);
+      // console.log('🗑️ Șterg datele asociației:', association.id, association.name);
       
       // Șterge cheltuielile asociației
       const expensesQuery = query(
@@ -175,7 +181,7 @@ export const useDataOperations = ({
       for (const expenseDoc of expensesSnapshot.docs) {
         await deleteDoc(doc(db, 'expenses', expenseDoc.id));
       }
-      console.log(`✅ Șterse ${expensesSnapshot.docs.length} cheltuieli`);
+      // console.log(`✅ Șterse ${expensesSnapshot.docs.length} cheltuieli`);
       
       // Șterge cheltuielile custom ale asociației
       const customExpensesQuery = query(
@@ -186,7 +192,7 @@ export const useDataOperations = ({
       for (const customExpenseDoc of customExpensesSnapshot.docs) {
         await deleteDoc(doc(db, 'customExpenses', customExpenseDoc.id));
       }
-      console.log(`✅ Șterse ${customExpensesSnapshot.docs.length} cheltuieli custom`);
+      // console.log(`✅ Șterse ${customExpensesSnapshot.docs.length} cheltuieli custom`);
       
       // Șterge apartamentele (prin scări și blocuri)
       const blocksQuery = query(
@@ -213,25 +219,25 @@ export const useDataOperations = ({
           for (const apartmentDoc of apartmentsSnapshot.docs) {
             await deleteDoc(doc(db, 'apartments', apartmentDoc.id));
           }
-          console.log(`✅ Șterse ${apartmentsSnapshot.docs.length} apartamente`);
+          // console.log(`✅ Șterse ${apartmentsSnapshot.docs.length} apartamente`);
         }
         
         // Șterge scările
         for (const stairDoc of stairsSnapshot.docs) {
           await deleteDoc(doc(db, 'stairs', stairDoc.id));
         }
-        console.log(`✅ Șterse ${stairsSnapshot.docs.length} scări`);
+        // console.log(`✅ Șterse ${stairsSnapshot.docs.length} scări`);
       }
       
       // Șterge blocurile
       for (const blockDoc of blocksSnapshot.docs) {
         await deleteDoc(doc(db, 'blocks', blockDoc.id));
       }
-      console.log(`✅ Șterse ${blocksSnapshot.docs.length} blocuri`);
+      // console.log(`✅ Șterse ${blocksSnapshot.docs.length} blocuri`);
       
       // Șterge asociația
       await deleteDoc(doc(db, 'associations', association.id));
-      console.log('✅ Asociația ștearsă');
+      // console.log('✅ Asociația ștearsă');
       
       alert(`✅ Datele asociației "${association.name}" au fost șterse cu succes!\n\nPagina se va reîncărca...`);
       
@@ -245,9 +251,9 @@ export const useDataOperations = ({
 
   // Funcții actualizate pentru a folosi hook-urile Firestore
   const handleAddAssociation = useCallback(async (activeUser, newAssociation, resetForm, initializeMonths) => {
-    console.log('🏢 handleAddAssociation called');
-    console.log('📊 newAssociation:', newAssociation);
-    console.log('📊 activeUser:', activeUser);
+    // console.log('🏢 handleAddAssociation called');
+    // console.log('📊 newAssociation:', newAssociation);
+    // console.log('📊 activeUser:', activeUser);
     
     if (!newAssociation.name || !newAssociation.address) {
       alert('Te rog completează numele și adresa asociației!');
@@ -260,8 +266,8 @@ export const useDataOperations = ({
     }
     
     try {
-      console.log('🚀 Creez asociația...');
-      await createAssociation({
+      console.log('🚀 ÎNCEPE CREAREA ASOCIAȚIEI...');
+      const createdAssociation = await createAssociation({
         name: newAssociation.name,
         address: newAssociation.address,
         bankAccount: newAssociation.bankAccount || "",
@@ -269,13 +275,25 @@ export const useDataOperations = ({
         president: newAssociation.president || "",
         censor: newAssociation.censor || ""
       });
-      
+
       resetForm();
-      
-      // Inițializează lunile pentru noua asociație
-      initializeMonths();
-      
-      console.log('✅ Asociație creată cu succes!');
+
+      // Inițializează sheet-ul pentru noua asociație
+      // Trimitem datele asociației și ID-ul pentru a crea primul sheet
+      const associationData = {
+        id: createdAssociation.id, // Adăugăm ID-ul aici
+        name: newAssociation.name,
+        cui: newAssociation.cui || "",
+        address: newAssociation.address,
+        bankAccount: newAssociation.bankAccount || "",
+        administrator: newAssociation.administrator || "",
+        president: newAssociation.president || "",
+        censor: newAssociation.censor || ""
+      };
+      console.log('🎯 APELEAZĂ INITIALIZE MONTHS cu ID:', createdAssociation.id);
+      initializeMonths(associationData, createdAssociation.id); // Trimitem și ID-ul ca parametru separat
+
+      console.log('✅ ASOCIAȚIE CREATĂ CU SUCCES!');
     } catch (error) {
       console.error('❌ Eroare la crearea asociației:', error);
       alert('Eroare la crearea asociației: ' + error.message);
@@ -297,11 +315,11 @@ export const useDataOperations = ({
   }, [addBlock, association]);
 
   const handleAddStair = useCallback(async (newStair, resetForm) => {
-    console.log('🔼 handleAddStair - newStair:', newStair);
-    console.log('🔼 handleAddStair - blockId type:', typeof newStair.blockId, newStair.blockId);
+    // console.log('🔼 handleAddStair - newStair:', newStair);
+    // console.log('🔼 handleAddStair - blockId type:', typeof newStair.blockId, newStair.blockId);
     
     if (!newStair.name || !newStair.blockId) {
-      console.log('❌ Validare eșuată - lipsește numele sau blockId');
+      // console.log('❌ Validare eșuată - lipsește numele sau blockId');
       alert('Te rog completează numele scării și selectează blocul!');
       return;
     }
@@ -329,12 +347,12 @@ export const useDataOperations = ({
     
     const availableStairs = getAvailableStairs();
     
-    console.log('👥 handleAddApartment - newApartment:', newApartment);
-    console.log('👥 handleAddApartment - stairId type:', typeof newApartment.stairId, newApartment.stairId);
-    console.log('👥 handleAddApartment - availableStairs:', availableStairs);
+    // console.log('👥 handleAddApartment - newApartment:', newApartment);
+    // console.log('👥 handleAddApartment - stairId type:', typeof newApartment.stairId, newApartment.stairId);
+    // console.log('👥 handleAddApartment - availableStairs:', availableStairs);
     
     if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) {
-      console.log('❌ Validare eșuată - lipsesc datele obligatorii');
+      // console.log('❌ Validare eșuată - lipsesc datele obligatorii');
       alert('Te rog completează toate câmpurile obligatorii (nr apartament, proprietar, persoane, scara)!');
       return;
     }

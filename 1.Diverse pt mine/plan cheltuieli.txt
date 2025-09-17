@@ -1,0 +1,597 @@
+in sidebar am pagina Configurare cheltuieli, practic aici am cheltuielile pe care asociatia le poate avea, categoriile de cheltuieli si modul    
+  de distribuire. pe langa aceste "produse" va trebui sa avem si furnizorii pentru aceste produse, practic firmele care ofera aceste servicii si   
+  care genereaza aceste cheltuieli. apoi lunar va trebui sa inregistram si facturile care ne vin, cum vezi ca am putea sa implementam in 
+  aplicatie atat partea de furnizori si cum putem sa asociem cheltuielile cu furnizorii si cum propui sa inregistram facturile, analizeaza         
+  aplicatia si spune-mi ce ar trebui sa facem ca sa implementam intr-un mod foarte user friendly aceste optiuni si logic
+
+● Voi analiza aplicația pentru a înțelege structura actuală și a propune o implementare user-friendly pentru furnizori și facturi.
+
+● Search(pattern: "ExpenseConfigModal|useExpenseTypes|getExpenseConfig|distributionType", glob: "**/*.{js,jsx}")
+  ⎿  Found 11 files (ctrl+r to expand)
+
+● Read(src\components\views\ExpensesView.js)
+  ⎿  Read 100 lines (ctrl+r to expand)
+
+● Read(src\hooks\useExpenseManagement.js)
+  ⎿  Read 150 lines (ctrl+r to expand)
+
+● Search(pattern: "collection.*expenses|addDoc.*expenses|monthlyExpenses", glob: "**/*.{js,jsx}", output_mode: "content", head_limit: 30)
+  ⎿  Found 4 lines (ctrl+r to expand)
+
+● Read(src\hooks\useFirestore.js)
+  ⎿  Read 100 lines (ctrl+r to expand)
+
+● Read(src\hooks\useFirestore.js)
+  ⎿  Read 100 lines (ctrl+r to expand)
+
+● Read(src\hooks\useFirestore.js)
+  ⎿  Read 100 lines (ctrl+r to expand)
+
+● Search(pattern: "Sidebar|sidebar", glob: "**/*.{js,jsx}")
+  ⎿  Found 4 files (ctrl+r to expand)
+
+● Read(src\components\common\Sidebar.js)
+  ⎿  Read 100 lines (ctrl+r to expand)
+
+● După analiza detaliată a aplicației, am înțeles structura actuală și pot propune o soluție completă pentru implementarea furnizorilor și
+  facturilor.
+
+  Analiza situației actuale:
+
+  Ce avem deja:
+  - Tipuri de cheltuieli (Apă caldă, Căldură, etc.) cu moduri de distribuție
+  - Cheltuieli lunare care se adaugă pentru calcul întreținere
+  - Colecții Firestore: expenses (cheltuieli lunare), customExpenses (tipuri personalizate)
+
+  Ce lipsește:
+  - Furnizori/prestatori de servicii
+  - Facturi cu detalii complete (număr, dată, scadență, etc.)
+  - Legătura între cheltuieli, furnizori și facturi
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ Plan de implementare pentru Furnizori și Facturi                                                               │
+     │                                                                                                                │
+     │ 1. Structura de date nouă în Firestore                                                                         │
+     │                                                                                                                │
+     │ Colecție suppliers (Furnizori):                                                                                │
+     │ {                                                                                                              │
+     │   id: "auto-generated",                                                                                        │
+     │   associationId: "association-id",                                                                             │
+     │   name: "EON Energie România",                                                                                 │
+     │   cui: "22043010",                                                                                             │
+     │   address: "Str. Example 123",                                                                                 │
+     │   phone: "0800 800 800",                                                                                       │
+     │   email: "contact@eon.ro",                                                                                     │
+     │   website: "www.eon.ro",                                                                                       │
+     │   serviceTypes: ["Căldură", "Apă caldă"], // tipurile de cheltuieli pe care le furnizează                      │
+     │   contractNumber: "12345/2024",                                                                                │
+     │   iban: "RO12BTRL0000000000000",                                                                               │
+     │   notes: "Furnizor principal utilități",                                                                       │
+     │   isActive: true,                                                                                              │
+     │   createdAt: "2024-01-01T10:00:00Z"                                                                            │
+     │ }                                                                                                              │
+     │                                                                                                                │
+     │ Colecție invoices (Facturi):                                                                                   │
+     │ {                                                                                                              │
+     │   id: "auto-generated",                                                                                        │
+     │   associationId: "association-id",                                                                             │
+     │   supplierId: "supplier-id",                                                                                   │
+     │   supplierName: "EON Energie", // redundanță pentru afișare rapidă                                             │
+     │   invoiceNumber: "FAC-2024-001234",                                                                            │
+     │   invoiceDate: "2024-11-15",                                                                                   │
+     │   dueDate: "2024-11-30",                                                                                       │
+     │   month: "noiembrie 2024", // luna pentru care se aplică                                                       │
+     │   expenseType: "Căldură", // tipul de cheltuială                                                               │
+     │   amount: 2500.00,                                                                                             │
+     │   vatAmount: 475.00,                                                                                           │
+     │   totalAmount: 2975.00,                                                                                        │
+     │   isPaid: false,                                                                                               │
+     │   paidDate: null,                                                                                              │
+     │   paymentMethod: null,                                                                                         │
+     │   attachmentUrl: null, // pentru PDF-ul facturii                                                               │
+     │   notes: "",                                                                                                   │
+     │   createdAt: "2024-11-16T10:00:00Z",                                                                           │
+     │   createdBy: "user-id"                                                                                         │
+     │ }                                                                                                              │
+     │                                                                                                                │
+     │ Modificare colecție expenses existentă:                                                                        │
+     │ Adăugăm câmpuri noi:                                                                                           │
+     │ {                                                                                                              │
+     │   // câmpuri existente...                                                                                      │
+     │   supplierId: "supplier-id", // NEW                                                                            │
+     │   invoiceId: "invoice-id",   // NEW                                                                            │
+     │   invoiceNumber: "FAC-2024-001234" // NEW pentru referință rapidă                                              │
+     │ }                                                                                                              │
+     │                                                                                                                │
+     │ 2. Interfața utilizator nouă                                                                                   │
+     │                                                                                                                │
+     │ A. Pagină Furnizori (nouă în sidebar)                                                                          │
+     │                                                                                                                │
+     │ - Listă furnizori activi/inactivi                                                                              │
+     │ - Adăugare/editare/ștergere furnizori                                                                          │
+     │ - Asociere tipuri de cheltuieli cu furnizorii                                                                  │
+     │ - Căutare și filtrare                                                                                          │
+     │                                                                                                                │
+     │ B. Pagină Facturi (nouă în sidebar)                                                                            │
+     │                                                                                                                │
+     │ - Listă facturi cu filtrare (lună, furnizor, status plată)                                                     │
+     │ - Înregistrare factură nouă cu:                                                                                │
+     │   - Selectare furnizor (dropdown)                                                                              │
+     │   - Completare automată tip cheltuială bazat pe furnizor                                                       │
+     │   - Detalii factură                                                                                            │
+     │   - Upload PDF (opțional)                                                                                      │
+     │ - Marcare ca plătită                                                                                           │
+     │ - Vizualizare istoric facturi                                                                                  │
+     │                                                                                                                │
+     │ C. Modificări în Calcul Întreținere                                                                            │
+     │                                                                                                                │
+     │ - La adăugarea unei cheltuieli:                                                                                │
+     │   - Opțiune de selectare furnizor (dropdown)                                                                   │
+     │   - Opțiune de creare factură direct                                                                           │
+     │   - Afișare număr factură dacă există                                                                          │
+     │                                                                                                                │
+     │ 3. Flux de lucru propus                                                                                        │
+     │                                                                                                                │
+     │ Flux inițial (o singură dată):                                                                                 │
+     │ 1. Administrator accesează "Configurare Furnizori"                                                             │
+     │ 2. Adaugă furnizorii (EON, Apa Nova, etc.)                                                                     │
+     │ 3. Asociază fiecare furnizor cu tipurile de cheltuieli relevante                                               │
+     │                                                                                                                │
+     │ Flux lunar:                                                                                                    │
+     │ 1. Primește factură de la furnizor                                                                             │
+     │ 2. Intră în "Facturi" → "Adaugă factură"                                                                       │
+     │ 3. Selectează furnizorul → tipul cheltuială se completează automat                                             │
+     │ 4. Introduce detaliile facturii                                                                                │
+     │ 5. Salvează factura → se creează automat cheltuiala lunară asociată                                            │
+     │ 6. În Calcul Întreținere vede cheltuiala cu referința la factură                                               │
+     │                                                                                                                │
+     │ 4. Funcționalități user-friendly                                                                               │
+     │                                                                                                                │
+     │ - Auto-completare: La selectarea furnizorului, se pre-completează tipurile de cheltuieli disponibile           │
+     │ - Validări: Nu poți avea 2 facturi de la același furnizor pentru același tip cheltuială în aceeași lună        │
+     │ - Dashboard facturi: Widget cu facturi scadente/neplătite                                                      │
+     │ - Istoricul furnizorului: Vezi toate facturile de la un furnizor                                               │
+     │ - Rapoarte: Export situație facturi pe perioadă                                                                │
+     │                                                                                                                │
+     │ 5. Implementare în etape                                                                                       │
+     │                                                                                                                │
+     │ Etapa 1 - Backend & Model date:                                                                                │
+     │ - Creare colecții Firestore noi                                                                                │
+     │ - Hooks pentru CRUD furnizori și facturi                                                                       │
+     │ - Migrare date existente (opțional)                                                                            │
+     │                                                                                                                │
+     │ Etapa 2 - UI Furnizori:                                                                                        │
+     │ - Pagină configurare furnizori                                                                                 │
+     │ - CRUD complet furnizori                                                                                       │
+     │ - Integrare în sidebar                                                                                         │
+     │                                                                                                                │
+     │ Etapa 3 - UI Facturi:                                                                                          │
+     │ - Pagină gestionare facturi                                                                                    │
+     │ - Formular înregistrare factură                                                                                │
+     │ - Listă și filtrare facturi                                                                                    │
+     │                                                                                                                │
+     │ Etapa 4 - Integrare:                                                                                           │
+     │ - Conectare facturi cu cheltuieli lunare                                                                       │
+     │ - Modificare flux adăugare cheltuială                                                                          │
+     │ - Afișare referințe în tabele                                                                                  │
+     │                                                                                                                │
+     │ Etapa 5 - Raportare:                                                                                           │
+     │ - Dashboard cu statistici facturi                                                                              │
+     │ - Export PDF/Excel                                                                                             │
+     │ - Notificări facturi scadente                                                                                  │
+     │                                                                                                                │
+     │ 6. Avantaje ale acestei abordări                                                                               │
+     │                                                                                                                │
+     │ - Trasabilitate completă: Fiecare cheltuială are factură și furnizor asociat                                   │
+     │ - Reducere erori: Nu mai introduci manual, selectezi din liste                                                 │
+     │ - Istoric centralizat: Vezi toate facturile unui furnizor                                                      │
+     │ - Conformitate fiscală: Ai toate datele pentru contabilitate                                                   │
+     │ - Automatizare: Facturile generează automat cheltuielile lunare                                                │
+     │                                                                                                                │
+     │ Această soluție păstrează simplitatea actuală dar adaugă functionalități profesionale de management financiar. │
+     ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> eu vad asa: in pagina Configurare cheltuieli sa punem si Cheltuieli si furnizori si facturi. Modificam modul in care arata acum zona de 
+  Cheltuieli in sensul ca eliminam modul in care se adauga acum o cheltuiala, arata cam ciudat cu un buton pentru a adauga cheltuiala care         
+  deschide un modal in care poti adauga numele cheltuielii, modul de distribuire si furnizorul. eliminam zonade Configurează cheltuială: si punem  
+   un buton la fiecare cheltuiala inainte de butonul Elimina, un buton de Configurare a acelei cheltuieli careva deschide un modal in care poti    
+  modifica modul de distributie, poti modifica Participarea apartamentelor si totodata poti adauga si datele furnizorului. ce parere ai. asta      
+  legat de furnizori. nu imi dau seama daca este ok sa bagam si factura tot aici la configurare, ce zici? cum ti se pare?
+
+● Excelentă idee! Îmi place abordarea ta - este mult mai intuitivă și păstrează totul centralizat. Hai să analizez propunerea:
+
+  Ce îmi place la abordarea ta:
+
+  1. Pagina unificată "Configurare cheltuieli"
+
+  - ✅ Totul într-un singur loc - mai ușor de găsit
+  - ✅ Elimină navigarea între multiple pagini
+  - ✅ Logic să ai cheltuiala → furnizorul ei → facturile în același loc
+
+  2. Redesign zona Cheltuieli
+
+  - ✅ Eliminarea modalului pentru adăugare e bună - e mai clar cu buton direct
+  - ✅ Buton de configurare pentru fiecare cheltuială - mult mai intuitiv
+  - ✅ Modal unificat pentru: mod distribuție + participare apartamente + furnizor
+
+  Propunerea mea rafinată:
+
+  Structura paginii "Configurare cheltuieli":
+
+  ┌─────────────────────────────────────────────┐
+  │  💰 Configurare cheltuieli                 │
+  ├─────────────────────────────────────────────┤
+  │                                             │
+  │  [Tab: Cheltuieli] [Tab: Furnizori]        │
+  │                                             │
+  │  TAB CHELTUIELI:                           │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ + Adaugă cheltuială nouă             │   │
+  │  └─────────────────────────────────────┘   │
+  │                                             │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ Apă caldă                           │   │
+  │  │ Pe consum • EON Energie             │   │
+  │  │ [⚙️ Configurare] [🗑️ Șterge]        │   │
+  │  └─────────────────────────────────────┘   │
+  │                                             │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ Întreținere lift                    │   │
+  │  │ Pe apartament • OTIS                 │   │
+  │  │ [⚙️ Configurare] [🗑️ Șterge]        │   │
+  │  └─────────────────────────────────────┘   │
+  │                                             │
+  │  TAB FURNIZORI:                            │
+  │  Lista furnizorilor cu detalii complete    │
+  │                                             │
+  └─────────────────────────────────────────────┘
+
+  Modal Configurare Cheltuială:
+
+  ┌─────────────────────────────────────────────┐
+  │  ⚙️ Configurare: Apă caldă                 │
+  ├─────────────────────────────────────────────┤
+  │                                             │
+  │  [Tab: General] [Tab: Participare] [Tab: Furnizor] │
+  │                                             │
+  │  TAB GENERAL:                              │
+  │  Mod distribuție: [Dropdown]               │
+  │  Status: [Activ/Inactiv]                   │
+  │                                             │
+  │  TAB PARTICIPARE:                          │
+  │  Lista apartamente cu checkbox/procent     │
+  │                                             │
+  │  TAB FURNIZOR:                             │
+  │  Furnizor: [Dropdown sau "Adaugă nou"]     │
+  │  Contract: [___________]                   │
+  │  Persoană contact: [___________]           │
+  │                                             │
+  │  [Salvează] [Anulează]                     │
+  └─────────────────────────────────────────────┘
+
+  Despre Facturi - Recomandarea mea:
+
+  NU în pagina Configurare cheltuieli, ci:
+
+  Opțiunea 1: Direct în "Calcul întreținere" ✅ (Recomand)
+
+  Când adaugi cheltuiala lunară:
+  1. Selectezi tipul cheltuială
+  2. Apare furnizorul pre-completat
+  3. Ai opțiune: "Asociază factură" cu câmpuri:
+    - Număr factură
+    - Dată factură
+    - Dată scadență
+
+  Avantaje:
+  - Facturile sunt specifice lunii, nu configurării generale
+  - Le introduci exact când le folosești
+  - Mai puțină navigare
+
+  Opțiunea 2: Pagină separată "Facturi"
+
+  - Doar dacă vrei istoric complet și raportare avansată
+  - Pentru asociații mari care vor management financiar complet
+
+  Implementare sugerată:
+
+  Faza 1 - Configurare cheltuieli îmbunătățită:
+
+  1. Redesign pagină cu cele 2 tab-uri
+  2. Buton configurare pentru fiecare cheltuială
+  3. Modal cu 3 tab-uri (general, participare, furnizor)
+  4. CRUD furnizori în tab separat
+
+  Faza 2 - Facturi simple în Calcul întreținere:
+
+  1. La adăugarea cheltuielii lunare, câmpuri opționale pentru factură
+  2. Salvare număr factură și date asociate cu cheltuiala lunară
+  3. Afișare în liste și tabele
+
+  Faza 3 - Raportare (opțional, mai târziu):
+
+  - Istoric facturi per furnizor
+  - Export pentru contabilitate
+  - Dashboard financiar
+
+  Ce zici de această abordare? Păstrează simplitatea ta dar adaugă structură pentru creștere ulterioară.
+
+> eventual putem sa punem lista de facturi in pagina de contabilitate si avem incasarile pe luna respectiva si facturile,ce zici?
+
+● Excelent! Asta e o idee foarte bună! Pagina de Contabilitate devine astfel un centru financiar complet.
+
+  Pagina Contabilitate - Viziune completă:
+
+  ┌─────────────────────────────────────────────┐
+  │  📊 Contabilitate - Noiembrie 2024          │
+  ├─────────────────────────────────────────────┤
+  │                                             │
+  │  [Tab: Încasări] [Tab: Facturi] [Tab: Balanță] │
+  │                                             │
+  │  TAB ÎNCASĂRI:                              │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ Rezumat: 15 încasări • 12,500 RON   │   │
+  │  │ [+ Adaugă încasare]                  │   │
+  │  └─────────────────────────────────────┘   │
+  │  Lista încasărilor (cum e acum)            │
+  │                                             │
+  │  TAB FACTURI:                              │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ Rezumat: 8 facturi • 18,750 RON      │   │
+  │  │ Din care: 5 plătite • 3 neplătite    │   │
+  │  │ [+ Înregistrează factură]            │   │
+  │  └─────────────────────────────────────┘   │
+  │  Lista facturilor cu status               │
+  │                                             │
+  │  TAB BALANȚĂ:                              │
+  │  Încasări luna: 12,500 RON                │
+  │  Facturi luna: 18,750 RON                 │
+  │  Diferență: -6,250 RON                    │
+  │  Sold cont: 45,000 RON                    │
+  │                                             │
+  └─────────────────────────────────────────────┘
+
+  Avantajele acestei abordări:
+
+  ✅ Logic și intuitiv
+
+  - Contabilitatea = Bani care intră (încasări) + Bani care ies (facturi)
+  - Tot ce ține de fluxul financiar într-un singur loc
+  - Administratorul vede instant situația financiară
+
+  ✅ Fluxuri clare:
+
+  Pentru configurare (o dată):
+  1. Configurare cheltuieli → Setezi tipurile și furnizorii
+  2. Nu te complici cu facturi aici
+
+  Pentru operare lunară:
+  1. Calcul întreținere → Adaugi cheltuielile lunare (eventual cu nr. factură)
+  2. Contabilitate → Vezi/gestionezi facturile detaliat și încasările
+  3. Poți face reconciliere: ce ai încasat vs. ce ai de plătit
+
+  ✅ Separare clară a responsabilităților:
+
+  - Configurare cheltuieli = Setup (rar modificat)
+  - Calcul întreținere = Operațional (lunar)
+  - Contabilitate = Financiar (zilnic/săptămânal)
+
+  Cum ar funcționa facturile:
+
+  În Calcul întreținere:
+
+  - Când adaugi o cheltuială, poți opțional adăuga număr factură
+  - Dacă vrei detalii complete, te trimite la Contabilitate
+
+  În Contabilitate → Facturi:
+
+  ┌─────────────────────────────────────────────┐
+  │  Factură #2024-1234 | EON Energie          │
+  │  Căldură • 2,500 RON • Scadent: 30.11.2024 │
+  │  Status: 🔴 Neplătită                       │
+  │  [Vezi detalii] [Marchează plătită] [PDF]  │
+  └─────────────────────────────────────────────┘
+
+  Funcționalități în Contabilitate:
+
+  1. Dashboard financiar - vezi instant situația
+  2. Facturi scadente - alertă pentru cele care trebuie plătite
+  3. Istoric plăți - ce furnizori ai plătit și când
+  4. Reconciliere - verifici că ai încasat destul pentru a plăti facturile
+  5. Export - pentru contabil, PDF/Excel cu toate tranzacțiile
+
+  Implementare propusă:
+
+  Pasul 1: Configurare cheltuieli îmbunătățită
+
+  - Redesign cu butoane de configurare
+  - Adaugă furnizori în modal configurare
+
+  Pasul 2: Contabilitate cu tab-uri
+
+  - Păstrăm Încasări cum e acum
+  - Adăugăm tab Facturi
+  - Adăugăm tab Balanță (overview)
+
+  Pasul 3: Legături între module
+
+  - Cheltuială lunară → poate avea factură asociată
+  - Factură → știe pentru ce cheltuială și lună e
+  - Furnizor → vezi toate facturile lui
+
+  Această structură e scalabilă - poți începe simplu și adăugi funcționalități pe parcurs. Plus, e foarte intuitivă pentru administratori -        
+  exact cum gândesc ei: "Am de încasat X, am de plătit Y, rămân cu Z".
+
+  Ce părere ai? Vrei să începem cu redesign-ul paginii Configurare cheltuieli?
+
+> pai eu zic ca cel mai bine este sa adauge datele facturii cand adauga cheltuiala si cu posibilitatea de upload phf  si doar acolo sa le poata    
+  introduce iar in contabilitate sa le vada in lista si  poata sa o marcheze ca platita, nu? nu are de ce sa mai introduca factura in zona de      
+  contabilitate
+
+● Ai perfectă dreptate! E mult mai logic și eficient așa:
+
+  Fluxul ideal:
+
+  În Calcul întreținere - când adaugi cheltuială:        
+
+  ┌─────────────────────────────────────────────┐        
+  │  Adaugă Cheltuială: Căldură                │
+  ├─────────────────────────────────────────────┤
+  │  Suma: [2500] RON                          │
+  │  Furnizor: [EON Energie ↓]                 │
+  │                                             │
+  │  📋 DETALII FACTURĂ (opțional)             │
+  │  Număr factură: [2024-1234]                │
+  │  Data factură: [15.11.2024]                │
+  │  Data scadență: [30.11.2024]               │
+  │  Upload PDF: [📎 Selectează fișier]        │
+  │                                             │
+  │  [Adaugă cheltuială]                       │
+  └─────────────────────────────────────────────┘
+
+  În Contabilitate - doar vizualizare și management:
+
+  ┌─────────────────────────────────────────────┐
+  │  📊 Facturi - Noiembrie 2024               │
+  ├─────────────────────────────────────────────┤
+  │  ┌─────────────────────────────────────┐   │
+  │  │ #2024-1234 | EON Energie           │   │
+  │  │ Căldură • 2,500 RON                 │   │
+  │  │ Scadent: 30.11.2024 • 🔴 Neplătită │   │
+  │  │ [📄 Vezi PDF] [✅ Marchează plătită] │   │
+  │  └─────────────────────────────────────┘   │
+  │                                             │
+  │  ┌─────────────────────────────────────┐   │
+  │  │ #2024-1235 | Apa Nova               │   │
+  │  │ Apă rece • 1,200 RON                │   │
+  │  │ Scadent: 25.11.2024 • ✅ Plătită    │   │
+  │  │ [📄 Vezi PDF] [Plătită pe 20.11]    │   │
+  │  └─────────────────────────────────────┘   │
+  └─────────────────────────────────────────────┘
+
+  Avantajele acestei abordări:
+
+  ✅ Un singur punct de introducere date
+
+  - Introduci cheltuiala → automat ai și factura
+  - Nu duplici munca
+  - Nu riști să uiți să înregistrezi factura
+
+  ✅ Workflow natural
+
+  1. Primești factura → intri să adaugi cheltuiala în Calcul întreținere
+  2. Completezi totul odată → cheltuială + detalii factură + PDF
+  3. În Contabilitate vezi situația → toate facturile, care sunt plătite/neplătite
+  4. Marchezi ca plătită când plătești efectiv
+
+  ✅ Contabilitate = Dashboard, nu input
+
+  - Vezi toate facturile automat
+  - Filtrezi: plătite/neplătite/scadente
+  - Marchezi status plată
+  - Export pentru contabil
+  - NU mai introduci date manual
+
+  Implementare tehnică:
+
+  Modificare în ExpenseForm (Calcul întreținere):
+
+  // Câmpuri noi în formular
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceNumber: '',
+    invoiceDate: '',
+    dueDate: '',
+    pdfFile: null
+  });
+
+  // La salvare, factura se creează automat
+  const saveExpenseWithInvoice = async () => {
+    // 1. Salvez cheltuiala
+    const expense = await addExpense(expenseData);
+
+    // 2. Dacă am detalii factură, le salvez asociate
+    if (invoiceData.invoiceNumber) {
+      await createInvoice({
+        ...invoiceData,
+        expenseId: expense.id,
+        associationId: association.id,
+        month: currentMonth
+      });
+    }
+  };
+
+  În Contabilitate (AccountingView):
+
+  // Doar citesc facturile existente
+  const invoices = useInvoices(association.id, currentMonth);
+
+  // Pot marca ca plătită
+  const markAsPaid = async (invoiceId) => {
+    await updateInvoice(invoiceId, {
+      isPaid: true,
+      paidDate: new Date().toISOString()
+    });
+  };
+
+  Rezultat final:
+
+  - Calcul întreținere = Unde se întâmplă munca (input complet)
+  - Contabilitate = Unde vezi rezultatul (dashboard + status management)
+  - Zero duplicare de efort
+  - Fluxul natural al administratorului de asociație
+
+  Exact așa ar trebui să fie! Vrei să implementăm această abordare?
+
+> vreau sa mai discutam maine pe subiect si apoi vreau sa trecem la implementare cum putem salva ce am discutat ca maine sa reluam de unde am      
+  ramas? poti sa tii minte?
+
+● Nu, din păcate nu pot să "țin minte" conversațiile între sesiuni - fiecare conversație nouă pentru mine este ca și cum ne-am întâlni pentru
+  prima dată.
+
+  Modalități de a salva discuția:
+
+  Opțiunea 1: Salvare manuală ⭐ (Recomand)
+
+  Copiezi rezumatul de mai jos și îl salvezi într-un fișier text sau document.
+
+  Opțiunea 2: Commit în repository
+
+  Pot să creez un fișier PLAN_FURNIZORI_FACTURI.md în proiectul tău cu tot ce am discutat.
+
+  Opțiunea 3: Screenshot
+
+  Poți face screenshot la această conversație.
+
+  ---
+  REZUMAT PENTRU MÂINE:
+
+  Decizia finală:
+
+  1. Configurare cheltuieli: Redesign cu butoane de configurare per cheltuială + furnizori
+  2. Calcul întreținere: Aici se introduc detaliile facturii când adaugi cheltuială (număr, dată, scadență, PDF)
+  3. Contabilitate: Tab nou "Facturi" - doar vizualizare și marcare ca plătită
+
+  Structura implementare:
+
+  Faza 1: Configurare cheltuieli
+  - Elimină modalul ciudat de adăugare
+  - Buton "⚙️ Configurare" pentru fiecare cheltuială
+  - Modal cu tabs: General + Participare + Furnizor
+  - Tab separat pentru lista furnizorilor
+
+  Faza 2: Calcul întreținere
+  - Adaugă câmpuri opționale factură în ExpenseForm
+  - Upload PDF pentru factură
+  - Salvare automată factură când adaugi cheltuială
+
+  Faza 3: Contabilitate
+  - Tab nou "Facturi" lângă "Încasări"
+  - Listă facturi cu status plătit/neplătit
+  - Butoane: Vezi PDF, Marchează plătită
+
+  Principiu cheie:
+
+  Un singur punct de introducere (Calcul întreținere), dashboard pentru management (Contabilitate)
+
+  ---
+  Vrei să salvez asta într-un fișier în proiectul tău ca să ai mâine la îndemână?

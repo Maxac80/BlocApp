@@ -60,25 +60,25 @@ const ConsumptionInput = ({
   
   // Funcție pentru a comuta expansiunea unei cheltuieli
   const toggleExpenseExpansion = (expenseId) => {
-    console.log('Toggling expense:', expenseId, 'Current state:', expandedExpenses[expenseId]);
+    // console.log('Toggling expense:', expenseId, 'Current state:', expandedExpenses[expenseId]);
     setExpandedExpenses(prev => {
       const newState = {
         ...prev,
         [expenseId]: !prev[expenseId]
       };
-      console.log('New state:', newState);
+      // console.log('New state:', newState);
       return newState;
     });
   };
   
   // Inițializez toate cheltuielile ca fiind colapsate
   React.useEffect(() => {
-    console.log('Initializing expanded state for expenses:', consumptionExpenses);
+    // console.log('Initializing expanded state for expenses:', consumptionExpenses);
     const initialExpanded = {};
     consumptionExpenses.forEach(expense => {
       initialExpanded[expense.id] = false;
     });
-    console.log('Setting initial expanded state:', initialExpanded);
+    // console.log('Setting initial expanded state:', initialExpanded);
     setExpandedExpenses(initialExpanded);
   }, [consumptionExpenses.length]); // Schimb dependency pentru a evita loop-uri
 

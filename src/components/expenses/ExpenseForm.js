@@ -438,17 +438,17 @@ const ExpenseForm = ({
             const shouldShowAllPartials = !hasConfiguredSupplier && allPartialInvoices?.length > 0;
             const shouldShowSpecificPartials = hasConfiguredSupplier && partialInvoicesForType?.length > 0;
             
-            console.log('🔍 Debug dropdown ENHANCED:', {
-              hasFunction,
-              expenseType: newExpense.name,
-              hasConfiguredSupplier,
-              configuredSupplier: expenseConfig?.supplierName,
-              partialInvoicesForTypeCount: partialInvoicesForType?.length || 0,
-              allPartialInvoicesCount: allPartialInvoices?.length || 0,
-              shouldShowAllPartials,
-              shouldShowSpecificPartials,
-              willShow: shouldShowAllPartials || shouldShowSpecificPartials
-            });
+            // console.log('🔍 Debug dropdown ENHANCED:', {
+            //   hasFunction,
+            //   expenseType: newExpense.name,
+            //   hasConfiguredSupplier,
+            //   configuredSupplier: expenseConfig?.supplierName,
+            //   partialInvoicesForTypeCount: partialInvoicesForType?.length || 0,
+            //   allPartialInvoicesCount: allPartialInvoices?.length || 0,
+            //   shouldShowAllPartials,
+            //   shouldShowSpecificPartials,
+            //   willShow: shouldShowAllPartials || shouldShowSpecificPartials
+            // });
             
             // Auto-sincronizare dacă nu găsim facturi pentru cheltuiala cu furnizor configurat
             if (hasConfiguredSupplier && partialInvoicesForType?.length === 0 && syncSuppliersForExpenseType) {
@@ -463,24 +463,24 @@ const ExpenseForm = ({
               });
             }
             
-            console.log('🎯 FINAL DROPDOWN DECISION:', {
-              hasFunction,
-              hasConfiguredSupplier,
-              partialInvoicesForTypeCount: partialInvoicesForType?.length || 0,
-              shouldShowAllPartials,
-              shouldShowSpecificPartials,
-              finalDecision: shouldShowAllPartials || shouldShowSpecificPartials
-            });
+            // console.log('🎯 FINAL DROPDOWN DECISION:', {
+            //   hasFunction,
+            //   hasConfiguredSupplier,
+            //   partialInvoicesForTypeCount: partialInvoicesForType?.length || 0,
+            //   shouldShowAllPartials,
+            //   shouldShowSpecificPartials,
+            //   finalDecision: shouldShowAllPartials || shouldShowSpecificPartials
+            // });
             
             // TEMPORAR: Afișează dropdown pentru cheltuieli cu furnizor configurat chiar dacă nu găsește facturi încă
             const shouldShowDropdown = hasFunction && (shouldShowAllPartials || shouldShowSpecificPartials || hasConfiguredSupplier);
             
-            console.log('🔧 TEMPORARY SHOW LOGIC:', { shouldShowDropdown, reasons: {
-              hasFunction,
-              shouldShowAllPartials,
-              shouldShowSpecificPartials,
-              hasConfiguredSupplier
-            }});
+            // console.log('🔧 TEMPORARY SHOW LOGIC:', { shouldShowDropdown, reasons: {
+            //   hasFunction,
+            //   shouldShowAllPartials,
+            //   shouldShowSpecificPartials,
+            //   hasConfiguredSupplier
+            // }});
             
             return shouldShowDropdown;
           })() && (
@@ -721,15 +721,15 @@ const ExpenseForm = ({
                       {(() => {
                         const totalInvoice = invoiceData.totalInvoiceAmount;
                         const currentAmount = newExpense.billAmount || newExpense.amount;
-                        console.log('🔍 DEBUG Condiție distribuție:', {
-                          totalInvoice,
-                          billAmount: newExpense.billAmount,
-                          amount: newExpense.amount,
-                          currentAmount,
-                          hasTotal: !!totalInvoice,
-                          hasCurrent: !!currentAmount,
-                          isPartial: totalInvoice && currentAmount && parseFloat(totalInvoice) > parseFloat(currentAmount)
-                        });
+                        // console.log('🔍 DEBUG Condiție distribuție:', {
+                        //   totalInvoice,
+                        //   billAmount: newExpense.billAmount,
+                        //   amount: newExpense.amount,
+                        //   currentAmount,
+                        //   hasTotal: !!totalInvoice,
+                        //   hasCurrent: !!currentAmount,
+                        //   isPartial: totalInvoice && currentAmount && parseFloat(totalInvoice) > parseFloat(currentAmount)
+                        // });
                         return totalInvoice && currentAmount && 
                                parseFloat(totalInvoice) > parseFloat(currentAmount);
                       })() && (

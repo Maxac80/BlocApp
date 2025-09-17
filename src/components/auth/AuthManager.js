@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import { LoginForm, RegisterForm, ResetPasswordForm, EmailVerification } from './index';
 import OnboardingWizard from '../onboarding/OnboardingWizard';
+import ErrorBoundary from '../common/ErrorBoundary';
 
 /**
  * 🎯 AUTH MANAGER - ORCHESTREAZĂ TOATE FLOWS-URILE DE AUTENTIFICARE
@@ -48,7 +49,7 @@ export default function AuthManager({ onAuthComplete }) {
 
   // 🔄 HANDLE SUCCESSFUL LOGIN/REGISTER
   const handleAuthSuccess = (result) => {
-    console.log('✅ Auth success:', result);
+    // console.log('✅ Auth success:', result);
     
     // Dacă trebuie să verifice emailul
     if (!result.emailVerified && result.needsEmailVerification) {
@@ -70,7 +71,7 @@ export default function AuthManager({ onAuthComplete }) {
 
   // ✅ HANDLE EMAIL VERIFIED
   const handleEmailVerified = () => {
-    console.log('✅ Email verified');
+    // console.log('✅ Email verified');
     
     // Verifică dacă necesită onboarding
     if (needsOnboarding) {
@@ -85,7 +86,7 @@ export default function AuthManager({ onAuthComplete }) {
 
   // 🎯 HANDLE EMAIL VERIFICATION SKIP
   const handleEmailVerificationSkip = () => {
-    console.log('⏭️ Email verification skipped');
+    // console.log('⏭️ Email verification skipped');
     
     // Permite accesul limitat - merge direct la onboarding sau app
     if (needsOnboarding) {
@@ -99,7 +100,7 @@ export default function AuthManager({ onAuthComplete }) {
 
   // 🎉 HANDLE ONBOARDING COMPLETE
   const handleOnboardingComplete = (result) => {
-    console.log('✅ Onboarding complete:', result);
+    // console.log('✅ Onboarding complete:', result);
     
     // Afișează mesajul de succes pentru o scurtă perioadă
     setCurrentFlow('completed');
@@ -107,7 +108,7 @@ export default function AuthManager({ onAuthComplete }) {
     // Redirecționează către aplicația principală după un delay scurt
     setTimeout(() => {
       if (onAuthComplete) {
-        console.log('Calling onAuthComplete with:', { onboardingCompleted: true, ...result });
+        // console.log('Calling onAuthComplete with:', { onboardingCompleted: true, ...result });
         onAuthComplete({ 
           onboardingCompleted: true,
           ...result 
@@ -118,7 +119,7 @@ export default function AuthManager({ onAuthComplete }) {
 
   // ⏭️ HANDLE ONBOARDING SKIP
   const handleOnboardingSkip = () => {
-    console.log('⏭️ Onboarding skipped');
+    // console.log('⏭️ Onboarding skipped');
     
     // Permite accesul limitat la aplicația principală
     if (onAuthComplete) {

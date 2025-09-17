@@ -98,20 +98,20 @@ const MaintenanceView = ({
   } = useInvoices(association?.id);
   
   // Debug: Verifică dacă funcțiile sunt disponibile
-  console.log('🔧 MaintenanceView functions check:', {
-    hasAddInvoice: !!addInvoice,
-    hasGetPartiallyDistributedInvoices: !!getPartiallyDistributedInvoices,
-    hasGetInvoiceByNumber: !!getInvoiceByNumber,
-    associationId: association?.id
-  });
+  // console.log('🔧 MaintenanceView functions check:', {
+  //   hasAddInvoice: !!addInvoice,
+  //   hasGetPartiallyDistributedInvoices: !!getPartiallyDistributedInvoices,
+  //   hasGetInvoiceByNumber: !!getInvoiceByNumber,
+  //   associationId: association?.id
+  // });
   
   // Wrapper îmbunătățit pentru handleAddExpense care gestionează facturi parțiale
   const handleAddExpenseWithInvoice = async () => {
-    console.log('🚀 handleAddExpenseWithInvoice called', {
-      hasInvoiceData: !!newExpense.invoiceData,
-      invoiceNumber: newExpense.invoiceData?.invoiceNumber,
-      selectedExistingInvoice: newExpense.invoiceData?.selectedExistingInvoiceId
-    });
+    // console.log('🚀 handleAddExpenseWithInvoice called', {
+    //   hasInvoiceData: !!newExpense.invoiceData,
+    //   invoiceNumber: newExpense.invoiceData?.invoiceNumber,
+    //   selectedExistingInvoice: newExpense.invoiceData?.selectedExistingInvoiceId
+    // });
     // Verifică dacă este o distribuție parțială din factură existentă
     if (newExpense.invoiceData?.selectedExistingInvoiceId) {
       // Actualizează distribuția facturii existente

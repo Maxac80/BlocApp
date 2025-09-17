@@ -75,7 +75,7 @@ export const useMonthStatus = (associationId) => {
       // Actualizează și state-ul local
       setMonthStatuses(updatedStatuses);
       
-      console.log(`✅ Status salvat pentru ${month}: ${status}`);
+      // console.log(`✅ Status salvat pentru ${month}: ${status}`);
       return true;
     } catch (err) {
       console.error('Eroare la salvarea statusului:', err);

@@ -50,7 +50,7 @@ async function register(email, password, userData) {
 
     // ✅ ÎNCARCĂ IMEDIAT PROFILUL DUPĂ CREARE
     setUserProfile(userProfileData);
-    console.log('✅ Utilizator înregistrat și profil încărcat:', userProfileData);
+    // console.log('✅ Utilizator înregistrat și profil încărcat:', userProfileData);
 
     return user;
   } catch (error) {
@@ -90,9 +90,9 @@ async function register(email, password, userData) {
       if (userDoc.exists()) {
         const profileData = userDoc.data();
         setUserProfile(profileData);
-        console.log('✅ Profil utilizator încărcat:', profileData);
+        // console.log('✅ Profil utilizator încărcat:', profileData);
       } else {
-        console.log('❌ Nu s-a găsit profil pentru utilizator');
+        // console.log('❌ Nu s-a găsit profil pentru utilizator');
         setUserProfile(null);
       }
     } catch (error) {
@@ -144,7 +144,7 @@ async function register(email, password, userData) {
   // Effect pentru a urmări schimbările de autentificare
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    console.log('🔄 Auth state changed:', user ? user.uid : 'No user');
+    // console.log('🔄 Auth state changed:', user ? user.uid : 'No user');
     setCurrentUser(user);
     
     if (user) {

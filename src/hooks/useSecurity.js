@@ -68,7 +68,7 @@ export const useSecurity = () => {
       };
 
       await addDoc(collection(db, 'audit_logs'), activityData);
-      console.log('✅ Activity logged:', action, details);
+      // console.log('✅ Activity logged:', action, details);
     } catch (error) {
       console.error('❌ Error logging activity:', error);
     }
@@ -377,7 +377,7 @@ export const useSecurity = () => {
     try {
       const expiredTime = Date.now() - (24 * 60 * 60 * 1000); // 24 ore
       // Implementare cleanup pentru sesiuni vechi
-      console.log('🧹 Cleaning up expired sessions older than', new Date(expiredTime));
+      // console.log('🧹 Cleaning up expired sessions older than', new Date(expiredTime));
     } catch (error) {
       console.error('❌ Error cleaning up sessions:', error);
     }

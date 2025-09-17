@@ -87,7 +87,7 @@ export const useBase64Upload = () => {
       // Validează fișierul
       validateImageFile(file);
       
-      console.log('🔄 Processing image for Base64 storage...');
+      // console.log('🔄 Processing image for Base64 storage...');
       
       // Redimensionează imaginea pentru a reduce dimensiunea
       const resizedFile = await resizeImage(file, 200, 200, 0.7);
@@ -95,9 +95,9 @@ export const useBase64Upload = () => {
       // Convertește la Base64
       const base64String = await imageToBase64(resizedFile);
       
-      console.log('✅ Image processed successfully');
-      console.log('📊 Original size:', file.size, 'bytes');
-      console.log('📊 Processed size:', base64String.length, 'characters');
+      // console.log('✅ Image processed successfully');
+      // console.log('📊 Original size:', file.size, 'bytes');
+      // console.log('📊 Processed size:', base64String.length, 'characters');
       
       // Verifică dacă Base64 nu este prea mare pentru Firestore (1MB limit)
       if (base64String.length > 1048487) { // ~1MB în Base64

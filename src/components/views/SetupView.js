@@ -86,7 +86,7 @@ const SetupView = ({
 
   // 📊 FUNCȚIE PENTRU IMPORT ÎN BULK AL APARTAMENTELOR
   const handleImportApartments = async (apartments) => {
-    console.log('📊 Import apartamente în bulk:', apartments.length);
+    // console.log('📊 Import apartamente în bulk:', apartments.length);
     
     let successCount = 0;
     let errorCount = 0;
@@ -117,7 +117,7 @@ const SetupView = ({
     
     // 2. Dacă există apartamente cu solduri inițiale, le populez automat
     if (apartmentsWithBalances.length > 0 && setApartmentBalance && saveInitialBalances) {
-      console.log(`💰 Populez automat soldurile inițiale pentru ${apartmentsWithBalances.length} apartamente`);
+      // console.log(`💰 Populez automat soldurile inițiale pentru ${apartmentsWithBalances.length} apartamente`);
       
       try {
         // Setează soldurile pentru fiecare apartament
@@ -145,9 +145,9 @@ const SetupView = ({
         // Salvează soldurile inițiale
         await saveInitialBalances(monthlyBalances, currentMonth);
         
-        console.log(`✅ Solduri inițiale salvate automat pentru:`, 
-          apartmentsWithBalances.map(apt => `Ap.${apt.apartmentNumber} (${apt.restante} RON + ${apt.penalitati} RON)`).join(', ')
-        );
+        // console.log(`✅ Solduri inițiale salvate automat pentru:`, 
+        //   apartmentsWithBalances.map(apt => `Ap.${apt.apartmentNumber} (${apt.restante} RON + ${apt.penalitati} RON)`).join(', ')
+        // );
         
         // Notificare pentru utilizator
         alert(`✅ Import reușit!\n\n` +
@@ -161,7 +161,7 @@ const SetupView = ({
               `Vă rugăm să configurați manual soldurile în pagina de calcul întreținere.`);
       }
     } else {
-      console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
+      // console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
     }
     
     if (errorCount > 0) {

@@ -92,7 +92,7 @@ export default function EmailVerification({ onVerified, onSkip, user }) {
   // 🔗 LISTENER PENTRU SIMULARE EMAIL VERIFICARE
   useEffect(() => {
     const handleEmailVerificationSimulated = (event) => {
-      console.log('📧 Email verification simulated:', event.detail);
+      // console.log('📧 Email verification simulated:', event.detail);
       if (onVerified) {
         onVerified();
       }

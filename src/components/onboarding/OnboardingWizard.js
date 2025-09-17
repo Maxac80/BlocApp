@@ -82,7 +82,7 @@ export default function OnboardingWizard({ onComplete, onSkip }) {
     const timer = setTimeout(() => {
       if (Object.keys(wizardData).length > 0) {
         sessionStorage.setItem('onboarding_draft', JSON.stringify(wizardData));
-        console.log('💾 Auto-saved onboarding draft');
+        // console.log('💾 Auto-saved onboarding draft');
       }
     }, 30000); // 30 secunde
 

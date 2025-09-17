@@ -69,10 +69,10 @@ export const useBalanceManagement = (association) => {
         setInitialBalances(loadedBalances);
       }
       
-      console.log('✅ Configurații încărcate:', {
-        solduri: Object.keys(loadedBalances).length,
-        cheltuieliEliminate: Object.keys(loadedDisabledExpenses).length
-      });
+      // console.log('✅ Configurații încărcate:', {
+      //   solduri: Object.keys(loadedBalances).length,
+      //   cheltuieliEliminate: Object.keys(loadedDisabledExpenses).length
+      // });
       
       return {
         balances: loadedBalances,
@@ -327,16 +327,16 @@ export const useBalanceManagement = (association) => {
         // Calculează totalul rămas
         const totalRemaining = remainingRestante + remainingMaintenance + remainingPenalties;
         
-        console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
-          totalDatorat: row.totalDatorat,
-          remainingRestante,
-          remainingMaintenance, 
-          remainingPenalties,
-          totalRemaining,
-          isPaid: row.isPaid,
-          isPartiallyPaid: row.isPartiallyPaid,
-          paymentInfo: row.paymentInfo
-        });
+        // console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
+        //   totalDatorat: row.totalDatorat,
+        //   remainingRestante,
+        //   remainingMaintenance, 
+        //   remainingPenalties,
+        //   totalRemaining,
+        //   isPaid: row.isPaid,
+        //   isPartiallyPaid: row.isPartiallyPaid,
+        //   paymentInfo: row.paymentInfo
+        // });
         
         if (totalRemaining > 0) {
           // Mai sunt datorii de transferat în luna următoare

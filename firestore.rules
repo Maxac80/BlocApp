@@ -1,0 +1,197 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('super_admin') || hasRole('admin_asociatie');
+    }
+    
+    function isPresedinte() {
+      return hasRole('presedinte');
+    }
+    
+    function belongsToAssociation(associationId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.associationId == associationId;
+    }
+
+    // Users collection - profile management
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      
+      // Users can update their own profile (except role)
+      allow update: if isOwner(userId) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'associationId']));
+      
+      // Only admins can read all users
+      allow read: if isAdmin();
+      
+      // Only super_admin can create users or change roles
+      allow create, update: if hasRole('super_admin');
+      allow delete: if hasRole('super_admin');
+    }
+
+    // Associations collection
+    match /associations/{associationId} {
+      // Members can read their association
+      allow read: if belongsToAssociation(associationId);
+      
+      // Only admins can create/update/delete
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && belongsToAssociation(associationId);
+    }
+
+    // Blocks collection
+    match /blocks/{blockId} {
+      // Read if belongs to user's association
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      // Write only for admins of that association
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Stairs collection
+    match /stairs/{stairId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Apartments collection
+    match /apartments/{apartmentId} {
+      // Owners can read their apartment
+      allow read: if isAuthenticated() && 
+        (resource.data.ownerId == request.auth.uid || 
+         belongsToAssociation(resource.data.associationId));
+      
+      // Only admins can write
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Expenses collection
+    match /expenses/{expenseId} {
+      // Members can read expenses from their association
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      // Only admins and presedinte can write
+      allow write: if (isAdmin() || isPresedinte()) && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Invoices collection
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if (isAdmin() || isPresedinte()) && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Payment records (incasari)
+    match /incasari/{paymentId} {
+      // Owners can see their payments
+      allow read: if isAuthenticated() && 
+        (resource.data.apartmentOwnerId == request.auth.uid ||
+         belongsToAssociation(resource.data.associationId));
+      
+      // Only admins can record payments
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Month status
+    match /monthStatus/{statusId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Initial balances
+    match /initialBalances/{balanceId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Suppliers
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Activity logs - write only, admins can read
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Logs should never be modified
+    }
+
+    // Expense configurations
+    match /expenseConfigurations/{configId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Custom expenses
+    match /customExpenses/{expenseId} {
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      allow write: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+    }
+
+    // Sheets collection - NEW SHEET SYSTEM
+    match /sheets/{sheetId} {
+      // Members can read sheets from their association
+      allow read: if isAuthenticated() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      // Only admins can create and modify sheets
+      allow create: if isAdmin() && 
+        belongsToAssociation(request.resource.data.associationId);
+      
+      // Only admins can update (for publishing and adding payments)
+      allow update: if isAdmin() && 
+        belongsToAssociation(resource.data.associationId);
+      
+      // Sheets should not be deleted (historical data)
+      allow delete: if false;
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

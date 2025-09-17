@@ -140,13 +140,13 @@ export const useExpenseManagement = ({
 
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
   const handleAddExpense = useCallback(async (addInvoiceFn = null) => {
-    console.log('🚀 handleAddExpense START', {
-      hasName: !!newExpense.name,
-      expenseName: newExpense.name,
-      hasAssociation: !!association,
-      hasInvoiceData: !!newExpense.invoiceData,
-      hasAddInvoiceFn: !!addInvoiceFn
-    });
+    // console.log('🚀 handleAddExpense START', {
+    //   hasName: !!newExpense.name,
+    //   expenseName: newExpense.name,
+    //   hasAssociation: !!association,
+    //   hasInvoiceData: !!newExpense.invoiceData,
+    //   hasAddInvoiceFn: !!addInvoiceFn
+    // });
     
     if (!newExpense.name || !association) {
       console.log('❌ handleAddExpense EARLY EXIT - no name or association');
@@ -192,48 +192,48 @@ export const useExpenseManagement = ({
       const expenseId = await addMonthlyExpense(expenseData);
       
       // 2. Dacă avem detalii factură, salvăm și factura
-      console.log('🔍 DEBUG Condiții salvare factură:', {
-        hasInvoiceData: !!newExpense.invoiceData,
-        hasInvoiceNumber: !!newExpense.invoiceData?.invoiceNumber,
-        invoiceNumber: newExpense.invoiceData?.invoiceNumber,
-        hasAddInvoiceFn: !!addInvoiceFn,
-        willSaveInvoice: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
-      });
+      // console.log('🔍 DEBUG Condiții salvare factură:', {
+      //   hasInvoiceData: !!newExpense.invoiceData,
+      //   hasInvoiceNumber: !!newExpense.invoiceData?.invoiceNumber,
+      //   invoiceNumber: newExpense.invoiceData?.invoiceNumber,
+      //   hasAddInvoiceFn: !!addInvoiceFn,
+      //   willSaveInvoice: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
+      // });
       
-      console.log('🔥 CRITICAL CHECK before invoice save condition:', {
-        hasInvoiceData: !!newExpense.invoiceData,
-        invoiceDataType: typeof newExpense.invoiceData,
-        hasInvoiceNumber: !!newExpense.invoiceData?.invoiceNumber,
-        invoiceNumber: newExpense.invoiceData?.invoiceNumber,
-        hasAddInvoiceFn: !!addInvoiceFn,
-        addInvoiceFnType: typeof addInvoiceFn,
-        conditionResult: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
-      });
+      // console.log('🔥 CRITICAL CHECK before invoice save condition:', {
+      //   hasInvoiceData: !!newExpense.invoiceData,
+      //   invoiceDataType: typeof newExpense.invoiceData,
+      //   hasInvoiceNumber: !!newExpense.invoiceData?.invoiceNumber,
+      //   invoiceNumber: newExpense.invoiceData?.invoiceNumber,
+      //   hasAddInvoiceFn: !!addInvoiceFn,
+      //   addInvoiceFnType: typeof addInvoiceFn,
+      //   conditionResult: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
+      // });
       
       if (newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn) {
         console.log('🧾 Salvez factura asociată:', newExpense.invoiceData.invoiceNumber);
         console.log('📄 Date factură:', newExpense.invoiceData);
         console.log('📎 Fișier PDF:', newExpense.pdfFile?.name || 'Nu există PDF');
         console.log('🏢 FULL expenseSettings object:', expenseSettings);
-        console.log('🔍 expenseSettings detailed breakdown:', {
-          expenseType: newExpense.name,
-          supplierId: expenseSettings.supplierId,
-          supplierName: expenseSettings.supplierName,
-          hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName),
-          supplierNameEmpty: expenseSettings.supplierName === '',
-          supplierNameNull: expenseSettings.supplierName === null,
-          supplierNameUndefined: expenseSettings.supplierName === undefined
-        });
-        console.log('🏢 Furnizor din expenseSettings:', {
-          supplierId: expenseSettings.supplierId,
-          supplierName: expenseSettings.supplierName,
-          hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName)
-        });
+        // console.log('🔍 expenseSettings detailed breakdown:', {
+        //   expenseType: newExpense.name,
+        //   supplierId: expenseSettings.supplierId,
+        //   supplierName: expenseSettings.supplierName,
+        //   hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName),
+        //   supplierNameEmpty: expenseSettings.supplierName === '',
+        //   supplierNameNull: expenseSettings.supplierName === null,
+        //   supplierNameUndefined: expenseSettings.supplierName === undefined
+        // });
+        // console.log('🏢 Furnizor din expenseSettings:', {
+        //   supplierId: expenseSettings.supplierId,
+        //   supplierName: expenseSettings.supplierName,
+        //   hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName)
+        // });
         
-        console.log('🏢 invoiceData will be created with supplier:', {
-          supplierId: expenseSettings.supplierId || null,
-          supplierName: expenseSettings.supplierName || 'Fără furnizor'
-        });
+        // console.log('🏢 invoiceData will be created with supplier:', {
+        //   supplierId: expenseSettings.supplierId || null,
+        //   supplierName: expenseSettings.supplierName || 'Fără furnizor'
+        // });
         
         // Calculează valorile pentru distribuție parțială
         const currentDistribution = parseFloat(newExpense.amount || newExpense.billAmount || 0);
@@ -260,11 +260,11 @@ export const useExpenseManagement = ({
         };
         
         try {
-          console.log('🚀 ABOUT TO CALL addInvoiceFn with:', {
-            invoiceData: invoiceData,
-            pdfFile: newExpense.pdfFile?.name,
-            addInvoiceFnExists: !!addInvoiceFn
-          });
+          // console.log('🚀 ABOUT TO CALL addInvoiceFn with:', {
+          //   invoiceData: invoiceData,
+          //   pdfFile: newExpense.pdfFile?.name,
+          //   addInvoiceFnExists: !!addInvoiceFn
+          // });
           await addInvoiceFn(invoiceData, newExpense.pdfFile);
           console.log('✅ Factură salvată cu succes');
         } catch (invoiceError) {

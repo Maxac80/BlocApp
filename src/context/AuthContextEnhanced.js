@@ -113,7 +113,7 @@ export function AuthProviderEnhanced({ children }) {
         needsEmailVerification: true
       });
       
-      console.log('✅ Utilizator înregistrat cu funcționalități avansate:', basicProfileData);
+      // console.log('✅ Utilizator înregistrat cu funcționalități avansate:', basicProfileData);
       return { user, needsEmailVerification: true };
       
     } catch (error) {
@@ -163,7 +163,7 @@ export function AuthProviderEnhanced({ children }) {
         // Verifică device nou
         const deviceCheck = await security.checkNewDevice(user.uid);
         if (deviceCheck.isNewDevice) {
-          console.log('🆕 Device nou detectat pentru utilizator:', user.uid);
+          // console.log('🆕 Device nou detectat pentru utilizator:', user.uid);
           // Aici poți adăuga logica pentru notificare email despre device nou
         }
         
@@ -400,9 +400,9 @@ export function AuthProviderEnhanced({ children }) {
           await onboarding.loadOnboardingProgress(user.uid);
         }
         
-        console.log('✅ Profil enhanced încărcat:', profileData);
+        // console.log('✅ Profil enhanced încărcat:', profileData);
       } else {
-        console.log('❌ Nu s-a găsit profil pentru utilizator, creez unul nou...');
+        // console.log('❌ Nu s-a găsit profil pentru utilizator, creez unul nou...');
         
         // Creează un profil de bază dacă nu există
         const newProfileData = {
@@ -425,7 +425,7 @@ export function AuthProviderEnhanced({ children }) {
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
         
-        console.log('✅ Profil creat automat:', newProfileData);
+        // console.log('✅ Profil creat automat:', newProfileData);
       }
     } catch (error) {
       console.error('❌ Error loading enhanced profile:', error);
@@ -474,7 +474,7 @@ export function AuthProviderEnhanced({ children }) {
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('🔄 Enhanced auth state changed:', user ? user.uid : 'No user');
+      // console.log('🔄 Enhanced auth state changed:', user ? user.uid : 'No user');
       setCurrentUser(user);
       
       if (user) {
@@ -511,7 +511,7 @@ export function AuthProviderEnhanced({ children }) {
     const unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (doc) => {
       if (doc.exists()) {
         const profileData = doc.data();
-        console.log('🔄 UserProfile actualizat în timp real:', profileData);
+        // console.log('🔄 UserProfile actualizat în timp real:', profileData);
         setUserProfile(profileData);
       }
     }, (error) => {

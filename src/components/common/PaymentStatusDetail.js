@@ -21,7 +21,7 @@ const PaymentStatusDetail = ({
   }
 
   // Debug logging (commented for production)
-  // console.log('PaymentStatusDetail Debug:', {
+  // // console.log('PaymentStatusDetail Debug:', {
   //   paymentStatus,
   //   isPaid,
   //   isPartiallyPaid,
@@ -33,7 +33,7 @@ const PaymentStatusDetail = ({
   const getPaymentBreakdown = () => {
     // Folosim noua structură de date din usePaymentSync
     if (!paymentInfo || !paymentInfo.hasPayments) {
-      // console.log('No payment info or no payments for apartment:', apartmentData?.apartment);
+      // // console.log('No payment info or no payments for apartment:', apartmentData?.apartment);
       return null;
     }
 
@@ -64,7 +64,7 @@ const PaymentStatusDetail = ({
       lastPayment: paymentInfo.payments?.[0] || null
     };
     
-    // console.log('Payment breakdown calculated:', breakdown);
+    // // console.log('Payment breakdown calculated:', breakdown);
     return breakdown;
   };
 

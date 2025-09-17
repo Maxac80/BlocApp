@@ -60,31 +60,31 @@ const AccountingView = ({
   };
 
   // DEBUG: Log pentru facturile din luna curentă
-  console.log('🔍 AccountingView DEBUG:', {
-    currentMonth,
-    currentMonthType: typeof currentMonth,
-    totalInvoices: invoices?.length || 0,
-    monthlyInvoicesCount: monthlyInvoices.length,
-    getInvoicesByMonthExists: !!getInvoicesByMonth,
-    allInvoicesMonths: invoices?.map(inv => inv.month) || [],
-    monthlyInvoices: monthlyInvoices.map(inv => ({
-      id: inv.id,
-      month: inv.month,
-      invoiceNumber: inv.invoiceNumber,
-      supplierName: inv.supplierName,
-      supplierId: inv.supplierId
-    })),
-    invoiceStats
-  });
+  // console.log('🔍 AccountingView DEBUG:', {
+  //   currentMonth,
+  //   currentMonthType: typeof currentMonth,
+  //   totalInvoices: invoices?.length || 0,
+  //   monthlyInvoicesCount: monthlyInvoices.length,
+  //   getInvoicesByMonthExists: !!getInvoicesByMonth,
+  //   allInvoicesMonths: invoices?.map(inv => inv.month) || [],
+  //   monthlyInvoices: monthlyInvoices.map(inv => ({
+  //     id: inv.id,
+  //     month: inv.month,
+  //     invoiceNumber: inv.invoiceNumber,
+  //     supplierName: inv.supplierName,
+  //     supplierId: inv.supplierId
+  //   })),
+  //   invoiceStats
+  // });
   
   // DEBUG: Loghează fiecare factură în detaliu
   monthlyInvoices.forEach(invoice => {
-    console.log(`🧾 Factură ${invoice.invoiceNumber}:`, {
-      supplierName: invoice.supplierName,
-      supplierId: invoice.supplierId,
-      hasSupplierName: !!invoice.supplierName,
-      supplierNameLength: invoice.supplierName?.length
-    });
+    // console.log(`🧾 Factură ${invoice.invoiceNumber}:`, {
+    //   supplierName: invoice.supplierName,
+    //   supplierId: invoice.supplierId,
+    //   hasSupplierName: !!invoice.supplierName,
+    //   supplierNameLength: invoice.supplierName?.length
+    // });
   });
 
 
@@ -771,14 +771,14 @@ const AccountingView = ({
                                           {(() => {
                                             // Debug logging pentru distribuții
                                             if (invoice.invoiceNumber === 'Factura 4') {
-                                              console.log('🔍 DEBUG Factura 4 distributionHistory:', {
-                                                invoiceId: invoice.id,
-                                                invoiceNumber: invoice.invoiceNumber,
-                                                distributionHistory: invoice.distributionHistory,
-                                                distributionHistoryLength: invoice.distributionHistory?.length || 0,
-                                                distributedAmount: invoice.distributedAmount,
-                                                remainingAmount: invoice.remainingAmount
-                                              });
+                                              // console.log('🔍 DEBUG Factura 4 distributionHistory:', {
+                                              //   invoiceId: invoice.id,
+                                              //   invoiceNumber: invoice.invoiceNumber,
+                                              //   distributionHistory: invoice.distributionHistory,
+                                              //   distributionHistoryLength: invoice.distributionHistory?.length || 0,
+                                              //   distributedAmount: invoice.distributedAmount,
+                                              //   remainingAmount: invoice.remainingAmount
+                                              // });
                                             }
                                             
                                             return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (
@@ -806,14 +806,14 @@ const AccountingView = ({
                                           {(() => {
                                             // Debug logging pentru distribuții
                                             if (invoice.invoiceNumber === 'Factura 4') {
-                                              console.log('🔍 DEBUG Factura 4 distributionHistory:', {
-                                                invoiceId: invoice.id,
-                                                invoiceNumber: invoice.invoiceNumber,
-                                                distributionHistory: invoice.distributionHistory,
-                                                distributionHistoryLength: invoice.distributionHistory?.length || 0,
-                                                distributedAmount: invoice.distributedAmount,
-                                                remainingAmount: invoice.remainingAmount
-                                              });
+                                              // console.log('🔍 DEBUG Factura 4 distributionHistory:', {
+                                              //   invoiceId: invoice.id,
+                                              //   invoiceNumber: invoice.invoiceNumber,
+                                              //   distributionHistory: invoice.distributionHistory,
+                                              //   distributionHistoryLength: invoice.distributionHistory?.length || 0,
+                                              //   distributedAmount: invoice.distributedAmount,
+                                              //   remainingAmount: invoice.remainingAmount
+                                              // });
                                             }
                                             
                                             return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (

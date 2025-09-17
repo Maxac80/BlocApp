@@ -66,15 +66,15 @@ const RecentActivity = ({ maintenanceData, association, currentMonth, getAssocia
   const totalRestante = totalDatoratCurent;
 
   // Debug pentru calculul progresului de încasare
-  console.log('RecentActivity - Progres Încasare Debug:', {
-    totalDatoratCurent,
-    totalDatoratInitial,
-    totalIncasat,
-    procentIncasare,
-    totalRestante,
-    platiInregistrate,
-    apartamenteTotal: maintenanceData.length
-  });
+  // console.log('RecentActivity - Progres Încasare Debug:', {
+  //   totalDatoratCurent,
+  //   totalDatoratInitial,
+  //   totalIncasat,
+  //   procentIncasare,
+  //   totalRestante,
+  //   platiInregistrate,
+  //   apartamenteTotal: maintenanceData.length
+  // });
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
