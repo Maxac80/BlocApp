@@ -20,6 +20,11 @@ export const useMaintenanceCalculation = ({
   expenses,
   currentMonth,
   calculateNextMonthBalances, // Funcția din useBalanceManagement
+  // Parametri noi pentru integrarea cu sheet-uri
+  currentSheet,
+  publishedSheet,
+  getSheetBalances,
+  getCurrentSheetBalance
 }) => {
   // 📊 STATE LOCAL PENTRU TABELE ȘI SOLDURI
   const [monthlyTables, setMonthlyTables] = useState({});
@@ -128,13 +133,44 @@ export const useMaintenanceCalculation = ({
   // 💰 GESTIONAREA SOLDURILOR  
   const getApartmentBalance = useCallback(
     (apartmentId) => {
-      // Returnează soldurile din monthlyBalances pentru luna curentă
-      // Aceste solduri vin doar din transferul din publicarea lunii precedente
-      const monthKey = `${association?.id}-${currentMonth}`;
-      const monthBalances = monthlyBalances[monthKey] || {};
-      return monthBalances[apartmentId] || { restante: 0, penalitati: 0 };
+      // NOUA LOGICĂ: Calculează dinamic din sheet-ul publicat
+      if (publishedSheet && currentSheet) {
+        // Găsește datele apartamentului din tabelul de întreținere publicat
+        const publishedTable = publishedSheet.maintenanceTable || [];
+        
+        
+        const apartmentRow = publishedTable.find(row => row.apartmentId === apartmentId);
+        
+        if (apartmentRow) {
+          // Calculează cât a plătit apartamentul în luna publicată
+          const payments = publishedSheet.payments || [];
+          const apartmentPayments = payments.filter(p => p.apartmentId === apartmentId);
+          const totalPaid = apartmentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          
+          // Calculează restanța = Total datorat - Total plătit
+          const totalDatorat = apartmentRow.totalDatorat || 0;
+          const restante = Math.max(0, totalDatorat - totalPaid);
+          
+          
+          return {
+            restante: Math.round(restante * 100) / 100,
+            penalitati: 0
+          };
+        }
+      }
+      
+      // Pentru primul sheet sau când nu există sheet publicat - folosește initialBalance din apartament
+      const apartment = apartments.find(apt => apt.id === apartmentId);
+      if (apartment?.initialBalance) {
+        return {
+          restante: apartment.initialBalance.restante || 0,
+          penalitati: apartment.initialBalance.penalitati || 0
+        };
+      }
+
+      return { restante: 0, penalitati: 0 };
     },
-    [association?.id, currentMonth, monthlyBalances]
+    [publishedSheet, currentSheet, apartments]
   );
 
   const setApartmentBalance = useCallback(

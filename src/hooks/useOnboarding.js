@@ -324,29 +324,29 @@ export const useOnboarding = () => {
   // 💾 SALVARE ASOCIAȚIE DIN ONBOARDING
   const saveAssociationFromOnboarding = async (userId) => {
     try {
-      console.log('🔍 DEBUG: saveAssociationFromOnboarding called for user:', userId);
+      // console.log('🔍 DEBUG: saveAssociationFromOnboarding called for user:', userId);
       
       // Verifică dacă există date de asociație în stepsCompleted
       const associationStepData = stepsCompleted?.association?.data;
       const profileStepData = stepsCompleted?.profile?.data;
       const documentsStepData = stepsCompleted?.documents?.data;
       
-      console.log('🔍 DEBUG: Found association step data:', !!associationStepData);
-      console.log('🔍 DEBUG: Found profile step data:', !!profileStepData);
-      console.log('🔍 DEBUG: Found documents step data:', !!documentsStepData);
+      // console.log('🔍 DEBUG: Found association step data:', !!associationStepData);
+      // console.log('🔍 DEBUG: Found profile step data:', !!profileStepData);
+      // console.log('🔍 DEBUG: Found documents step data:', !!documentsStepData);
       
       if (!associationStepData || associationStepData.skipStep) {
-        console.log('📋 Association step was skipped or no data available');
+        // console.log('📋 Association step was skipped or no data available');
         return;
       }
 
       const { associationData } = associationStepData;
       
-      console.log('🔍 DEBUG: Association name:', associationData?.name);
+      // console.log('🔍 DEBUG: Association name:', associationData?.name);
       
       // Verifică dacă datele sunt complete
       if (!associationData?.name?.trim()) {
-        console.log('📋 Association data incomplete, skipping save');
+        // console.log('📋 Association data incomplete, skipping save');
         return;
       }
 
@@ -426,19 +426,90 @@ export const useOnboarding = () => {
         source: 'onboarding'
       };
 
-      console.log('🔍 DEBUG: Ready to save association with name:', associationToSave.name);
+      // console.log('🔍 DEBUG: Ready to save association with name:', associationToSave.name);
       
       // Salvează în Firestore
       const associationsRef = collection(db, 'associations');
       const docRef = await addDoc(associationsRef, associationToSave);
-      
+
       console.log('✅ Association created from onboarding with ID:', docRef.id);
-      
+
+      // 🎯 CREEAZĂ AUTOMAT SHEET 1 PENTRU NOUA ASOCIAȚIE
+      try {
+        console.log('🎯 Creating initial sheet for association:', docRef.id);
+
+        // Creează direct primul sheet fără hook-uri
+        const currentDate = new Date();
+        const monthYear = currentDate.toLocaleDateString('ro-RO', {
+          month: 'long',
+          year: 'numeric'
+        });
+
+        const { serverTimestamp } = await import('firebase/firestore');
+
+        const sheetData = {
+          associationId: docRef.id,
+          monthYear,
+          status: 'in_progress', // SHEET_STATUS.IN_PROGRESS
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+
+          // SNAPSHOT COMPLET - structura asociației în momentul creării
+          associationSnapshot: {
+            name: associationToSave.name || '',
+            cui: associationToSave.cui || '',
+            address: associationToSave.address || {},
+            bankAccount: associationToSave.bankAccountData || {},
+            totalApartments: 0, // Se va actualiza când se adaugă apartamente
+            blocks: [],
+            stairs: [],
+            apartments: [],
+            // Timestamp când a fost creat snapshot-ul
+            createdAt: serverTimestamp()
+          },
+
+          // Date financiare inițiale (toate goale pentru primul sheet)
+          expenses: [],
+          maintenanceTable: [],
+          payments: [],
+          balances: {
+            previousMonth: 0,
+            currentMonth: 0,
+            transferred: false
+          },
+
+          // Configurări inițiale (toate goale, se vor popula pe măsură ce se configurează)
+          configSnapshot: {
+            expenseConfigurations: {},
+            balanceAdjustments: {},
+            disabledExpenses: [],
+            customSettings: {},
+            createdAt: serverTimestamp()
+          },
+
+          // Metadata
+          publishedAt: null,
+          archivedAt: null,
+          publishedBy: null,
+          notes: 'Primul sheet creat automat din onboarding'
+        };
+
+        const { addDoc } = await import('firebase/firestore');
+        const sheetsRef = collection(db, 'sheets');
+        const sheetDocRef = await addDoc(sheetsRef, sheetData);
+
+        console.log('✅ Initial sheet created successfully:', sheetDocRef.id);
+
+      } catch (sheetError) {
+        console.error('❌ Error creating initial sheet:', sheetError);
+        // Nu failăm întreaga operație pentru că asociația s-a creat cu succes
+      }
+
       await logActivity(userId, 'ASSOCIATION_CREATED_FROM_ONBOARDING', {
         associationId: docRef.id,
         associationName: associationToSave.name
       });
-      
+
       return docRef.id;
     } catch (error) {
       console.error('❌ Error saving association from onboarding:', error);

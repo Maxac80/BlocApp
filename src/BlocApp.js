@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Menu } from "lucide-react";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 
 // Hooks
 import { useAssociationData } from "./hooks/useFirestore";
@@ -126,7 +127,12 @@ export default function BlocApp() {
     shouldShowPublishButton,
     isMonthReadOnly,
     getCurrentActiveMonth,
-    getNextActiveMonth
+    getNextActiveMonth,
+    // Adaug variabilele pentru sheet-uri
+    currentSheet,
+    publishedSheet,
+    getSheetBalances,
+    getCurrentSheetBalance
   } = useMonthManagement(association?.id);
 
 
@@ -172,6 +178,11 @@ export default function BlocApp() {
     expenses,
     currentMonth,
     calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
+    // Pasăm soldurile din sheet-uri pentru corelația corectă
+    currentSheet,
+    publishedSheet,
+    getSheetBalances: getSheetBalances || (() => null),
+    getCurrentSheetBalance: getCurrentSheetBalance || (() => ({ restante: 0, penalitati: 0 }))
   });
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
@@ -285,7 +296,7 @@ useEffect(() => {
   const loadAdjustments = async () => {
     if (association?.id) {
       try {
-        console.log('📋 Încarc ajustările de solduri pentru asociația:', association.id);
+        // console.log('📋 Încarc ajustările de solduri pentru asociația:', association.id);
         const adjustments = await loadBalanceAdjustments();
         
         // Integrează ajustările în monthlyBalances
@@ -295,7 +306,7 @@ useEffect(() => {
           });
         });
         
-        console.log('✅ Ajustări de solduri încărcate și integrate:', Object.keys(adjustments).length, 'luni');
+        // console.log('✅ Ajustări de solduri încărcate și integrate:', Object.keys(adjustments).length, 'luni');
       } catch (error) {
         console.error('❌ Eroare la încărcarea ajustărilor de solduri:', error);
       }
@@ -371,7 +382,8 @@ useEffect(() => {
 
   // 🔥 LAYOUT PRINCIPAL
   return (
-    <div className="flex h-screen bg-gray-100">
+    <ErrorBoundary>
+      <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <Sidebar 
         sidebarOpen={sidebarOpen}
@@ -447,18 +459,18 @@ useEffect(() => {
               getNextActiveMonth={getNextActiveMonth}
               getMonthType={getMonthType}
               publishMonth={(month) => {
-                console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
+                // console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
                 const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData);
                 if (result) {
                   // ✅ TRANSFER AUTOMAT SOLDURI - REACTIVAT ȘI REPARAT
-                  console.log('🔄 Începe transferul automat de solduri...');
+                  // console.log('🔄 Începe transferul automat de solduri...');
                   
                   if (maintenanceData && maintenanceData.length > 0) {
                     try {
                       // Calculează soldurile pentru luna următoare folosind logica reparată
                       const nextMonthBalances = calculateNextMonthBalances(maintenanceData, month);
                       
-                      console.log('💰 Solduri calculate pentru luna următoare:', nextMonthBalances);
+                      // console.log('💰 Solduri calculate pentru luna următoare:', nextMonthBalances);
                       
                       if (nextMonthBalances && Object.keys(nextMonthBalances).length > 0) {
                         // Salvează soldurile în Firebase pentru luna următoare
@@ -467,14 +479,14 @@ useEffect(() => {
                         const nextMonth = nextMonthKey.split('-').slice(1).join('-'); // Extrage luna din cheie
                         
                         saveInitialBalances(monthlyBalances, nextMonth).then(() => {
-                          console.log(`✅ Soldurile au fost transferate automat în luna următoare: ${nextMonth}`);
+                          // console.log(`✅ Soldurile au fost transferate automat în luna următoare: ${nextMonth}`);
                           alert(`✅ Luna ${month} a fost publicată cu succes!\n\n💰 Soldurile au fost transferate automat în luna următoare.`);
                         }).catch((error) => {
                           console.error('❌ Eroare la salvarea soldurilor:', error);
                           alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
                         });
                       } else {
-                        console.log('ℹ️ Nu sunt solduri de transferat (toate plătite integral)');
+                        // console.log('ℹ️ Nu sunt solduri de transferat (toate plătite integral)');
                         alert(`✅ Luna ${month} a fost publicată cu succes!`);
                       }
                     } catch (error) {
@@ -482,7 +494,7 @@ useEffect(() => {
                       alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
                     }
                   } else {
-                    console.log('ℹ️ Nu există date de întreținere pentru transfer');
+                    // console.log('ℹ️ Nu există date de întreținere pentru transfer');
                     alert(`✅ Luna ${month} a fost publicată cu succes!`);
                   }
                   
@@ -678,5 +690,6 @@ useEffect(() => {
         </main>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
