@@ -7,3 +7,4 @@ export { default as MaintenanceView } from './MaintenanceView';
 export { default as ProfileView } from './ProfileView';
 export { default as TutorialsView } from './TutorialsView';
 export { default as AccountingView } from './AccountingView';
+export { default as SettingsView } from './SettingsView';

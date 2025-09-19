@@ -108,7 +108,15 @@ export const useSheetManagement = (associationId) => {
 
     try {
       const currentDate = new Date();
+      const previousDate = new Date(currentDate);
+      previousDate.setMonth(previousDate.getMonth() - 1);
+
       const monthYear = currentDate.toLocaleDateString('ro-RO', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const consumptionMonthYear = previousDate.toLocaleDateString('ro-RO', {
         month: 'long',
         year: 'numeric'
       });
@@ -116,6 +124,8 @@ export const useSheetManagement = (associationId) => {
       const sheetData = {
         associationId: idToUse,
         monthYear,
+        customMonthName: monthYear, // Setăm luna curentă ca luna de lucru
+        consumptionMonth: consumptionMonthYear, // Luna anterioară pentru consumuri
         status: SHEET_STATUS.IN_PROGRESS,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -337,13 +347,22 @@ export const useSheetManagement = (associationId) => {
     try {
       // 1. Actualizează sheet-ul curent ca PUBLISHED
       const currentSheetRef = doc(db, 'sheets', currentSheet.id);
-      batch.update(currentSheetRef, {
+
+      // Păstrează tabelul de întreținere existent din sheet în loc să-l suprascrii
+      // pentru a conserva plățile și statusurile
+      const updateData = {
         status: SHEET_STATUS.PUBLISHED,
-        maintenanceTable: maintenanceData,
         publishedAt: serverTimestamp(),
         publishedBy,
         updatedAt: serverTimestamp()
-      });
+      };
+
+      // Adaugă maintenanceTable doar dacă nu există deja în sheet
+      if (!currentSheet.maintenanceTable && maintenanceData && maintenanceData.length > 0) {
+        updateData.maintenanceTable = maintenanceData;
+      }
+
+      batch.update(currentSheetRef, updateData);
 
       // 2. Arhivează sheet-ul publicat anterior (dacă există)
       if (publishedSheet) {
@@ -356,17 +375,56 @@ export const useSheetManagement = (associationId) => {
       }
 
       // 3. Creează noul sheet în lucru pentru luna următoare
-      const nextDate = new Date();
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      const nextMonthYear = nextDate.toLocaleDateString('ro-RO', { 
-        month: 'long', 
-        year: 'numeric' 
-      });
+      // Calculăm lunile următoare bazat pe schema existentă
+      let nextWorkingMonth, nextConsumptionMonth;
+
+      if (currentSheet.customMonthName && currentSheet.consumptionMonth) {
+        // Avem setări personalizate, le incrementăm păstrând diferența
+        const workingParts = currentSheet.customMonthName.split(' ');
+        const consumptionParts = currentSheet.consumptionMonth.split(' ');
+
+        // Parsăm lunile și anii
+        const workingMonthName = workingParts.slice(0, -1).join(' ').toLowerCase();
+        const workingYear = parseInt(workingParts[workingParts.length - 1]);
+        const consumptionMonthName = consumptionParts.slice(0, -1).join(' ').toLowerCase();
+        const consumptionYear = parseInt(consumptionParts[consumptionParts.length - 1]);
+
+        // Găsim indexurile lunilor
+        const romanianMonths = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie',
+                               'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+        const workingMonthIndex = romanianMonths.indexOf(workingMonthName);
+        const consumptionMonthIndex = romanianMonths.indexOf(consumptionMonthName);
+
+        // Calculăm lunile următoare
+        const nextWorkingDate = new Date(workingYear, workingMonthIndex + 1);
+        const nextConsumptionDate = new Date(consumptionYear, consumptionMonthIndex + 1);
+
+        nextWorkingMonth = `${romanianMonths[nextWorkingDate.getMonth()]} ${nextWorkingDate.getFullYear()}`;
+        nextConsumptionMonth = `${romanianMonths[nextConsumptionDate.getMonth()]} ${nextConsumptionDate.getFullYear()}`;
+
+        console.log('📅 Calculare luni următoare:', {
+          currentWorking: currentSheet.customMonthName,
+          currentConsumption: currentSheet.consumptionMonth,
+          nextWorking: nextWorkingMonth,
+          nextConsumption: nextConsumptionMonth
+        });
+      } else {
+        // Fallback la incrementare standard
+        const nextDate = new Date();
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        const prevDate = new Date(nextDate);
+        prevDate.setMonth(prevDate.getMonth() - 1);
+
+        nextWorkingMonth = nextDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+        nextConsumptionMonth = prevDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+      }
 
       const newSheetRef = doc(collection(db, 'sheets'));
       const newSheetData = {
         associationId,
-        monthYear: nextMonthYear,
+        monthYear: nextWorkingMonth, // Folosim luna de lucru calculată
+        customMonthName: nextWorkingMonth, // Setăm direct luna de lucru
+        consumptionMonth: nextConsumptionMonth, // Setăm luna de consum calculată
         status: SHEET_STATUS.IN_PROGRESS,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -409,7 +467,7 @@ export const useSheetManagement = (associationId) => {
           const totalBalance = calculateTotalBalanceAfterPayments(maintenanceData, currentSheet.payments || []);
           
           console.log('🔄 Creating new sheet with transferred balances:', {
-            nextMonth: nextMonthYear,
+            nextMonth: nextWorkingMonth,
             apartmentBalancesCount: Object.keys(apartmentBalances).length,
             totalTransferredBalance: totalBalance,
             apartmentBalances: apartmentBalances
@@ -461,7 +519,7 @@ export const useSheetManagement = (associationId) => {
 
       console.log('✅ Sheet publicat și nou sheet creat:', {
         published: currentSheet.monthYear,
-        newSheet: nextMonthYear
+        newSheet: nextWorkingMonth
       });
 
       return { 
@@ -712,6 +770,51 @@ export const useSheetManagement = (associationId) => {
   }, [resetPublishedSheetBalances]);
 
   /**
+   * Actualizează numele personalizat pentru un sheet specific
+   */
+  const updateSheetCustomName = useCallback(async (sheetId, customName) => {
+    if (!sheetId) {
+      throw new Error('Sheet ID este necesar');
+    }
+
+    try {
+      const sheetRef = doc(db, 'sheets', sheetId);
+      await updateDoc(sheetRef, {
+        customMonthName: customName,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log('✅ Numele personalizat al sheet-ului actualizat:', customName);
+    } catch (error) {
+      console.error('❌ Error updating custom sheet name:', error);
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Actualizează setările de luni pentru un sheet specific
+   */
+  const updateSheetMonthSettings = useCallback(async (sheetId, workingMonth, consumptionMonth) => {
+    if (!sheetId) {
+      throw new Error('Sheet ID este necesar');
+    }
+
+    try {
+      const sheetRef = doc(db, 'sheets', sheetId);
+      await updateDoc(sheetRef, {
+        customMonthName: workingMonth,
+        consumptionMonth: consumptionMonth,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log('✅ Setările de luni actualizate pentru sheet:', { workingMonth, consumptionMonth });
+    } catch (error) {
+      console.error('❌ Error updating sheet month settings:', error);
+      throw error;
+    }
+  }, []);
+
+  /**
    * Resetează toate sheet-urile (pentru debug/test)
    * ATENȚIE: Șterge toate datele!
    */
@@ -758,6 +861,8 @@ export const useSheetManagement = (associationId) => {
     publishCurrentSheet,
     addPaymentToPublishedSheet,
     getSheetByMonth,
+    updateSheetCustomName,
+    updateSheetMonthSettings,
     resetAllSheets,
     resetPublishedSheetBalances, // Pentru debug
 

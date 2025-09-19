@@ -16,15 +16,16 @@ import useInvoices from './hooks/useInvoices';
 
 // Components
 import Sidebar from './components/common/Sidebar';
-import { 
-  SetupView, 
-  AssociationView, 
-  ExpensesView, 
-  DashboardView, 
+import {
+  SetupView,
+  AssociationView,
+  ExpensesView,
+  DashboardView,
   MaintenanceView,
   ProfileView,
   TutorialsView,
-  AccountingView
+  AccountingView,
+  SettingsView
 } from './components/views';
 
 export default function BlocApp() {
@@ -120,7 +121,6 @@ export default function BlocApp() {
     getMonthStatus,
     setMonthStatus,
     publishMonth,
-    unpublishMonth,
     getMonthType,
     getAvailableMonths,
     shouldShowAdjustButton,
@@ -131,8 +131,11 @@ export default function BlocApp() {
     // Adaug variabilele pentru sheet-uri
     currentSheet,
     publishedSheet,
+    sheets,
     getSheetBalances,
-    getCurrentSheetBalance
+    getCurrentSheetBalance,
+    updateSheetCustomName,
+    updateSheetMonthSettings
   } = useMonthManagement(association?.id);
 
 
@@ -202,6 +205,7 @@ export default function BlocApp() {
     getAssociationExpenseTypes,
     getDisabledExpenseTypes,
     getAvailableExpenseTypes,
+    areAllExpensesFullyCompleted,
     handleAddExpense,
     handleAddCustomExpense,
     handleDeleteCustomExpense,
@@ -257,7 +261,6 @@ export default function BlocApp() {
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
     deleteAllBlocAppData,
-    deleteCurrentAssociationData,
     handleAddAssociation,
     handleAddBlock,
     handleAddStair,
@@ -394,7 +397,6 @@ useEffect(() => {
         handleNavigation={handleNavigation}
         association={association}
         getAssociationApartments={getAssociationApartments}
-        deleteCurrentAssociationData={deleteCurrentAssociationData}
         deleteAllBlocAppData={deleteAllBlocAppData}
         userProfile={userProfile}
         activeUser={activeUser}
@@ -480,7 +482,7 @@ useEffect(() => {
                         
                         saveInitialBalances(monthlyBalances, nextMonth).then(() => {
                           // console.log(`✅ Soldurile au fost transferate automat în luna următoare: ${nextMonth}`);
-                          alert(`✅ Luna ${month} a fost publicată cu succes!\n\n💰 Soldurile au fost transferate automat în luna următoare.`);
+                          alert(`✅ Luna ${month} a fost publicată cu succes!`);
                         }).catch((error) => {
                           console.error('❌ Eroare la salvarea soldurilor:', error);
                           alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
@@ -502,12 +504,12 @@ useEffect(() => {
                 }
                 return result;
               }}
-              unpublishMonth={unpublishMonth}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               newExpense={newExpense}
               setNewExpense={setNewExpense}
               getAvailableExpenseTypes={getAvailableExpenseTypes}
+              areAllExpensesFullyCompleted={areAllExpensesFullyCompleted}
               getExpenseConfig={getFirestoreExpenseConfig}
               handleAddExpense={() => handleAddExpense(addInvoice)}
               handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
@@ -518,18 +520,14 @@ useEffect(() => {
               activeMaintenanceTab={activeMaintenanceTab}
               setActiveMaintenanceTab={setActiveMaintenanceTab}
               forceRecalculate={forceRecalculate}
-              showInitialBalances={showInitialBalances}
-              setShowInitialBalances={setShowInitialBalances}
               showAdjustBalances={showAdjustBalances}
               setShowAdjustBalances={setShowAdjustBalances}
               showExpenseConfig={showExpenseConfig}
               setShowExpenseConfig={setShowExpenseConfig}
-              hasInitialBalances={hasInitialBalances}
               adjustModalData={adjustModalData}
               setAdjustModalData={setAdjustModalData}
               getApartmentBalance={getApartmentBalance}
               setApartmentBalance={setApartmentBalance}
-              saveInitialBalances={saveInitialBalances}
               saveBalanceAdjustments={saveBalanceAdjustments}
               setMonthlyTables={setMonthlyTables}
               selectedExpenseForConfig={selectedExpenseForConfig}
@@ -684,6 +682,27 @@ useEffect(() => {
               markInvoiceAsPaid={markInvoiceAsPaid}
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
               updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
+            />
+          )}
+
+          {/* Settings View */}
+          {currentView === "settings" && (
+            <SettingsView
+              association={association}
+              updateAssociation={updateAssociation}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              expenses={expenses}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              getAssociationApartments={getAssociationApartments}
+              handleNavigation={handleNavigation}
+              getMonthType={getMonthType}
+              currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
+              sheets={sheets || []}
+              updateSheetCustomName={updateSheetCustomName}
+              updateSheetMonthSettings={updateSheetMonthSettings}
             />
           )}
 

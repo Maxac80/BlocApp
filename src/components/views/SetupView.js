@@ -38,7 +38,9 @@ const SetupView = ({
   addApartment,
   setApartmentBalance,
   saveInitialBalances,
-  getMonthType
+  getMonthType,
+  // Pentru actualizarea Sheet 1 cu apartamentele
+  updateStructureSnapshot
 }) => {
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
@@ -87,19 +89,19 @@ const SetupView = ({
   // 📊 FUNCȚIE PENTRU IMPORT ÎN BULK AL APARTAMENTELOR
   const handleImportApartments = async (apartments) => {
     // console.log('📊 Import apartamente în bulk:', apartments.length);
-    
+
     let successCount = 0;
     let errorCount = 0;
     let apartmentsWithBalances = [];
-    
+
     // 1. Adaugă apartamentele
     for (const apartment of apartments) {
       try {
         const newApartment = await addApartment(apartment);
         successCount++;
-        
+
         // Verifică dacă apartamentul are solduri inițiale
-        if ((apartment.initialBalance?.restante && apartment.initialBalance.restante > 0) || 
+        if ((apartment.initialBalance?.restante && apartment.initialBalance.restante > 0) ||
             (apartment.initialBalance?.penalitati && apartment.initialBalance.penalitati > 0)) {
           apartmentsWithBalances.push({
             apartmentId: newApartment.id || `${apartment.stairId}-${apartment.number}`,
@@ -162,8 +164,31 @@ const SetupView = ({
       }
     } else {
       // console.log(`✅ Import finalizat: ${successCount} reușite, ${errorCount} erori`);
+      alert(`✅ Import reușit!\n\n📊 ${successCount} apartamente adăugate`);
     }
-    
+
+    // 3. ACTUALIZEAZĂ SHEET 1 cu noua structură de apartamente
+    if (updateStructureSnapshot && typeof updateStructureSnapshot === 'function') {
+      try {
+        // Construiește structura completă pentru Sheet 1
+        const completeStructureData = {
+          name: association.name,
+          cui: association.cui,
+          address: association.address,
+          bankAccount: association.bankAccount,
+          // updateStructureSnapshot va prelua apartamentele din Firebase automat
+        };
+
+        console.log('🏢 Actualizez Sheet 1 cu apartamentele importate...');
+        await updateStructureSnapshot(completeStructureData);
+        console.log('✅ Sheet 1 actualizat cu succes după importul Excel');
+
+      } catch (updateError) {
+        console.error('❌ Eroare la actualizarea Sheet 1:', updateError);
+        // Nu blochează procesul - apartamentele sunt deja adăugate
+      }
+    }
+
     if (errorCount > 0) {
       throw new Error(`Import parțial: ${successCount} apartamente adăugate, ${errorCount} erori`);
     }

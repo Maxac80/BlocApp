@@ -27,9 +27,9 @@ const DashboardHeader = ({
                 : "Adresa asociației"}
             </p>
             {/* Informații apartamente și persoane */}
-            {association && getAssociationApartments().length > 0 && (
+            {association && getAssociationApartments && getAssociationApartments().length > 0 && (
               <p className="text-gray-500 text-xs mt-1">
-                {getAssociationApartments().length} apartamente • 
+                {getAssociationApartments().length} apartamente •
                 {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
               </p>
             )}
@@ -43,11 +43,14 @@ const DashboardHeader = ({
               onChange={(e) => setCurrentMonth(e.target.value)}
               className="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             >
-              {getAvailableMonths(expenses).map(month => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
+              {getAvailableMonths && typeof getAvailableMonths === 'function' ?
+                getAvailableMonths(expenses).map(month => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                )) :
+                <option value={currentMonth}>{currentMonth}</option>
+              }
             </select>
 
             {/* Status-uri luna */}
@@ -58,7 +61,7 @@ const DashboardHeader = ({
                 if (monthType === 'current') {
                   return (
                     <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
-                      LUNA CURENTĂ
+                      LUNA ACTIVĂ
                     </span>
                   );
                 } else if (monthType === 'next') {
@@ -74,10 +77,10 @@ const DashboardHeader = ({
                     </span>
                   );
                 } else {
-                  // Pentru orice alt tip, afișăm implicit ca luna curentă
+                  // Pentru orice alt tip, afișăm implicit ca luna activă
                   return (
                     <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
-                      LUNA CURENTĂ
+                      LUNA ACTIVĂ
                     </span>
                   );
                 }

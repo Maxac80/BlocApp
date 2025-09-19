@@ -158,96 +158,6 @@ export const useDataOperations = ({
     }
   }, []);
 
-  // Funcție pentru ștergerea doar a datelor asociației curente
-  const deleteCurrentAssociationData = useCallback(async () => {
-    if (!association) {
-      alert('Nu există asociație de șters');
-      return;
-    }
-    
-    if (!window.confirm(`Ești sigur că vrei să ștergi datele asociației "${association.name}"?\n\nAceasta va șterge toate blocurile, scările, apartamentele și cheltuielile acestei asociații.`)) {
-      return;
-    }
-    
-    try {
-      // console.log('🗑️ Șterg datele asociației:', association.id, association.name);
-      
-      // Șterge cheltuielile asociației
-      const expensesQuery = query(
-        collection(db, 'expenses'),
-        where('associationId', '==', association.id)
-      );
-      const expensesSnapshot = await getDocs(expensesQuery);
-      for (const expenseDoc of expensesSnapshot.docs) {
-        await deleteDoc(doc(db, 'expenses', expenseDoc.id));
-      }
-      // console.log(`✅ Șterse ${expensesSnapshot.docs.length} cheltuieli`);
-      
-      // Șterge cheltuielile custom ale asociației
-      const customExpensesQuery = query(
-        collection(db, 'customExpenses'),
-        where('associationId', '==', association.id)
-      );
-      const customExpensesSnapshot = await getDocs(customExpensesQuery);
-      for (const customExpenseDoc of customExpensesSnapshot.docs) {
-        await deleteDoc(doc(db, 'customExpenses', customExpenseDoc.id));
-      }
-      // console.log(`✅ Șterse ${customExpensesSnapshot.docs.length} cheltuieli custom`);
-      
-      // Șterge apartamentele (prin scări și blocuri)
-      const blocksQuery = query(
-        collection(db, 'blocks'),
-        where('associationId', '==', association.id)
-      );
-      const blocksSnapshot = await getDocs(blocksQuery);
-      const blockIds = blocksSnapshot.docs.map(doc => doc.id);
-      
-      if (blockIds.length > 0) {
-        const stairsQuery = query(
-          collection(db, 'stairs'),
-          where('blockId', 'in', blockIds)
-        );
-        const stairsSnapshot = await getDocs(stairsQuery);
-        const stairIds = stairsSnapshot.docs.map(doc => doc.id);
-        
-        if (stairIds.length > 0) {
-          const apartmentsQuery = query(
-            collection(db, 'apartments'),
-            where('stairId', 'in', stairIds)
-          );
-          const apartmentsSnapshot = await getDocs(apartmentsQuery);
-          for (const apartmentDoc of apartmentsSnapshot.docs) {
-            await deleteDoc(doc(db, 'apartments', apartmentDoc.id));
-          }
-          // console.log(`✅ Șterse ${apartmentsSnapshot.docs.length} apartamente`);
-        }
-        
-        // Șterge scările
-        for (const stairDoc of stairsSnapshot.docs) {
-          await deleteDoc(doc(db, 'stairs', stairDoc.id));
-        }
-        // console.log(`✅ Șterse ${stairsSnapshot.docs.length} scări`);
-      }
-      
-      // Șterge blocurile
-      for (const blockDoc of blocksSnapshot.docs) {
-        await deleteDoc(doc(db, 'blocks', blockDoc.id));
-      }
-      // console.log(`✅ Șterse ${blocksSnapshot.docs.length} blocuri`);
-      
-      // Șterge asociația
-      await deleteDoc(doc(db, 'associations', association.id));
-      // console.log('✅ Asociația ștearsă');
-      
-      alert(`✅ Datele asociației "${association.name}" au fost șterse cu succes!\n\nPagina se va reîncărca...`);
-      
-      // Reîncarcă pagina
-      window.location.reload();
-    } catch (error) {
-      console.error('❌ Eroare la ștergerea datelor asociației:', error);
-      alert('❌ Eroare la ștergerea datelor: ' + error.message);
-    }
-  }, [association]);
 
   // Funcții actualizate pentru a folosi hook-urile Firestore
   const handleAddAssociation = useCallback(async (activeUser, newAssociation, resetForm, initializeMonths) => {
@@ -416,7 +326,6 @@ export const useDataOperations = ({
   return {
     // Delete operations
     deleteAllBlocAppData,
-    deleteCurrentAssociationData,
     
     // CRUD operations
     handleAddAssociation,

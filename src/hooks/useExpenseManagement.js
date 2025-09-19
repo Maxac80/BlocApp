@@ -138,6 +138,38 @@ export const useExpenseManagement = ({
     );
   }, [association?.id, expenses, currentMonth, getAssociationExpenseTypes, getExpenseConfig]);
 
+  // 🔍 VERIFICARE DACĂ TOATE CHELTUIELILE SUNT COMPLET COMPLETATE
+  const areAllExpensesFullyCompleted = useCallback((getAssociationApartments) => {
+    if (!association?.id || !getAssociationApartments) return false;
+
+    const associationExpenses = expenses.filter(exp =>
+      exp.associationId === association.id && exp.month === currentMonth
+    );
+
+    if (associationExpenses.length === 0) return false;
+
+    const apartments = getAssociationApartments();
+    if (apartments.length === 0) return false;
+
+    // Verifică fiecare cheltuială să fie complet completată
+    return associationExpenses.every(expense => {
+      const expenseSettings = getExpenseConfig(expense.name);
+
+      return apartments.every(apartment => {
+        if (expenseSettings.distributionType === "individual") {
+          const value = expense.individualAmounts?.[apartment.id];
+          return value && parseFloat(value) > 0;
+        } else if (expenseSettings.distributionType === "consumption") {
+          const value = expense.consumption?.[apartment.id];
+          return value && parseFloat(value) > 0;
+        } else {
+          // Pentru cheltuieli pe apartament, nu trebuie verificate consumuri
+          return true;
+        }
+      });
+    });
+  }, [association?.id, expenses, currentMonth, getExpenseConfig]);
+
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
   const handleAddExpense = useCallback(async (addInvoiceFn = null) => {
     // console.log('🚀 handleAddExpense START', {
@@ -458,6 +490,7 @@ export const useExpenseManagement = ({
     getAssociationExpenseTypes,
     getDisabledExpenseTypes,
     getAvailableExpenseTypes,
+    areAllExpensesFullyCompleted,
     
     // ➕ Funcții de adăugare și actualizare
     handleAddExpense,

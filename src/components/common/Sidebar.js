@@ -10,7 +10,6 @@ const Sidebar = ({
   handleNavigation,
   association,
   getAssociationApartments,
-  deleteCurrentAssociationData,
   deleteAllBlocAppData,
   userProfile,
   activeUser,
@@ -252,6 +251,30 @@ const Sidebar = ({
           )}
         </button>
 
+        {/* Setări */}
+        <button
+          onClick={() => handleNavigation("settings")}
+          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "settings"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Settings className="w-5 h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-3">
+              <div className="font-medium">Setări</div>
+              <div className="text-xs text-gray-500">Configurări aplicație</div>
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Setări
+            </div>
+          )}
+        </button>
+
         {/* Tutoriale */}
         <button
           onClick={() => handleNavigation("tutorials")}
@@ -268,7 +291,7 @@ const Sidebar = ({
               <div className="text-xs text-gray-500">Ghiduri și învățare</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Tutoriale
@@ -282,18 +305,10 @@ const Sidebar = ({
         <>
           <div className="mx-4 my-6 border-t border-gray-200"></div>
 
-          {/* Butoane de ștergere */}
+          {/* Buton ștergere toate datele */}
           {association && (
             <div className="px-4 space-y-3">
               <div className="space-y-2">
-                <button
-                  onClick={deleteCurrentAssociationData}
-                  className="w-full bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium flex items-center justify-center"
-                  title={`Șterge doar "${association.name}"`}
-                >
-                  🏢 Șterge "{association.name.length > 15 ? association.name.substring(0, 15) + '...' : association.name}"
-                </button>
-                
                 <button
                   onClick={deleteAllBlocAppData}
                   className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
@@ -301,10 +316,6 @@ const Sidebar = ({
                 >
                   🗑️ Șterge TOATE datele
                 </button>
-                
-                <div className="text-xs text-gray-500 text-center mt-2">
-                  ⚠️ Development tools
-                </div>
               </div>
             </div>
           )}

@@ -1,6 +1,6 @@
 // src/components/views/MaintenanceView.js
 import React, { useState } from 'react';
-import { Calculator, Plus } from 'lucide-react';
+import { Calculator, Plus, Settings } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal } from '../modals';
@@ -24,7 +24,6 @@ const MaintenanceView = ({
   shouldShowPublishButton,
   shouldShowAdjustButton,
   publishMonth,
-  unpublishMonth,
   getAvailableMonths,
   getCurrentActiveMonth,
   getNextActiveMonth,
@@ -35,6 +34,7 @@ const MaintenanceView = ({
   newExpense,
   setNewExpense,
   getAvailableExpenseTypes,
+  areAllExpensesFullyCompleted,
   getExpenseConfig,
   handleAddExpense,
   handleDeleteMonthlyExpense,
@@ -49,18 +49,14 @@ const MaintenanceView = ({
   forceRecalculate,
   
   // Modals and balances
-  showInitialBalances,
-  setShowInitialBalances,
   showAdjustBalances,
   setShowAdjustBalances,
   showExpenseConfig,
   setShowExpenseConfig,
-  hasInitialBalances,
   adjustModalData,
   setAdjustModalData,
   getApartmentBalance,
   setApartmentBalance,
-  saveInitialBalances,
   saveBalanceAdjustments,
   setMonthlyTables,
   
@@ -707,11 +703,9 @@ const MaintenanceView = ({
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
           isMonthReadOnly={isMonthReadOnly}
-          shouldShowPublishButton={shouldShowPublishButton}
+          shouldShowPublishButton={(month) => shouldShowPublishButton(month, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments)}
           shouldShowAdjustButton={shouldShowAdjustButton}
-          hasInitialBalances={hasInitialBalances}
           publishMonth={publishMonth}
-          unpublishMonth={unpublishMonth}
           getCurrentActiveMonth={getCurrentActiveMonth}
           getNextActiveMonth={getNextActiveMonth}
           getMonthType={getMonthType}
@@ -741,288 +735,265 @@ const MaintenanceView = ({
           maintenanceData={updatedMaintenanceData}
           handleNavigation={handleNavigation}
           getAssociationApartments={getAssociationApartments}
-        />
 
+          // Conținutul care va fi afișat în tab-uri
+          tabContent={
+            <>
+              {/* Adaugă Cheltuială - pe întreaga lățime */}
+              <div className="p-6 border-b">
+                <ExpenseForm
+                  newExpense={newExpense}
+                  setNewExpense={setNewExpense}
+                  availableExpenseTypes={getAvailableExpenseTypes()}
+                  associationExpenses={associationExpenses}
+                  getExpenseConfig={getExpenseConfig}
+                  handleAddExpense={handleAddExpenseWithInvoice}
+                  isMonthReadOnly={isMonthReadOnly}
+                  currentMonth={currentMonth}
+                  setShowExpenseConfig={setShowExpenseConfig}
+                  setSelectedExpenseForConfig={setSelectedExpenseForConfig}
+                  monthType={monthType}
+                  // Funcții noi pentru facturi parțiale
+                  getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
+                  getInvoiceByNumber={getInvoiceByNumber}
+                  syncSuppliersForExpenseType={syncSuppliersForExpenseType}
+                />
+              </div>
 
+              {/* Cheltuieli și Consumuri - pe 2 coloane */}
+              <div className="p-6 border-b">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <ExpenseList
+                    associationExpenses={associationExpenses}
+                    currentMonth={currentMonth}
+                    getExpenseConfig={getExpenseConfig}
+                    getAssociationApartments={getAssociationApartments}
+                    handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
+                    isMonthReadOnly={isMonthReadOnly}
+                    monthType={monthType}
+                  />
 
-        {/* Secțiune pentru gestionarea soldurilor inițiale - doar pentru luna curentă nepublicată */}
-        {getAssociationApartments().length > 0 && currentMonth === currentMonthStr && !isMonthReadOnly && (
-          <div className="mb-6">
-            <div className={`border rounded-xl p-6 ${hasInitialBalances ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center">
-            {hasInitialBalances ? (
-              <>
-                <span className="text-green-800">✅ Solduri Inițiale Configurate</span>
-              </>
-            ) : (
-              <>
-                <span className="text-yellow-800">⚡ Configurare Solduri Inițiale</span>
-              </>
-            )}
-          </h3>
-          <p className={`text-sm mt-1 ${hasInitialBalances ? 'text-green-700' : 'text-yellow-700'}`}>
-            {hasInitialBalances 
-              ? 'Soldurile inițiale sunt configurate. Puteți vizualiza sau modifica valorile.'
-              : 'Este prima utilizare a aplicației. Introduceți soldurile existente din luna anterioară.'}
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            const modalData = getAssociationApartments().map(apartment => {
-              // Găsește datele din tabelul de întreținere pentru sincronizare
-              const maintenanceItem = maintenanceData.find(item => item.apartment === apartment.number);
-              
-              // Folosește datele din tabelul de întreținere dacă există, altfel fallback la getApartmentBalance
-              const restanteCurente = maintenanceItem ? maintenanceItem.restante : getApartmentBalance(apartment.id).restante;
-              const penalitatiCurente = maintenanceItem ? maintenanceItem.penalitati : getApartmentBalance(apartment.id).penalitati;
-              
-              return {
-                apartmentId: apartment.id,
-                apartmentNumber: apartment.number,
-                owner: apartment.owner,
-                restanteCurente: restanteCurente,
-                penalitatiCurente: penalitatiCurente,
-                restanteAjustate: restanteCurente,
-                penalitatiAjustate: penalitatiCurente
-              };
-            });
-            setAdjustModalData(modalData);
-            setShowAdjustBalances(true);
-          }}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            hasInitialBalances 
-              ? 'bg-green-600 text-white hover:bg-green-700' 
-              : 'bg-yellow-600 text-white hover:bg-yellow-700'
-          }`}
-        >
-          {hasInitialBalances ? "Vizualizează/Editează Solduri" : "Configurează Solduri"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                  <ConsumptionInput
+                    associationExpenses={associationExpenses}
+                    getExpenseConfig={getExpenseConfig}
+                    getAssociationApartments={getAssociationApartments}
+                    updateExpenseConsumption={updateExpenseConsumption}
+                    updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+                    isMonthReadOnly={isMonthReadOnly}
+                    currentMonth={currentMonth}
+                    monthType={monthType}
+                  />
+                </div>
+              </div>
 
-<AdjustBalancesModal
-  showAdjustBalances={showAdjustBalances}
-  setShowAdjustBalances={setShowAdjustBalances}
-  currentMonth={currentMonth}
-  adjustModalData={adjustModalData}
-  setAdjustModalData={setAdjustModalData}
-  setApartmentBalance={setApartmentBalance}
-  saveBalanceAdjustments={saveBalanceAdjustments}
-  association={association}
-  setMonthlyTables={setMonthlyTables}
-  forceRecalculate={forceRecalculate}
-/>
-
-          {/* Modal Configurare Cheltuieli */}
-<ExpenseConfigModal
-  isOpen={showExpenseConfig}
-  onClose={() => setShowExpenseConfig(false)}
-  expenseName={selectedExpenseForConfig}
-  expenseConfig={selectedExpenseForConfig ? getExpenseConfig(selectedExpenseForConfig) : null}
-  updateExpenseConfig={updateExpenseConfig}
-  getAssociationApartments={getAssociationApartments}
-  getApartmentParticipation={getApartmentParticipation}
-  setApartmentParticipation={setApartmentParticipation}
-  associationId={association?.id}
-/>
-
-{/* Payment Modal */}
-<PaymentModal
-  showPaymentModal={showPaymentModal}
-  setShowPaymentModal={setShowPaymentModal}
-  currentMonth={currentMonth}
-  selectedApartment={selectedApartment}
-  onSavePayment={handleSavePayment}
-/>
-
-          {/* Adaugă Cheltuială - pe întreaga lățime */}
-          <div className="mb-6">
-            <ExpenseForm
-              newExpense={newExpense}
-              setNewExpense={setNewExpense}
-              availableExpenseTypes={getAvailableExpenseTypes()}
-              associationExpenses={associationExpenses}
-              getExpenseConfig={getExpenseConfig}
-              handleAddExpense={handleAddExpenseWithInvoice}
-              isMonthReadOnly={isMonthReadOnly}
-              currentMonth={currentMonth}
-              setShowExpenseConfig={setShowExpenseConfig}
-              setSelectedExpenseForConfig={setSelectedExpenseForConfig}
-              monthType={monthType}
-              // Funcții noi pentru facturi parțiale
-              getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
-              getInvoiceByNumber={getInvoiceByNumber}
-              syncSuppliersForExpenseType={syncSuppliersForExpenseType}
-            />
-          </div>
-
-          {/* Cheltuieli și Consumuri - pe 2 coloane */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-6">
-            <ExpenseList
-              associationExpenses={associationExpenses}
-              currentMonth={currentMonth}
-              getExpenseConfig={getExpenseConfig}
-              getAssociationApartments={getAssociationApartments}
-              handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
-              isMonthReadOnly={isMonthReadOnly}
-              monthType={monthType}
-            />
-
-            <ConsumptionInput
-              associationExpenses={associationExpenses}
-              getExpenseConfig={getExpenseConfig}
-              getAssociationApartments={getAssociationApartments}
-              updateExpenseConsumption={updateExpenseConsumption}
-              updateExpenseIndividualAmount={updateExpenseIndividualAmount}
-              isMonthReadOnly={isMonthReadOnly}
-              currentMonth={currentMonth}
-              monthType={monthType}
-            />
-          </div>
-
-          {updatedMaintenanceData.length > 0 ? (
-            <div className={`rounded-xl shadow-lg overflow-hidden ${
-              monthType === 'historic' 
-                ? 'bg-gray-50 border-2 border-gray-300' 
-                : isMonthReadOnly 
-                ? 'bg-purple-50 border-2 border-purple-200' 
-                : 'bg-white'
-            }`}>
-              <div className={`p-4 border-b ${
-                monthType === 'historic'
-                  ? 'bg-gray-100'
-                  : isMonthReadOnly 
-                  ? 'bg-purple-100' 
-                  : 'bg-indigo-50'
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className={`text-lg font-semibold ${
-                      monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-purple-800' : ''
+              {/* Tabelul de întreținere */}
+              <div className="p-6">
+                {updatedMaintenanceData.length > 0 ? (
+                  <div className={`rounded-xl shadow-lg overflow-hidden ${
+                    monthType === 'historic'
+                      ? 'bg-gray-50 border-2 border-gray-300'
+                      : isMonthReadOnly
+                      ? 'bg-purple-50 border-2 border-purple-200'
+                      : 'bg-white'
+                  }`}>
+                    <div className={`p-4 border-b ${
+                      monthType === 'historic'
+                        ? 'bg-gray-100'
+                        : isMonthReadOnly
+                        ? 'bg-purple-100'
+                        : 'bg-indigo-50'
                     }`}>
-                      🧾 Tabel Întreținere - {currentMonth} 
-                      {monthType === 'historic' ? (
-                        <span className="text-sm bg-gray-200 px-2 py-1 rounded-full ml-2">(ARHIVATĂ)</span>
-                      ) : isMonthReadOnly ? (
-                        <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>
-                      ) : null}
-                    </h3>
-                    {association && getAssociationApartments().length > 0 && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {(() => {
-                          const associationBlocks = blocks.filter(block => block.associationId === association.id);
-                          const associationStairs = stairs.filter(stair => 
-                            associationBlocks.some(block => block.id === stair.blockId)
-                          );
-                          const apartmentCount = getAssociationApartments().length;
-                          const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
-                          
-                          let structureText = "";
-                          if (associationBlocks.length === 1 && associationStairs.length === 1) {
-                            structureText = `${associationBlocks[0].name} - ${associationStairs[0].name}`;
-                          } else if (associationBlocks.length === 1) {
-                            structureText = `${associationBlocks[0].name} - ${associationStairs.length} scări`;
-                          } else {
-                            structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
-                          }
-                          
-                          return `${association.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
-                        })()}
-                      </p>
-                    )}
-                    <div className="flex items-center space-x-2 mt-1">
-                      {monthType === 'historic' ? (
-                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          📚 ARHIVATĂ
-                        </span>
-                      ) : isMonthReadOnly ? (
-                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          📋 PUBLICATĂ
-                        </span>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className={`text-lg font-semibold ${
+                            monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-purple-800' : ''
+                          }`}>
+                            🧾 Tabel Întreținere - {currentMonth}
+                            {monthType === 'historic' ? (
+                              <span className="text-sm bg-gray-200 px-2 py-1 rounded-full ml-2">(ARHIVATĂ)</span>
+                            ) : isMonthReadOnly ? (
+                              <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>
+                            ) : null}
+                          </h3>
+                          {association && getAssociationApartments().length > 0 && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {(() => {
+                                const associationBlocks = blocks.filter(block => block.associationId === association.id);
+                                const associationStairs = stairs.filter(stair =>
+                                  associationBlocks.some(block => block.id === stair.blockId)
+                                );
+                                const apartmentCount = getAssociationApartments().length;
+                                const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
+
+                                let structureText = "";
+                                if (associationBlocks.length === 1 && associationStairs.length === 1) {
+                                  structureText = `${associationBlocks[0].name} - ${associationStairs[0].name}`;
+                                } else if (associationBlocks.length === 1) {
+                                  structureText = `${associationBlocks[0].name} - ${associationStairs.length} scări`;
+                                } else {
+                                  structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
+                                }
+
+                                return `${association.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
+                              })()}
+                            </p>
+                          )}
+                          <div className="flex items-center space-x-2 mt-1">
+                            {monthType === 'historic' ? (
+                              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                📚 ARHIVATĂ
+                              </span>
+                            ) : isMonthReadOnly ? (
+                              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                📋 PUBLICATĂ
+                              </span>
+                            ) : (
+                              <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                🔧 ÎN LUCRU
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          {/* Buton Ajustări Solduri - doar pentru luna în lucru */}
+                          {shouldShowAdjustButton(currentMonth) && !isMonthReadOnly && (
+                            <button
+                              onClick={() => {
+                                const modalData = getAssociationApartments().map(apartment => {
+                                  return {
+                                    apartmentId: apartment.id,
+                                    apartmentNumber: apartment.number,
+                                    currentBalance: {
+                                      restante: monthlyBalances[`${association.id}-${currentMonth}`]?.[apartment.id]?.restante || 0,
+                                      penalitati: monthlyBalances[`${association.id}-${currentMonth}`]?.[apartment.id]?.penalitati || 0
+                                    }
+                                  };
+                                });
+                                setAdjustModalData(modalData);
+                                setShowAdjustBalances(true);
+                              }}
+                              className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center"
+                              title="Ajustează soldurile inițiale"
+                            >
+                              <Settings className="w-4 h-4 mr-2" />
+                              Ajustări Solduri
+                            </button>
+                          )}
+
+                          {/* Buton Export PDF - doar pentru luna publicată și Tabel Simplificat */}
+                          {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && isMonthReadOnly && (
+                            <button
+                              onClick={exportPDFAvizier}
+                              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+                              title="Exportă PDF pentru avizier (fără nume proprietari)"
+                            >
+                              📄 Export PDF
+                            </button>
+                          )}
+                          {/* Buton Export PDF Detaliat - doar pentru luna publicată și Tabel Detaliat */}
+                          {updatedMaintenanceData.length > 0 && activeMaintenanceTab === "detailed" && isMonthReadOnly && (
+                            <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Export PDF Detaliat
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-4 border-t border-indigo-100 pt-3">
+                        <button
+                          onClick={() => setActiveMaintenanceTab("simple")}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            activeMaintenanceTab === "simple"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          Tabel Simplificat
+                        </button>
+                        <button
+                          onClick={() => setActiveMaintenanceTab("detailed")}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            activeMaintenanceTab === "detailed"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          Tabel Detaliat
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      {activeMaintenanceTab === "simple" ? (
+                        <MaintenanceTableSimple
+                          maintenanceData={updatedMaintenanceData}
+                          isMonthReadOnly={isMonthReadOnly}
+                          togglePayment={togglePayment}
+                          onOpenPaymentModal={handleOpenPaymentModal}
+                          isHistoricMonth={monthType === 'historic'}
+                        />
                       ) : (
-                        <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          🔧 ÎN LUCRU
-                        </span>
+                        <MaintenanceTableDetailed
+                          maintenanceData={updatedMaintenanceData}
+                          expenses={expenses}
+                          association={association}
+                          isMonthReadOnly={isMonthReadOnly}
+                          onOpenPaymentModal={handleOpenPaymentModal}
+                          isHistoricMonth={monthType === 'historic'}
+                        />
                       )}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    {/* Buton Export PDF - doar pentru Tabel Simplificat */}
-                    {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && (
-                      <button 
-                        onClick={exportPDFAvizier}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
-                        title="Exportă PDF pentru avizier (fără nume proprietari)"
-                      >
-                        📄 Export PDF
-                      </button>
-                    )}
-                    {/* Buton Export PDF Detaliat - doar pentru Tabel Detaliat */}
-                    {updatedMaintenanceData.length > 0 && activeMaintenanceTab === "detailed" && (
-                      <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Export PDF Detaliat
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex space-x-4 border-t border-indigo-100 pt-3">
-                  <button
-                    onClick={() => setActiveMaintenanceTab("simple")}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeMaintenanceTab === "simple" 
-                        ? "bg-indigo-600 text-white" 
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    Tabel Simplificat
-                  </button>
-                  <button
-                    onClick={() => setActiveMaintenanceTab("detailed")}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeMaintenanceTab === "detailed" 
-                        ? "bg-indigo-600 text-white" 
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    Tabel Detaliat
-                  </button>
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto">
-                {activeMaintenanceTab === "simple" ? (
-                  <MaintenanceTableSimple
-                    maintenanceData={updatedMaintenanceData}
-                    isMonthReadOnly={isMonthReadOnly}
-                    togglePayment={togglePayment}
-                    onOpenPaymentModal={handleOpenPaymentModal}
-                    isHistoricMonth={monthType === 'historic'}
-                  />
                 ) : (
-                  <MaintenanceTableDetailed
-                    maintenanceData={updatedMaintenanceData}
-                    expenses={expenses}
-                    association={association}
-                    isMonthReadOnly={isMonthReadOnly}
-                    onOpenPaymentModal={handleOpenPaymentModal}
-                    isHistoricMonth={monthType === 'historic'}
-                  />
+                  <div className="text-center py-12 bg-white rounded-xl shadow-lg border border-gray-200">
+                    <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nu există date de întreținere</h3>
+                    <p className="text-gray-500">
+                      {areAllExpensesFullyCompleted(currentMonth)
+                        ? "Completează toate consumurile pentru a genera tabelul de întreținere."
+                        : "Adaugă cheltuieli și completează consumurile pentru a calcula întreținerea."}
+                    </p>
+                  </div>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <Calculator className="w-20 h-20 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Nu există date pentru tabelul de întreținere</h3>
-              <p className="text-gray-600">Adaugă cheltuieli lunare pentru a genera tabelul de întreținere.</p>
-            </div>
-          )}
+            </>
+          }
+        />
+
+        {/* Modalurile rămân în afara tab-urilor */}
+        <AdjustBalancesModal
+          showAdjustBalances={showAdjustBalances}
+          setShowAdjustBalances={setShowAdjustBalances}
+          currentMonth={currentMonth}
+          adjustModalData={adjustModalData}
+          setAdjustModalData={setAdjustModalData}
+          setApartmentBalance={setApartmentBalance}
+          saveBalanceAdjustments={saveBalanceAdjustments}
+          association={association}
+          setMonthlyTables={setMonthlyTables}
+          forceRecalculate={forceRecalculate}
+        />
+
+        <ExpenseConfigModal
+          isOpen={showExpenseConfig}
+          onClose={() => setShowExpenseConfig(false)}
+          expenseName={selectedExpenseForConfig}
+          expenseConfig={selectedExpenseForConfig ? getExpenseConfig(selectedExpenseForConfig) : null}
+          updateExpenseConfig={updateExpenseConfig}
+          getAssociationApartments={getAssociationApartments}
+          getApartmentParticipation={getApartmentParticipation}
+          setApartmentParticipation={setApartmentParticipation}
+          associationId={association?.id}
+        />
+
+        <PaymentModal
+          showPaymentModal={showPaymentModal}
+          setShowPaymentModal={setShowPaymentModal}
+          currentMonth={currentMonth}
+          selectedApartment={selectedApartment}
+          onSavePayment={handleSavePayment}
+        />
 
         {/* All modals are already rendered above in the component, no duplicates needed */}
       </div>

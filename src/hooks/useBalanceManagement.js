@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 /**
@@ -16,11 +16,16 @@ export const useBalanceManagement = (association) => {
   const [hasInitialBalances, setHasInitialBalances] = useState(false);
   const [disabledExpenses, setDisabledExpenses] = useState({});
   const [initialBalances, setInitialBalances] = useState({});
+  const [penaltySettings, setPenaltySettings] = useState({
+    defaultPenaltyRate: 0.02, // 2% default
+    daysBeforePenalty: 30
+  });
 
   // 🔄 ÎNCĂRCAREA CONFIGURĂRILOR LA SCHIMBAREA ASOCIAȚIEI
   useEffect(() => {
     if (association?.id) {
       loadInitialBalances();
+      loadPenaltySettings();
     }
   }, [association?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -303,6 +308,29 @@ export const useBalanceManagement = (association) => {
     }
   }, [association?.id]);
 
+  // 📥 ÎNCĂRCAREA SETĂRILOR PENALITĂȚILOR
+  const loadPenaltySettings = useCallback(async () => {
+    if (!association?.id) return;
+
+    try {
+      const settingsRef = doc(db, 'associations', association.id, 'settings', 'app');
+      const settingsDoc = await getDoc(settingsRef);
+
+      if (settingsDoc.exists()) {
+        const data = settingsDoc.data();
+        if (data.generalSettings) {
+          setPenaltySettings({
+            defaultPenaltyRate: data.generalSettings.defaultPenaltyRate || 0.02,
+            daysBeforePenalty: data.generalSettings.daysBeforePenalty || 30
+          });
+          console.log('📥 Setări penalități încărcate:', data.generalSettings);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Eroare la încărcarea setărilor penalităților:', error);
+    }
+  }, [association?.id]);
+
   // 🧮 CALCULUL AUTOMATIZAT AL SOLDURILOR PENTRU LUNA URMĂTOARE
   const calculateNextMonthBalances = useCallback((currentTable, currentMonth) => {
     console.log('🧮 Calculez soldurile pentru luna următoare...');
@@ -317,35 +345,51 @@ export const useBalanceManagement = (association) => {
       const nextMonthBalances = {};
       
       currentTable.forEach(row => {
-        // Folosim datele actualizate din usePaymentSync care reflectă plățile parțiale
-        // Aceste câmpuri sunt deja calculate prin scăderea plăților din sumele inițiale
+        // Verificăm dacă apartamentul este plătit integral
+        const isPaidInFull = row.isPaid === true;
+
+        let remainingRestante, remainingMaintenance, remainingPenalties, totalRemaining;
+
+        if (isPaidInFull) {
+          // Dacă e plătit integral, nu transferăm nimic
+          remainingRestante = 0;
+          remainingMaintenance = 0;
+          remainingPenalties = 0;
+          totalRemaining = 0;
+        } else {
+          // Folosim datele actualizate din usePaymentSync care reflectă plățile parțiale
+          remainingRestante = row.restante || 0; // Restanțele rămase după plăți
+          remainingMaintenance = row.currentMaintenance || 0; // Întreținerea rămasă după plăți
+          remainingPenalties = row.penalitati || 0; // Penalitățile rămase după plăți
+
+          // Calculează totalul rămas
+          totalRemaining = remainingRestante + remainingMaintenance + remainingPenalties;
+        }
         
-        const remainingRestante = row.restante || 0; // Restanțele rămase după plăți
-        const remainingMaintenance = row.currentMaintenance || 0; // Întreținerea rămasă după plăți  
-        const remainingPenalties = row.penalitati || 0; // Penalitățile rămase după plăți
-        
-        // Calculează totalul rămas
-        const totalRemaining = remainingRestante + remainingMaintenance + remainingPenalties;
-        
-        // console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
-        //   totalDatorat: row.totalDatorat,
-        //   remainingRestante,
-        //   remainingMaintenance, 
-        //   remainingPenalties,
-        //   totalRemaining,
-        //   isPaid: row.isPaid,
-        //   isPartiallyPaid: row.isPartiallyPaid,
-        //   paymentInfo: row.paymentInfo
-        // });
+        console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
+          totalDatorat: row.totalDatorat,
+          totalIntretinere: row.totalIntretinere,
+          currentMaintenance: row.currentMaintenance,
+          restante: row.restante,
+          penalitati: row.penalitati,
+          remainingRestante,
+          remainingMaintenance,
+          remainingPenalties,
+          totalRemaining,
+          isPaid: row.isPaid,
+          calculatedNextRestante: remainingRestante + remainingMaintenance,
+          paymentInfo: row.paymentInfo
+        });
         
         if (totalRemaining > 0) {
           // Mai sunt datorii de transferat în luna următoare
           // Pentru luna următoare, ce rămâne neplătit din luna curentă devine "restanță"
-          const nextMonthRestante = Math.round(totalRemaining * 100) / 100;
+          // LOGIC: Restanța în Sheet 2 = Total Întreținere din Sheet 1 (întreținere + restanțe vechi)
+          const nextMonthRestante = Math.round((remainingRestante + remainingMaintenance) * 100) / 100;
           
-          // Calculăm penalty doar pe întreținerea curentă neplătită (1%)
+          // Calculăm penalty doar pe întreținerea curentă neplătită folosind rata configurată
           // Nu aplicăm penalty pe restanțe sau penalități existente
-          const penaltyOnCurrentMaintenance = remainingMaintenance > 0 ? (remainingMaintenance * 0.01) : 0;
+          const penaltyOnCurrentMaintenance = remainingMaintenance > 0 ? (remainingMaintenance * penaltySettings.defaultPenaltyRate) : 0;
           
           // Penalitățile pentru luna următoare = penalitățile rămase + penalty pe întreținerea neplătită
           const nextMonthPenalitati = Math.round((remainingPenalties + penaltyOnCurrentMaintenance) * 100) / 100;
@@ -366,9 +410,9 @@ export const useBalanceManagement = (association) => {
       console.log('✅ Solduri calculate pentru', nextMonth, ':', Object.keys(nextMonthBalances).length, 'apartamente');
       return { [nextMonthKey]: nextMonthBalances };
     }
-    
+
     return {};
-  }, [association?.id]);
+  }, [association?.id, penaltySettings.defaultPenaltyRate]);
 
   console.log('🔄 useBalanceManagement render:', {
     association: !!association,

@@ -367,10 +367,39 @@ export const useMaintenanceCalculation = ({
       monthlyBalancesKeys: Object.keys(monthlyBalances)
     });
     if (!association?.id || !currentMonth) return [];
+
+    // Pentru sheet-ul publicat, folosește datele înghețate din sheet
+    if (publishedSheet && publishedSheet.monthYear === currentMonth && publishedSheet.maintenanceTable) {
+      console.log('📋 Folosind datele înghețate din sheet-ul publicat pentru:', currentMonth);
+      return publishedSheet.maintenanceTable;
+    }
+
+    // Pentru sheet-ul în lucru, calculează dinamic bazat pe sheet-ul anterior
     const result = calculateMaintenance();
-    console.log('📊 Noul maintenanceData calculat:', result);
+    console.log('📊 Noul maintenanceData calculat pentru sheet în lucru:', result);
+
+    // Dacă avem un sheet publicat anterior, actualizează restanțele și penalitățile din el
+    if (publishedSheet && publishedSheet.maintenanceTable && currentSheet && currentSheet.monthYear !== publishedSheet.monthYear) {
+      console.log('🔄 Actualizez Sheet în lucru cu datele din sheet-ul publicat anterior');
+      return result.map(row => {
+        const publishedRow = publishedSheet.maintenanceTable.find(pRow => pRow.apartmentId === row.apartmentId);
+        if (publishedRow && !publishedRow.isPaid) {
+          // Calculează ce rămâne neplătit din sheet-ul anterior
+          const remainingFromPrevious = (publishedRow.restante || 0) + (publishedRow.currentMaintenance || 0);
+          const remainingPenalties = publishedRow.penalitati || 0;
+
+          return {
+            ...row,
+            restante: remainingFromPrevious, // Restanța = total întreținere neplătită din sheet anterior
+            penalitati: remainingPenalties   // Penalitățile rămase din sheet anterior
+          };
+        }
+        return row;
+      });
+    }
+
     return result;
-  }, [association?.id, currentMonth, calculateMaintenance, monthlyBalances]);
+  }, [association?.id, currentMonth, calculateMaintenance, monthlyBalances, publishedSheet, currentSheet]);
 
   // 📈 STATISTICI ÎNTREȚINERE
   const maintenanceStats = useMemo(() => {

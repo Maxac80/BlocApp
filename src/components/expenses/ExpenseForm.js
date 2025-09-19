@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Settings, FileText, Upload, X } from 'lucide-react';
+import { Plus, FileText, Upload, X } from 'lucide-react';
 
 const ExpenseForm = ({
   newExpense,
@@ -152,18 +152,6 @@ const ExpenseForm = ({
     <div className="bg-white p-6 rounded-xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">💰 Adaugă Cheltuială</h3>
-        {!isMonthReadOnly && (
-          <button
-            onClick={() => {
-              setSelectedExpenseForConfig(null); // Pentru configurare generală
-              setShowExpenseConfig(true);
-            }}
-            className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 flex items-center text-sm"
-            title="Configurează cheltuieli"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        )}
       </div>
       
       {availableExpenseTypes.length === 0 ? (
@@ -224,20 +212,23 @@ const ExpenseForm = ({
             <p className="text-orange-600 text-sm mt-2">Mergi la Configurare Asociație → Cheltuieli pentru a reactiva cheltuielile necesare</p>
           </div>
         ) : (
-          <div className="text-center py-8 bg-green-50 border-2 border-green-200 rounded-xl">
-            <div className="mb-4">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-4xl">✅</span>
-              </div>
-              <div className="mb-2">
-                <span className="bg-green-600 text-white text-sm font-bold px-4 py-2 rounded-full">
-                  ✅ TOATE CHELTUIELILE ADĂUGATE
-                </span>
+          <div className="py-4 px-6 bg-green-50 border-2 border-green-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">✅</span>
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      TOATE CHELTUIELILE ADĂUGATE
+                    </span>
+                    <span className="text-sm font-semibold text-green-800">Toate cheltuielile configurate au fost adăugate</span>
+                  </div>
+                  <p className="text-sm text-green-600">Poți modifica cheltuielile existente sau configura cheltuieli noi</p>
+                </div>
               </div>
             </div>
-            <h3 className="text-lg font-bold text-green-800 mb-2">Toate cheltuielile disponibile au fost adăugate</h3>
-            <p className="text-green-700 font-medium">Ai adăugat toate cheltuielile configurate pentru această lună</p>
-            <p className="text-green-600 text-sm mt-2">Poți modifica cheltuielile existente sau configura cheltuieli noi</p>
           </div>
         )
       ) : isMonthReadOnly ? (

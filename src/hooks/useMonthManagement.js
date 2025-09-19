@@ -21,7 +21,9 @@ export const useMonthManagement = (associationId) => {
     addExpenseToSheet,
     addPaymentToPublishedSheet,
     SHEET_STATUS,
-    updateStructureSnapshot
+    updateStructureSnapshot,
+    updateSheetCustomName,
+    updateSheetMonthSettings
   } = useSheetManagement(associationId);
 
   // State pentru compatibilitate cu vechea interfață
@@ -39,14 +41,14 @@ export const useMonthManagement = (associationId) => {
   // Construiește availableMonths - fallback simplu dacă sheet-urile nu se încarcă
   const availableMonths = useMemo(() => {
     const months = [];
-    
+
     // Dacă avem sheet-uri, folosește-le
     if (currentSheet || publishedSheet || archivedSheets.length > 0) {
       // Adaugă sheet-ul în lucru
       if (currentSheet) {
         months.push({
           value: currentSheet.monthYear,
-          label: currentSheet.monthYear,
+          label: currentSheet.customMonthName || currentSheet.monthYear, // Folosește numele personalizat dacă există
           type: "current",
           status: "in_lucru"
         });
@@ -56,7 +58,7 @@ export const useMonthManagement = (associationId) => {
       if (publishedSheet && (!currentSheet || publishedSheet.id !== currentSheet.id)) {
         months.push({
           value: publishedSheet.monthYear,
-          label: publishedSheet.monthYear,
+          label: publishedSheet.customMonthName || publishedSheet.monthYear, // Folosește numele personalizat dacă există
           type: "historic", // Sheet-ul publicat devine istoric
           status: "afisata"
         });
@@ -66,7 +68,7 @@ export const useMonthManagement = (associationId) => {
       archivedSheets.slice(0, 3).forEach(sheet => {
         months.push({
           value: sheet.monthYear,
-          label: sheet.monthYear,
+          label: sheet.customMonthName || sheet.monthYear, // Folosește numele personalizat dacă există
           type: "historic",
           status: "arhivata"
         });
@@ -203,51 +205,82 @@ export const useMonthManagement = (associationId) => {
         }
       }
 
-      // Verificare solduri pentru prima publicare
+      // Verificare solduri inițiale pentru prima publicare
       if (!publishedSheet) { // Prima publicare
         const totalRestante = maintenanceData.reduce((sum, data) => sum + (data.restante || 0), 0);
         const totalPenalitati = maintenanceData.reduce((sum, data) => sum + (data.penalitati || 0), 0);
         const totalSolduri = totalRestante + totalPenalitati;
 
-        if (totalSolduri === 0) {
-          const continueWithZero = window.confirm(
-            "⚠️ ATENȚIE: Solduri inițiale sunt 0!\n\n" +
-            "Este aceasta prima lună de întreținere pentru asociație?\n" +
-            "Dacă DA, continuați.\n" +
-            "Dacă NU, anulați și setați soldurile inițiale."
+        // Verificăm dacă utilizatorul a completat soldurile inițiale
+        const apartmentCount = getAssociationApartments ? getAssociationApartments().length : 0;
+        const apartmentsWithBalances = maintenanceData.filter(data =>
+          (data.restante && data.restante > 0) || (data.penalitati && data.penalitati > 0)
+        ).length;
+
+        if (totalSolduri === 0 && apartmentCount > 0) {
+          // Nu există solduri inițiale completate
+          alert(
+            "⚠️ ATENȚIE: Nu ați completat soldurile inițiale!\n\n" +
+            "Pentru primul sheet, trebuie să introduceți soldurile reale existente:\n" +
+            "• Restanțe din lunile anterioare\n" +
+            "• Penalități acumulate\n\n" +
+            "Mergeți la 'Ajustări Solduri' pentru a completa soldurile inițiale."
           );
-          if (!continueWithZero) return false;
+          return false;
+        }
+
+        if (totalSolduri > 0 && apartmentsWithBalances < apartmentCount / 2) {
+          // Solduri incomplete - doar câteva apartamente au solduri
+          const continueWithPartial = window.confirm(
+            `⚠️ ATENȚIE: Solduri incomplete!\n\n` +
+            `Doar ${apartmentsWithBalances} din ${apartmentCount} apartamente au solduri completate.\n\n` +
+            `Continuați cu publicarea? Apartamentele fără solduri vor începe cu 0.`
+          );
+          if (!continueWithPartial) return false;
+        }
+
+        if (totalSolduri > 0) {
+          // Confirmă că soldurile sunt corecte
+          const confirmBalances = window.confirm(
+            `💰 Confirmare solduri inițiale:\n\n` +
+            `Total restanțe: ${totalRestante.toFixed(2)} RON\n` +
+            `Total penalități: ${totalPenalitati.toFixed(2)} RON\n` +
+            `TOTAL: ${totalSolduri.toFixed(2)} RON\n\n` +
+            `Acestea sunt soldurile corecte pentru începutul activității?\n` +
+            `După publicare, aceste solduri vor fi transferate automat în luna următoare.`
+          );
+          if (!confirmBalances) return false;
         }
       }
 
-      // Pentru primul sheet, creează-l ca IN_PROGRESS apoi publică-l normal
+      // Pentru primul sheet, publică sheet-ul existent (nu îl mai creează)
       if (isFirstSheet) {
-        console.log('🚀 Creating first sheet and then publishing...');
-        
-        // 1. Creează primul sheet ca IN_PROGRESS
-        await createInitialSheet({
-          name: association.name,
-          cui: association.cui,
-          address: association.address,
-          bankAccount: association.bankAccount
-        });
-        
-        // 2. Adaugă cheltuielile în sheet (dacă există)
-        // Acest pas se va face automat prin sistemul existent
-        
-        // 3. Publică sheet-ul folosind logica normală
-        // Va fi gestionat în următorul apel după ce currentSheet e disponibil
-        
-        alert(`✅ Primul sheet pentru luna ${month} a fost creat! Apasă din nou "Publică Luna" pentru publicare.`);
+        // Verifică dacă chiar nu există sheet-ul
+        console.error('⚠️ EROARE: Încerc să public primul sheet dar nu există currentSheet!');
+        console.error('Aceasta înseamnă că sistemul de inițializare nu a funcționat corect.');
+
+        alert(
+          "❌ EROARE SISTEM: Nu există sheet de lucru!\n\n" +
+          "Sheet-ul 1 ar fi trebuit să fie creat la înregistrarea asociației.\n" +
+          "Te rog contactează suportul tehnic."
+        );
+        return false;
+      }
+
+      // PUBLICARE SHEET EXISTENT - pentru toate sheet-urile (inclusiv primul)
+      if (!currentSheet) {
+        console.error('❌ Nu există sheet curent pentru publicare');
+        return false;
+      }
+
+      console.log('📋 Publică sheet-ul existent:', currentSheet.monthYear);
+
+      // Publică sheet-ul curent (actualizează statusul și adaugă date complete)
+      const result = await publishCurrentSheet(maintenanceData, association.adminId);
+
+      if (result) {
+        alert(`✅ Luna ${month} a fost publicată cu succes!`);
         return true;
-      } else {
-        // Pentru sheet-urile existente, publică direct
-        const result = await publishCurrentSheet(maintenanceData, association.adminId);
-        
-        if (result) {
-          alert(`✅ Luna ${month} a fost publicată cu succes!`);
-          return true;
-        }
       }
     } catch (error) {
       console.error('Error publishing month:', error);
@@ -281,20 +314,47 @@ export const useMonthManagement = (associationId) => {
   }, [currentSheet]);
 
   // Helper pentru a determina dacă butonul "Publică Luna" trebuie să apară
-  const shouldShowPublishButton = useCallback((month) => {
-    // Se poate publica sheet-ul curent în lucru
-    if (currentSheet && currentSheet.monthYear === month && getMonthStatus(month) === "in_lucru") {
-      return true;
-    }
-    
+  // IMPORTANT: Butonul apare doar când toate cheltuielile active au fost adăugate ȘI completate
+  const shouldShowPublishButton = useCallback((month, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments) => {
+    // Verifică mai întâi condițiile de bază pentru publicare
+    const canPublishBasic = currentSheet && currentSheet.monthYear === month && getMonthStatus(month) === "in_lucru";
+
     // Pentru primul sheet (când nu există sheet-uri create încă)
-    if (!currentSheet && !publishedSheet && sheets.length === 0 && getMonthStatus(month) === "in_lucru") {
+    const isFirstSheet = !currentSheet && !publishedSheet && sheets.length === 0 && getMonthStatus(month) === "in_lucru";
+
+    if (!canPublishBasic && !isFirstSheet) {
+      return false;
+    }
+
+    // Pentru primul sheet, verifică și luna
+    if (isFirstSheet) {
       const currentDate = new Date();
       const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-      return month === currentMonthStr;
+      if (month !== currentMonthStr) {
+        return false;
+      }
     }
-    
-    return false;
+
+    // CONDIȚIA 1: Toate cheltuielile active trebuie să fie adăugate
+    if (typeof getAvailableExpenseTypes === 'function') {
+      const availableExpenses = getAvailableExpenseTypes();
+      if (availableExpenses.length > 0) {
+        // Încă mai sunt cheltuieli de adăugat
+        return false;
+      }
+    }
+
+    // CONDIȚIA 2: Toate cheltuielile adăugate trebuie să fie complet completate
+    if (typeof areAllExpensesFullyCompleted === 'function' && typeof getAssociationApartments === 'function') {
+      const allCompleted = areAllExpensesFullyCompleted(getAssociationApartments);
+      if (!allCompleted) {
+        // Încă mai sunt câmpuri necompletate
+        return false;
+      }
+    }
+
+    // Toate condițiile sunt îndeplinite
+    return true;
   }, [currentSheet, publishedSheet, sheets, getMonthStatus]);
 
   // Get available months (pentru compatibilitate cu componente)
@@ -508,6 +568,10 @@ export const useMonthManagement = (associationId) => {
         transferDetails: sheet.balances?.transferDetails || null
       };
     }, [sheets]),
+
+    // Funcție pentru actualizarea numelui personalizat
+    updateSheetCustomName,
+    updateSheetMonthSettings,
 
     getCurrentSheetBalance: useCallback((apartmentId) => {
       if (!currentSheet) return { restante: 0, penalitati: 0 };

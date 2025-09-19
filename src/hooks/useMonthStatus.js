@@ -133,10 +133,6 @@ export const useMonthStatus = (associationId) => {
     return await saveMonthStatus(month, 'afisata');
   };
 
-  // Depublică o lună (pentru cazuri excepționale)
-  const unpublishMonth = async (month) => {
-    return await saveMonthStatus(month, 'in_lucru');
-  };
 
   // Închide definitiv o lună
   const closeMonth = async (month) => {
@@ -153,7 +149,6 @@ export const useMonthStatus = (associationId) => {
     isMonthReadOnly,
     getPublishDate,
     publishMonth,
-    unpublishMonth,
     closeMonth
   };
 };
