@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Eye } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGenerator';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
+import ApartmentModal from '../modals/ApartmentModal';
+import BlockModal from '../modals/BlockModal';
+import StairModal from '../modals/StairModal';
 import DashboardHeader from '../dashboard/DashboardHeader';
 
 const SetupView = ({
@@ -45,6 +49,49 @@ const SetupView = ({
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
 
+  // State pentru dropdown-urile hamburger ale blocurilor, scărilor și apartamentelor
+  const [openBlockMenus, setOpenBlockMenus] = useState({});
+  const [openStairMenus, setOpenStairMenus] = useState({});
+  const [openApartmentMenus, setOpenApartmentMenus] = useState({});
+
+  // State pentru modalul de apartament
+  const [apartmentModalOpen, setApartmentModalOpen] = useState(false);
+  const [apartmentModalMode, setApartmentModalMode] = useState('add'); // 'add' sau 'edit'
+  const [apartmentModalData, setApartmentModalData] = useState(null);
+  const [apartmentModalStair, setApartmentModalStair] = useState(null);
+
+  // State pentru modalul de bloc
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockModalMode, setBlockModalMode] = useState('add'); // 'add' sau 'edit'
+  const [blockModalData, setBlockModalData] = useState(null);
+
+  // State pentru modalul de scară
+  const [stairModalOpen, setStairModalOpen] = useState(false);
+  const [stairModalMode, setStairModalMode] = useState('add'); // 'add' sau 'edit'
+  const [stairModalData, setStairModalData] = useState(null);
+  const [stairModalBlock, setStairModalBlock] = useState(null);
+
+  // State pentru apartamentul evidențiat
+  const [highlightedApartmentId, setHighlightedApartmentId] = useState(null);
+
+  // Effect pentru închiderea dropdown-urilor când se face click în afara lor
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.block-menu-container') &&
+          !event.target.closest('.stair-menu-container') &&
+          !event.target.closest('.apartment-menu-container')) {
+        setOpenBlockMenus({});
+        setOpenStairMenus({});
+        setOpenApartmentMenus({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Verifică dacă toate props-urile necesare sunt disponibile
   if (!association || !blocks || !stairs || !apartments) {
     return (
@@ -76,10 +123,22 @@ const SetupView = ({
   const totalApartments = associationApartments.length;
   const totalPersons = associationApartments.reduce((sum, apt) => sum + apt.persons, 0);
 
+  // Calculez scările care nu au apartamente definite
+  const stairsWithoutApartments = associationStairs.filter(stair => {
+    const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+    return stairApartments.length === 0;
+  }).length;
+
   // 📊 FUNCȚIE PENTRU DESCĂRCAREA TEMPLATE-ULUI EXCEL
   const handleDownloadExcelTemplate = async () => {
     try {
-      await generateExcelTemplate(association, blocks, stairs);
+      // Filtrează doar scările care nu au apartamente definite
+      const emptyStairs = stairs.filter(stair => {
+        const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+        return stairApartments.length === 0;
+      });
+
+      await generateExcelTemplate(association, blocks, emptyStairs);
     } catch (error) {
       console.error('❌ Eroare la generarea template-ului Excel:', error);
       alert('Eroare la generarea template-ului Excel: ' + error.message);
@@ -189,6 +248,26 @@ const SetupView = ({
       }
     }
 
+    // Menține blocurile expandate pentru apartamentele nou adăugate
+    if (successCount > 0 && apartments.length > 0) {
+      const affectedBlockIds = new Set();
+
+      apartments.forEach(apartment => {
+        const stair = associationStairs.find(s => s.id === apartment.stairId);
+        if (stair) {
+          affectedBlockIds.add(stair.blockId);
+        }
+      });
+
+      // Expandează blocurile afectate
+      affectedBlockIds.forEach(blockId => {
+        setExpandedBlocks(prev => ({
+          ...prev,
+          [blockId]: true
+        }));
+      });
+    }
+
     if (errorCount > 0) {
       throw new Error(`Import parțial: ${successCount} apartamente adăugate, ${errorCount} erori`);
     }
@@ -198,8 +277,123 @@ const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", 
 
 const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
+  // Funcții helper pentru modalul de apartament
+  const openAddApartmentModal = (stair) => {
+    // Găsește blocul pentru această scară
+    const stairBlock = blocks.find(block => block.id === stair.blockId);
+
+    // Auto-expandează blocul dacă nu este expandat
+    if (stairBlock && !expandedBlocks[stairBlock.id]) {
+      setExpandedBlocks(prev => ({
+        ...prev,
+        [stairBlock.id]: true
+      }));
+    }
+
+    // Auto-expandează scara dacă nu este expandată
+    if (!expandedStairs[stair.id]) {
+      setExpandedStairs(prev => ({
+        ...prev,
+        [stair.id]: true
+      }));
+    }
+
+    setApartmentModalMode('add');
+    setApartmentModalData(null);
+    setApartmentModalStair(stair);
+    setApartmentModalOpen(true);
+  };
+
+  const openEditApartmentModal = (apartment) => {
+    setApartmentModalMode('edit');
+    setApartmentModalData(apartment);
+    setApartmentModalStair(null);
+    setApartmentModalOpen(true);
+  };
+
+  const closeApartmentModal = () => {
+    setApartmentModalOpen(false);
+    setApartmentModalMode('add');
+    setApartmentModalData(null);
+    setApartmentModalStair(null);
+  };
+
+  const handleSaveApartment = async (apartmentData) => {
+    if (apartmentModalMode === 'edit') {
+      await updateApartment(apartmentModalData.id, apartmentData);
+    } else {
+      await addApartment({
+        ...apartmentData,
+        stairId: apartmentModalStair.id
+      });
+    }
+  };
+
+  // Funcții helper pentru modalul de bloc
+  const openAddBlockModal = () => {
+    setBlockModalMode('add');
+    setBlockModalData(null);
+    setBlockModalOpen(true);
+  };
+
+  const openEditBlockModal = (block) => {
+    setBlockModalMode('edit');
+    setBlockModalData(block);
+    setBlockModalOpen(true);
+  };
+
+  const closeBlockModal = () => {
+    setBlockModalOpen(false);
+    setBlockModalMode('add');
+    setBlockModalData(null);
+  };
+
+  const handleSaveBlock = async (blockData) => {
+    if (blockModalMode === 'edit') {
+      await updateBlock(blockModalData.id, blockData);
+    } else {
+      await addBlock({
+        ...blockData,
+        associationId: association.id
+      });
+    }
+  };
+
+  // Funcții helper pentru modalul de scară
+  const openAddStairModal = (block) => {
+    // Expandează blocul automat dacă nu este expandat
+    setExpandedBlocks(prev => ({ ...prev, [block.id]: true }));
+
+    setStairModalMode('add');
+    setStairModalData(null);
+    setStairModalBlock(block);
+    setStairModalOpen(true);
+  };
+
+  const openEditStairModal = (stair) => {
+    setStairModalMode('edit');
+    setStairModalData(stair);
+    setStairModalBlock(null);
+    setStairModalOpen(true);
+  };
+
+  const closeStairModal = () => {
+    setStairModalOpen(false);
+    setStairModalMode('add');
+    setStairModalData(null);
+    setStairModalBlock(null);
+  };
+
+  const handleSaveStair = async (stairData) => {
+    if (stairModalMode === 'edit') {
+      await updateStair(stairModalData.id, stairData);
+    } else {
+      await addStair(stairData);
+    }
+  };
+
 return (
-  <div className={`min-h-screen p-6 ${
+  <div className={`min-h-screen pt-2 px-6 pb-6 ${
     monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : monthType === 'next'
@@ -250,8 +444,8 @@ return (
             </div>
 
             <div className="flex gap-3">
-              {/* Butoane Excel - vizibile doar când nu există apartamente */}
-              {totalApartments === 0 && totalStairs > 0 && (
+              {/* Butoane Excel - vizibile doar când există cel puțin o scară fără apartamente */}
+              {stairsWithoutApartments > 0 && (
                 <>
                   <button
                     onClick={handleDownloadExcelTemplate}
@@ -300,37 +494,16 @@ return (
           </div>
 
           {/* Mesaj informativ pentru template Excel când nu există apartamente */}
-          {totalApartments === 0 && totalStairs > 0 && !searchTerm && (
+          {stairsWithoutApartments > 0 && !searchTerm && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <div className="text-2xl">📥</div>
                   <div className="flex-1">
                     <h4 className="font-medium text-blue-800 mb-2">Import masiv cu Excel</h4>
-                    <p className="text-sm text-blue-700 mb-3">
-                      Ai configurate {totalBlocks} {totalBlocks === 1 ? 'bloc' : 'blocuri'} și {totalStairs} {totalStairs === 1 ? 'scară' : 'scări'}. 
-                      Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru a adăuga toate apartamentele deodată.
+                    <p className="text-sm text-blue-700">
+                      Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru scările care nu au apartamente definite. <strong>Notă:</strong> Template-ul Excel va conține doar scările care nu au apartamente și se poate folosi pentru import doar în aceste scări.
                     </p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleDownloadExcelTemplate}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center text-sm font-medium"
-                      >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Descarcă Template Excel
-                      </button>
-                      <button
-                        onClick={() => setShowExcelUploadModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center text-sm font-medium"
-                      >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        Încarcă Excel Completat
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -341,18 +514,21 @@ return (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="text-sm text-gray-600 mb-2">
                 Rezultate căutare "{searchTerm}": {filteredApartments.length} apartamente
+                {filteredApartments.length > 3 && (
+                  <span className="text-gray-500"> (afișez doar primele 3)</span>
+                )}
               </div>
               {filteredApartments.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredApartments.sort((a, b) => {
                     const numberDiff = a.number - b.number;
                     if (numberDiff !== 0) return numberDiff;
-                    
+
                     if (a.createdAt && b.createdAt) {
                       return new Date(a.createdAt) - new Date(b.createdAt);
                     }
                     return a.id.localeCompare(b.id);
-                  }).map(apartment => {
+                  }).slice(0, 3).map(apartment => {
                     const stairForApartment = stairs.find(s => s.id === apartment.stairId);
                     const blockForApartment = blocks.find(b => b.id === stairForApartment?.blockId);
                     return (
@@ -366,14 +542,27 @@ return (
                         <div className="mt-2 flex gap-2">
                           <button
                             onClick={() => {
-                              setEditingItem({ type: 'apartment', id: apartment.id });
-                              setEditingData({
-                                owner: apartment.owner,
-                                persons: apartment.persons,
-                                apartmentType: apartment.apartmentType || '',
-                                surface: apartment.surface || '',
-                                heatingSource: apartment.heatingSource || ''
-                              });
+                              // Colapsează toate blocurile și scările
+                              setExpandedBlocks({});
+                              setExpandedStairs({});
+
+                              // Expandează doar blocul și scara unde este apartamentul
+                              setExpandedBlocks(prev => ({ ...prev, [blockForApartment.id]: true }));
+                              setExpandedStairs(prev => ({ ...prev, [stairForApartment.id]: true }));
+
+                              // Evidențiază apartamentul
+                              setHighlightedApartmentId(apartment.id);
+
+                              // Elimină highlighting după 3 secunde
+                              setTimeout(() => {
+                                setHighlightedApartmentId(null);
+                              }, 3000);
+
+                              // Deschide modalul de editare pentru apartament
+                              setApartmentModalMode('edit');
+                              setApartmentModalData(apartment);
+                              setApartmentModalStair(stairForApartment);
+                              setApartmentModalOpen(true);
                             }}
                             className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
                           >
@@ -381,13 +570,26 @@ return (
                           </button>
                           <button
                             onClick={() => {
+                              // Colapsează toate blocurile și scările
+                              setExpandedBlocks({});
+                              setExpandedStairs({});
+
+                              // Expandează doar blocul și scara unde este apartamentul
                               setExpandedBlocks(prev => ({ ...prev, [blockForApartment.id]: true }));
                               setExpandedStairs(prev => ({ ...prev, [stairForApartment.id]: true }));
-                              setSearchTerm('');
+
+                              // Evidențiază apartamentul
+                              setHighlightedApartmentId(apartment.id);
+
+                              // Elimină orice highlighting după 3 secunde
+                              setTimeout(() => {
+                                setHighlightedApartmentId(null);
+                              }, 3000);
                             }}
-                            className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 flex items-center justify-center"
+                            title="Vezi în structură"
                           >
-                            Vezi în structură
+                            <Eye className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -440,16 +642,19 @@ return (
                 </div>
               )}
               <button
-                onClick={() => {
-                  setShowAddForm({ type: 'block' });
-                  setEditingItem(null);
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+                onClick={openAddBlockModal}
+                className={`bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-all duration-200 hover:shadow-md hover:scale-105 ${
+                  associationBlocks.length > 0 ? 'p-2' : 'px-4 py-2'
+                }`}
+                title="Adaugă Bloc"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Adaugă Bloc Nou
+                {associationBlocks.length > 0 ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                ) : (
+                  'Adaugă Bloc'
+                )}
               </button>
             </div>
           </div>
@@ -459,7 +664,7 @@ return (
             {/* Form adăugare bloc */}
             {showAddForm?.type === 'block' && (
               <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-3 text-lg">➕ Adaugă Bloc Nou</h4>
+                <h4 className="font-medium text-gray-800 mb-3 text-lg">➕ Adaugă Bloc</h4>
                 <form 
                   onSubmit={async (e) => {
                     e.preventDefault();
@@ -505,25 +710,24 @@ return (
               </div>
             )}
 
-            {associationBlocks.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-8xl mb-6">🏠</div>
-                <h3 className="text-2xl font-semibold text-gray-700 mb-4">Nu există blocuri configurate</h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                  Începe prin a adăuga primul bloc al asociației. Apoi poți să adaugi scările și apartamentele.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowAddForm({ type: 'block' });
-                    setEditingItem(null);
-                  }}
-                  className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 flex items-center mx-auto text-lg"
-                >
-                  <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Adaugă Primul Bloc
-                </button>
+            {associationBlocks.length === 0 && !(showAddForm?.type === 'block') ? (
+              <div className="py-4 px-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">🏢</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                          BLOCURI NECESARE
+                        </span>
+                        <span className="text-sm font-semibold text-blue-800">Nu există blocuri configurate</span>
+                      </div>
+                      <p className="text-sm text-blue-600">Poți genera template Excel cu blocurile și scările și upload de fișier Excel cu apartamentele</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               associationBlocks.sort((a, b) => {
@@ -533,24 +737,50 @@ return (
                 return a.id.localeCompare(b.id);
               }).map(block => {
                 const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
-                const isExpanded = expandedBlocks[block.id] ?? (associationBlocks.length <= 3);
+                // Reguli inteligente de expandare pentru blocuri
+                const shouldExpandBlock = () => {
+                  // Dacă nu există blocuri - expandează pentru mesaje
+                  if (associationBlocks.length === 0) {
+                    return true;
+                  }
+
+                  // Dacă blocul nu are scări - expandează să se vadă mesajul
+                  if (blockStairs.length === 0) {
+                    return true;
+                  }
+
+                  // Dacă blocul are cel puțin o scară fără apartamente - expandează să se vadă scara
+                  const hasStairsWithoutApartments = blockStairs.some(stair => {
+                    const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+                    return stairApartments.length === 0;
+                  });
+
+                  if (hasStairsWithoutApartments) {
+                    return true;
+                  }
+
+                  // În rest, nu expandează
+                  return false;
+                };
+
+                const isExpanded = expandedBlocks[block.id] ?? shouldExpandBlock();
 
                 return (
                   <div key={block.id} className="border border-gray-200 rounded-lg">
                     {/* Header Bloc */}
-                    <div className="flex items-center justify-between p-4 bg-blue-50 border-b">
+                    <div
+                      className="flex items-center justify-between p-4 bg-blue-50 border-b cursor-pointer hover:bg-blue-100 transition-colors"
+                      onClick={() => {
+                        setExpandedBlocks(prev => ({
+                          ...prev,
+                          [block.id]: !isExpanded
+                        }));
+                      }}
+                    >
                       <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => {
-                            setExpandedBlocks(prev => ({
-                              ...prev,
-                              [block.id]: !isExpanded
-                            }));
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-xl"
-                        >
-                          {isExpanded ? '📂' : '📁'}
-                        </button>
+                        <div className="text-blue-600 text-xl">
+                          {isExpanded ? '▼' : '▸'}
+                        </div>
                         
                         {editingItem?.type === 'block' && editingItem?.id === block.id ? (
                           <div className="flex items-center space-x-2">
@@ -592,9 +822,17 @@ return (
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-2">
+                          <div
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 rounded-lg p-2 -m-2 transition-colors"
+                            onClick={() => {
+                              setExpandedBlocks(prev => ({
+                                ...prev,
+                                [block.id]: !isExpanded
+                              }));
+                            }}
+                          >
                             <span className="text-lg font-medium text-gray-800">
-                              🏠 {block.name}
+                              🏢 {block.name}
                             </span>
                             <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded-full">
                               {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
@@ -605,44 +843,114 @@ return (
                         )}
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            setEditingItem({ type: 'block', id: block.id });
-                            setEditingData({ name: block.name });
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                          title={`Editează blocul ${block.name}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Ești sigur că vrei să ștergi blocul "${block.name}"?\n\nAceasta va șterge și toate scările și apartamentele din bloc!`)) {
-                              deleteBlock(block.id);
-                            }
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title={`Șterge blocul ${block.name}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowAddForm({ type: 'stair', parentId: block.id });
-                            setEditingItem(null);
-                          }}
-                          className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                          title={`Adaugă scară în ${block.name}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
+                      <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                        {blockStairs.length > 0 ? (
+                          // Menu hamburger pentru blocuri cu scări
+                          <div className="relative block-menu-container">
+                            <button
+                              onClick={() => {
+                                // Dacă acest menu este deschis, îl închide
+                                if (openBlockMenus[block.id]) {
+                                  setOpenBlockMenus({});
+                                } else {
+                                  // Închide toate menu-urile și deschide doar pe acesta
+                                  setOpenBlockMenus({});
+                                  setOpenStairMenus({});
+                                  setOpenApartmentMenus({});
+                                  setOpenBlockMenus({ [block.id]: true });
+                                }
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-200 hover:text-blue-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
+                              title={`Acțiuni pentru ${block.name}`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                              </svg>
+                            </button>
+
+                            {openBlockMenus[block.id] && (
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      openEditBlockModal(block);
+                                      setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                  >
+                                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Editează Bloc
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      openAddStairModal(block);
+                                      setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                  >
+                                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Adaugă Scară
+                                  </button>
+                                  <hr className="my-1" />
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`Ești sigur că vrei să ștergi blocul "${block.name}"?\n\nAceasta va șterge și toate scările și apartamentele din bloc!`)) {
+                                        deleteBlock(block.id);
+                                      }
+                                      setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                  >
+                                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Șterge Bloc
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Butoane individuale pentru blocuri fără scări
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingItem({ type: 'block', id: block.id });
+                                setEditingData({ name: block.name });
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                              title={`Editează blocul ${block.name}`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Ești sigur că vrei să ștergi blocul "${block.name}"?\n\nAceasta va șterge și toate scările și apartamentele din bloc!`)) {
+                                  deleteBlock(block.id);
+                                }
+                              }}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                              title={`Șterge blocul ${block.name}`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => openAddStairModal(block)}
+                              className="px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors flex items-center text-sm"
+                              title={`Adaugă scară în ${block.name}`}
+                            >
+                              Adaugă Scară
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -651,7 +959,7 @@ return (
                       <div className="p-4">
                         {/* Form adăugare scară */}
                         {showAddForm?.type === 'stair' && showAddForm?.parentId === block.id && (
-                          <div className="mb-4 bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+                          <div className="mb-4 bg-green-50 border-2 border-green-300 rounded-lg p-4">
                             <h4 className="font-medium text-gray-800 mb-3">➕ Adaugă Scară pentru {block.name}</h4>
                             <form 
                               onSubmit={async (e) => {
@@ -682,7 +990,7 @@ return (
                                 type="text"
                                 placeholder="Numele scării (ex: Scara A, Intrarea 1)"
                                 required
-                                className="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                                className="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                               />
                               <button
                                 type="button"
@@ -693,7 +1001,7 @@ return (
                               </button>
                               <button
                                 type="submit"
-                                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                               >
                                 Salvează Scară
                               </button>
@@ -711,24 +1019,40 @@ return (
                               return a.id.localeCompare(b.id);
                             }).map(currentStair => {
                               const stairApartments = associationApartments.filter(apt => apt.stairId === currentStair.id);
-                              const isStairExpanded = expandedStairs[currentStair.id] ?? (associationStairs.length <= 5);
+                              // Reguli inteligente de expandare pentru scări
+                              const shouldExpandStair = () => {
+                                // Dacă scara nu are apartamente - expandează să se vadă mesajul
+                                if (stairApartments.length === 0) {
+                                  return true;
+                                }
+
+                                // Dacă blocul are o singură scară cu apartamente - expandează să se vadă apartamentele
+                                if (blockStairs.length === 1 && stairApartments.length > 0) {
+                                  return true;
+                                }
+
+                                // În rest, nu expandează
+                                return false;
+                              };
+
+                              const isStairExpanded = expandedStairs[currentStair.id] ?? shouldExpandStair();
                               
                               return (
-                                <div key={currentStair.id} className="ml-6 border-l-2 border-purple-200 pl-4">
-                                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                <div key={currentStair.id} className="ml-6 border-l-2 border-green-200 pl-4">
+                                  <div
+                                    className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                                    onClick={() => {
+                                      setExpandedStairs(prev => ({
+                                        ...prev,
+                                        [currentStair.id]: !isStairExpanded
+                                      }));
+                                    }}
+                                  >
                                     <div className="flex items-center space-x-3">
-                                      <button
-                                        onClick={() => {
-                                          setExpandedStairs(prev => ({
-                                            ...prev,
-                                            [currentStair.id]: !isStairExpanded
-                                          }));
-                                        }}
-                                        className="text-purple-600 hover:text-purple-800"
-                                      >
-                                        {isStairExpanded ? '🔽' : '▶️'}
-                                      </button>
-                                      <span className="text-purple-600 text-lg">🔼</span>
+                                      <div className="text-green-600">
+                                        {isStairExpanded ? '▼' : '▸'}
+                                      </div>
+                                      <span className="text-green-600 text-lg">🪜</span>
                                       
                                       {editingItem?.type === 'stair' && editingItem?.id === currentStair.id ? (
                                         <div className="flex items-center space-x-2">
@@ -770,55 +1094,132 @@ return (
                                           </button>
                                         </div>
                                       ) : (
-                                        <div className="flex items-center space-x-2">
+                                        <div
+                                          className="flex items-center space-x-2 cursor-pointer hover:bg-green-100 rounded-lg p-2 -m-2 transition-colors"
+                                          onClick={() => {
+                                            setExpandedStairs(prev => ({
+                                              ...prev,
+                                              [currentStair.id]: !isStairExpanded
+                                            }));
+                                          }}
+                                        >
                                           <span className="font-medium text-gray-800 text-lg">
                                             {currentStair.name}
                                           </span>
-                                          <span className="text-sm text-gray-600 bg-purple-100 px-2 py-1 rounded-full">
+                                          <span className="text-sm text-gray-600 bg-green-100 px-2 py-1 rounded-full">
                                             {stairApartments.length} apartamente • {stairApartments.reduce((sum, apt) => sum + apt.persons, 0)} persoane
                                           </span>
                                         </div>
                                       )}
                                     </div>
                                     
-                                    <div className="flex items-center space-x-2">
-                                      <button
-                                        onClick={() => {
-                                          setEditingItem({ type: 'stair', id: currentStair.id });
-                                          setEditingData({ name: currentStair.name });
-                                        }}
-                                        className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
-                                        title={`Editează ${currentStair.name}`}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          if (window.confirm(`Ești sigur că vrei să ștergi scara "${currentStair.name}"?\n\nAceasta va șterge și toate apartamentele din scară!`)) {
-                                            deleteStair(currentStair.id);
-                                          }
-                                        }}
-                                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                        title={`Șterge ${currentStair.name}`}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          setShowAddForm({ type: 'apartment', parentId: currentStair.id });
-                                          setEditingItem(null);
-                                        }}
-                                        className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                                        title={`Adaugă apartament în ${currentStair.name}`}
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </button>
+                                    <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                                      {stairApartments.length > 0 ? (
+                                        // Menu hamburger pentru scări cu apartamente
+                                        <div className="relative stair-menu-container">
+                                          <button
+                                            onClick={() => {
+                                              // Dacă acest menu este deschis, îl închide
+                                              if (openStairMenus[currentStair.id]) {
+                                                setOpenStairMenus({});
+                                              } else {
+                                                // Închide toate menu-urile și deschide doar pe acesta
+                                                setOpenBlockMenus({});
+                                                setOpenStairMenus({});
+                                                setOpenApartmentMenus({});
+                                                setOpenStairMenus({ [currentStair.id]: true });
+                                              }
+                                            }}
+                                            className="p-2 text-green-600 hover:bg-green-200 hover:text-green-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
+                                            title={`Acțiuni pentru ${currentStair.name}`}
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                            </svg>
+                                          </button>
+
+                                          {openStairMenus[currentStair.id] && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                              <div className="py-1">
+                                                <button
+                                                  onClick={() => {
+                                                    openEditStairModal(currentStair);
+                                                    setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
+                                                  }}
+                                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                >
+                                                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                  </svg>
+                                                  Editează Scară
+                                                </button>
+                                                <button
+                                                  onClick={() => {
+                                                    openAddApartmentModal(currentStair);
+                                                    setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
+                                                  }}
+                                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                >
+                                                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                  </svg>
+                                                  Adaugă Apartament
+                                                </button>
+                                                <hr className="my-1" />
+                                                <button
+                                                  onClick={() => {
+                                                    if (window.confirm(`Ești sigur că vrei să ștergi scara "${currentStair.name}"?\n\nAceasta va șterge și toate apartamentele din scară!`)) {
+                                                      deleteStair(currentStair.id);
+                                                    }
+                                                    setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
+                                                  }}
+                                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                                >
+                                                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                  </svg>
+                                                  Șterge Scară
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        // Butoane individuale pentru scări fără apartamente
+                                        <>
+                                          <button
+                                            onClick={() => openEditStairModal(currentStair)}
+                                            className="p-2 text-green-600 hover:bg-green-200 hover:text-green-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
+                                            title={`Editează ${currentStair.name}`}
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              if (window.confirm(`Ești sigur că vrei să ștergi scara "${currentStair.name}"?\n\nAceasta va șterge și toate apartamentele din scară!`)) {
+                                                deleteStair(currentStair.id);
+                                              }
+                                            }}
+                                            className="p-2 text-red-600 hover:bg-red-200 hover:text-red-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
+                                            title={`Șterge ${currentStair.name}`}
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              openAddApartmentModal(currentStair);
+                                            }}
+                                            className="px-3 py-2 bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md rounded-lg transition-all duration-200 hover:scale-105 flex items-center text-sm"
+                                            title={`Adaugă apartament în ${currentStair.name}`}
+                                          >
+                                            Adaugă Apartament
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
 
@@ -827,8 +1228,10 @@ return (
                                     <div className="mt-3 ml-6 space-y-3">
                                       {/* Form adăugare apartament */}
                                       {showAddForm?.type === 'apartment' && showAddForm.parentId === currentStair.id && (
-                                        <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-6">
-                                          <h4 className="font-medium text-gray-800 mb-4 text-lg">➕ Adaugă Apartament la {currentStair.name}</h4>
+                                        <div className="bg-white border-2 border-orange-400 rounded-xl p-6 shadow-lg ring-2 ring-orange-200">
+                                          <div className="bg-orange-100 -m-6 mb-4 p-4 rounded-t-xl border-b border-orange-200">
+                                            <h4 className="font-semibold text-orange-800 text-lg">➕ Adaugă Apartament la {currentStair.name}</h4>
+                                          </div>
                                           <form 
                                             onSubmit={async (e) => {
                                               e.preventDefault();
@@ -852,6 +1255,18 @@ return (
                                               try {
                                                 await addApartment(apartmentData);
                                                 setShowAddForm(null);
+
+                                                // Menține blocul expandat după adăugarea apartamentului
+                                                const stair = associationStairs.find(s => s.id === currentStair.id);
+                                                if (stair) {
+                                                  const block = associationBlocks.find(b => b.id === stair.blockId);
+                                                  if (block) {
+                                                    setExpandedBlocks(prev => ({
+                                                      ...prev,
+                                                      [block.id]: true
+                                                    }));
+                                                  }
+                                                }
                                               } catch (error) {
                                                 console.error('❌ Error adding apartment:', error);
                                                 alert('Eroare la adăugarea apartamentului: ' + error.message);
@@ -969,21 +1384,26 @@ return (
                                       )}
 
                                       {/* Lista apartamentelor */}
-                                      {stairApartments.length === 0 ? (
-                                        <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                          <div className="text-3xl mb-2">🏠</div>
-                                          <p className="text-sm">Nu există apartamente în această scară</p>
-                                          <button
-                                            onClick={() => {
-                                              setShowAddForm({ type: 'apartment', parentId: currentStair.id });
-                                              setEditingItem(null);
-                                            }}
-                                            className="mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"
-                                          >
-                                            ➕ Adaugă primul apartament
-                                          </button>
+                                      {stairApartments.length === 0 && !(showAddForm?.type === 'apartment' && showAddForm.parentId === currentStair.id) ? (
+                                        <div className="py-4 px-6 bg-orange-50 border-2 border-orange-200 rounded-xl">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                                <span className="text-2xl">👥</span>
+                                              </div>
+                                              <div className="text-left">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span className="bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                                    APARTAMENTE NECESARE
+                                                  </span>
+                                                  <span className="text-sm font-semibold text-orange-800">Nu există apartamente în această scară</span>
+                                                </div>
+                                                <p className="text-sm text-orange-600">Adaugă apartamentele manual pentru această scară sau folosește Import masiv cu Excel pentru scările fără apartamente</p>
+                                              </div>
+                                            </div>
+                                          </div>
                                         </div>
-                                      ) : (
+                                      ) : stairApartments.length > 0 ? (
                                         <div className="space-y-3">
                                           {stairApartments.sort((a, b) => {
                                             const numberDiff = a.number - b.number;
@@ -993,12 +1413,18 @@ return (
                                             }
                                             return a.id.localeCompare(b.id);
                                           }).map(apartment => (
-                                            <div key={apartment.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:bg-orange-100 transition-colors">
+                                            <div key={apartment.id} className={`${
+                                              editingItem?.type === 'apartment' && editingItem?.id === apartment.id
+                                                ? "bg-white border-2 border-orange-400 rounded-xl p-4 shadow-lg ring-2 ring-orange-200"
+                                                : highlightedApartmentId === apartment.id
+                                                ? "bg-yellow-100 border-2 border-yellow-400 rounded-xl p-4 shadow-lg ring-2 ring-yellow-200 animate-pulse"
+                                                : "bg-orange-50 border border-orange-200 rounded-lg p-3 hover:bg-orange-100"
+                                            } transition-all duration-200`}>
                                               {editingItem?.type === 'apartment' && editingItem?.id === apartment.id ? (
                                                 /* Form editare apartament */
                                                 <div className="space-y-4">
-                                                  <div className="flex items-center justify-between mb-4">
-                                                    <h4 className="font-medium text-gray-800">✏️ Editează Apartamentul {apartment.number}</h4>
+                                                  <div className="flex items-center justify-between mb-4 bg-orange-100 -m-4 mb-4 p-4 rounded-t-xl border-b border-orange-200">
+                                                    <h4 className="font-semibold text-orange-800 text-lg">✏️ Editează Apartamentul {apartment.number}</h4>
                                                     <div className="flex gap-2">
                                                       <button
                                                         onClick={async () => {
@@ -1122,124 +1548,228 @@ return (
                                                 /* Afișare normală apartament */
                                                 <div className="flex items-start justify-between">
                                                   <div className="flex-1">
-                                                    <div className="mb-2">
-                                                      <span className="font-medium text-gray-800 text-lg">
-                                                        👥 Apt {apartment.number} - {apartment.owner}
-                                                      </span>
+                                                    {/* Desktop: o singură linie cu numele și etichetele alinate */}
+                                                    <div className="hidden lg:flex items-center">
+                                                      {/* Numele cu lățime fixă pentru aliniere */}
+                                                      <div className="w-96 flex-shrink-0">
+                                                        <span className="font-medium text-gray-800 text-lg">
+                                                          👥 Apt {apartment.number} - {apartment.owner}
+                                                        </span>
+                                                      </div>
+
+                                                      {/* Etichetele cu formatare tabelară fixă - pornesc de la același punct */}
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
+                                                          {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
+                                                        </span>
+
+                                                        {apartment.apartmentType ? (
+                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
+                                                            🏠 {apartment.apartmentType}
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
+                                                            🏠 -
+                                                          </span>
+                                                        )}
+
+                                                        {apartment.surface ? (
+                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
+                                                            📐 {apartment.surface} mp
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
+                                                            📐 - mp
+                                                          </span>
+                                                        )}
+
+                                                        {apartment.heatingSource ? (
+                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
+                                                            🔥 {apartment.heatingSource}
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
+                                                            🔥 -
+                                                          </span>
+                                                        )}
+                                                      </div>
                                                     </div>
-                                                    
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                      <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
-                                                        {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
-                                                      </span>
 
-                                                      {apartment.apartmentType ? (
-                                                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
-                                                          🏠 {apartment.apartmentType}
+                                                    {/* Mobile: numele sus, etichetele jos */}
+                                                    <div className="lg:hidden">
+                                                      <div className="mb-2">
+                                                        <span className="font-medium text-gray-800 text-lg">
+                                                          👥 Apt {apartment.number} - {apartment.owner}
                                                         </span>
-                                                      ) : (
-                                                        <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
-                                                          🏠 -
-                                                        </span>
-                                                      )}
+                                                      </div>
 
-                                                      {apartment.surface ? (
-                                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
-                                                          📐 {apartment.surface} mp
+                                                      <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
+                                                          {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
                                                         </span>
-                                                      ) : (
-                                                        <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
-                                                          📐 - mp
-                                                        </span>
-                                                      )}
 
-                                                      {apartment.heatingSource ? (
-                                                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
-                                                          🔥 {apartment.heatingSource}
-                                                        </span>
-                                                      ) : (
-                                                        <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
-                                                          🔥 -
-                                                        </span>
-                                                      )}
+                                                        {apartment.apartmentType ? (
+                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
+                                                            🏠 {apartment.apartmentType}
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
+                                                            🏠 -
+                                                          </span>
+                                                        )}
+
+                                                        {apartment.surface ? (
+                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
+                                                            📐 {apartment.surface} mp
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
+                                                            📐 - mp
+                                                          </span>
+                                                        )}
+
+                                                        {apartment.heatingSource ? (
+                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
+                                                            🔥 {apartment.heatingSource}
+                                                          </span>
+                                                        ) : (
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
+                                                            🔥 -
+                                                          </span>
+                                                        )}
+                                                      </div>
                                                     </div>
                                                   </div>
 
-                                                  <div className="flex items-center space-x-1 ml-4">
+                                                  {/* Hamburger menu pentru apartament */}
+                                                  <div className="relative ml-4 apartment-menu-container">
                                                     <button
                                                       onClick={() => {
-                                                        setEditingItem({ type: 'apartment', id: apartment.id });
-                                                        setEditingData({
-                                                          owner: apartment.owner,
-                                                          persons: apartment.persons,
-                                                          apartmentType: apartment.apartmentType || '',
-                                                          surface: apartment.surface || '',
-                                                          heatingSource: apartment.heatingSource || ''
+                                                        // Determină dacă este ultimul apartament din scară
+                                                        const stairApts = stairApartments.sort((a, b) => {
+                                                          const numberDiff = a.number - b.number;
+                                                          if (numberDiff !== 0) return numberDiff;
+                                                          if (a.createdAt && b.createdAt) {
+                                                            return new Date(a.createdAt) - new Date(b.createdAt);
+                                                          }
+                                                          return a.id.localeCompare(b.id);
                                                         });
+                                                        const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
+
+                                                        if (isLastApartment) {
+                                                          // Pentru ultimul apartament, arată meniul cu opțiuni (editează + șterge)
+                                                          if (openApartmentMenus[apartment.id]) {
+                                                            setOpenApartmentMenus({});
+                                                          } else {
+                                                            setOpenBlockMenus({});
+                                                            setOpenStairMenus({});
+                                                            setOpenApartmentMenus({});
+                                                            setOpenApartmentMenus({ [apartment.id]: true });
+                                                          }
+                                                        } else {
+                                                          // Pentru celelalte apartamente, deschide direct edit-ul
+                                                          openEditApartmentModal(apartment);
+                                                        }
                                                       }}
-                                                      className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                                                      title={`Editează apartamentul ${apartment.number}`}
+                                                      className="p-2 text-orange-600 hover:bg-orange-200 hover:text-orange-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
+                                                      title={(() => {
+                                                        const stairApts = stairApartments.sort((a, b) => {
+                                                          const numberDiff = a.number - b.number;
+                                                          if (numberDiff !== 0) return numberDiff;
+                                                          if (a.createdAt && b.createdAt) {
+                                                            return new Date(a.createdAt) - new Date(b.createdAt);
+                                                          }
+                                                          return a.id.localeCompare(b.id);
+                                                        });
+                                                        const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
+                                                        return isLastApartment ? "Acțiuni pentru apartament" : "Editează apartament";
+                                                      })()}
                                                     >
                                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                                       </svg>
                                                     </button>
 
-                                                    {(() => {
-                                                      const stairApts = stairApartments.sort((a, b) => {
-                                                        const numberDiff = a.number - b.number;
-                                                        if (numberDiff !== 0) return numberDiff;
-                                                        if (a.createdAt && b.createdAt) {
-                                                          return new Date(a.createdAt) - new Date(b.createdAt);
-                                                        }
-                                                        return a.id.localeCompare(b.id);
-                                                      });
-                                                      const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
-                                                      
-                                                      return isLastApartment && (
-                                                        <button
-                                                          onClick={() => {
-                                                            if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
-                                                              deleteApartment(apartment.id);
-                                                            }
-                                                          }}
-                                                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                                          title={`Șterge apartamentul ${apartment.number} (ultimul adăugat)`}
-                                                        >
-                                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                          </svg>
-                                                        </button>
-                                                      );
-                                                    })()}
+                                                    {openApartmentMenus[apartment.id] && (
+                                                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                                                        <div className="py-1">
+                                                          <button
+                                                            onClick={() => {
+                                                              openEditApartmentModal(apartment);
+                                                              setOpenApartmentMenus(prev => ({
+                                                                ...prev,
+                                                                [apartment.id]: false
+                                                              }));
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 flex items-center gap-2"
+                                                          >
+                                                            ✏️ Editează Apartament
+                                                          </button>
+
+                                                          {(() => {
+                                                            const stairApts = stairApartments.sort((a, b) => {
+                                                              const numberDiff = a.number - b.number;
+                                                              if (numberDiff !== 0) return numberDiff;
+                                                              if (a.createdAt && b.createdAt) {
+                                                                return new Date(a.createdAt) - new Date(b.createdAt);
+                                                              }
+                                                              return a.id.localeCompare(b.id);
+                                                            });
+                                                            const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
+
+                                                            return isLastApartment && (
+                                                              <button
+                                                                onClick={() => {
+                                                                  if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
+                                                                    deleteApartment(apartment.id);
+                                                                  }
+                                                                  setOpenApartmentMenus(prev => ({
+                                                                    ...prev,
+                                                                    [apartment.id]: false
+                                                                  }));
+                                                                }}
+                                                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                                              >
+                                                                🗑️ Șterge Apartament
+                                                              </button>
+                                                            );
+                                                          })()}
+                                                        </div>
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 </div>
                                               )}
                                             </div>
                                           ))}
                                         </div>
-                                      )}
+                                      ) : null}
                                     </div>
                                   )}
                                 </div>
                               );
                             })}
                           </div>
-                        ) : (
-                          <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                            <div className="text-4xl mb-2">🔼</div>
-                            <p className="text-lg mb-2">Nu există scări în acest bloc</p>
-                            <button
-                              onClick={() => {
-                                setShowAddForm({ type: 'stair', parentId: block.id });
-                                setEditingItem(null);
-                              }}
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                            >
-                              ➕ Adaugă prima scară
-                            </button>
+                        ) : !(showAddForm?.type === 'stair' && showAddForm?.parentId === block.id) ? (
+                          <div className="py-4 px-6 bg-green-50 border-2 border-green-200 rounded-xl">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                  <span className="text-2xl">🪜</span>
+                                </div>
+                                <div className="text-left">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                      SCĂRI NECESARE
+                                    </span>
+                                    <span className="text-sm font-semibold text-green-800">Nu există scări în acest bloc</span>
+                                  </div>
+                                  <p className="text-sm text-green-600">Adaugă scările pentru acest bloc pentru a putea configura apartamentele</p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -1256,8 +1786,43 @@ return (
         onClose={() => setShowExcelUploadModal(false)}
         association={association}
         blocks={blocks}
-        stairs={stairs}
+        stairs={stairs.filter(stair => {
+          const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+          return stairApartments.length === 0;
+        })}
         onImportApartments={handleImportApartments}
+      />
+
+      {/* Modal pentru blocuri */}
+      <BlockModal
+        isOpen={blockModalOpen}
+        onClose={closeBlockModal}
+        mode={blockModalMode}
+        block={blockModalData}
+        associationName={association?.name}
+        onSave={handleSaveBlock}
+      />
+
+      {/* Modal pentru scări */}
+      <StairModal
+        isOpen={stairModalOpen}
+        onClose={closeStairModal}
+        mode={stairModalMode}
+        stair={stairModalData}
+        block={stairModalBlock}
+        onSave={handleSaveStair}
+      />
+
+      {/* Modal pentru apartamente */}
+      <ApartmentModal
+        isOpen={apartmentModalOpen}
+        onClose={closeApartmentModal}
+        mode={apartmentModalMode}
+        apartment={apartmentModalData}
+        stair={apartmentModalStair}
+        blocks={blocks}
+        stairs={stairs}
+        onSave={handleSaveApartment}
       />
     </div>
   );
