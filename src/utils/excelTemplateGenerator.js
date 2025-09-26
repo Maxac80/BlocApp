@@ -297,8 +297,8 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
       throw new Error('Nu există scări configurate pentru această asociație');
     }
 
-    // Creează workbook-ul
-    const workbook = XLSX.utils.book_new();
+    // Creează workbook-ul gol (fără sheet-uri automate)
+    const workbook = { SheetNames: [], Sheets: {} };
 
     // 📖 Adaugă sheet-ul cu instrucțiuni
     const instructionsSheet = generateInstructionsSheet(association.name);

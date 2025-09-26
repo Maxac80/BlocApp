@@ -110,7 +110,7 @@ const ExpensesViewNew = ({
   };
 
   return (
-    <div className={`min-h-screen p-6 ${
+    <div className={`min-h-screen pt-2 px-6 pb-6 ${
       monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : monthType === 'next'
@@ -136,7 +136,7 @@ const ExpensesViewNew = ({
           <h1 className="text-2xl font-bold text-gray-900">💰 Configurare cheltuieli</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="border-b">
             <div className="flex">
               <button

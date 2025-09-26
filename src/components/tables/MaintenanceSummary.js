@@ -27,13 +27,13 @@ const nextActiveMonth = getNextActiveMonth();
 const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
 // Verificăm dacă avem ceva de afișat
-const hasContent = 
+const hasContent =
   (currentActiveMonth && nextActiveMonth && monthType !== 'historic') ||
   shouldShowPublishButton(currentMonth) ||
   (isMonthReadOnly && monthType !== 'historic') ||
   (shouldShowAdjustButton(currentMonth) && !isMonthReadOnly);
 
-// Nu afișăm nimic dacă nu avem conținut
+// Nu afișăm nimic dacă nu avem conținut - sheet-ul se creează automat acum
 if (!hasContent) {
   return null;
 }

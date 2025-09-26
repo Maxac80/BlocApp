@@ -82,15 +82,20 @@ export const useExpenseManagement = ({
 
   // 📋 TIPURILE DE CHELTUIELI ASOCIAȚIEI - OPTIMIZAT
   const getAssociationExpenseTypes = useCallback(() => {
-    if (!defaultExpenseTypes || !association?.id) return [];
-    
+    if (!defaultExpenseTypes) return [];
+
+    // Dacă nu există asociație, returnează doar cheltuielile default (pentru primul setup)
+    if (!association?.id) {
+      return defaultExpenseTypes;
+    }
+
     const disabledKey = `${association.id}-${currentMonth}`;
     const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
-    
-    const activeDefaultExpenses = defaultExpenseTypes.filter(exp => 
+
+    const activeDefaultExpenses = defaultExpenseTypes.filter(exp =>
       !monthDisabledExpenses.includes(exp.name)
     );
-    
+
     const customExpensesList = customExpenses.filter(exp => exp.associationId === association.id);
     const activeCustomExpenses = customExpensesList.filter(exp => 
       !monthDisabledExpenses.includes(exp.name)

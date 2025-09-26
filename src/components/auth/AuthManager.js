@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import { LoginForm, RegisterForm, ResetPasswordForm, EmailVerification } from './index';
-import OnboardingWizard from '../onboarding/OnboardingWizard';
+import OnboardingTabs from '../onboarding/OnboardingTabs';
 import ErrorBoundary from '../common/ErrorBoundary';
 
 /**
@@ -153,9 +153,8 @@ export default function AuthManager({ onAuthComplete }) {
       console.warn('Too many renders detected, forcing onboarding display');
     }
     return (
-      <OnboardingWizard
+      <OnboardingTabs
         onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
       />
     );
   }
@@ -174,9 +173,8 @@ export default function AuthManager({ onAuthComplete }) {
   // 🧙‍♂️ ONBOARDING FLOW
   if (currentFlow === 'onboarding' || (currentUser && isEmailVerified && needsOnboarding)) {
     return (
-      <OnboardingWizard
+      <OnboardingTabs
         onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
       />
     );
   }

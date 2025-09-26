@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSecurity } from './useSecurity';
 import { useUserProfile } from './useUserProfile';
+import { useMonthManagement } from './useMonthManagement';
 import { EmailSimulator } from '../utils/emailSimulator';
 
 /**
@@ -18,7 +19,8 @@ import { EmailSimulator } from '../utils/emailSimulator';
  */
 export const useOnboarding = () => {
   const { logActivity } = useSecurity();
-  const { loadUserProfile, updateUserProfile, completeOnboarding } = useUserProfile();
+  const { loadUserProfile, completeOnboarding } = useUserProfile();
+  const { initializeMonths } = useMonthManagement();
   
   const [onboardingData, setOnboardingData] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -704,6 +706,93 @@ export const useOnboarding = () => {
     goToStep,
     skipOnboarding,
     completeOnboardingProcess,
+    completeOnboardingWithTabs: async (tabData, currentUser) => {
+      try {
+        console.log('🚀 Starting completeOnboardingWithTabs...');
+
+        // Salvez direct asociația fără să depend de funcția veche
+        if (tabData.association && tabData.association.name) {
+          const associationToSave = {
+            name: tabData.association.name.trim(),
+            cui: tabData.association.cui || '',
+            registrationNumber: tabData.association.registrationNumber || '',
+
+            // Format pentru AssociationView (câmpuri separate)
+            sediu_judet: tabData.association.address?.county || '',
+            sediu_oras: tabData.association.address?.city || '',
+            sediu_strada: tabData.association.address?.street || '',
+            sediu_numar: tabData.association.address?.number || '',
+            sediu_bloc: tabData.association.address?.block || '',
+
+            // Format nou (obiect address)
+            address: {
+              street: tabData.association.address?.street || '',
+              number: tabData.association.address?.number || '',
+              block: tabData.association.address?.block || '',
+              city: tabData.association.address?.city || '',
+              county: tabData.association.address?.county || '',
+              zipCode: tabData.association.address?.zipCode || ''
+            },
+
+            // Date administrator din ProfileStep
+            adminProfile: tabData.profile ? {
+              firstName: tabData.profile.firstName || '',
+              lastName: tabData.profile.lastName || '',
+              phone: tabData.profile.phone || '',
+              email: tabData.profile.email || '',
+              avatarURL: tabData.profile.avatarURL || '',
+              companyName: tabData.profile.professionalInfo?.companyName || '',
+              position: tabData.profile.professionalInfo?.position || 'Administrator asociație',
+              licenseNumber: tabData.profile.professionalInfo?.licenseNumber || '',
+              address: {
+                street: tabData.profile.address?.street || '',
+                city: tabData.profile.address?.city || '',
+                county: tabData.profile.address?.county || ''
+              },
+              documents: tabData.profile.documents || {}
+            } : {},
+
+            adminId: currentUser.uid,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            source: 'onboarding_tabs'
+          };
+
+          // Salvează în Firestore
+          console.log('💾 Saving association to Firestore...', associationToSave);
+          const associationsRef = collection(db, 'associations');
+          const docRef = await addDoc(associationsRef, associationToSave);
+          console.log('✅ Association created from tabs with ID:', docRef.id);
+
+          // 🎯 INIȚIALIZEAZĂ SISTEM DE SHEETS PENTRU NOUA ASOCIAȚIE
+          try {
+            console.log('🎯 Initializing sheet system for association:', docRef.id);
+            await initializeMonths(associationToSave, docRef.id);
+            console.log('✅ Sheet system initialized successfully for association:', docRef.id);
+          } catch (sheetError) {
+            console.error('❌ Error initializing sheet system:', sheetError);
+            // Nu failăm întreaga operație pentru că asociația s-a creat cu succes
+          }
+        }
+
+        // Marchează onboarding-ul ca fiind complet
+        const onboardingRef = doc(db, 'onboarding_progress', currentUser.uid);
+        await updateDoc(onboardingRef, {
+          completed: true,
+          completedAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        });
+
+        // Marchează profilul ca având onboarding complet
+        await completeOnboarding(currentUser.uid);
+
+        console.log('✅ Onboarding completed successfully');
+        return true;
+      } catch (error) {
+        console.error('❌ Error in completeOnboardingWithTabs:', error);
+        throw error;
+      }
+    },
     validateCurrentStep,
     getOnboardingStats,
     startTutorial,

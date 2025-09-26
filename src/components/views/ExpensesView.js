@@ -30,7 +30,7 @@ const ExpensesView = ({
 const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
 return (
-  <div className={`min-h-screen p-6 ${
+  <div className={`min-h-screen pt-2 px-6 pb-6 ${
     monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : monthType === 'next'

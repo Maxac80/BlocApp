@@ -33,7 +33,11 @@
       "Bash(git checkout:*)",
       "Bash(npx serve:*)",
       "Bash(start http://localhost:3000)",
-      "Bash(del test-sheet-system.js)"
+      "Bash(del test-sheet-system.js)",
+      "Bash(del:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, MapPin, Phone, Mail, CreditCard, FileText, Plus, Check } from 'lucide-react';
+import { Building, MapPin, Mail, FileText, Plus, Check, CheckCircle } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
 
 /**
@@ -17,51 +17,89 @@ export default function AssociationStep({ stepData, onUpdateData }) {
       city: '',
       county: ''
     },
-    contact: {
-      phone: '',
-      email: ''
-    },
-    bankAccount: {
-      bank: '',
-      iban: '',
-      accountName: ''
-    },
-    ...stepData.associationData
+    ...stepData
   });
 
   const [validationErrors, setValidationErrors] = useState({});
   const [availableCities, setAvailableCities] = useState([]);
   const [previousAssociationName, setPreviousAssociationName] = useState('');
+  const [touchedFields, setTouchedFields] = useState(new Set());
 
-  // Auto-completare Numele contului cu numele asociației când se schimbă numele asociației
+  // 🔄 ACTUALIZARE CÂND SE SCHIMBĂ stepData
   useEffect(() => {
-    // Actualizează numele contului doar dacă:
-    // 1. Numele contului este gol
-    // 2. SAU numele contului era identic cu numele anterior al asociației (urmărește modificările)
-    if (!associationData.bankAccount.accountName || 
-        associationData.bankAccount.accountName === previousAssociationName) {
-      setAssociationData(prev => ({
-        ...prev,
-        bankAccount: {
-          ...prev.bankAccount,
-          accountName: associationData.name
-        }
+    if (stepData && Object.keys(stepData).length > 0) {
+      // Restaurează datele
+      const { touchedFields: savedTouchedFields, ...dataWithoutMeta } = stepData;
+
+      setAssociationData(prevData => ({
+        name: '',
+        cui: '',
+        registrationNumber: '',
+        address: {
+          street: '',
+          number: '',
+          block: '',
+          city: '',
+          county: ''
+        },
+        ...prevData, // Păstrează datele existente
+        ...dataWithoutMeta  // Aplică datele noi din stepData (fără meta)
       }));
+
+      // Restaurează touched fields dacă există
+      if (savedTouchedFields) {
+        setTouchedFields(new Set(savedTouchedFields));
+      }
     }
-    // Salvează numele curent pentru următoarea comparație
-    setPreviousAssociationName(associationData.name);
-  }, [associationData.name]);
+  }, [stepData]);
+
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
+      // Calculează progresul bazat pe câmpurile completate
+      const basicFields = ['name', 'cui', 'registrationNumber', 'address.street', 'address.number', 'address.block', 'address.city', 'address.county'];
+      const completedBasicFields = basicFields.filter(field => {
+        const value = field.includes('.') ?
+          associationData.address[field.split('.')[1]] :
+          associationData[field];
+        return value && value.toString().trim().length > 0;
+      });
+
+      const progress = Math.round((completedBasicFields.length / basicFields.length) * 100);
+      const isValid = validateBasicInfo() && Object.keys(validationErrors).every(key => !validationErrors[key]);
+
       onUpdateData({
-        associationData,
-        isValid: validateBasicInfo()
+        ...associationData,
+        isValid,
+        progress,
+        touchedFields: Array.from(touchedFields) // Convertim Set-ul la array pentru serializare
       });
     }, 300); // Debounce pentru a evita actualizări prea frecvente
-    
+
     return () => clearTimeout(timeoutId);
-  }, [associationData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [associationData, validationErrors, touchedFields]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ VALIDARE INIȚIALĂ PENTRU CÂMPURILE PRE-COMPLETATE
+  useEffect(() => {
+    const basicFields = ['name', 'cui', 'registrationNumber', 'address.street', 'address.number', 'address.block', 'address.city', 'address.county'];
+
+    // Marchează câmpurile pre-completate ca touched
+    const preFilledFields = basicFields.filter(field => {
+      const value = field.includes('.') ?
+        associationData.address?.[field.split('.')[1]] :
+        associationData[field];
+      return value && value.toString().trim().length > 0;
+    });
+
+    if (preFilledFields.length > 0) {
+      setTouchedFields(prev => new Set([...prev, ...preFilledFields]));
+    }
+
+    // Validări specifice pentru câmpuri pre-completate
+    if (associationData.cui && associationData.cui.trim().length > 0) {
+      validateCUI(associationData.cui);
+    }
+  }, [associationData.name, associationData.cui, associationData.registrationNumber]); // Se rulează când se schimbă datele principale
 
   // Actualizare orașe bazate pe județ
   useEffect(() => {
@@ -83,10 +121,7 @@ export default function AssociationStep({ stepData, onUpdateData }) {
            associationData.address?.number?.trim().length > 0 &&
            associationData.address?.block?.trim().length > 0 &&
            associationData.address?.city?.trim().length > 0 &&
-           associationData.address?.county?.trim().length > 0 &&
-           associationData.bankAccount?.bank?.trim().length > 0 &&
-           associationData.bankAccount?.iban?.trim().length > 0 &&
-           associationData.bankAccount?.accountName?.trim().length > 0;
+           associationData.address?.county?.trim().length > 0;
   };
 
   const handleInputChange = (path, value) => {
@@ -94,21 +129,24 @@ export default function AssociationStep({ stepData, onUpdateData }) {
       const newData = { ...prev };
       const keys = path.split('.');
       let target = newData;
-      
+
       for (let i = 0; i < keys.length - 1; i++) {
         if (!target[keys[i]]) target[keys[i]] = {};
         target = target[keys[i]];
       }
-      
+
       target[keys[keys.length - 1]] = value;
-      
+
       // Reset orașul când se schimbă județul
       if (path === 'address.county') {
         newData.address.city = '';
       }
-      
+
       return newData;
     });
+
+    // Marchează câmpul ca touched
+    setTouchedFields(prev => new Set([...prev, path]));
 
     // Clear validation error
     if (validationErrors[path]) {
@@ -116,6 +154,11 @@ export default function AssociationStep({ stepData, onUpdateData }) {
         ...prev,
         [path]: null
       }));
+    }
+
+    // Validări specifice
+    if (path === 'cui') {
+      validateCUI(value);
     }
   };
 
@@ -157,42 +200,44 @@ export default function AssociationStep({ stepData, onUpdateData }) {
     }
   };
 
+  // 🎨 RENDER FIELD SUCCESS
+  const renderFieldSuccess = (fieldPath) => {
+    const value = fieldPath.includes('.') ?
+      associationData[fieldPath.split('.')[0]]?.[fieldPath.split('.')[1]] :
+      associationData[fieldPath];
+    const isTouched = touchedFields.has(fieldPath);
+    const hasError = validationErrors[fieldPath];
+
+    if (!isTouched || hasError || !value || value.toString().trim().length === 0) {
+      return null;
+    }
+
+    return (
+      <p className="mt-1 text-xs text-green-600 flex items-center">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Completat
+      </p>
+    );
+  };
+
+  // 🚨 RENDER FIELD ERROR
+  const renderFieldError = (fieldPath) => {
+    const error = validationErrors[fieldPath];
+    if (!error) return null;
+
+    return (
+      <p className="mt-1 text-xs text-red-600 flex items-center">
+        <span>⚠️ {error}</span>
+      </p>
+    );
+  };
+
+
 
   return (
     <div className="max-w-4xl mx-auto">
-      
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        
-        {/* INFO SIDEBAR */}
-        <div className="lg:col-span-1">
-          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 sticky top-4">
-            <h4 className="font-semibold text-blue-900 mb-4">💡 Despre prima asociație</h4>
-            <ul className="text-sm text-blue-800 space-y-3">
-              <li className="flex items-start">
-                <Check className="w-4 h-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <span>Poți începe cu informațiile de bază</span>
-              </li>
-              <li className="flex items-start">
-                <Check className="w-4 h-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <span>Datele se completează ulterior</span>
-              </li>
-              <li className="flex items-start">
-                <Check className="w-4 h-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <span>Poți crea multiple asociații</span>
-              </li>
-              <li className="flex items-start">
-                <Check className="w-4 h-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <span>Structura se configurează în app</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* FORMULAR PRINCIPAL */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* DATE GENERALE */}
+      <div className="space-y-8">
+        {/* DATE GENERALE */}
           <div className="bg-white p-6 rounded-xl border border-gray-200">
             <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
               <Building className="w-5 h-5 mr-2" />
@@ -211,6 +256,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: Asociația de Proprietari Bloc A1"
                 />
+                {renderFieldError('name')}
+                {renderFieldSuccess('name')}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -221,18 +268,14 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   <input
                     type="text"
                     value={associationData.cui}
-                    onChange={(e) => {
-                      handleInputChange('cui', e.target.value);
-                      validateCUI(e.target.value);
-                    }}
+                    onChange={(e) => handleInputChange('cui', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="12345678"
                     maxLength="10"
                     required
                   />
-                  {validationErrors.cui && (
-                    <p className="mt-1 text-xs text-red-600">{validationErrors.cui}</p>
-                  )}
+                  {renderFieldError('cui')}
+                  {renderFieldSuccess('cui')}
                 </div>
 
                 <div>
@@ -247,6 +290,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                     placeholder="Ex: J40/12345/2020"
                     required
                   />
+                  {renderFieldError('registrationNumber')}
+                  {renderFieldSuccess('registrationNumber')}
                 </div>
               </div>
             </div>
@@ -276,6 +321,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                     </option>
                   ))}
                 </select>
+                {renderFieldError('address.county')}
+                {renderFieldSuccess('address.county')}
               </div>
 
               <div>
@@ -295,6 +342,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                     </option>
                   ))}
                 </select>
+                {renderFieldError('address.city')}
+                {renderFieldSuccess('address.city')}
               </div>
 
               <div className="md:col-span-2">
@@ -308,6 +357,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: Strada Primăverii"
                 />
+                {renderFieldError('address.street')}
+                {renderFieldSuccess('address.street')}
               </div>
 
               <div>
@@ -322,6 +373,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   placeholder="123A"
                   required
                 />
+                {renderFieldError('address.number')}
+                {renderFieldSuccess('address.number')}
               </div>
 
               <div>
@@ -336,120 +389,21 @@ export default function AssociationStep({ stepData, onUpdateData }) {
                   placeholder="A1, B2, etc."
                   required
                 />
+                {renderFieldError('address.block')}
+                {renderFieldSuccess('address.block')}
               </div>
             </div>
           </div>
 
-          {/* CONTACT */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-              <Phone className="w-5 h-5 mr-2" />
-              Date de contact asociație
-            </h4>
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Telefon
-                </label>
-                <input
-                  type="tel"
-                  value={associationData.contact.phone}
-                  onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0721234567"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={associationData.contact.email}
-                  onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="asociatia@exemplu.ro"
-                />
-              </div>
-
-            </div>
-          </div>
-
-          {/* CONT BANCAR */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-              <CreditCard className="w-5 h-5 mr-2" />
-              Cont bancar <span className="text-red-500">*</span>
-            </h4>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Banca <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={associationData.bankAccount.bank}
-                  onChange={(e) => handleInputChange('bankAccount.bank', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ex: CEC Bank"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  IBAN <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={associationData.bankAccount.iban}
-                  onChange={(e) => {
-                    handleInputChange('bankAccount.iban', e.target.value.toUpperCase());
-                    validateIBAN(e.target.value, 'bankAccount.iban');
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="RO49AAAA1B31007593840000"
-                  maxLength="24"
-                  required
-                />
-                {validationErrors['bankAccount.iban'] && (
-                  <p className="mt-1 text-xs text-red-600">{validationErrors['bankAccount.iban']}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numele contului <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={associationData.bankAccount.accountName}
-                  onChange={(e) => handleInputChange('bankAccount.accountName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Asociația de Proprietari..."
-                  required
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  💡 Pre-completat cu numele asociației. Modifică doar dacă diferă la bancă.
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* 🚀 INFO DESPRE ASOCIAȚII */}
+        <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+          <h4 className="font-medium text-green-900 mb-2">🚀 Gata să începi!</h4>
+          <p className="text-sm text-green-800">
+            Administrează cu ușurință asociația de proprietari.
+          </p>
         </div>
-      </div>
 
-      {/* PROGRES COMPLETARE */}
-      <div className="mt-8 bg-green-50 rounded-xl p-6 border border-green-200">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-medium text-green-900">Progres completare asociație</span>
-          <span className="text-green-700">{validateBasicInfo() ? '✓ Minim necesar completat' : 'În completare...'}</span>
-        </div>
-        <p className="text-sm text-green-800">
-          Ai completat informațiile de bază necesare. Restul detaliilor se pot adăuga din aplicația principală.
-        </p>
       </div>
     </div>
   );

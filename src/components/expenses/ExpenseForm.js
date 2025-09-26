@@ -16,7 +16,8 @@ const ExpenseForm = ({
   // Funcții noi pentru facturi parțiale
   getPartiallyDistributedInvoices,
   getInvoiceByNumber,
-  syncSuppliersForExpenseType
+  syncSuppliersForExpenseType,
+  getAssociationApartments
 }) => {
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
   const [invoiceData, setInvoiceData] = useState({
@@ -154,7 +155,26 @@ const ExpenseForm = ({
         <h3 className="text-lg font-semibold">💰 Adaugă Cheltuială</h3>
       </div>
       
-      {availableExpenseTypes.length === 0 ? (
+      {getAssociationApartments && getAssociationApartments().length === 0 ? (
+        <div className="py-4 px-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🏠</span>
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    APARTAMENTE NECESARE
+                  </span>
+                  <span className="text-sm font-semibold text-blue-800">Nu există apartamente configurate</span>
+                </div>
+                <p className="text-sm text-blue-600">Pentru a adăuga cheltuieli, configurează mai întâi apartamentele din asociație</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : availableExpenseTypes.length === 0 ? (
         isMonthReadOnly ? (
           monthType === 'historic' ? (
             <div className="py-4 px-6 bg-gray-50 border-2 border-gray-300 rounded-xl">

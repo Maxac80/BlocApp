@@ -13,10 +13,9 @@ const AssociationCreator = ({
         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Building2 className="w-10 h-10 text-blue-600" />
         </div>
-        <h3 className="text-xl font-semibold text-blue-800 mb-2">🎉 Bun venit în BlocApp!</h3>
+        <h3 className="text-xl font-semibold text-blue-800 mb-2">🏢 Creează Asociația</h3>
         <p className="text-blue-700 max-w-md mx-auto">
-          Pentru a începe, trebuie să creezi prima ta asociație de proprietari. 
-          Această informație se salvează doar o dată.
+          Completează detaliile asociației tale de proprietari pentru a continua.
         </p>
       </div>
       

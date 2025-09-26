@@ -1,11 +1,10 @@
 // src/components/views/DashboardView.js
 import React, { useState } from 'react';
-import { 
-  AssociationCreator, 
-  StatisticsCards, 
-  RecentActivity, 
+import {
+  StatisticsCards,
+  RecentActivity,
   DashboardHeader,
-  DashboardMaintenanceTable 
+  DashboardMaintenanceTable
 } from '../dashboard';
 import { PaymentModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
@@ -25,10 +24,6 @@ const DashboardView = ({
   isMonthReadOnly,
   getMonthType,
   
-  // Association creation
-  newAssociation,
-  setNewAssociation,
-  handleAddAssociation,
   
   // Navigation
   handleNavigation,
@@ -112,7 +107,7 @@ const DashboardView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen p-6 ${
+    <div className={`min-h-screen pt-2 px-6 pb-6 ${
       monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : monthType === 'next'
@@ -138,14 +133,6 @@ const DashboardView = ({
           <h1 className="text-2xl font-bold text-gray-900">📊 Dashboard</h1>
         </div>
 
-        {/* Condiție principală: Dacă nu există asociație și utilizatorul nu a trecut prin onboarding */}
-        {!association && !userProfile?.metadata?.onboardingCompleted && (
-          <AssociationCreator
-            newAssociation={newAssociation}
-            setNewAssociation={setNewAssociation}
-            handleAddAssociation={handleAddAssociation}
-          />
-        )}
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
         {!association && userProfile?.metadata?.onboardingCompleted && (

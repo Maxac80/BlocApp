@@ -311,7 +311,7 @@ const AccountingView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen p-6 ${
+    <div className={`min-h-screen pt-2 px-6 pb-6 ${
       monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : monthType === 'next'
@@ -338,14 +338,14 @@ const AccountingView = ({
           <h1 className="text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="border-b">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('incasari')}
                 className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                   activeTab === 'incasari'
-                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -356,7 +356,7 @@ const AccountingView = ({
                 onClick={() => setActiveTab('facturi')}
                 className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                   activeTab === 'facturi'
-                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >

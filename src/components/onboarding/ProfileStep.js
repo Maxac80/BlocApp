@@ -47,10 +47,7 @@ export default function ProfileStep({
     
     // Adresă
     address: stepData.address || {
-      street: '',
-      number: '',
-      building: '',
-      apartment: '',
+      street: '', // Strada și numărul combined
       city: '',
       county: ''
     },
@@ -75,29 +72,80 @@ export default function ProfileStep({
   // 📊 CALCULARE PROGRES COMPLETARE
   useEffect(() => {
     const requiredFields = [
-      'firstName', 'lastName', 'phone', 
-      'address.city', 'address.county', 'address.street', 'address.number',
-      'professionalInfo.position', 'professionalInfo.licenseNumber'
+      'firstName', 'lastName', 'phone',
+      'address.city', 'address.county', 'address.street',
+      'professionalInfo.position'
     ];
-    
+
     const completedFields = requiredFields.filter(field => {
       const value = getNestedValue(formData, field);
       return value && value.toString().trim().length > 0;
     });
-    
+
     const percentage = Math.round((completedFields.length / requiredFields.length) * 100);
     setCompletionPercentage(percentage);
   }, [formData]);
+
+  // ✅ VALIDARE INIȚIALĂ PENTRU CÂMPURILE PRE-COMPLETATE
+  useEffect(() => {
+    const requiredFields = [
+      'firstName', 'lastName', 'phone',
+      'address.city', 'address.county', 'address.street',
+      'professionalInfo.position'
+    ];
+
+    // Marchează câmpurile pre-completate ca touched
+    const preFilledFields = requiredFields.filter(field => {
+      const value = getNestedValue(formData, field);
+      return value && value.toString().trim().length > 0;
+    });
+
+    if (preFilledFields.length > 0) {
+      setTouchedFields(prev => new Set([...prev, ...preFilledFields]));
+    }
+
+    // Validează telefon dacă e pre-completat
+    if (formData.phone && formData.phone.trim().length > 0) {
+      validatePhone(formData.phone);
+    }
+  }, []); // Rulează doar la mount
+
+  // 🔄 RESTAURARE TOUCHED FIELDS CÂND SE SCHIMBĂ stepData
+  useEffect(() => {
+    if (stepData && stepData.touchedFields) {
+      setTouchedFields(new Set(stepData.touchedFields));
+    }
+  }, [stepData]);
 
 
   // 🔄 UPDATE PARENT DATA
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      onUpdateData(formData);
+      // Calculează validarea pentru parent
+      const requiredFields = [
+        'firstName', 'lastName', 'phone',
+        'address.city', 'address.county', 'address.street',
+        'professionalInfo.position'
+      ];
+
+      const completedFields = requiredFields.filter(field => {
+        const value = getNestedValue(formData, field);
+        return value && value.toString().trim().length > 0;
+      });
+
+      const isValid = completedFields.length === requiredFields.length && Object.keys(fieldErrors).every(key => !fieldErrors[key]);
+      const progress = Math.round((completedFields.length / requiredFields.length) * 100);
+
+      onUpdateData({
+        ...formData,
+        isValid,
+        progress,
+        touchedFields: Array.from(touchedFields) // Salvează touched fields
+      });
     }, 300); // Debounce pentru a evita actualizări prea frecvente
-    
+
     return () => clearTimeout(timeoutId);
-  }, [formData, onUpdateData]);
+  }, [formData, fieldErrors, onUpdateData]);
 
   // 🔍 HELPER PENTRU NESTED VALUES
   const getNestedValue = (obj, path) => {
@@ -232,80 +280,8 @@ export default function ProfileStep({
 
   return (
     <div className="max-w-4xl mx-auto">
-      
-      {/* 📊 PROGRESS HEADER */}
-      <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Progres completare profil</h3>
-          <span className="text-2xl font-bold text-blue-600">{completionPercentage}%</span>
-        </div>
-        <div className="w-full bg-blue-200 rounded-full h-3">
-          <div 
-            className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-            style={{ width: `${completionPercentage}%` }}
-          ></div>
-        </div>
-        <p className="text-sm text-blue-700 mt-2">
-          Completează minim 80% pentru a continua la pasul următor
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        
-        {/* 📷 AVATAR SECTION */}
-        <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 text-center">
-            <h4 className="font-semibold text-gray-900 mb-4">Fotografia ta</h4>
-            
-            <div className="relative inline-block mb-4">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
-                {formData.avatarPreview ? (
-                  <img 
-                    src={formData.avatarPreview} 
-                    alt="Avatar preview" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <User className="w-10 h-10" />
-                  </div>
-                )}
-              </div>
-              
-              {(isUploadingAvatar || isUploading(`avatars/admins/${currentUser?.uid}`) || isUploadingBase64) && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                </div>
-              )}
-            </div>
-            
-            <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-              <Camera className="w-4 h-4 mr-2" />
-              {formData.avatarPreview ? 'Schimbă foto' : 'Adaugă foto'}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-                disabled={isUploadingAvatar || isUploading(`avatars/admins/${currentUser?.uid}`) || isUploadingBase64}
-              />
-            </label>
-            
-            {renderFieldError('avatar')}
-            
-            <p className="text-xs text-gray-500 mt-2">
-              JPG, PNG până la 2MB (redimensionată automat)
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              💡 Base64 storage (Firebase Storage necesită upgrade)
-            </p>
-          </div>
-        </div>
-
-        {/* 📝 FORMULAR PRINCIPAL */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* DATE PERSONALE */}
+      <div className="space-y-8">
+        {/* DATE PERSONALE */}
           <div className="bg-white p-6 rounded-xl border border-gray-200">
             <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
               <User className="w-5 h-5 mr-2" />
@@ -421,46 +397,17 @@ export default function ProfileStep({
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Strada <span className="text-red-500">*</span>
+                  Strada și numărul <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.address.street}
                   onChange={(e) => handleInputChange('address.street', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Strada Exemplu"
+                  placeholder="Strada Exemplu nr. 123A"
                 />
                 {renderFieldError('address.street')}
                 {renderFieldSuccess('address.street')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Numărul <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.number}
-                  onChange={(e) => handleInputChange('address.number', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="123A"
-                />
-                {renderFieldError('address.number')}
-                {renderFieldSuccess('address.number')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Blocul/Scara/Apartamentul
-                </label>
-                <input
-                  type="text"
-                  value={formData.address.apartment}
-                  onChange={(e) => handleInputChange('address.apartment', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Ap. 15"
-                />
-                {renderFieldSuccess('address.apartment')}
               </div>
             </div>
           </div>
@@ -489,7 +436,7 @@ export default function ProfileStep({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Compania/Firma (opțional)
+                  Compania/Firma
                 </label>
                 <input
                   type="text"
@@ -504,7 +451,7 @@ export default function ProfileStep({
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Număr atestat administrator <span className="text-red-500">*</span>
+                  Număr atestat administrator
                 </label>
                 <input
                   type="text"
@@ -518,18 +465,15 @@ export default function ProfileStep({
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* 💡 TIPS PENTRU COMPLETARE */}
-      <div className="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-200">
-        <h4 className="font-semibold text-blue-900 mb-3">💡 Sfaturi pentru completarea profilului</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Datele cu * sunt obligatorii pentru a continua</li>
-          <li>• Fotografia îți va apărea în documentele generate</li>
-          <li>• Adresa va fi folosită pentru corespondența oficială</li>
-          <li>• Datele profesionale ajută la generarea documentelor legale</li>
-        </ul>
+        {/* ℹ️ INFO CONT ADMINISTRATOR */}
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">ℹ️ Cont Administrator asociație</h4>
+          <p className="text-sm text-blue-800">
+            Acest cont îți permite să creezi și să administrezi asociații de proprietari, să gestionezi cheltuielile și să coordonezi activitățile administrative.
+          </p>
+        </div>
+
       </div>
     </div>
   );

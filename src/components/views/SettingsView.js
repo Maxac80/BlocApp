@@ -201,7 +201,7 @@ const SettingsView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen p-6 ${
+    <div className={`min-h-screen pt-2 px-6 pb-6 ${
       monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : monthType === 'next'
@@ -240,7 +240,7 @@ const SettingsView = ({
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-xl shadow-lg">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Tabs */}
           <div className="border-b">
             <div className="flex">
