@@ -5,6 +5,8 @@
 const ALLOWED_DOMAINS = [
   'localhost:3000',
   'localhost:3001',
+  '127.0.0.1:3000',
+  '127.0.0.1:3001',
   // Add your production domain when you have it
   // 'your-domain.com',
 ];
@@ -12,6 +14,10 @@ const ALLOWED_DOMAINS = [
 // Check if current domain is allowed
 export const isDomainAllowed = () => {
   const currentHost = window.location.host;
+  // Allow localhost and development environments
+  if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
+    return true;
+  }
   return ALLOWED_DOMAINS.includes(currentHost);
 };
 

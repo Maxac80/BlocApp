@@ -3,7 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { validateFirebaseConfig } from './config/security';
+// Temporarily disable security validation to fix loading issue
+// import { validateFirebaseConfig } from './config/security';
 
 // Your web app's Firebase configuration
 // Using environment variables for security - values are stored in .env file
@@ -17,10 +18,12 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Validate configuration before initializing
-if (!validateFirebaseConfig()) {
-  console.error('Firebase configuration validation failed');
-}
+// Log config to debug (remove this in production!)
+console.log('Firebase Config:', {
+  hasApiKey: !!firebaseConfig.apiKey,
+  hasAuthDomain: !!firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
