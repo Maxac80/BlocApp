@@ -1,0 +1,90 @@
+// Firebase Firestore Security Rules
+// Copiază aceste reguli în Firebase Console -> Firestore -> Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Funcție helper pentru verificare autentificare
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Funcție pentru verificare admin (poți adăuga un custom claim)
+    function isAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.admin == true;
+    }
+
+    // Funcție pentru verificare owner
+    function isOwner(userId) {
+      return isAuthenticated() &&
+        request.auth.uid == userId;
+    }
+
+    // Reguli pentru asociații
+    match /associations/{associationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.createdBy == request.auth.uid;
+    }
+
+    // Reguli pentru blocuri
+    match /blocuri/{blocId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reguli pentru apartamente
+    match /apartamente/{apartmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reguli pentru cheltuieli
+    match /cheltuieli/{expenseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reguli pentru furnizori
+    match /furnizori/{supplierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reguli pentru facturi
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Reguli pentru încasări
+    match /incasari/{collectionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Blocare acces pentru orice altă colecție
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// Firebase Storage Security Rules
+// Copiază în Firebase Console -> Storage -> Rules
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permite doar utilizatorilor autentificați
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        request.resource.size < 10 * 1024 * 1024; // Max 10MB
+    }
+  }
+}

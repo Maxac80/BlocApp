@@ -3,6 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { validateFirebaseConfig } from './config/security';
 
 // Your web app's Firebase configuration
 // Using environment variables for security - values are stored in .env file
@@ -15,6 +16,11 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
+
+// Validate configuration before initializing
+if (!validateFirebaseConfig()) {
+  console.error('Firebase configuration validation failed');
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
