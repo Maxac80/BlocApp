@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Menu } from "lucide-react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
@@ -13,6 +13,12 @@ import { useDataOperations } from './hooks/useDataOperations';
 import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 import useExpenseConfigurations from './hooks/useExpenseConfigurations';
 import useInvoices from './hooks/useInvoices';
+
+// Migration tools
+import { exposeMigrationTools } from './utils/dataMigration';
+import './utils/testMigration';
+import './utils/cleanupOldCollections';
+import './utils/structureMigration';
 
 // Components
 import Sidebar from './components/common/Sidebar';
@@ -31,13 +37,16 @@ import {
 export default function BlocApp() {
   const { userProfile, currentUser } = useAuthEnhanced();
   const activeUser = currentUser;
+
+  // 🔗 REF pentru sheet operations (pentru a evita dependența circulară)
+  const sheetOperationsRef = useRef(null);
   
-  // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE
+  // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE (primul pentru a obține association)
   const {
     loading,
     error,
     association,
-    blocks,np,
+    blocks,
     stairs,
     apartments,
     expenses,
@@ -51,14 +60,13 @@ export default function BlocApp() {
     deleteApartment,
     addCustomExpense,
     deleteCustomExpense,
-    addMonthlyExpense,
     updateMonthlyExpense,
     deleteMonthlyExpense,
     updateBlock,
     deleteBlock,
     updateStair,
     deleteStair
-  } = useAssociationData();
+  } = useAssociationData(sheetOperationsRef);
 
   // 🔥 HOOK PENTRU NAVIGARE ȘI UI
   const {
@@ -113,7 +121,7 @@ export default function BlocApp() {
     cancelApartmentEdit
   } = useNavigationAndUI();
 
-  // 🔥 HOOK PENTRU GESTIONAREA LUNILOR
+  // 🔥 HOOK PENTRU GESTIONAREA LUNILOR (după ce avem association)
   const {
     currentMonth,
     setCurrentMonth,
@@ -135,8 +143,77 @@ export default function BlocApp() {
     getSheetBalances,
     getCurrentSheetBalance,
     updateSheetCustomName,
-    updateSheetMonthSettings
+    updateSheetMonthSettings,
+    updateCurrentSheetMaintenanceTable,
+    createInitialSheet,
+    fixTransferredBalances,
+    addExpenseToSheet,
+    removeExpenseFromSheet,
+    updateStructureSnapshot,
+    updateConfigSnapshot,
+    // 🆕 SHEET-BASED STRUCTURE OPERATIONS
+    addBlockToSheet,
+    addStairToSheet,
+    addApartmentToSheet,
+    deleteBlockFromSheet,
+    deleteStairFromSheet,
+    deleteApartmentFromSheet,
+    updateBlockInSheet,
+    updateStairInSheet,
+    updateApartmentInSheet
   } = useMonthManagement(association?.id);
+
+  // 🔄 SHEET-BASED DATA: Prioritizează datele din sheet în loc de colecții (DUPĂ useMonthManagement)
+  const sheetBlocks = currentSheet?.associationSnapshot?.blocks || [];
+  const sheetStairs = currentSheet?.associationSnapshot?.stairs || [];
+  const sheetApartments = currentSheet?.associationSnapshot?.apartments || [];
+
+  // 🎯 USE SHEET DATA: Folosește datele din sheet dacă sunt disponibile, altfel fallback la colecții
+  const finalBlocks = sheetBlocks.length > 0 ? sheetBlocks : (blocks || []);
+  const finalStairs = sheetStairs.length > 0 ? sheetStairs : (stairs || []);
+  const finalApartments = sheetApartments.length > 0 ? sheetApartments : (apartments || []);
+
+
+
+  // 🔄 ACTUALIZEAZĂ sheet operations în useAssociationData
+  useEffect(() => {
+    if (addBlockToSheet && addStairToSheet && addApartmentToSheet && updateStructureSnapshot) {
+      // Actualizează ref-ul cu toate sheet operations
+      sheetOperationsRef.current = {
+        // CREATE operations
+        addBlockToSheet,
+        addStairToSheet,
+        addApartmentToSheet,
+        // DELETE operations
+        deleteBlockFromSheet,
+        deleteStairFromSheet,
+        deleteApartmentFromSheet,
+        // UPDATE operations
+        updateBlockInSheet,
+        updateStairInSheet,
+        updateApartmentInSheet,
+        // STRUCTURE operations
+        updateStructureSnapshot
+      };
+    }
+  }, [addBlockToSheet, addStairToSheet, addApartmentToSheet, deleteBlockFromSheet, deleteStairFromSheet, deleteApartmentFromSheet, updateBlockInSheet, updateStairInSheet, updateApartmentInSheet, updateStructureSnapshot]);
+
+  // Pentru debug - expune funcțiile în window
+  useEffect(() => {
+    if (fixTransferredBalances) {
+      window.fixTransferredBalances = fixTransferredBalances;
+      console.log('🔧 fixTransferredBalances available in window for debugging');
+    }
+    if (createInitialSheet && association) {
+      window.createInitialSheet = () => createInitialSheet(association);
+      console.log('🔧 createInitialSheet available in window for debugging');
+    }
+
+    // Expune migration tools pentru debugging
+    exposeMigrationTools();
+    console.log('🔧 Migration tools available in window.dataMigration for debugging');
+
+  }, [fixTransferredBalances, createInitialSheet, association, currentSheet, publishedSheet, sheets]);
 
 
   // 🔥 HOOK PENTRU GESTIONAREA SOLDURILOR
@@ -154,38 +231,37 @@ export default function BlocApp() {
     calculateNextMonthBalances,
     toggleExpenseStatus,
     saveDisabledExpenses
-  } = useBalanceManagement(association);
+  } = useBalanceManagement(association, {
+    updateConfigSnapshot: updateConfigSnapshot,
+    currentSheet: currentSheet
+  });
 
   // 🔥 HOOK PENTRU CALCULUL ÎNTREȚINERII
   const {
-    maintenanceData,
-    maintenanceStats,
-    calculateMaintenance,
-    calculateMaintenanceWithDetails,
-    getCurrentMonthTable,
+    getAssociationApartments,
     getApartmentBalance,
     setApartmentBalance,
-    monthlyBalances,
-    setMonthlyBalances,
-    monthlyTables,
-    setMonthlyTables,
-    togglePayment,
-    closeCurrentMonth,
-    forceRecalculate,
-    getAssociationApartments
+    maintenanceData,
+    calculateMaintenanceWithDetails,
+    calculateTotalExpenses,
+    calculateTotalMaintenance,
+    maintenanceStats,
+    monthlyBalances
   } = useMaintenanceCalculation({
-    association,
-    blocks,
-    stairs,
-    apartments,
-    expenses,
-    currentMonth,
+    association: association || null,
+    blocks: finalBlocks || [],
+    stairs: finalStairs || [],
+    apartments: finalApartments || [],
+    expenses: expenses || [],
+    currentMonth: currentMonth || null,
     calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
     // Pasăm soldurile din sheet-uri pentru corelația corectă
     currentSheet,
     publishedSheet,
     getSheetBalances: getSheetBalances || (() => null),
-    getCurrentSheetBalance: getCurrentSheetBalance || (() => ({ restante: 0, penalitati: 0 }))
+    getCurrentSheetBalance: getCurrentSheetBalance || (() => ({ restante: 0, penalitati: 0 })),
+    // Adăugăm funcția pentru salvarea automată a tabelului calculat
+    updateCurrentSheetMaintenanceTable
   });
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
@@ -215,13 +291,13 @@ export default function BlocApp() {
     expenseStats
   } = useExpenseManagement({
     association,
-    expenses,
+    expenses: currentSheet?.expenses || [], // SHEET-BASED: folosește cheltuielile din sheet
     customExpenses,
     currentMonth,
     disabledExpenses,
-    addMonthlyExpense,
+    addMonthlyExpense: addExpenseToSheet, // SHEET-BASED: folosește addExpenseToSheet
     updateMonthlyExpense,
-    deleteMonthlyExpense,
+    deleteMonthlyExpense: removeExpenseFromSheet, // SHEET-BASED: folosește removeExpenseFromSheet
     addCustomExpense,
     deleteCustomExpense
   });
@@ -233,7 +309,7 @@ export default function BlocApp() {
     getExpenseConfig: getFirestoreExpenseConfig,
     updateExpenseConfig: updateFirestoreExpenseConfig,
     fixFirestoreConfigurations
-  } = useExpenseConfigurations(association?.id);
+  } = useExpenseConfigurations(currentSheet);
 
   // 🔧 Corectează configurațiile greșite din Firestore o singură dată
   React.useEffect(() => {
@@ -256,7 +332,7 @@ export default function BlocApp() {
     getOverdueInvoices,
     getInvoiceStats,
     updateMissingSuppliersForExistingInvoices
-  } = useInvoices(association?.id);
+  } = useInvoices(association?.id, currentSheet);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
@@ -270,9 +346,9 @@ export default function BlocApp() {
     getAvailableStairs
   } = useDataOperations({
     association,
-    blocks,
-    stairs,
-    apartments,
+    blocks: finalBlocks,
+    stairs: finalStairs,
+    apartments: finalApartments,
     createAssociation,
     addBlock,
     addStair,
@@ -287,38 +363,33 @@ export default function BlocApp() {
 
 // 🔥 AUTO-EXPAND ENTITIES LA ÎNCĂRCAREA DATELOR - OPTIMIZAT
 useEffect(() => {
-  if (association?.id && blocks.length > 0) {
-    autoExpandEntities(blocks, stairs, association.id);
+  if (association?.id && finalBlocks.length > 0) {
+    autoExpandEntities(finalBlocks, finalStairs, association.id);
   }
 }, [association?.id]);
 
-// 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI
-// DEZACTIVAT - folosim doar calculul din tabelul curent, fără încărcări din Firebase
-/*
+// 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI SAU SHEET-ULUI
+// ACTIVAT - încarcă ajustările din sheet-ul curent
 useEffect(() => {
-  const loadAdjustments = async () => {
-    if (association?.id) {
-      try {
-        // console.log('📋 Încarc ajustările de solduri pentru asociația:', association.id);
-        const adjustments = await loadBalanceAdjustments();
-        
-        // Integrează ajustările în monthlyBalances
-        Object.entries(adjustments).forEach(([monthKey, monthAdjustments]) => {
-          Object.entries(monthAdjustments).forEach(([apartmentId, balance]) => {
-            setApartmentBalance(apartmentId, balance);
-          });
-        });
-        
-        // console.log('✅ Ajustări de solduri încărcate și integrate:', Object.keys(adjustments).length, 'luni');
-      } catch (error) {
-        console.error('❌ Eroare la încărcarea ajustărilor de solduri:', error);
-      }
+  if (association?.id && currentSheet?.configSnapshot?.balanceAdjustments) {
+    try {
+      // Citește direct din currentSheet fără a apela funcția
+      const sheetAdjustments = currentSheet.configSnapshot.balanceAdjustments;
+
+      // Convertește și integrează direct în monthlyBalances
+      Object.entries(sheetAdjustments).forEach(([apartmentId, adjustmentData]) => {
+        const balance = {
+          restante: adjustmentData.restante || 0,
+          penalitati: adjustmentData.penalitati || 0
+        };
+        setApartmentBalance(apartmentId, balance);
+      });
+
+    } catch (error) {
+      console.error('❌ Eroare la încărcarea ajustărilor de solduri:', error);
     }
-  };
-  
-  loadAdjustments();
-}, [association?.id, loadBalanceAdjustments, setApartmentBalance]);
-*/
+  }
+}, [association?.id, currentSheet?.id, currentSheet?.configSnapshot?.balanceAdjustments, setApartmentBalance]);
 
 
   // 🔥 OVERLAY PENTRU MOBILE
@@ -427,9 +498,12 @@ useEffect(() => {
           {currentView === "dashboard" && (
             <DashboardView
               association={association}
-              blocks={blocks}
-              stairs={stairs}
-              getAssociationApartments={getAssociationApartments}
+              blocks={finalBlocks}
+              stairs={finalStairs}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
@@ -442,6 +516,7 @@ useEffect(() => {
               maintenanceData={maintenanceData}
               userProfile={userProfile}
               getMonthType={getMonthType}
+              currentSheet={currentSheet}
             />
           )}
 
@@ -449,9 +524,12 @@ useEffect(() => {
           {currentView === "maintenance" && (
             <MaintenanceView
               association={association}
-              blocks={blocks}
-              stairs={stairs}
-              getAssociationApartments={getAssociationApartments}
+              blocks={finalBlocks}
+              stairs={finalStairs}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available from useMaintenanceCalculation');
+                return [];
+              })}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
@@ -460,49 +538,9 @@ useEffect(() => {
               getCurrentActiveMonth={getCurrentActiveMonth}
               getNextActiveMonth={getNextActiveMonth}
               getMonthType={getMonthType}
-              publishMonth={(month) => {
-                // console.log('🔍 BlocApp publishMonth - hasInitialBalances:', hasInitialBalances, typeof hasInitialBalances);
-                const result = publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments, maintenanceData);
-                if (result) {
-                  // ✅ TRANSFER AUTOMAT SOLDURI - REACTIVAT ȘI REPARAT
-                  // console.log('🔄 Începe transferul automat de solduri...');
-                  
-                  if (maintenanceData && maintenanceData.length > 0) {
-                    try {
-                      // Calculează soldurile pentru luna următoare folosind logica reparată
-                      const nextMonthBalances = calculateNextMonthBalances(maintenanceData, month);
-                      
-                      // console.log('💰 Solduri calculate pentru luna următoare:', nextMonthBalances);
-                      
-                      if (nextMonthBalances && Object.keys(nextMonthBalances).length > 0) {
-                        // Salvează soldurile în Firebase pentru luna următoare
-                        const monthlyBalances = nextMonthBalances; // nextMonthBalances vine cu cheia corectă
-                        const nextMonthKey = Object.keys(nextMonthBalances)[0]; // Ia prima cheie care conține luna
-                        const nextMonth = nextMonthKey.split('-').slice(1).join('-'); // Extrage luna din cheie
-                        
-                        saveInitialBalances(monthlyBalances, nextMonth).then(() => {
-                          // console.log(`✅ Soldurile au fost transferate automat în luna următoare: ${nextMonth}`);
-                          alert(`✅ Luna ${month} a fost publicată cu succes!`);
-                        }).catch((error) => {
-                          console.error('❌ Eroare la salvarea soldurilor:', error);
-                          alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
-                        });
-                      } else {
-                        // console.log('ℹ️ Nu sunt solduri de transferat (toate plătite integral)');
-                        alert(`✅ Luna ${month} a fost publicată cu succes!`);
-                      }
-                    } catch (error) {
-                      console.error('❌ Eroare la transferul soldurilor:', error);
-                      alert(`✅ Luna ${month} a fost publicată cu succes!\n\n⚠️ Atenție: A apărut o eroare la transferul automat al soldurilor. Verifică luna următoare.`);
-                    }
-                  } else {
-                    // console.log('ℹ️ Nu există date de întreținere pentru transfer');
-                    alert(`✅ Luna ${month} a fost publicată cu succes!`);
-                  }
-                  
-                  // TODO: Generare automată PDF (va trebui să mutăm funcția exportPDFAvizier într-un loc accesibil)
-                }
-                return result;
+              publishMonth={async (month) => {
+                // Apelăm publishMonth din hook care gestionează tot (inclusiv mesajele)
+                return await publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments || (() => []), calculateMaintenanceWithDetails());
               }}
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
@@ -516,10 +554,10 @@ useEffect(() => {
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               maintenanceData={maintenanceData}
-              togglePayment={togglePayment}
+              togglePayment={() => {}}
               activeMaintenanceTab={activeMaintenanceTab}
               setActiveMaintenanceTab={setActiveMaintenanceTab}
-              forceRecalculate={forceRecalculate}
+              forceRecalculate={() => {}}
               showAdjustBalances={showAdjustBalances}
               setShowAdjustBalances={setShowAdjustBalances}
               showExpenseConfig={showExpenseConfig}
@@ -529,7 +567,10 @@ useEffect(() => {
               getApartmentBalance={getApartmentBalance}
               setApartmentBalance={setApartmentBalance}
               saveBalanceAdjustments={saveBalanceAdjustments}
-              setMonthlyTables={setMonthlyTables}
+              updateCurrentSheetMaintenanceTable={updateCurrentSheetMaintenanceTable}
+              createInitialSheet={createInitialSheet}
+              currentSheet={currentSheet}
+              setMonthlyTables={() => {}}
               selectedExpenseForConfig={selectedExpenseForConfig}
               setSelectedExpenseForConfig={setSelectedExpenseForConfig}
               newCustomExpense={newCustomExpense}
@@ -543,6 +584,7 @@ useEffect(() => {
               toggleExpenseStatus={toggleExpenseStatus}
               deleteCustomExpense={deleteCustomExpense}
               handleNavigation={handleNavigation}
+              monthlyBalances={monthlyBalances}
             />
           )}
 
@@ -550,10 +592,13 @@ useEffect(() => {
           {currentView === "setup" && (
             <SetupView
               association={association}
-              blocks={blocks}
-              stairs={stairs}
-              apartments={apartments}
-              getAssociationApartments={getAssociationApartments}
+              blocks={finalBlocks}
+              stairs={finalStairs}
+              apartments={finalApartments}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
@@ -596,7 +641,10 @@ useEffect(() => {
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               handleNavigation={handleNavigation}
               newCustomExpense={newCustomExpense}
               setNewCustomExpense={setNewCustomExpense}
@@ -612,6 +660,7 @@ useEffect(() => {
               toggleExpenseStatus={toggleExpenseStatus}
               deleteCustomExpense={handleDeleteCustomExpense}
               getMonthType={getMonthType}
+              currentSheet={currentSheet}
             />
           )}
 
@@ -623,9 +672,12 @@ useEffect(() => {
               setNewAssociation={setNewAssociation}
               handleAddAssociation={handleAssociationSubmit}
               updateAssociation={updateAssociation}
-              blocks={blocks}
-              stairs={stairs}
-              getAssociationApartments={getAssociationApartments}
+              blocks={finalBlocks}
+              stairs={finalStairs}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               handleNavigation={handleNavigation}
               userProfile={userProfile}
               currentMonth={currentMonth}
@@ -649,7 +701,10 @@ useEffect(() => {
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               handleNavigation={handleNavigation}
               getMonthType={getMonthType}
             />
@@ -672,7 +727,10 @@ useEffect(() => {
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               handleNavigation={handleNavigation}
               getMonthType={getMonthType}
               // Props pentru facturi
@@ -695,7 +753,10 @@ useEffect(() => {
               getAvailableMonths={getAvailableMonths}
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments}
+              getAssociationApartments={getAssociationApartments || (() => {
+                console.error('⚠️ getAssociationApartments is not available');
+                return [];
+              })}
               handleNavigation={handleNavigation}
               getMonthType={getMonthType}
               currentSheet={currentSheet}

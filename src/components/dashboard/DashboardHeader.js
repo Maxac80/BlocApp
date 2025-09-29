@@ -29,8 +29,7 @@ const DashboardHeader = ({
             {/* Informații apartamente și persoane */}
             {association && getAssociationApartments && getAssociationApartments().length > 0 && (
               <p className="text-gray-500 text-xs mt-1">
-                {getAssociationApartments().length} apartamente •
-                {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+                {getAssociationApartments().length} apartamente • {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
               </p>
             )}
           </div>

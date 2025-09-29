@@ -19,11 +19,25 @@ export const useMonthManagement = (associationId) => {
     createInitialSheet,
     publishCurrentSheet,
     addExpenseToSheet,
+    removeExpenseFromSheet,
     addPaymentToPublishedSheet,
     SHEET_STATUS,
     updateStructureSnapshot,
+    updateConfigSnapshot,
     updateSheetCustomName,
-    updateSheetMonthSettings
+    updateSheetMonthSettings,
+    updateCurrentSheetMaintenanceTable,
+    fixTransferredBalances,
+    // 🆕 SHEET-BASED STRUCTURE OPERATIONS
+    addBlockToSheet,
+    addStairToSheet,
+    addApartmentToSheet,
+    deleteBlockFromSheet,
+    deleteStairFromSheet,
+    deleteApartmentFromSheet,
+    updateBlockInSheet,
+    updateStairInSheet,
+    updateApartmentInSheet
   } = useSheetManagement(associationId);
 
   // State pentru compatibilitate cu vechea interfață
@@ -31,12 +45,14 @@ export const useMonthManagement = (associationId) => {
     new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
   );
 
-  // Actualizează luna curentă când se schimbă sheet-ul
+  // Actualizează luna curentă când se schimbă sheet-ul - prioritizează published sheet
   useEffect(() => {
-    if (currentSheet) {
-      setCurrentMonth(currentSheet.monthYear);
+    if (publishedSheet) {
+      setCurrentMonth(publishedSheet.monthYear); // Luna activă publicată
+    } else if (currentSheet) {
+      setCurrentMonth(currentSheet.monthYear);   // Luna activă în lucru
     }
-  }, [currentSheet]);
+  }, [publishedSheet, currentSheet]);
 
   // Construiește availableMonths - fallback simplu dacă sheet-urile nu se încarcă
   const availableMonths = useMemo(() => {
@@ -128,7 +144,6 @@ export const useMonthManagement = (associationId) => {
       // Creează sheet-ul folosind ID-ul explicit
       // Trebuie să modificăm createInitialSheet să accepte ID-ul
       await createInitialSheet(associationData, idToUse);
-      console.log('✅ Sistem inițializat cu primul sheet');
     } catch (error) {
       console.error('❌ Error initializing sheets:', error);
     }
@@ -199,6 +214,12 @@ export const useMonthManagement = (associationId) => {
 
     try {
       // Validări de bază
+      console.log('🔍 Verificare date întreținere:', {
+        hasMaintenanceData: !!maintenanceData,
+        maintenanceDataLength: maintenanceData?.length,
+        maintenanceData: maintenanceData
+      });
+
       if (!maintenanceData || maintenanceData.length === 0) {
         if (!window.confirm('Nu există date de întreținere. Continuați cu publicarea?')) {
           return false;
@@ -244,12 +265,13 @@ export const useMonthManagement = (associationId) => {
           const confirmBalances = window.confirm(
             `💰 Confirmare solduri inițiale:\n\n` +
             `Total restanțe: ${totalRestante.toFixed(2)} RON\n` +
-            `Total penalități: ${totalPenalitati.toFixed(2)} RON\n` +
-            `TOTAL: ${totalSolduri.toFixed(2)} RON\n\n` +
-            `Acestea sunt soldurile corecte pentru începutul activității?\n` +
-            `După publicare, aceste solduri vor fi transferate automat în luna următoare.`
+            `Total penalități: ${totalPenalitati.toFixed(2)} RON\n\n` +
+            `Acestea sunt soldurile corecte pentru începutul activității?`
           );
-          if (!confirmBalances) return false;
+          if (!confirmBalances) {
+        console.log('❌ User cancelled balance confirmation');
+        return false;
+      }
         }
       }
 
@@ -275,12 +297,15 @@ export const useMonthManagement = (associationId) => {
 
       console.log('📋 Publică sheet-ul existent:', currentSheet.monthYear);
 
-      // Publică sheet-ul curent (actualizează statusul și adaugă date complete)
+      // Publică sheet-ul curent cu datele calculate (SNAPSHOT COMPLET la publicare)
       const result = await publishCurrentSheet(maintenanceData, association.adminId);
 
       if (result) {
         alert(`✅ Luna ${month} a fost publicată cu succes!`);
         return true;
+      } else {
+        console.log('⚠️ publishCurrentSheet returned falsy value:', result);
+        return false;
       }
     } catch (error) {
       console.error('Error publishing month:', error);
@@ -450,7 +475,6 @@ export const useMonthManagement = (associationId) => {
       const sheetRef = doc(collection(db, 'sheets'));
       await setDoc(sheetRef, sheetData);
 
-      console.log('✅ Primul sheet creat și publicat:', monthYear);
       return sheetRef.id;
     } catch (error) {
       console.error('❌ Error creating initial sheet with data:', error);
@@ -572,6 +596,13 @@ export const useMonthManagement = (associationId) => {
     // Funcție pentru actualizarea numelui personalizat
     updateSheetCustomName,
     updateSheetMonthSettings,
+    updateCurrentSheetMaintenanceTable,
+    createInitialSheet,
+    fixTransferredBalances,
+
+    // Sheet expense management
+    addExpenseToSheet,
+    removeExpenseFromSheet,
 
     getCurrentSheetBalance: useCallback((apartmentId) => {
       if (!currentSheet) return { restante: 0, penalitati: 0 };
@@ -597,7 +628,20 @@ export const useMonthManagement = (associationId) => {
       
       // Fallback pentru apartamente noi sau fără istoric
       return { restante: 0, penalitati: 0 };
-    }, [currentSheet])
+    }, [currentSheet]),
+
+    // 🆕 SHEET-BASED STRUCTURE OPERATIONS
+    updateStructureSnapshot,
+    updateConfigSnapshot,
+    addBlockToSheet,
+    addStairToSheet,
+    addApartmentToSheet,
+    deleteBlockFromSheet,
+    deleteStairFromSheet,
+    deleteApartmentFromSheet,
+    updateBlockInSheet,
+    updateStairInSheet,
+    updateApartmentInSheet
   };
 };
 

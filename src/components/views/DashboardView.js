@@ -31,7 +31,8 @@ const DashboardView = ({
   // Data
   expenses,
   maintenanceData,
-  
+  currentSheet,
+
   // User profile
   userProfile
 }) => {
@@ -181,6 +182,7 @@ const DashboardView = ({
               expenses={expenses}
               currentMonth={currentMonth}
               maintenanceData={updatedMaintenanceData}
+              currentSheet={currentSheet}
             />
 
             {/* Verifică dacă luna curentă este publicată */}

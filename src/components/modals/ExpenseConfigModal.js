@@ -11,7 +11,7 @@ const ExpenseConfigModal = ({
   getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
-  associationId
+  currentSheet
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [localConfig, setLocalConfig] = useState({
@@ -22,7 +22,7 @@ const ExpenseConfigModal = ({
     contactPerson: ''
   });
   
-  const { suppliers, loading, addSupplier } = useSuppliers(associationId);
+  const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
   const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
   const [newSupplierData, setNewSupplierData] = useState({
     name: '',
@@ -34,6 +34,16 @@ const ExpenseConfigModal = ({
     iban: '',
     notes: ''
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('ExpenseConfigModal mounted with:', {
+      expenseName,
+      currentSheet: currentSheet?.id,
+      hasSuppliers: suppliers.length,
+      loading
+    });
+  }, [expenseName, currentSheet?.id, suppliers.length, loading]);
 
   useEffect(() => {
     if (expenseConfig) {
@@ -54,11 +64,19 @@ const ExpenseConfigModal = ({
           ...newSupplierData,
           serviceTypes: [expenseName]
         });
-        setLocalConfig({
+
+        // Update local config with new supplier
+        const updatedConfig = {
           ...localConfig,
           supplierId: newSupplier.id,
           supplierName: newSupplier.name
-        });
+        };
+
+        // Update state and save to parent
+        setLocalConfig(updatedConfig);
+        updateExpenseConfig(expenseName, updatedConfig);
+
+        // Reset the form
         setIsAddingNewSupplier(false);
         setNewSupplierData({
           name: '',
@@ -70,12 +88,33 @@ const ExpenseConfigModal = ({
           iban: '',
           notes: ''
         });
+
+        // Close modal after successful save
+        onClose();
+        return;
       } catch (error) {
         console.error('Error adding supplier:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          stack: error.stack,
+          supplierData: newSupplierData,
+          currentSheet: currentSheet?.id
+        });
+
+        // More specific error messages
+        if (error.code === 'permission-denied') {
+          alert('Nu aveți permisiunea de a adăuga furnizori. Verificați dacă sunteți autentificat.');
+        } else if (error.message?.includes('Missing or insufficient permissions')) {
+          alert('Permisiuni insuficiente. Contactați administratorul.');
+        } else {
+          alert(`Eroare la adăugarea furnizorului: ${error.message || 'Eroare necunoscută'}. Verificați consola pentru detalii.`);
+        }
         return;
       }
     }
-    
+
+    // Save configuration without adding new supplier
     updateExpenseConfig(expenseName, localConfig);
     onClose();
   };

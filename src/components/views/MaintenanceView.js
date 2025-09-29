@@ -16,7 +16,7 @@ const MaintenanceView = ({
   blocks,
   stairs,
   getAssociationApartments,
-  
+
   // Month management
   currentMonth,
   setCurrentMonth,
@@ -58,6 +58,9 @@ const MaintenanceView = ({
   getApartmentBalance,
   setApartmentBalance,
   saveBalanceAdjustments,
+  updateCurrentSheetMaintenanceTable,
+  createInitialSheet,
+  currentSheet,
   setMonthlyTables,
   
   // Expense configuration
@@ -73,26 +76,71 @@ const MaintenanceView = ({
   getDisabledExpenseTypes,
   toggleExpenseStatus,
   deleteCustomExpense,
-  
+
   // Navigation
-  handleNavigation
+  handleNavigation,
+
+  // Monthly balances
+  monthlyBalances
 }) => {
+  // 🔍 DEBUGGING MAINTENANCE DATA
+  console.log('🔍 MaintenanceView received:', {
+    maintenanceDataLength: maintenanceData?.length,
+    maintenanceDataSample: maintenanceData?.[0],
+    associationId: association?.id,
+    currentMonth,
+    getAssociationApartments: typeof getAssociationApartments
+  });
+
+  // TOATE HOOK-URILE TREBUIE SĂ FIE APELATE ÎNAINTE DE ORICE RETURN CONDIȚIONAL
+
   // State pentru modalul de plăți
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
   // Hook pentru gestionarea încasărilor
-  const { addIncasare } = useIncasari(association, currentMonth);
-  
+  const { addIncasare } = useIncasari(association || null, currentMonth);
+
   // Hook pentru gestionarea facturilor cu suport complet pentru distribuție parțială
-  const { 
-    addInvoice, 
+  const {
+    addInvoice,
     updateInvoiceDistribution,
     getPartiallyDistributedInvoices,
     getInvoiceByNumber,
     syncSuppliersForExpenseType
   } = useInvoices(association?.id);
-  
+
+  // Hook pentru sincronizarea plăților cu tabelul de întreținere
+  const {
+    getUpdatedMaintenanceData,
+    getApartmentPayments,
+    getPaymentStats
+  } = usePaymentSync(association || null, currentMonth);
+
+  // Early return if critical dependencies are missing - DUPĂ HOOK-URI
+  if (!getAssociationApartments || typeof getAssociationApartments !== 'function') {
+    console.error('⚠️ MaintenanceView: getAssociationApartments is not available');
+    console.error('⚠️ Props received:', {
+      hasAssociation: !!association,
+      hasBlocks: blocks?.length > 0,
+      hasStairs: stairs?.length > 0,
+      getAssociationApartmentsType: typeof getAssociationApartments,
+      getAssociationApartments
+    });
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Se încarcă datele asociației...</p>
+          <p className="mt-2 text-sm text-gray-500">Dacă această problemă persistă, reîmprospătați pagina</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Nu mai e nevoie de wrapper - folosim direct getAssociationApartments din props
+  // Funcția vine deja din useMaintenanceCalculation hook
+
   // Debug: Verifică dacă funcțiile sunt disponibile
   // console.log('🔧 MaintenanceView functions check:', {
   //   hasAddInvoice: !!addInvoice,
@@ -100,7 +148,7 @@ const MaintenanceView = ({
   //   hasGetInvoiceByNumber: !!getInvoiceByNumber,
   //   associationId: association?.id
   // });
-  
+
   // Wrapper îmbunătățit pentru handleAddExpense care gestionează facturi parțiale
   const handleAddExpenseWithInvoice = async () => {
     // console.log('🚀 handleAddExpenseWithInvoice called', {
@@ -117,10 +165,10 @@ const MaintenanceView = ({
         expenseId: null, // Va fi setat după ce se creează expense-ul
         notes: `Distribuție pentru ${newExpense.name}`
       };
-      
+
       try {
         await updateInvoiceDistribution(
-          newExpense.invoiceData.selectedExistingInvoiceId, 
+          newExpense.invoiceData.selectedExistingInvoiceId,
           distributionData
         );
         console.log('✅ Distribuție parțială actualizată pentru factura existentă');
@@ -128,21 +176,22 @@ const MaintenanceView = ({
         console.error('❌ Eroare la actualizarea distribuției:', error);
       }
     }
-    
+
     // Apelează handler-ul original cu funcția addInvoice modificată
     return await handleAddExpense(addInvoice);
   };
-  
-  // Hook pentru sincronizarea plăților cu tabelul de întreținere
-  const { 
-    getUpdatedMaintenanceData, 
-    getApartmentPayments,
-    getPaymentStats 
-  } = usePaymentSync(association, currentMonth);
 
   // Calculează datele actualizate pentru afișare în tabel
   // Acestea vor reflecta datoriile reale după încasări
   const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+
+  // DEBUGGING TEMPORAR
+  console.log('🔍 DEBUGGING:', {
+    maintenanceDataLength: maintenanceData?.length,
+    updatedMaintenanceDataLength: updatedMaintenanceData?.length,
+    maintenanceDataFirst: maintenanceData?.[0],
+    updatedFirst: updatedMaintenanceData?.[0]
+  });
 
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
@@ -174,8 +223,8 @@ const MaintenanceView = ({
     }
   };
 
-  // ✅ PRELUAREA EXACTĂ A LOGICII DIN ORIGINALUL BlocApp.js
-  const associationExpenses = expenses.filter(exp => exp.associationId === association?.id && exp.month === currentMonth);
+  // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul curent
+  const associationExpenses = currentSheet?.expenses || [];
   
   // ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER (COPIATĂ EXACT)
   const exportPDFAvizier = () => {
@@ -861,13 +910,14 @@ const MaintenanceView = ({
                             <button
                               onClick={() => {
                                 const modalData = getAssociationApartments().map(apartment => {
+                                  const balance = getApartmentBalance(apartment.id);
                                   return {
                                     apartmentId: apartment.id,
                                     apartmentNumber: apartment.number,
-                                    currentBalance: {
-                                      restante: monthlyBalances[`${association.id}-${currentMonth}`]?.[apartment.id]?.restante || 0,
-                                      penalitati: monthlyBalances[`${association.id}-${currentMonth}`]?.[apartment.id]?.penalitati || 0
-                                    }
+                                    restanteCurente: balance.restante || 0,
+                                    penalitatiCurente: balance.penalitati || 0,
+                                    restanteAjustate: balance.restante || 0,
+                                    penalitatiAjustate: balance.penalitati || 0
                                   };
                                 });
                                 setAdjustModalData(modalData);
@@ -951,7 +1001,7 @@ const MaintenanceView = ({
                     <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Nu există date de întreținere</h3>
                     <p className="text-gray-500">
-                      {areAllExpensesFullyCompleted(currentMonth)
+                      {areAllExpensesFullyCompleted(getAssociationApartments)
                         ? "Completează toate consumurile pentru a genera tabelul de întreținere."
                         : "Adaugă cheltuieli și completează consumurile pentru a calcula întreținerea."}
                     </p>
@@ -971,6 +1021,10 @@ const MaintenanceView = ({
           setAdjustModalData={setAdjustModalData}
           setApartmentBalance={setApartmentBalance}
           saveBalanceAdjustments={saveBalanceAdjustments}
+          updateCurrentSheetMaintenanceTable={updateCurrentSheetMaintenanceTable}
+          createInitialSheet={createInitialSheet}
+          currentSheet={currentSheet}
+          maintenanceData={maintenanceData}
           association={association}
           setMonthlyTables={setMonthlyTables}
           forceRecalculate={forceRecalculate}
@@ -985,7 +1039,7 @@ const MaintenanceView = ({
           getAssociationApartments={getAssociationApartments}
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
-          associationId={association?.id}
+          currentSheet={currentSheet}
         />
 
         <PaymentModal

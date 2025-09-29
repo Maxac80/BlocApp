@@ -55,7 +55,7 @@ return (
                 }`}
               >
                 <Calendar className="w-5 h-5" />
-                Luna Curentă
+                Luna Activă
               </button>
               <button
                 onClick={() => setCurrentMonth(nextActiveMonth.value)}
@@ -77,7 +77,10 @@ return (
             {shouldShowPublishButton(currentMonth) && (
               <div className="p-6 border-b">
                 <button
-                  onClick={() => publishMonth(currentMonth)}
+                  onClick={async () => {
+                    const result = await publishMonth(currentMonth);
+                    console.log('Publish result:', result);
+                  }}
                   className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 flex items-center gap-2 font-medium shadow-md transition-all hover:shadow-lg"
                 >
                   📋 Publică Luna
@@ -97,7 +100,10 @@ return (
           {shouldShowPublishButton(currentMonth) && (
             <div className="p-6 border-b">
               <button
-                onClick={() => publishMonth(currentMonth)}
+                onClick={async () => {
+                  const result = await publishMonth(currentMonth);
+                  console.log('Publish result:', result);
+                }}
                 className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 flex items-center gap-2 font-medium shadow-md transition-all hover:shadow-lg"
               >
                 📋 Publică Luna

@@ -177,16 +177,8 @@ export const useExpenseManagement = ({
 
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
   const handleAddExpense = useCallback(async (addInvoiceFn = null) => {
-    // console.log('🚀 handleAddExpense START', {
-    //   hasName: !!newExpense.name,
-    //   expenseName: newExpense.name,
-    //   hasAssociation: !!association,
-    //   hasInvoiceData: !!newExpense.invoiceData,
-    //   hasAddInvoiceFn: !!addInvoiceFn
-    // });
-    
+
     if (!newExpense.name || !association) {
-      console.log('❌ handleAddExpense EARLY EXIT - no name or association');
       return false;
     }
     
@@ -211,7 +203,6 @@ export const useExpenseManagement = ({
     }
     
     try {
-      console.log('💰 Adaug cheltuiala:', newExpense.name);
       
       // 1. Adaugă cheltuiala lunară
       const expenseData = {
@@ -248,10 +239,6 @@ export const useExpenseManagement = ({
       // });
       
       if (newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn) {
-        console.log('🧾 Salvez factura asociată:', newExpense.invoiceData.invoiceNumber);
-        console.log('📄 Date factură:', newExpense.invoiceData);
-        console.log('📎 Fișier PDF:', newExpense.pdfFile?.name || 'Nu există PDF');
-        console.log('🏢 FULL expenseSettings object:', expenseSettings);
         // console.log('🔍 expenseSettings detailed breakdown:', {
         //   expenseType: newExpense.name,
         //   supplierId: expenseSettings.supplierId,
@@ -303,7 +290,6 @@ export const useExpenseManagement = ({
           //   addInvoiceFnExists: !!addInvoiceFn
           // });
           await addInvoiceFn(invoiceData, newExpense.pdfFile);
-          console.log('✅ Factură salvată cu succes');
         } catch (invoiceError) {
           console.warn('⚠️ Cheltuiala a fost salvată, dar factura nu a putut fi salvată:', invoiceError);
           
@@ -321,7 +307,6 @@ export const useExpenseManagement = ({
       }
       
       // 3. Reset form
-      console.log('🔄 Resetez forma completă după adăugarea cheltuielii');
       setNewExpense({
         name: "",
         amount: "",
@@ -392,15 +377,13 @@ export const useExpenseManagement = ({
 
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleDeleteCustomExpense = useCallback(async (expenseName) => {
-    if (window.confirm(`Ești sigur că vrei să ștergi cheltuiala personalizată "${expenseName}"?`)) {
-      try {
-        await deleteCustomExpense(expenseName);
-        return true;
-      } catch (error) {
-        console.error('❌ Eroare la ștergerea cheltuielii personalizate:', error);
-        alert('Eroare la ștergerea cheltuielii personalizate: ' + error.message);
-        return false;
-      }
+    try {
+      await deleteCustomExpense(expenseName);
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la ștergerea cheltuielii personalizate:', error);
+      alert('Eroare la ștergerea cheltuielii personalizate: ' + error.message);
+      return false;
     }
     return false;
   }, [deleteCustomExpense]);
@@ -418,25 +401,13 @@ export const useExpenseManagement = ({
     const hasIndividualAmounts = expense.individualAmounts && Object.keys(expense.individualAmounts).length > 0 && 
                                  Object.values(expense.individualAmounts).some(val => parseFloat(val) > 0);
     
-    let confirmMessage = `Ești sigur că vrei să ștergi cheltuiala "${expense.name}"?`;
-    
-    if (hasConsumption || hasIndividualAmounts) {
-      confirmMessage = `⚠️ ATENȚIE: Cheltuiala "${expense.name}" are ${
-        hasConsumption ? 'consumuri introduse' : ''
-      }${hasConsumption && hasIndividualAmounts ? ' și ' : ''}${
-        hasIndividualAmounts ? 'sume individuale setate' : ''
-      }!\n\nDacă ștergi această cheltuială, toate datele vor fi pierdute.\n\nEști sigur că vrei să continui?`;
-    }
-    
-    if (window.confirm(confirmMessage)) {
-      try {
-        await deleteMonthlyExpense(expenseId);
-        return true;
-      } catch (error) {
-        console.error('❌ Eroare la ștergerea cheltuielii lunare:', error);
-        alert('Eroare la ștergerea cheltuielii lunare: ' + error.message);
-        return false;
-      }
+    try {
+      await deleteMonthlyExpense(expenseId);
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la ștergerea cheltuielii lunare:', error);
+      alert('Eroare la ștergerea cheltuielii lunare: ' + error.message);
+      return false;
     }
     return false;
   }, [expenses, deleteMonthlyExpense]);

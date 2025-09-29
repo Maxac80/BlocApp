@@ -11,7 +11,7 @@ import { db } from '../firebase';
  * - Sincronizarea cu Firestore
  * - Calculul automatizat al soldurilor
  */
-export const useBalanceManagement = (association) => {
+export const useBalanceManagement = (association, sheetOperations = null) => {
   // 📊 STATE LOCAL PENTRU SOLDURI
   const [hasInitialBalances, setHasInitialBalances] = useState(false);
   const [disabledExpenses, setDisabledExpenses] = useState({});
@@ -20,6 +20,7 @@ export const useBalanceManagement = (association) => {
     defaultPenaltyRate: 0.02, // 2% default
     daysBeforePenalty: 30
   });
+
 
   // 🔄 ÎNCĂRCAREA CONFIGURĂRILOR LA SCHIMBAREA ASOCIAȚIEI
   useEffect(() => {
@@ -145,10 +146,35 @@ export const useBalanceManagement = (association) => {
     if (!association?.id) {
       throw new Error('Nu există asociație selectată');
     }
-    
+
     try {
-      console.log('🔄 Salvez ajustările de solduri pentru:', month);
-      
+      // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
+      if (sheetOperations?.updateConfigSnapshot && sheetOperations?.currentSheet) {
+
+        // Creează obiectul de ajustări indexat după apartmentId
+        const balanceAdjustments = {};
+        adjustmentData.forEach(apartmentData => {
+          balanceAdjustments[apartmentData.apartmentId] = {
+            restante: apartmentData.restanteAjustate || 0,
+            penalitati: apartmentData.penalitatiAjustate || 0,
+            savedAt: new Date().toISOString(),
+            month: month
+          };
+        });
+
+        // Actualizează config snapshot-ul în sheet
+        const updatedConfigData = {
+          ...sheetOperations.currentSheet.configSnapshot,
+          balanceAdjustments: balanceAdjustments
+        };
+
+        await sheetOperations.updateConfigSnapshot(updatedConfigData);
+        return;
+      }
+
+      // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
+      console.log('📦 COLLECTION-FALLBACK: Salvez ajustările în colecții...');
+
       // Șterge ajustările existente pentru această lună
       const existingQuery = query(
         collection(db, 'balanceAdjustments'),
@@ -156,12 +182,12 @@ export const useBalanceManagement = (association) => {
         where('month', '==', month)
       );
       const existingSnapshot = await getDocs(existingQuery);
-      
-      const deletePromises = existingSnapshot.docs.map(docSnapshot => 
+
+      const deletePromises = existingSnapshot.docs.map(docSnapshot =>
         deleteDoc(doc(db, 'balanceAdjustments', docSnapshot.id))
       );
       await Promise.all(deletePromises);
-      
+
       // Salvează noile ajustări
       const savePromises = adjustmentData.map(apartmentData => {
         return addDoc(collection(db, 'balanceAdjustments'), {
@@ -173,16 +199,16 @@ export const useBalanceManagement = (association) => {
           savedAt: new Date().toISOString()
         });
       });
-      
+
       await Promise.all(savePromises);
-      console.log(`✅ Ajustări solduri salvate pentru ${month}:`, adjustmentData.length, 'apartamente');
+      console.log(`✅ Ajustări solduri salvate în colecții pentru ${month}:`, adjustmentData.length, 'apartamente');
       
       return true;
     } catch (error) {
       console.error('❌ Eroare la salvarea ajustărilor:', error);
       throw error;
     }
-  }, [association?.id]);
+  }, [association?.id, sheetOperations]);
 
   // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE
   const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
@@ -276,16 +302,40 @@ export const useBalanceManagement = (association) => {
   // 📋 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI
   const loadBalanceAdjustments = useCallback(async () => {
     if (!association?.id) return {};
-    
+
     try {
       console.log('📋 Încarc ajustările de solduri...');
-      
+
+      // 🎯 PRIORITATE: Citește din sheet dacă sunt disponibile
+      if (sheetOperations?.currentSheet?.configSnapshot?.balanceAdjustments) {
+        console.log('📖 SHEET-BASED: Citesc ajustările din sheet...');
+        const sheetAdjustments = sheetOperations.currentSheet.configSnapshot.balanceAdjustments;
+
+        // Convertește din formatul sheet (indexat după apartmentId) în formatul legacy
+        const loadedAdjustments = {};
+        Object.entries(sheetAdjustments).forEach(([apartmentId, adjustmentData]) => {
+          const monthKey = adjustmentData.month || 'unknown';
+          if (!loadedAdjustments[monthKey]) {
+            loadedAdjustments[monthKey] = {};
+          }
+          loadedAdjustments[monthKey][apartmentId] = {
+            restante: adjustmentData.restante || 0,
+            penalitati: adjustmentData.penalitati || 0
+          };
+        });
+
+        return loadedAdjustments;
+      }
+
+      // 📦 FALLBACK: Citește din colecțiile Firebase (pentru compatibilitate)
+      console.log('📖 COLLECTION-FALLBACK: Citesc ajustările din colecții...');
+
       const adjustmentsQuery = query(
         collection(db, 'balanceAdjustments'),
         where('associationId', '==', association.id)
       );
       const adjustmentsSnapshot = await getDocs(adjustmentsQuery);
-      
+
       const loadedAdjustments = {};
       adjustmentsSnapshot.docs.forEach(docSnapshot => {
         const data = docSnapshot.data();
@@ -306,7 +356,7 @@ export const useBalanceManagement = (association) => {
       console.error('❌ Eroare la încărcarea ajustărilor:', error);
       return {};
     }
-  }, [association?.id]);
+  }, [association?.id, sheetOperations]);
 
   // 📥 ÎNCĂRCAREA SETĂRILOR PENALITĂȚILOR
   const loadPenaltySettings = useCallback(async () => {

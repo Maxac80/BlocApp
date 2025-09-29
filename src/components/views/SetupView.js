@@ -108,7 +108,8 @@ const SetupView = ({
   const associationStairs = stairs.filter(stair => 
     associationBlocks.some(block => block.id === stair.blockId)
   );
-  const associationApartments = getAssociationApartments();
+  // Folosim direct apartments care sunt deja filtrate pentru asociația curentă
+  const associationApartments = apartments || [];
 
   // Filtrez apartamentele pentru căutare
   const filteredApartments = searchTerm 

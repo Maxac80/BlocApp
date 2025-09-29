@@ -27,13 +27,14 @@ const ExpensesViewNew = ({
   getDisabledExpenseTypes,
   toggleExpenseStatus,
   deleteCustomExpense,
-  getMonthType
+  getMonthType,
+  currentSheet
 }) => {
   const [activeTab, setActiveTab] = useState('expenses');
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   
-  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(association?.id);
+  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(currentSheet);
   
   const [newSupplier, setNewSupplier] = useState({
     name: '',
@@ -503,7 +504,7 @@ const ExpensesViewNew = ({
           getAssociationApartments={getAssociationApartments}
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
-          associationId={association?.id}
+          currentSheet={currentSheet}
         />
       </div>
     </div>

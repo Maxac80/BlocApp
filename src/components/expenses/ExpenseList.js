@@ -191,9 +191,11 @@ const ExpenseList = ({
                           </span>
                           {!isMonthReadOnly && handleDeleteMonthlyExpense && (
                             <button
-                              onClick={() => {
-                                handleDeleteMonthlyExpense(expense.id);
-                                setShowDetailModal(false);
+                              onClick={async () => {
+                                const success = await handleDeleteMonthlyExpense(expense.id);
+                                if (success) {
+                                  setShowDetailModal(false);
+                                }
                               }}
                               className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
                               title="Șterge cheltuiala"

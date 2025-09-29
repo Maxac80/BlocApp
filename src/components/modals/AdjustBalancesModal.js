@@ -9,6 +9,10 @@ const AdjustBalancesModal = ({
   setAdjustModalData,
   setApartmentBalance,
   saveBalanceAdjustments,
+  updateCurrentSheetMaintenanceTable,
+  createInitialSheet,
+  currentSheet,
+  maintenanceData,
   association,
   setMonthlyTables,
   forceRecalculate
@@ -19,8 +23,9 @@ const AdjustBalancesModal = ({
 
   const handleSave = async () => {
     try {
-      console.log('🔄 Începe salvarea ajustărilor...');
-      console.log('📊 Date din modal:', adjustModalData);
+      console.log('🎯 BALANCE ADJUSTMENT: Starting save...');
+      console.log('🎯 BALANCE ADJUSTMENT: Sheet ID =', currentSheet?.id || 'NULL');
+      console.log('🎯 BALANCE ADJUSTMENT: Has update function =', !!updateCurrentSheetMaintenanceTable);
       
       // Salvează local (solduri curente pentru luna actuală)
       adjustModalData.forEach(apartmentData => {
@@ -58,8 +63,63 @@ const AdjustBalancesModal = ({
       } else {
         console.log('❌ forceRecalculate nu este disponibil');
       }
-      
-      alert('✅ Valorile au fost înlocuite cu succes! Tabelul de întreținere va fi recalculat.');
+
+      // Actualizează tabelul de întreținere din sheet-ul curent cu noile solduri
+      console.log('🔍 Debug updateCurrentSheetMaintenanceTable:', {
+        hasUpdateFunction: !!updateCurrentSheetMaintenanceTable,
+        hasMaintenanceData: !!maintenanceData,
+        maintenanceDataLength: maintenanceData?.length || 0,
+        adjustModalDataLength: adjustModalData?.length || 0
+      });
+
+      if (updateCurrentSheetMaintenanceTable && maintenanceData && maintenanceData.length > 0) {
+        console.log('🎯 BALANCE ADJUSTMENT: Attempting Firebase save...');
+        try {
+          // Creează un nou tabel cu soldurile actualizate
+          const updatedMaintenanceTable = maintenanceData.map(row => {
+            // Găsește ajustarea pentru acest apartament
+            const adjustment = adjustModalData.find(adj => adj.apartmentId === row.apartmentId);
+
+            if (adjustment) {
+              // Calculează noile valori
+              const newRestante = Math.round((adjustment.restanteAjustate || 0) * 100) / 100;
+              const newPenalitati = Math.round((adjustment.penalitatiAjustate || 0) * 100) / 100;
+              const newTotalMaintenance = Math.round((row.currentMaintenance + newRestante) * 100) / 100;
+              const newTotalDatorat = Math.round((newTotalMaintenance + newPenalitati) * 100) / 100;
+
+              console.log(`💰 Actualizez soldurile pentru ap. ${row.apartment}:`, {
+                restanteVechi: row.restante,
+                restanteNoi: newRestante,
+                penalitatiVechi: row.penalitati,
+                penalitatiNoi: newPenalitati
+              });
+
+              return {
+                ...row,
+                restante: newRestante,
+                penalitati: newPenalitati,
+                totalMaintenance: newTotalMaintenance,
+                totalDatorat: newTotalDatorat
+              };
+            }
+
+            return row; // Nu modificăm apartamentele care nu au ajustări
+          });
+
+          // Salvează tabelul actualizat în sheet-ul curent
+          await updateCurrentSheetMaintenanceTable(updatedMaintenanceTable);
+          console.log('🎯 BALANCE ADJUSTMENT: Firebase save SUCCESS!');
+        } catch (error) {
+          console.error('❌ Eroare la actualizarea tabelului din sheet:', error);
+          // Nu blochez salvarea, doar loghează eroarea
+        }
+      } else {
+        console.log('🎯 BALANCE ADJUSTMENT: NO SHEET FOUND - Cannot save to Firebase!');
+        alert('⚠️ Nu există sheet curent pentru salvarea balance adjustments. Te rugăm să completezi onboarding-ul întâi.');
+        return;
+      }
+
+      // Valorile sunt salvate automat - nu mai e nevoie de alert
     } catch (error) {
       console.error('❌ Eroare la salvarea ajustărilor:', error);
       alert('❌ Eroare la salvarea ajustărilor: ' + error.message);
@@ -187,14 +247,18 @@ const AdjustBalancesModal = ({
                             const normalizedValue = value.replace(',', '.');
                             const numericValue = normalizedValue === "" ? 0 : parseFloat(normalizedValue) || 0;
                             console.log(`🔄 Update restante ap. ${apartmentData.apartmentNumber}: "${value}" -> ${numericValue}`);
-                            setAdjustModalData(prev => prev.map(item => 
-                              item.apartmentId === apartmentData.apartmentId 
+                            setAdjustModalData(prev => prev.map(item =>
+                              item.apartmentId === apartmentData.apartmentId
                                 ? { ...item, restanteAjustate: numericValue }
                                 : item
                             ));
                           }
                         }}
-                        className="w-full p-1 border rounded text-sm"
+                        className={`w-full p-1 border rounded text-sm ${
+                          (apartmentData.restanteAjustate || 0) !== (apartmentData.restanteCurente || 0)
+                            ? 'border-orange-400 bg-orange-50 text-orange-900 font-semibold ring-1 ring-orange-200'
+                            : 'border-gray-300'
+                        }`}
                         placeholder="0"
                       />
                     </td>
@@ -209,14 +273,18 @@ const AdjustBalancesModal = ({
                             const normalizedValue = value.replace(',', '.');
                             const numericValue = normalizedValue === "" ? 0 : parseFloat(normalizedValue) || 0;
                             console.log(`🔄 Update penalitati ap. ${apartmentData.apartmentNumber}: "${value}" -> ${numericValue}`);
-                            setAdjustModalData(prev => prev.map(item => 
-                              item.apartmentId === apartmentData.apartmentId 
+                            setAdjustModalData(prev => prev.map(item =>
+                              item.apartmentId === apartmentData.apartmentId
                                 ? { ...item, penalitatiAjustate: numericValue }
                                 : item
                             ));
                           }
                         }}
-                        className="w-full p-1 border rounded text-sm"
+                        className={`w-full p-1 border rounded text-sm ${
+                          (apartmentData.penalitatiAjustate || 0) !== (apartmentData.penalitatiCurente || 0)
+                            ? 'border-orange-400 bg-orange-50 text-orange-900 font-semibold ring-1 ring-orange-200'
+                            : 'border-gray-300'
+                        }`}
                         placeholder="0"
                       />
                     </td>

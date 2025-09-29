@@ -10,7 +10,8 @@ const StatisticsCards = ({
   getAssociationApartments,
   expenses,
   currentMonth,
-  maintenanceData
+  maintenanceData,
+  currentSheet
 }) => {
   // Hook pentru încasări din Firestore
   const { getIncasariStats } = useIncasari(association, currentMonth);
@@ -30,8 +31,8 @@ const StatisticsCards = ({
   const apartmentCount = apartments.length;
   const personCount = apartments.reduce((sum, apt) => sum + apt.persons, 0);
   
-  // Calculează cheltuielile pentru luna curentă
-  const currentMonthExpenses = expenses.filter(e => e.associationId === association.id && e.month === currentMonth);
+  // SHEET-BASED: Folosește cheltuielile din sheet-ul curent
+  const currentMonthExpenses = currentSheet?.expenses || [];
   const expenseCount = currentMonthExpenses.length;
   const totalExpenses = currentMonthExpenses.reduce((sum, expense) => {
     // Pentru cheltuielile pe consum folosește billAmount, pentru altele amount

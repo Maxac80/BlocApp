@@ -76,13 +76,14 @@ export const useDataOperations = ({
         'invoices',
         'monthStatuses',
         'sheets',
-        'suppliers'
+        'suppliers',
+        'settings'
       ];
 
       // Șterge toate colecțiile în paralel pentru viteză
       const deletePromises = collectionsToDelete.map(async (collectionName) => {
         try {
-          // console.log(`🗑️ Șterg colecția: ${collectionName}`);
+          console.log(`🗑️ Șterg colecția: ${collectionName}`);
           
           const collectionRef = collection(db, collectionName);
           const querySnapshot = await getDocs(collectionRef);
@@ -98,7 +99,7 @@ export const useDataOperations = ({
           });
           
           await Promise.all(batch);
-          // console.log(`✅ Colecția ${collectionName} ștearsă complet (${batch.length} documente)`);
+          console.log(`✅ Colecția ${collectionName} ștearsă complet (${batch.length} documente)`);
         } catch (error) {
           console.error(`❌ Eroare la ștergerea colecției ${collectionName}:`, error);
         }
@@ -188,20 +189,10 @@ export const useDataOperations = ({
 
       resetForm();
 
-      // Inițializează sheet-ul pentru noua asociație
-      // Trimitem datele asociației și ID-ul pentru a crea primul sheet
-      const associationData = {
-        id: createdAssociation.id, // Adăugăm ID-ul aici
-        name: newAssociation.name,
-        cui: newAssociation.cui || "",
-        address: newAssociation.address,
-        bankAccount: newAssociation.bankAccount || "",
-        administrator: newAssociation.administrator || "",
-        president: newAssociation.president || "",
-        censor: newAssociation.censor || ""
-      };
-      console.log('🎯 APELEAZĂ INITIALIZE MONTHS cu ID:', createdAssociation.id);
-      initializeMonths(associationData, createdAssociation.id); // Trimitem și ID-ul ca parametru separat
+      // 🎯 Sheet creation removed - only happens automatically after onboarding completion
+      // Nu mai creăm sheet automat la adăugarea manuală de asociații
+      // Sheet-ul se creează doar după finalizarea onboarding-ului
+      console.log('✅ Association created successfully. Sheet will be created automatically after onboarding completion.');
 
       console.log('✅ ASOCIAȚIE CREATĂ CU SUCCES!');
     } catch (error) {

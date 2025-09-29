@@ -23,12 +23,12 @@ import useExpenseConfigurations from './useExpenseConfigurations';
  * - Sincronizare real-time cu Firebase
  * - Filtrare și căutare facturi
  */
-const useInvoices = (associationId) => {
+const useInvoices = (associationId, currentSheet) => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
-  const { getExpenseConfig } = useExpenseConfigurations(associationId);
+  const { getExpenseConfig } = useExpenseConfigurations(currentSheet);
 
   // 🔄 ÎNCĂRCAREA FACTURILOR LA SCHIMBAREA ASOCIAȚIEI
   useEffect(() => {

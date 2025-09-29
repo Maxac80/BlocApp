@@ -1,75 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  collection, 
+import {
   doc,
-  setDoc,
-  getDoc,
-  onSnapshot,
-  query,
-  where,
-  getDocs
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { defaultExpenseTypes } from '../data/expenseTypes';
 
-const useExpenseConfigurations = (associationId) => {
+const useExpenseConfigurations = (currentSheet) => {
   const [configurations, setConfigurations] = useState({});
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!associationId) {
+    if (!currentSheet) {
       setConfigurations({});
       setSuppliers([]);
       setLoading(false);
       return;
     }
 
-    // Ascultă modificările la configurările cheltuielilor pentru această asociație
-    const configRef = doc(db, 'expenseConfigurations', associationId);
-    const suppliersQuery = query(
-      collection(db, 'suppliers'),
-      where('associationId', '==', associationId)
-    );
-    
-    const unsubscribeConfig = onSnapshot(
-      configRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          setConfigurations(snapshot.data());
-        } else {
-          setConfigurations({});
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching expense configurations:', error);
-        setConfigurations({});
-        setLoading(false);
-      }
-    );
+    // Citește configurările și furnizorii din sheet-ul curent
+    const sheetConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+    const sheetSuppliers = currentSheet.configSnapshot?.suppliers || [];
 
-    // Ascultă modificările la furnizori
-    const unsubscribeSuppliers = onSnapshot(
-      suppliersQuery,
-      (snapshot) => {
-        const suppliersData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setSuppliers(suppliersData);
-      },
-      (error) => {
-        console.error('Error fetching suppliers:', error);
-        setSuppliers([]);
-      }
-    );
+    setConfigurations(sheetConfigurations);
+    setSuppliers(sheetSuppliers);
+    setLoading(false);
 
-    return () => {
-      unsubscribeConfig();
-      unsubscribeSuppliers();
-    };
-  }, [associationId]);
+  }, [currentSheet]);
 
   const getExpenseConfig = useCallback((expenseType) => {
     // Încearcă să găsească configurația în Firestore
@@ -113,15 +72,14 @@ const useExpenseConfigurations = (associationId) => {
   }, [configurations, suppliers]);
 
   const updateExpenseConfig = useCallback(async (expenseType, config) => {
-    if (!associationId) return;
+    if (!currentSheet || !currentSheet.id) return;
 
     try {
-      const docRef = doc(db, 'expenseConfigurations', associationId);
-      
-      // Obține configurațiile existente
-      const docSnap = await getDoc(docRef);
-      const existingConfigs = docSnap.exists() ? docSnap.data() : {};
-      
+      const sheetRef = doc(db, 'sheets', currentSheet.id);
+
+      // Obține configurațiile existente din sheet
+      const existingConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
+
       // Actualizează configurația pentru tipul de cheltuială specific
       const updatedConfigs = {
         ...existingConfigs,
@@ -131,23 +89,26 @@ const useExpenseConfigurations = (associationId) => {
           updatedAt: new Date().toISOString()
         }
       };
-      
-      // Salvează în Firestore
-      await setDoc(docRef, updatedConfigs);
-      
+
+      // Salvează în sheet-ul curent
+      await updateDoc(sheetRef, {
+        'configSnapshot.expenseConfigurations': updatedConfigs,
+        'configSnapshot.updatedAt': serverTimestamp()
+      });
+
       // Actualizează state-ul local pentru feedback instant
       setConfigurations(updatedConfigs);
-      
-      // console.log('✅ Configurație actualizată pentru:', expenseType);
+
+      console.log('✅ SHEET-BASED: Configurație actualizată pentru:', expenseType, 'în sheet:', currentSheet.monthYear);
     } catch (error) {
-      console.error('Error updating expense configuration:', error);
+      console.error('Error updating expense configuration in sheet:', error);
       throw error;
     }
-  }, [associationId]);
+  }, [currentSheet]);
 
   // Funcție pentru a corecta configurațiile greșite din Firestore
   const fixFirestoreConfigurations = useCallback(async () => {
-    if (!associationId) return;
+    if (!currentSheet) return;
 
     // console.log('🔧 Fixing incorrect Firestore configurations...');
     
@@ -169,10 +130,11 @@ const useExpenseConfigurations = (associationId) => {
     }
     
     // console.log('✅ Firestore configurations corrected!');
-  }, [associationId, configurations, updateExpenseConfig]);
+  }, [currentSheet, configurations, updateExpenseConfig]);
 
   return {
     configurations,
+    suppliers,
     loading,
     getExpenseConfig,
     updateExpenseConfig,
