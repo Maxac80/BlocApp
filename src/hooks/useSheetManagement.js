@@ -399,7 +399,8 @@ export const useSheetManagement = (associationId) => {
       const configSnapshot = {
         expenseConfigurations: configData.expenseConfigurations ? {...configData.expenseConfigurations} : {},
         balanceAdjustments: configData.balanceAdjustments ? {...configData.balanceAdjustments} : {},
-        disabledExpenses: configData.disabledExpenses ? [...configData.disabledExpenses] : [],
+        disabledExpenses: configData.disabledExpenses ? [...(configData.disabledExpenses || [])] : [],
+        customExpenses: configData.customExpenses ? [...(configData.customExpenses || [])] : [],
         customSettings: configData.customSettings ? {...configData.customSettings} : {},
         // Păstrează TOATE configurările
         ...configData,

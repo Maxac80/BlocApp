@@ -132,12 +132,41 @@ const useExpenseConfigurations = (currentSheet) => {
     // console.log('✅ Firestore configurations corrected!');
   }, [currentSheet, configurations, updateExpenseConfig]);
 
+  const deleteExpenseConfig = useCallback(async (expenseType) => {
+    if (!currentSheet?.id) {
+      console.warn('⚠️ Nu există sheet pentru ștergerea configurației cheltuielii');
+      return;
+    }
+
+    try {
+      const currentConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+
+      // Creează o copie fără configurația cheltuielii ștearse
+      const { [expenseType]: deletedConfig, ...updatedConfigurations } = currentConfigurations;
+
+      // Actualizează în Firebase
+      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+        'configSnapshot.expenseConfigurations': updatedConfigurations,
+        updatedAt: serverTimestamp()
+      });
+
+      // Actualizează state-ul local
+      setConfigurations(updatedConfigurations);
+
+      console.log(`✅ Configurația pentru "${expenseType}" ștearsă cu succes`);
+    } catch (error) {
+      console.error(`❌ Eroare la ștergerea configurației pentru "${expenseType}":`, error);
+      throw error;
+    }
+  }, [currentSheet]);
+
   return {
     configurations,
     suppliers,
     loading,
     getExpenseConfig,
     updateExpenseConfig,
+    deleteExpenseConfig,
     fixFirestoreConfigurations
   };
 };

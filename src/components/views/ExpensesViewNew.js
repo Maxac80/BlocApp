@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Plus, Settings, Trash2, Building2, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Settings, Trash2, Building2, Package, MoreVertical } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
+import ExpenseAddModal from '../modals/ExpenseAddModal';
+import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 
 const ExpensesViewNew = ({
@@ -17,6 +19,7 @@ const ExpensesViewNew = ({
   newCustomExpense,
   setNewCustomExpense,
   handleAddCustomExpense,
+  addCustomExpense,
   selectedExpenseForConfig,
   setSelectedExpenseForConfig,
   getAssociationExpenseTypes,
@@ -32,22 +35,25 @@ const ExpensesViewNew = ({
 }) => {
   const [activeTab, setActiveTab] = useState('expenses');
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedExpense, setSelectedExpense] = useState(null);
-  
-  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(currentSheet);
-  
-  const [newSupplier, setNewSupplier] = useState({
-    name: '',
-    cui: '',
-    address: '',
-    phone: '',
-    email: '',
-    website: '',
-    iban: '',
-    notes: ''
-  });
-  
   const [editingSupplier, setEditingSupplier] = useState(null);
+
+  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(currentSheet);
+
+  // Închide dropdown-ul când se dă click în afara lui
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('[data-dropdown-container]')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
@@ -56,37 +62,68 @@ const ExpensesViewNew = ({
     setConfigModalOpen(true);
   };
 
-  const handleAddSupplier = async () => {
-    if (newSupplier.name) {
-      try {
-        // Adaugă furnizorul cu doar numele completat
-        await addSupplier({ name: newSupplier.name });
-        setNewSupplier({ 
-          name: '', 
-          cui: '', 
-          address: '', 
-          phone: '', 
-          email: '', 
-          website: '', 
-          iban: '', 
-          notes: '' 
-        });
-      } catch (error) {
-        console.error('Error adding supplier:', error);
-      }
+  const handleAddSupplier = () => {
+    setEditingSupplier(null);
+    setSupplierModalOpen(true);
+  };
+
+  const handleEditSupplier = (supplier) => {
+    setEditingSupplier(supplier);
+    setSupplierModalOpen(true);
+  };
+
+  const handleSupplierSave = async (formData) => {
+    if (editingSupplier) {
+      // Editare furnizor existent
+      await updateSupplier(editingSupplier.id, formData);
+    } else {
+      // Adăugare furnizor nou
+      await addSupplier(formData);
     }
   };
 
-  const handleUpdateSupplier = async (supplierId) => {
-    if (editingSupplier) {
-      try {
-        await updateSupplier(supplierId, editingSupplier);
-        setEditingSupplier(null);
-      } catch (error) {
-        console.error('Error updating supplier:', error);
+  const handleAddExpenseFromModal = async (expenseData, configData) => {
+    try {
+      console.log('🔄 Adăugare cheltuială din modal:', expenseData, configData);
+
+      // Verifică dacă numele cheltuielii există deja
+      const existingExpenseTypes = getAssociationExpenseTypes();
+      const nameExists = existingExpenseTypes.some(expense =>
+        expense.name.toLowerCase().trim() === expenseData.name.toLowerCase().trim()
+      );
+
+      if (nameExists) {
+        alert(`Cheltuiala cu numele "${expenseData.name}" există deja. Vă rugăm să alegeți un alt nume.`);
+        return;
       }
+
+      // Add custom expense directly
+      await addCustomExpense({
+        name: expenseData.name,
+        defaultDistribution: expenseData.defaultDistribution || "apartment"
+      });
+
+      // Update configuration if provided
+      if (configData && Object.keys(configData).length > 0) {
+        console.log('🔄 Actualizare configurație:', configData);
+        await updateExpenseConfig(expenseData.name, {
+          distributionType: configData.distributionType,
+          supplierId: configData.supplierId,
+          supplierName: configData.supplierName,
+          contractNumber: configData.contractNumber,
+          contactPerson: configData.contactPerson
+        });
+      }
+
+      console.log('✅ Cheltuială adăugată cu succes din modal');
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la adăugarea cheltuielii din modal:', error);
+      throw error;
     }
   };
+
+
 
   const handleDeleteSupplier = async (supplierId) => {
     if (window.confirm('Sigur doriți să ștergeți acest furnizor?')) {
@@ -168,33 +205,42 @@ const ExpensesViewNew = ({
           <div className="p-6">
             {activeTab === 'expenses' && (
               <div className="space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-3">Adaugă cheltuială nouă</h3>
-                  <div className="flex gap-2">
-                    <input
-                      value={newCustomExpense.name}
-                      onChange={(e) => setNewCustomExpense({...newCustomExpense, name: e.target.value})}
-                      placeholder="ex: Deratizare, Curățenie, etc."
-                      className="flex-1 p-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <button 
-                      onClick={handleAddCustomExpense}
-                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                      disabled={!newCustomExpense.name}
-                    >
-                      <Plus className="w-5 h-5" />
-                      Adaugă
-                    </button>
-                  </div>
-                </div>
+                {(() => {
+                  const customExpenses = getAssociationExpenseTypes().filter(expenseType =>
+                    !defaultExpenseTypes.find(def => def.name === expenseType.name)
+                  );
+                  const hasCustomExpenses = customExpenses.length > 0;
+
+                  return hasCustomExpenses ? (
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={() => setAddModalOpen(true)}
+                        className="w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center shadow-lg"
+                        title="Adaugă cheltuială nouă"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={() => setAddModalOpen(true)}
+                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                      >
+                        Adaugă cheltuială
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-4">Cheltuieli active pentru {currentMonth}</h3>
                   <div className="space-y-3">
-                    {getAssociationExpenseTypes().map(expenseType => {
+                    {getAssociationExpenseTypes().map((expenseType, index, array) => {
                       const config = getExpenseConfig(expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
                       const supplierName = config.supplierName || 'Fără furnizor';
+                      const isLastItem = index >= array.length - 2; // ultimele 2 iteme
                       
                       return (
                         <div key={expenseType.name} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -216,29 +262,65 @@ const ExpensesViewNew = ({
                                 <span>• 🏢 {supplierName}</span>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="relative" data-dropdown-container>
                               <button
-                                onClick={() => handleConfigureExpense(expenseType.name)}
-                                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === expenseType.name ? null : expenseType.name);
+                                }}
+                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                                title="Opțiuni"
                               >
-                                <Settings className="w-4 h-4" />
-                                Configurare
+                                <MoreVertical className="w-5 h-5" />
                               </button>
-                              <button
-                                onClick={() => toggleExpenseStatus(expenseType.name, currentMonth, true)}
-                                className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors"
-                                title="Elimină pentru această lună"
-                              >
-                                Elimină
-                              </button>
-                              {isCustom && (
-                                <button
-                                  onClick={() => deleteCustomExpense(expenseType.name)}
-                                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                                  title="Șterge definitiv cheltuiala"
+
+                              {openDropdown === expenseType.name && (
+                                <div
+                                  className={`absolute right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
+                                    isLastItem ? 'bottom-full mb-2' : 'top-full mt-2'
+                                  }`}
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                  <div className="py-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleConfigureExpense(expenseType.name);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2"
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                      Configurare
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleExpenseStatus(expenseType.name, currentMonth, true);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 flex items-center gap-2"
+                                      title="Elimină pentru această lună"
+                                    >
+                                      <span className="w-4 h-4 flex items-center justify-center">🚫</span>
+                                      Elimină
+                                    </button>
+                                    {isCustom && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          deleteCustomExpense(expenseType.name);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                        title="Șterge definitiv cheltuiala"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Șterge cheltuiala
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -252,38 +334,76 @@ const ExpensesViewNew = ({
                   <div>
                     <h3 className="font-semibold text-gray-500 mb-4">Cheltuieli dezactivate pentru {currentMonth}</h3>
                     <div className="space-y-3 opacity-60">
-                      {getDisabledExpenseTypes().map(expenseType => {
+                      {getDisabledExpenseTypes().map((expenseType, index, array) => {
                         const config = getExpenseConfig(expenseType.name);
                         const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                        
+                        const isLastItem = index >= array.length - 2; // ultimele 2 iteme
+
                         return (
                           <div key={expenseType.name} className="p-4 bg-gray-100 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <div className="font-medium text-gray-600 line-through">{expenseType.name}</div>
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium text-gray-600 line-through">{expenseType.name}</span>
+                                  {isCustom && (
+                                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full opacity-60">Custom</span>
+                                  )}
+                                </div>
                                 <div className="text-sm text-gray-500">
-                                  {config.distributionType === "apartment" ? "Pe apartament (egal)" : 
+                                  {config.distributionType === "apartment" ? "Pe apartament (egal)" :
                                    config.distributionType === "individual" ? "Pe apartament (individual)" :
-                                   config.distributionType === "person" ? "Pe persoană" : 
+                                   config.distributionType === "person" ? "Pe persoană" :
                                    "Pe consum"}
                                 </div>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="relative" data-dropdown-container>
                                 <button
-                                  onClick={() => toggleExpenseStatus(expenseType.name, currentMonth, false)}
-                                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                                  title="Reactivează pentru această lună"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdown(openDropdown === `disabled-${expenseType.name}` ? null : `disabled-${expenseType.name}`);
+                                  }}
+                                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                                  title="Opțiuni"
                                 >
-                                  Reactivează
+                                  <MoreVertical className="w-5 h-5" />
                                 </button>
-                                {isCustom && (
-                                  <button
-                                    onClick={() => deleteCustomExpense(expenseType.name)}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                                    title="Șterge definitiv cheltuiala"
+
+                                {openDropdown === `disabled-${expenseType.name}` && (
+                                  <div
+                                    className={`absolute right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
+                                      isLastItem ? 'bottom-full mb-2' : 'top-full mt-2'
+                                    }`}
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                    <div className="py-1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleExpenseStatus(expenseType.name, currentMonth, false);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-2"
+                                        title="Reactivează pentru această lună"
+                                      >
+                                        <span className="w-4 h-4 flex items-center justify-center">✅</span>
+                                        Reactivează
+                                      </button>
+                                      {isCustom && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteCustomExpense(expenseType.name);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                          title="Șterge definitiv cheltuiala"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                          Șterge cheltuiala
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -298,22 +418,30 @@ const ExpensesViewNew = ({
 
             {activeTab === 'suppliers' && (
               <div className="space-y-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <input
-                    value={newSupplier.name}
-                    onChange={(e) => setNewSupplier({...newSupplier, name: e.target.value})}
-                    placeholder="Nume furnizor (ex: EON Energie)"
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                  <button 
-                    onClick={handleAddSupplier}
-                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                    disabled={!newSupplier.name}
-                  >
-                    <Plus className="w-5 h-5" />
-                    Adaugă
-                  </button>
-                </div>
+                {(() => {
+                  const hasSuppliers = suppliers.length > 0;
+
+                  return hasSuppliers ? (
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={handleAddSupplier}
+                        className="w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center shadow-lg"
+                        title="Adaugă furnizor nou"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={handleAddSupplier}
+                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                      >
+                        Adaugă furnizor
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-4">Lista furnizorilor</h3>
@@ -323,167 +451,78 @@ const ExpensesViewNew = ({
                     <p className="text-gray-500 text-center py-8">Nu există furnizori adăugați</p>
                   ) : (
                     <div className="space-y-3">
-                      {suppliers.map(supplier => (
+                      {suppliers.map((supplier, index, array) => {
+                        const isLastItem = index >= array.length - 2; // ultimele 2 iteme
+                        const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
+
+                        return (
                         <div key={supplier.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex items-center justify-between">
-                            {editingSupplier && editingSupplier.id === supplier.id ? (
-                              <div className="w-full">
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Nume furnizor *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.name}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, name: e.target.value})}
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
+                            <div className="flex-1">
+                              <div className="font-medium text-lg text-gray-900">{supplier.name}</div>
+                              {activeExpenseTypes.length > 0 && (
+                                <div className="mt-1">
+                                  {activeExpenseTypes.map(type => (
+                                    <span key={type} className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full mr-2">
+                                      {type}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {supplier.cui && (
+                                <div className="text-sm text-gray-500 mt-1">CUI: {supplier.cui}</div>
+                              )}
+                            </div>
+                            <div className="relative" data-dropdown-container>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === `supplier-${supplier.id}` ? null : `supplier-${supplier.id}`);
+                                }}
+                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                                title="Opțiuni"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
 
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      CUI
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.cui || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, cui: e.target.value})}
-                                      placeholder="ex: 22043010"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Adresă
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.address || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, address: e.target.value})}
-                                      placeholder="ex: Str. Example 123, București"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Telefon
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.phone || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, phone: e.target.value})}
-                                      placeholder="ex: 0800 800 800"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Email
-                                    </label>
-                                    <input
-                                      type="email"
-                                      value={editingSupplier.email || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, email: e.target.value})}
-                                      placeholder="ex: contact@eon.ro"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Website
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.website || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, website: e.target.value})}
-                                      placeholder="ex: www.eon.ro"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      IBAN
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={editingSupplier.iban || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, iban: e.target.value})}
-                                      placeholder="ex: RO12BTRL0000000000000"
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-
-                                  <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Note
-                                    </label>
-                                    <textarea
-                                      value={editingSupplier.notes || ''}
-                                      onChange={(e) => setEditingSupplier({...editingSupplier, notes: e.target.value})}
-                                      placeholder="Informații adiționale..."
-                                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      rows="3"
-                                    />
+                              {openDropdown === `supplier-${supplier.id}` && (
+                                <div
+                                  className={`absolute right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
+                                    isLastItem ? 'bottom-full mb-2' : 'top-full mt-2'
+                                  }`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="py-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditSupplier(supplier);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                      Editează
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteSupplier(supplier.id);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Șterge furnizor
+                                    </button>
                                   </div>
                                 </div>
-                                
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    onClick={() => setEditingSupplier(null)}
-                                    className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500"
-                                  >
-                                    Anulează
-                                  </button>
-                                  <button
-                                    onClick={() => handleUpdateSupplier(supplier.id)}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                                  >
-                                    Salvează
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex-1">
-                                  <div className="font-medium text-lg text-gray-900">{supplier.name}</div>
-                                  {(() => {
-                                    const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
-                                    return activeExpenseTypes.length > 0 && (
-                                      <div className="mt-1">
-                                        {activeExpenseTypes.map(type => (
-                                          <span key={type} className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full mr-2">
-                                            {type}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => setEditingSupplier(supplier)}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                                  >
-                                    Editează
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSupplier(supplier.id)}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -505,6 +544,28 @@ const ExpensesViewNew = ({
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
           currentSheet={currentSheet}
+        />
+
+        <ExpenseAddModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onAddExpense={handleAddExpenseFromModal}
+          getAssociationApartments={getAssociationApartments}
+          getApartmentParticipation={getApartmentParticipation}
+          setApartmentParticipation={setApartmentParticipation}
+          getAssociationExpenseTypes={getAssociationExpenseTypes}
+          currentSheet={currentSheet}
+        />
+
+        <SupplierModal
+          isOpen={supplierModalOpen}
+          onClose={() => {
+            setSupplierModalOpen(false);
+            setEditingSupplier(null);
+          }}
+          onSave={handleSupplierSave}
+          supplier={editingSupplier}
+          title={editingSupplier ? 'Editează furnizor' : 'Adaugă furnizor nou'}
         />
       </div>
     </div>

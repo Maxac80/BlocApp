@@ -30,6 +30,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
   }, [association?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
   // 📥 ÎNCĂRCAREA SOLDURILOR ȘI CONFIGURĂRILOR DIN FIRESTORE
   const loadInitialBalances = useCallback(async () => {
     if (!association?.id) return;
@@ -53,20 +54,34 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         };
       });
       
-      // 2. Încarcă cheltuielile eliminate
-      const disabledExpensesQuery = query(
-        collection(db, 'disabledExpenses'),
-        where('associationId', '==', association.id)
+      // 2. Încarcă cheltuielile eliminate din sheet
+      let loadedDisabledExpenses = {};
+
+      // Încarcă direct din sheet-ul IN_PROGRESS
+      const sheetsQuery = query(
+        collection(db, 'sheets'),
+        where('associationId', '==', association.id),
+        where('status', '==', 'IN_PROGRESS')
       );
-      const disabledExpensesSnapshot = await getDocs(disabledExpensesQuery);
-      
-      const loadedDisabledExpenses = {};
-      disabledExpensesSnapshot.docs.forEach(docSnapshot => {
-        const data = docSnapshot.data();
-        const key = `${data.associationId}-${data.month}`;
-        loadedDisabledExpenses[key] = data.expenseNames || [];
-      });
-      
+      const sheetsSnapshot = await getDocs(sheetsQuery);
+
+      if (!sheetsSnapshot.empty) {
+        const sheetDoc = sheetsSnapshot.docs[0];
+        const sheetData = sheetDoc.data();
+        const sheetDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
+
+        // Convertește formatul din sheet în formatul așteptat de componente
+        // Pentru sheet-uri, folosim monthYear ca cheie
+        const key = `${association.id}-${sheetData.monthYear}`;
+        loadedDisabledExpenses[key] = sheetDisabledExpenses;
+
+        console.log('✅ Cheltuieli dezactivate încărcate din sheet:', {
+          sheetId: sheetDoc.id,
+          monthYear: sheetData.monthYear,
+          disabledExpenses: sheetDisabledExpenses
+        });
+      }
+
       // 3. Actualizează state-urile
       setDisabledExpenses(loadedDisabledExpenses);
       
@@ -213,23 +228,23 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
   // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE
   const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
     if (!association?.id) return;
-    
+
     const disabledKey = `${association.id}-${currentMonth}`;
-    
+
     try {
       console.log(`${disable ? '🚫' : '✅'} ${disable ? 'Elimin' : 'Reactiv'} cheltuiala:`, expenseName);
       
       // Actualizează starea locală
       setDisabledExpenses(prev => {
         const currentDisabled = prev[disabledKey] || [];
-        
+
         let newDisabled;
         if (disable) {
           newDisabled = [...currentDisabled, expenseName];
         } else {
           newDisabled = currentDisabled.filter(name => name !== expenseName);
         }
-        
+
         return {
           ...prev,
           [disabledKey]: newDisabled
@@ -245,54 +260,64 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
   }, [association?.id]);
 
-  // 💾 SALVAREA CHELTUIELILOR ELIMINATE ÎN FIRESTORE
+  // 💾 SALVAREA CHELTUIELILOR ELIMINATE ÎN SHEET
   const saveDisabledExpenses = useCallback(async (monthKey, expenseName, disable) => {
+    // Verificare de siguranță - dacă monthKey nu conține '-', probabil parametrii sunt inversați
+    if (!monthKey || !monthKey.includes('-')) {
+      console.error('❌ INVALID monthKey format! Expected format: "associationId-month", got:', monthKey);
+      return;
+    }
+
     try {
       const [associationId, month] = monthKey.split('-');
-      
-      // Găsește documentul existent pentru această lună
-      const existingQuery = query(
-        collection(db, 'disabledExpenses'),
-        where('associationId', '==', associationId),
-        where('month', '==', month)
+
+      // Găsim sheet-ul curent din Firebase
+      const sheetsQuery = query(
+        collection(db, 'sheets'),
+        where('associationId', '==', associationId)
       );
-      const existingSnapshot = await getDocs(existingQuery);
-      
-      if (existingSnapshot.empty) {
-        // Creează document nou
-        if (disable) {
-          await addDoc(collection(db, 'disabledExpenses'), {
-            associationId: associationId,
-            month: month,
-            expenseNames: [expenseName],
-            updatedAt: new Date().toISOString()
-          });
-        }
-      } else {
-        // Actualizează documentul existent
-        const existingDoc = existingSnapshot.docs[0];
-        const currentExpenseNames = existingDoc.data().expenseNames || [];
-        
+      const sheetsSnapshot = await getDocs(sheetsQuery);
+
+      console.log('📋 Sheets found:', sheetsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        status: doc.data().status,
+        monthYear: doc.data().monthYear
+      })));
+
+      // Caută sheet-ul IN_PROGRESS sau cel mai recent
+      const inProgressSheet = sheetsSnapshot.docs.find(doc => doc.data().status === 'IN_PROGRESS');
+      const sheetDoc = inProgressSheet || sheetsSnapshot.docs[0];
+
+      if (sheetDoc) {
+        const sheetData = sheetDoc.data();
+        console.log('📋 Using sheet:', { id: sheetDoc.id, status: sheetData.status, monthYear: sheetData.monthYear });
+        const currentDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
+
         let updatedExpenseNames;
         if (disable) {
-          updatedExpenseNames = [...currentExpenseNames, expenseName];
+          // Adaugă cheltuiala la lista celor dezactivate
+          updatedExpenseNames = [...new Set([...currentDisabledExpenses, expenseName])];
         } else {
-          updatedExpenseNames = currentExpenseNames.filter(name => name !== expenseName);
+          // Elimină cheltuiala din lista celor dezactivate
+          updatedExpenseNames = currentDisabledExpenses.filter(name => name !== expenseName);
         }
-        
-        if (updatedExpenseNames.length === 0) {
-          // Șterge documentul dacă nu mai există cheltuieli eliminate
-          await deleteDoc(doc(db, 'disabledExpenses', existingDoc.id));
-        } else {
-          // Actualizează lista
-          await updateDoc(doc(db, 'disabledExpenses', existingDoc.id), {
-            expenseNames: updatedExpenseNames,
-            updatedAt: new Date().toISOString()
-          });
-        }
+
+        // Actualizează direct în Firebase
+        await updateDoc(doc(db, 'sheets', sheetDoc.id), {
+          'configSnapshot.disabledExpenses': updatedExpenseNames
+        });
+
+        // Actualizează state-ul local pentru afișare imediată
+        const key = `${associationId}-${sheetData.monthYear}`;
+        setDisabledExpenses(prev => ({
+          ...prev,
+          [key]: updatedExpenseNames
+        }));
+
+        console.log(`✅ Cheltuiala "${expenseName}" ${disable ? 'eliminată' : 'reactivată'} în sheet ${sheetData.monthYear}`);
+      } else {
+        console.warn('⚠️ Nu există sheet în lucru pentru a salva disabled expenses');
       }
-      
-      console.log(`✅ Cheltuiala "${expenseName}" ${disable ? 'eliminată' : 'reactivată'} pentru ${month}`);
     } catch (error) {
       console.error('❌ Eroare la salvarea cheltuielilor eliminate:', error);
       throw error;
@@ -464,11 +489,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     return {};
   }, [association?.id, penaltySettings.defaultPenaltyRate]);
 
-  console.log('🔄 useBalanceManagement render:', {
-    association: !!association,
-    hasInitialBalances,
-    disabledExpensesKeys: Object.keys(disabledExpenses).length
-  });
 
   // 🎯 RETURN API
   return {

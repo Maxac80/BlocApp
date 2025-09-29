@@ -30,12 +30,10 @@ const useMaintenanceCalculation = ({
   const getAssociationApartments = useCallback(() => {
     // 1. PRIORITATE: Dacă există currentSheet cu associationSnapshot, folosește apartamentele din sheet
     if (currentSheet?.associationSnapshot?.apartments && currentSheet.associationSnapshot.apartments.length > 0) {
-      console.log('📊 getAssociationApartments: Folosind apartamentele din currentSheet.associationSnapshot');
       return currentSheet.associationSnapshot.apartments;
     }
 
     // 2. FALLBACK: Folosește colecțiile tradiționale pentru compatibilitate
-    console.log('📊 getAssociationApartments: Fallback către colecții tradiționale');
 
     if (!apartments || !association?.id) {
       return [];

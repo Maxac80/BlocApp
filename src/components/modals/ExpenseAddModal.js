@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Users, Building2 } from 'lucide-react';
+import { X, Plus, Settings, Users, Building2 } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 
-const ExpenseConfigModal = ({
+const ExpenseAddModal = ({
   isOpen,
   onClose,
-  expenseName,
-  expenseConfig,
-  updateExpenseConfig,
+  onAddExpense,
   getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
+  getAssociationExpenseTypes,
   currentSheet
 }) => {
   const [activeTab, setActiveTab] = useState('general');
+  const [expenseName, setExpenseName] = useState('');
   const [localConfig, setLocalConfig] = useState({
     distributionType: 'apartment',
     supplierId: null,
@@ -21,7 +21,7 @@ const ExpenseConfigModal = ({
     contractNumber: '',
     contactPerson: ''
   });
-  
+
   const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
   const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
   const [newSupplierData, setNewSupplierData] = useState({
@@ -35,18 +35,31 @@ const ExpenseConfigModal = ({
     notes: ''
   });
 
-
+  // Reset form when modal opens
   useEffect(() => {
-    if (expenseConfig) {
+    if (isOpen) {
+      setExpenseName('');
       setLocalConfig({
-        distributionType: expenseConfig.distributionType || 'apartment',
-        supplierId: expenseConfig.supplierId || null,
-        supplierName: expenseConfig.supplierName || '',
-        contractNumber: expenseConfig.contractNumber || '',
-        contactPerson: expenseConfig.contactPerson || ''
+        distributionType: 'apartment',
+        supplierId: null,
+        supplierName: '',
+        contractNumber: '',
+        contactPerson: ''
+      });
+      setActiveTab('general');
+      setIsAddingNewSupplier(false);
+      setNewSupplierData({
+        name: '',
+        cui: '',
+        address: '',
+        phone: '',
+        email: '',
+        website: '',
+        iban: '',
+        notes: ''
       });
     }
-  }, [expenseConfig]);
+  }, [isOpen]);
 
   const handleAddNewSupplier = async () => {
     if (!newSupplierData.name.trim()) {
@@ -55,19 +68,14 @@ const ExpenseConfigModal = ({
     }
 
     try {
-      const newSupplier = await addSupplier({
-        ...newSupplierData,
-        serviceTypes: [expenseName]
-      });
-
-      // Update local config with new supplier
+      const newSupplier = await addSupplier(newSupplierData);
       setLocalConfig(prev => ({
         ...prev,
         supplierId: newSupplier.id,
         supplierName: newSupplier.name
       }));
 
-      // Reset the form and exit add mode
+      // Reset supplier form and go back to supplier selection
       setIsAddingNewSupplier(false);
       setNewSupplierData({
         name: '',
@@ -80,21 +88,10 @@ const ExpenseConfigModal = ({
         notes: ''
       });
 
-      console.log('✅ Furnizor adăugat cu succes:', newSupplier.name);
+      console.log('✅ Furnizor nou adăugat și selectat:', newSupplier.name);
     } catch (error) {
-      console.error('Error adding supplier:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
-        supplierData: newSupplierData,
-        currentSheet: currentSheet?.id
-      });
-
-      // More specific error messages
+      console.error('Eroare la adăugarea furnizorului:', error);
       if (error.code === 'permission-denied') {
-        alert('Nu aveți permisiunea de a adăuga furnizori. Verificați dacă sunteți autentificat.');
-      } else if (error.message?.includes('Missing or insufficient permissions')) {
         alert('Permisiuni insuficiente. Contactați administratorul.');
       } else {
         alert(`Eroare la adăugarea furnizorului: ${error.message || 'Eroare necunoscută'}. Verificați consola pentru detalii.`);
@@ -103,9 +100,37 @@ const ExpenseConfigModal = ({
   };
 
   const handleSave = async () => {
-    // Save configuration
-    updateExpenseConfig(expenseName, localConfig);
-    onClose();
+    if (!expenseName.trim()) {
+      alert('Numele cheltuielii este obligatoriu');
+      return;
+    }
+
+    // Verifică dacă numele cheltuielii există deja
+    if (getAssociationExpenseTypes) {
+      const existingExpenseTypes = getAssociationExpenseTypes();
+      const nameExists = existingExpenseTypes.some(expense =>
+        expense.name.toLowerCase().trim() === expenseName.toLowerCase().trim()
+      );
+
+      if (nameExists) {
+        alert(`Cheltuiala cu numele "${expenseName.trim()}" există deja. Vă rugăm să alegeți un alt nume.`);
+        return;
+      }
+    }
+
+    try {
+      // Add the expense with configuration
+      await onAddExpense({
+        name: expenseName.trim(),
+        defaultDistribution: localConfig.distributionType
+      }, localConfig);
+
+      console.log('✅ Cheltuială adăugată cu succes:', expenseName.trim());
+      onClose();
+    } catch (error) {
+      console.error('Eroare la adăugarea cheltuielii:', error);
+      alert('Eroare la adăugarea cheltuielii: ' + error.message);
+    }
   };
 
   const handleSupplierChange = (supplierId) => {
@@ -126,15 +151,15 @@ const ExpenseConfigModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="p-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+        <div className="p-6 bg-gradient-to-r from-green-600 to-green-700 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">⚙️ Configurare: {expenseName}</h2>
-              <p className="text-purple-100 mt-1">Setări de distribuție și furnizor</p>
+              <h2 className="text-2xl font-bold">➕ Adaugă cheltuială nouă</h2>
+              <p className="text-green-100 mt-1">Configurează complet noua cheltuială</p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-purple-800 p-2 rounded-lg transition-colors"
+              className="text-white hover:bg-green-800 p-2 rounded-lg transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -147,7 +172,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('general')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'general'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -158,7 +183,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('participation')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'participation'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -169,7 +194,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('supplier')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'supplier'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -182,6 +207,21 @@ const ExpenseConfigModal = ({
         <div className="p-6 overflow-y-auto" style={{ maxHeight: '60vh' }}>
           {activeTab === 'general' && (
             <div className="space-y-6">
+              {/* Expense Name Field - NEW */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nume cheltuială *
+                </label>
+                <input
+                  type="text"
+                  value={expenseName}
+                  onChange={(e) => setExpenseName(e.target.value)}
+                  placeholder="ex: Deratizare, Curățenie, Întreținere lift..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              {/* Distribution Type - SAME AS CONFIG MODAL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mod de distribuție
@@ -189,7 +229,7 @@ const ExpenseConfigModal = ({
                 <select
                   value={localConfig.distributionType}
                   onChange={(e) => setLocalConfig({ ...localConfig, distributionType: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="apartment">Pe apartament (egal)</option>
                   <option value="individual">Pe apartament (individual)</option>
@@ -214,7 +254,7 @@ const ExpenseConfigModal = ({
               {apartments.length > 0 ? (
                 <div className="space-y-2">
                   {apartments.map(apartment => {
-                    const participation = getApartmentParticipation(apartment.id, expenseName);
+                    const participation = getApartmentParticipation ? getApartmentParticipation(apartment.id, expenseName) : { type: 'integral', value: null };
                     return (
                       <div key={apartment.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <span className="w-20 font-medium">Apt {apartment.number}</span>
@@ -223,9 +263,13 @@ const ExpenseConfigModal = ({
                           onChange={(e) => {
                             const type = e.target.value;
                             if (type === "integral" || type === "excluded") {
-                              setApartmentParticipation(apartment.id, expenseName, type);
+                              if (setApartmentParticipation) {
+                                setApartmentParticipation(apartment.id, expenseName, type);
+                              }
                             } else {
-                              setApartmentParticipation(apartment.id, expenseName, type, participation.value || (type === "percentage" ? 50 : 0));
+                              if (setApartmentParticipation) {
+                                setApartmentParticipation(apartment.id, expenseName, type, participation.value || (type === "percentage" ? 50 : 0));
+                              }
                             }
                           }}
                           className="flex-1 p-2 border border-gray-300 rounded-lg"
@@ -240,7 +284,11 @@ const ExpenseConfigModal = ({
                             type="text"
                             inputMode="numeric"
                             value={participation.value || ""}
-                            onChange={(e) => setApartmentParticipation(apartment.id, expenseName, participation.type, parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              if (setApartmentParticipation) {
+                                setApartmentParticipation(apartment.id, expenseName, participation.type, parseFloat(e.target.value) || 0);
+                              }
+                            }}
                             placeholder={participation.type === "percentage" ? "%" : "RON"}
                             className="w-24 p-2 border border-gray-300 rounded-lg"
                           />
@@ -281,7 +329,7 @@ const ExpenseConfigModal = ({
                       </select>
                       <button
                         onClick={() => setIsAddingNewSupplier(true)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                       >
                         Adaugă nou
                       </button>
@@ -466,15 +514,17 @@ const ExpenseConfigModal = ({
         <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            className="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Anulează
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            disabled={!expenseName.trim()}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            Salvează configurație
+            <Plus className="w-4 h-4" />
+            Adaugă cheltuială
           </button>
         </div>
       </div>
@@ -482,4 +532,4 @@ const ExpenseConfigModal = ({
   );
 };
 
-export default ExpenseConfigModal;
+export default ExpenseAddModal;

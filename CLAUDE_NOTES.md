@@ -553,5 +553,173 @@ Aplicația folosește acum **100% arhitectură sheet-based**:
 **Performance:** +60% reducere queries, +50% reducere storage
 **Stability:** Zero infinite loops, perfect UI sync
 
+## 🔧 EXPENSE CONFIGURATION SHEET MIGRATION - 29 SEPTEMBRIE 2025
+
+### **PROBLEMA IDENTIFICATĂ**
+Cheltuielile dezactivate (disabledExpenses) și custom (customExpenses) se salvau în colecții separate în loc de sheet-uri.
+
+### **SOLUȚIA IMPLEMENTATĂ**
+
+#### **1. DisabledExpenses Migration**
+**File:** `useBalanceManagement.js`
+- **Înainte:** Salvare în colecția `disabledExpenses`
+- **După:** Salvare în `currentSheet.configSnapshot.disabledExpenses`
+- **Structure:** `{ [month]: [expenseName1, expenseName2, ...] }`
+
+#### **2. CustomExpenses Migration**
+**Files:** `useFirestore.js`
+- **addCustomExpense:** Salvare în `currentSheet.configSnapshot.customExpenses[]`
+- **deleteCustomExpense:** Ștergere din `currentSheet.configSnapshot.customExpenses[]`
+- **ID Generation:** `custom-${Date.now()}-${random}`
+
+### **FIREBASE STRUCTURE ACTUALIZATĂ**
+```javascript
+{
+  configSnapshot: {
+    disabledExpenses: {
+      "[month]": ["expenseName1", "expenseName2", ...]
+    },
+    customExpenses: [
+      { id: "custom-...", name: "...", ...data }
+    ],
+    expenseConfigurations: { /* already implemented */ },
+    suppliers: [ /* already implemented */ ],
+    balanceAdjustments: { /* already implemented */ }
+  }
+}
+```
+
+### **BENEFICII**
+- ✅ Toate configurările de cheltuieli în sheet-uri
+- ✅ Izolare completă per perioadă
+- ✅ Fallback pentru compatibilitate
+- ✅ Consistență arhitecturală
+
+## 🛠️ SUPPLIER MODAL REDESIGN - 29 SEPTEMBRIE 2025
+
+### **CERINȚA UTILIZATORULUI**
+Modernizarea interfeței pentru furnizori să folosească același pattern ca modalul pentru cheltuieli:
+- **Modal pentru add/edit** în loc de forme inline
+- **Hamburger menu (3 dots)** pentru acțiuni în loc de butoane individuale
+- **Buton dinamic de adăugare** - text complet când nu există furnizori, doar "+" când există
+
+### **SOLUȚIA IMPLEMENTATĂ**
+
+#### **1. Creat SupplierModal.js**
+**Design Features:**
+- ✅ **Green gradient header** matching expense modal style
+- ✅ **Building icon** în header pentru consistență vizuală
+- ✅ **Comprehensive form fields**: name, CUI, address, phone, email, website, IBAN, notes
+- ✅ **Professional styling** cu gradient buttons și transitions
+- ✅ **Form validation** pentru câmpurile obligatorii
+- ✅ **Responsive design** cu max-height și scroll pentru viewport-uri mici
+
+#### **2. Updated ExpensesViewNew.js - Supplier Section**
+**UI Improvements:**
+- ✅ **Hamburger dropdown menu** cu `MoreVertical` icon
+- ✅ **Dynamic positioning** - dropdown se deschide în sus pentru ultimele itemuri
+- ✅ **Event handling** cu `stopPropagation()` pentru dropdown management
+- ✅ **State consolidation** - eliminat state-uri duplicate, folosit doar `editingSupplier`
+- ✅ **Function cleanup** - eliminat funcții duplicate (`handleAddSupplier`, `handleDeleteSupplier`)
+
+#### **3. Dynamic Add Button Logic**
+```javascript
+{suppliers.length === 0 ? (
+  <button className="w-full bg-green-600 text-white py-3 rounded-lg font-medium">
+    Adaugă furnizor
+  </button>
+) : (
+  <button className="bg-green-600 text-white p-2 rounded-lg">
+    <Plus className="w-5 h-5" />
+  </button>
+)}
+```
+
+### **IMPLEMENTĂRI TEHNICE**
+
+#### **State Management Cleanup**
+```javascript
+// ❌ ELIMINAT: State-uri redundante
+const [selectedSupplier, setSelectedSupplier] = useState(null);
+const [newSupplier, setNewSupplier] = useState({...});
+
+// ✅ CONSOLIDATED: Un singur state pentru both add/edit
+const [editingSupplier, setEditingSupplier] = useState(null);
+```
+
+#### **Modal Integration**
+```javascript
+// Modal state management
+const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+
+// Handler functions
+const handleAddSupplier = () => {
+  setEditingSupplier(null);      // null = add mode
+  setSupplierModalOpen(true);
+};
+
+const handleEditSupplier = (supplier) => {
+  setEditingSupplier(supplier);   // object = edit mode
+  setSupplierModalOpen(true);
+};
+
+const handleSupplierSave = async (formData) => {
+  if (editingSupplier) {
+    await updateSupplier(editingSupplier.id, formData);  // edit
+  } else {
+    await addSupplier(formData);                         // add
+  }
+};
+```
+
+### **USER EXPERIENCE IMPROVEMENTS**
+
+#### **1. Consistent Design Language**
+- **Header styling** matches expense modal cu green gradient
+- **Button patterns** identice pentru toate modalurile
+- **Icon usage** consistent throughout app (Building2 pentru suppliers)
+
+#### **2. Improved Usability**
+- **No more inline editing** - tot prin modal pentru consistență
+- **Clear visual hierarchy** cu dropdown menus în loc de button groups
+- **Better mobile UX** cu modal-based forms
+- **Reduced cognitive load** - same interaction patterns everywhere
+
+#### **3. Technical Benefits**
+- **Code consolidation** - eliminat 60+ linii de cod redundant
+- **State simplification** - 3 state variables → 1 state variable
+- **Function deduplication** - eliminat funcții duplicate
+- **Consistent error handling** prin modal error display
+
+### **DESIGN PATTERN ESTABLISHED**
+Acest redesign stabilește pattern-ul standard pentru toate modalurile din aplicație:
+1. **Green gradient header** cu icon relevant
+2. **Comprehensive forms** cu validation
+3. **Professional button styling** cu gradients
+4. **Hamburger menus** pentru list actions
+5. **Dynamic add buttons** responsive la content state
+
+### **LESSONS LEARNED**
+
+#### **1. State Management**
+- **Consolidate similar states** - multiple state variables pentru același scop creează confuzie
+- **Use null/object pattern** pentru add/edit modes în modaluri
+- **Avoid duplicate function declarations** - cauzează compilation errors
+
+#### **2. UI Consistency**
+- **Establish patterns early** - odată stabilit un design, aplicați-l consistent
+- **User feedback critical** - iconițele în form fields nu erau dorite de user
+- **Modal vs inline editing** - modalurile oferă UX superior pentru formulare complexe
+
+#### **3. Code Quality**
+- **Function naming matters** - nume descriptive pentru handler functions
+- **Event propagation important** - `stopPropagation()` esențial pentru dropdown-uri
+- **Import cleanup** - ștergeți import-urile nefolosite pentru code clarity
+
+### **FILES MODIFIED**
+1. **`SupplierModal.js`** - Created new modal component
+2. **`ExpensesViewNew.js`** - Updated supplier section UI
+3. **Import statements** - Cleaned up unused Lucide icons
+
 ---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*

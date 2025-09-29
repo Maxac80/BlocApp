@@ -96,8 +96,8 @@ export const useExpenseManagement = ({
       !monthDisabledExpenses.includes(exp.name)
     );
 
-    const customExpensesList = customExpenses.filter(exp => exp.associationId === association.id);
-    const activeCustomExpenses = customExpensesList.filter(exp => 
+    // SHEET-BASED: customExpenses din sheet nu mai au associationId (sheet-ul aparține deja asociației)
+    const activeCustomExpenses = customExpenses.filter(exp =>
       !monthDisabledExpenses.includes(exp.name)
     );
     
@@ -117,8 +117,8 @@ export const useExpenseManagement = ({
     );
     
     // Cheltuieli custom dezactivate
-    const customExpensesList = customExpenses.filter(exp => exp.associationId === association.id);
-    const disabledCustomExpenses = customExpensesList.filter(exp => 
+    // SHEET-BASED: customExpenses din sheet nu mai au associationId (sheet-ul aparține deja asociației)
+    const disabledCustomExpenses = customExpenses.filter(exp =>
       monthDisabledExpenses.includes(exp.name)
     );
     

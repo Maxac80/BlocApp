@@ -192,11 +192,14 @@ export default function BlocApp() {
         updateBlockInSheet,
         updateStairInSheet,
         updateApartmentInSheet,
+        // CONFIG operations
+        updateConfigSnapshot,
+        currentSheet,
         // STRUCTURE operations
         updateStructureSnapshot
       };
     }
-  }, [addBlockToSheet, addStairToSheet, addApartmentToSheet, deleteBlockFromSheet, deleteStairFromSheet, deleteApartmentFromSheet, updateBlockInSheet, updateStairInSheet, updateApartmentInSheet, updateStructureSnapshot]);
+  }, [addBlockToSheet, addStairToSheet, addApartmentToSheet, deleteBlockFromSheet, deleteStairFromSheet, deleteApartmentFromSheet, updateBlockInSheet, updateStairInSheet, updateApartmentInSheet, updateStructureSnapshot, updateConfigSnapshot, currentSheet]);
 
   // Pentru debug - expune funcțiile în window
   useEffect(() => {
@@ -308,6 +311,7 @@ export default function BlocApp() {
     loading: configLoading,
     getExpenseConfig: getFirestoreExpenseConfig,
     updateExpenseConfig: updateFirestoreExpenseConfig,
+    deleteExpenseConfig: deleteFirestoreExpenseConfig,
     fixFirestoreConfigurations
   } = useExpenseConfigurations(currentSheet);
 
@@ -360,6 +364,42 @@ export default function BlocApp() {
     updateStair,
     deleteStair
   });
+
+  // 🗑️ FUNCȚIE WRAPPER PENTRU ȘTERGEREA CHELTUIELILOR CUSTOM CU CLEANUP COMPLET
+  const handleDeleteCustomExpenseWithCleanup = async (expenseName) => {
+    try {
+      // 1. Șterge cheltuiala custom (din sheet și din state-ul customExpenses)
+      await handleDeleteCustomExpense(expenseName);
+
+      // 2. Șterge și configurația cheltuielii din expenseConfigurations
+      try {
+        await deleteFirestoreExpenseConfig(expenseName);
+        console.log(`✅ Configurația pentru "${expenseName}" ștearsă cu succes`);
+      } catch (configError) {
+        console.warn(`⚠️ Nu s-a putut șterge configurația pentru "${expenseName}":`, configError);
+        // Nu opresc procesul pentru această eroare non-critică
+      }
+
+      // 3. Actualizează și state-ul pentru disabledExpenses să elimine cheltuiala ștearsă
+      if (association?.id && currentSheet?.monthYear) {
+        const key = `${association.id}-${currentSheet.monthYear}`;
+        setDisabledExpenses(prev => {
+          const currentDisabled = prev[key] || [];
+          const updatedDisabled = currentDisabled.filter(name => name !== expenseName);
+          return {
+            ...prev,
+            [key]: updatedDisabled
+          };
+        });
+      }
+
+      console.log(`✅ Cleanup complet pentru cheltuiala "${expenseName}"`);
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la ștergerea cheltuielii custom cu cleanup:', error);
+      return false;
+    }
+  };
 
 // 🔥 AUTO-EXPAND ENTITIES LA ÎNCĂRCAREA DATELOR - OPTIMIZAT
 useEffect(() => {
@@ -582,7 +622,7 @@ useEffect(() => {
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
               toggleExpenseStatus={toggleExpenseStatus}
-              deleteCustomExpense={deleteCustomExpense}
+              deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               handleNavigation={handleNavigation}
               monthlyBalances={monthlyBalances}
             />
@@ -649,6 +689,7 @@ useEffect(() => {
               newCustomExpense={newCustomExpense}
               setNewCustomExpense={setNewCustomExpense}
               handleAddCustomExpense={handleAddCustomExpense}
+              addCustomExpense={addCustomExpense}
               selectedExpenseForConfig={selectedExpenseForConfig}
               setSelectedExpenseForConfig={setSelectedExpenseForConfig}
               getAssociationExpenseTypes={getAssociationExpenseTypes}
@@ -658,7 +699,7 @@ useEffect(() => {
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}
               toggleExpenseStatus={toggleExpenseStatus}
-              deleteCustomExpense={handleDeleteCustomExpense}
+              deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               getMonthType={getMonthType}
               currentSheet={currentSheet}
             />

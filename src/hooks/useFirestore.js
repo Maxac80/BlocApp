@@ -170,17 +170,34 @@ export const useAssociationData = (sheetOperationsRef = null) => {
 
   const loadCustomExpenses = async (associationId) => {
     try {
-      const customExpensesQuery = query(
-        collection(db, "customExpenses"),
-        where("associationId", "==", associationId)
+      // Încarcă din sheet în loc de colecție
+      const sheetsQuery = query(
+        collection(db, "sheets"),
+        where("associationId", "==", associationId),
+        where("status", "==", "IN_PROGRESS")
       );
-      const customExpensesSnapshot = await getDocs(customExpensesQuery);
-      const customExpensesData = customExpensesSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setCustomExpenses(customExpensesData);
-      // console.log("✅ Cheltuieli custom încărcate:", customExpensesData.length);
+      const sheetsSnapshot = await getDocs(sheetsQuery);
+
+      if (!sheetsSnapshot.empty) {
+        const sheetData = sheetsSnapshot.docs[0].data();
+        const customExpensesData = sheetData.configSnapshot?.customExpenses || [];
+
+        setCustomExpenses(customExpensesData);
+        console.log("✅ Cheltuieli custom încărcate din sheet:", customExpensesData.length);
+      } else {
+        // Fallback la colecție dacă nu există sheet
+        const customExpensesQuery = query(
+          collection(db, "customExpenses"),
+          where("associationId", "==", associationId)
+        );
+        const customExpensesSnapshot = await getDocs(customExpensesQuery);
+        const customExpensesData = customExpensesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCustomExpenses(customExpensesData);
+        console.log("⚠️ Cheltuieli custom încărcate din colecție (fallback):", customExpensesData.length);
+      }
     } catch (err) {
       console.error("❌ Eroare la încărcarea cheltuielilor custom:", err);
       setCustomExpenses([]);
@@ -656,13 +673,45 @@ export const useAssociationData = (sheetOperationsRef = null) => {
         createdAt: new Date().toISOString(),
       };
 
+      // 🎯 PRIORITATE: Salvează în sheet-based storage dacă este disponibil
+      if (sheetOperationsRef?.current?.updateConfigSnapshot && sheetOperationsRef?.current?.currentSheet) {
+        const currentSheet = sheetOperationsRef.current.currentSheet;
+        const currentCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+
+        // Generează un ID unic pentru noua cheltuială custom (fără associationId)
+        const newExpenseWithId = {
+          id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          ...data, // folosește data originală fără associationId
+          createdAt: new Date().toISOString()
+        };
+
+        // Adaugă noua cheltuială la array
+        const updatedCustomExpenses = [...currentCustomExpenses, newExpenseWithId];
+
+        // Actualizează configSnapshot
+        await sheetOperationsRef.current.updateConfigSnapshot({
+          ...currentSheet.configSnapshot,
+          customExpenses: updatedCustomExpenses
+        });
+
+        console.log("✅ [SHEET-BASED] Cheltuială custom adăugată în sheet:", newExpenseWithId);
+
+        // Actualizează direct state-ul local pentru afișare imediată
+        setCustomExpenses(updatedCustomExpenses);
+
+        return newExpenseWithId;
+      }
+
+      // FALLBACK: Metoda veche cu colecții separate (pentru compatibilitate)
+      console.warn('⚠️ Folosesc fallback la colecții separate pentru customExpenses');
+
       const docRef = await addDoc(collection(db, "customExpenses"), expenseData);
       const newExpense = { id: docRef.id, ...expenseData };
 
       // Reîncarcă cheltuielile custom pentru sincronizare
       await loadCustomExpenses(association.id);
 
-      // console.log("✅ Cheltuială custom adăugată și date reîncărcate:", newExpense);
+      console.log("✅ [FALLBACK] Cheltuială custom adăugată în colecție:", newExpense);
       return newExpense;
     } catch (err) {
       console.error("❌ Eroare la adăugarea cheltuielii custom:", err);
@@ -674,6 +723,40 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     if (!association) throw new Error("Nu există asociație");
 
     try {
+      // 🎯 PRIORITATE: Șterge din sheet-based storage dacă este disponibil
+      if (sheetOperationsRef?.current?.updateConfigSnapshot && sheetOperationsRef?.current?.currentSheet) {
+        const currentSheet = sheetOperationsRef.current.currentSheet;
+        const currentCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+
+        // Filtrează pentru a elimina cheltuiala cu numele specificat
+        const updatedCustomExpenses = currentCustomExpenses.filter(
+          expense => expense.name !== expenseName
+        );
+
+        // Elimină cheltuiala și din disabledExpenses dacă există acolo
+        const currentDisabledExpenses = currentSheet.configSnapshot?.disabledExpenses || [];
+        const updatedDisabledExpenses = currentDisabledExpenses.filter(
+          disabledExpenseName => disabledExpenseName !== expenseName
+        );
+
+        // Actualizează configSnapshot cu ambele modificări
+        await sheetOperationsRef.current.updateConfigSnapshot({
+          ...currentSheet.configSnapshot,
+          customExpenses: updatedCustomExpenses,
+          disabledExpenses: updatedDisabledExpenses
+        });
+
+        console.log(`✅ [SHEET-BASED] Cheltuială custom "${expenseName}" ștearsă din sheet`);
+
+        // Actualizează direct state-ul local pentru afișare imediată
+        setCustomExpenses(updatedCustomExpenses);
+
+        return;
+      }
+
+      // FALLBACK: Metoda veche cu colecții separate (pentru compatibilitate)
+      console.warn('⚠️ Folosesc fallback la colecții separate pentru ștergerea customExpenses');
+
       const expenseQuery = query(
         collection(db, "customExpenses"),
         where("associationId", "==", association.id),
@@ -689,7 +772,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       // Reîncarcă cheltuielile custom pentru sincronizare
       await loadCustomExpenses(association.id);
 
-      // console.log("✅ Cheltuială custom ștearsă și date reîncărcate");
+      console.log(`✅ [FALLBACK] Cheltuială custom "${expenseName}" ștearsă din colecție`);
     } catch (err) {
       console.error("❌ Eroare la ștergerea cheltuielii custom:", err);
       throw err;
