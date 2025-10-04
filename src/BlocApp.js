@@ -395,10 +395,10 @@ export default function BlocApp() {
 
 // 🔥 AUTO-EXPAND ENTITIES LA ÎNCĂRCAREA DATELOR - OPTIMIZAT
 useEffect(() => {
-  if (association?.id && finalBlocks.length > 0) {
+  if (association?.id && finalBlocks.length > 0 && currentView === 'setup') {
     autoExpandEntities(finalBlocks, finalStairs, association.id);
   }
-}, [association?.id]);
+}, [association?.id, currentView, finalBlocks.length, finalStairs.length, autoExpandEntities]);
 
 // 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI SAU SHEET-ULUI
 // ACTIVAT - încarcă ajustările din sheet-ul curent

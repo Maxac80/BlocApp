@@ -92,6 +92,61 @@ const SetupView = ({
     };
   }, []);
 
+  // Effect pentru auto-expand la încărcarea paginii
+  useEffect(() => {
+    if (!association?.id || !blocks || !stairs || !apartments) return;
+
+    const associationBlocks = blocks.filter(block => block.associationId === association.id);
+    const associationStairs = stairs.filter(stair =>
+      associationBlocks.some(block => block.id === stair.blockId)
+    );
+    const associationApartments = apartments || [];
+
+    const newExpandedBlocks = {};
+    const newExpandedStairs = {};
+
+    associationBlocks.forEach(block => {
+      const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
+
+      // Logica de expandare pentru blocuri
+      const shouldExpandBlock = () => {
+        if (associationBlocks.length === 0) return true;
+        if (associationBlocks.length === 1) return true; // Un singur bloc -> expandează automat
+        if (blockStairs.length === 0) return true;
+
+        const hasStairsWithoutApartments = blockStairs.some(stair => {
+          const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+          return stairApartments.length === 0;
+        });
+
+        if (hasStairsWithoutApartments) return true;
+        return false;
+      };
+
+      if (shouldExpandBlock()) {
+        newExpandedBlocks[block.id] = true;
+      }
+
+      // Logica de expandare pentru scări
+      blockStairs.forEach(stair => {
+        const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+
+        const shouldExpandStair = () => {
+          if (stairApartments.length === 0) return true;
+          if (blockStairs.length === 1 && stairApartments.length > 0) return true;
+          return false;
+        };
+
+        if (shouldExpandStair()) {
+          newExpandedStairs[stair.id] = true;
+        }
+      });
+    });
+
+    setExpandedBlocks(newExpandedBlocks);
+    setExpandedStairs(newExpandedStairs);
+  }, [association?.id, blocks, stairs, apartments, setExpandedBlocks, setExpandedStairs]);
+
   // Verifică dacă toate props-urile necesare sunt disponibile
   if (!association || !blocks || !stairs || !apartments) {
     return (
@@ -742,6 +797,11 @@ return (
                 const shouldExpandBlock = () => {
                   // Dacă nu există blocuri - expandează pentru mesaje
                   if (associationBlocks.length === 0) {
+                    return true;
+                  }
+
+                  // Dacă există un singur bloc - expandează automat
+                  if (associationBlocks.length === 1) {
                     return true;
                   }
 

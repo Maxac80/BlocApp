@@ -1014,5 +1014,268 @@ Când cheltuieli/configurări nu persistă după refresh:
 - ✅ Kept only `console.error` and `console.warn` for production debugging
 - ✅ Clean console output
 
+## 🎨 UI/UX IMPROVEMENTS - 5 OCTOMBRIE 2025
+
+### **1. OPTIMISTIC UI UPDATES - Blink-uri eliminate**
+
+#### **Problema:**
+La salvarea ajustărilor (participare, solduri, furnizori), UI-ul făcea blink - datele reveneau temporar la starea inițială înainte să se afișeze noile valori.
+
+#### **Root Cause:**
+useEffect-urile care sincronizau din Firebase suprascriu state-ul local imediat după o salvare optimistă.
+
+#### **Soluția Implementată:**
+
+##### **A. useBalanceManagement.js - Toggle Expense Status**
+```javascript
+// ✅ FIXED: Tracking optimistic updates cu useRef
+const pendingUpdatesRef = useRef(new Map());
+
+useEffect(() => {
+  if (sheetOperations?.currentSheet && association?.id) {
+    const key = `${association.id}-${sheetData.id}`;
+    const pendingUpdate = pendingUpdatesRef.current.get(key);
+
+    if (pendingUpdate) {
+      // Verifică dacă Firebase s-a sincronizat
+      const firebaseSynced = /* compare arrays */;
+
+      if (firebaseSynced) {
+        pendingUpdatesRef.current.delete(key);  // Clear flag
+      } else {
+        return;  // ✅ Ignoră Firebase sync până când se sincronizează
+      }
+    }
+
+    setDisabledExpenses(/* ... */);
+  }
+});
+
+const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable) => {
+  // Update optimistic
+  let optimisticState;
+  setDisabledExpenses(prev => {
+    // ... update logic
+    optimisticState = newDisabled;
+    return { ...prev, [disabledKey]: newDisabled };
+  });
+
+  // Mark as pending
+  pendingUpdatesRef.current.set(disabledKey, optimisticState);
+
+  // Save in background
+  saveDisabledExpenses(sheetId, expenseName, disable).catch(error => {
+    pendingUpdatesRef.current.delete(disabledKey);  // Rollback flag
+    // ... rollback state
+  });
+});
+```
+
+##### **B. ExpenseConfigModal.js - Supplier Auto-Selection**
+```javascript
+// ✅ FIXED: Prevent expenseConfig reset după add supplier
+const justAddedSupplierRef = React.useRef(false);
+
+useEffect(() => {
+  // ✅ Skip reset dacă tocmai am adăugat furnizor
+  if (expenseConfig && !justAddedSupplierRef.current) {
+    setLocalConfig({
+      distributionType: expenseConfig.distributionType || 'apartment',
+      supplierId: expenseConfig.supplierId || null,
+      supplierName: expenseConfig.supplierName || '',
+      // ...
+    });
+  }
+}, [expenseConfig]);
+
+const handleAddNewSupplier = async () => {
+  const newSupplier = await addSupplier(/* ... */);
+
+  // Set flag pentru 2 secunde
+  justAddedSupplierRef.current = true;
+
+  // Update config cu noul furnizor
+  setLocalConfig(prev => ({
+    ...prev,
+    supplierId: newSupplier.id,
+    supplierName: newSupplier.name
+  }));
+
+  // Reset flag after 2s
+  setTimeout(() => {
+    justAddedSupplierRef.current = false;
+  }, 2000);
+};
+```
+
+#### **Pattern Stabilit:**
+1. **Optimistic update** → Updatează state-ul local instant
+2. **Pending flag** → Marchează update-ul ca pending cu `useRef`
+3. **Firebase save** → Salvează în background (async)
+4. **Sync verification** → useEffect verifică flag-ul înainte de a suprascrie
+5. **Clear flag** → După ce Firebase s-a sincronizat, șterge flag-ul
+6. **Error rollback** → Dacă salvarea eșuează, rollback state + clear flag
+
+#### **Beneficii:**
+- ✅ **Zero blinks** - UI-ul nu revine la starea inițială
+- ✅ **Instant feedback** - User vede schimbarea imediat
+- ✅ **Resilient** - Rollback automat în caz de eroare
+- ✅ **No race conditions** - useRef nu triggherează re-renders
+
+### **2. AUTO-EXPAND LOGIC - SetupView Smart Expansion**
+
+#### **Cerința Utilizatorului:**
+Când există **1 bloc cu 1 scară cu apartamente**, acestea trebuie să fie expandate automat la page load pentru a vedea direct apartamentele.
+
+#### **Logica Implementată:**
+
+##### **A. Reguli de Expandare Blocuri**
+```javascript
+const shouldExpandBlock = () => {
+  if (associationBlocks.length === 0) return true;      // No blocks
+  if (associationBlocks.length === 1) return true;      // ✅ 1 bloc → expand
+  if (blockStairs.length === 0) return true;            // No stairs
+
+  const hasStairsWithoutApartments = blockStairs.some(stair => {
+    const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
+    return stairApartments.length === 0;
+  });
+
+  if (hasStairsWithoutApartments) return true;          // Empty stair
+  return false;
+};
+```
+
+##### **B. Reguli de Expandare Scări**
+```javascript
+const shouldExpandStair = () => {
+  if (stairApartments.length === 0) return true;        // No apartments
+  if (blockStairs.length === 1 && stairApartments.length > 0) return true;  // ✅ 1 stair → expand
+  return false;
+};
+```
+
+##### **C. Aplicare la Page Load**
+```javascript
+// ✅ FIXED: useEffect pentru auto-expand la încărcarea paginii
+useEffect(() => {
+  if (!association?.id || !blocks || !stairs || !apartments) return;
+
+  const newExpandedBlocks = {};
+  const newExpandedStairs = {};
+
+  associationBlocks.forEach(block => {
+    const blockStairs = /* ... */;
+
+    if (shouldExpandBlock()) {
+      newExpandedBlocks[block.id] = true;
+    }
+
+    blockStairs.forEach(stair => {
+      if (shouldExpandStair()) {
+        newExpandedStairs[stair.id] = true;
+      }
+    });
+  });
+
+  setExpandedBlocks(newExpandedBlocks);
+  setExpandedStairs(newExpandedStairs);
+}, [association?.id, blocks, stairs, apartments, setExpandedBlocks, setExpandedStairs]);
+```
+
+#### **Workflow:**
+1. **Page load** → useEffect se execută
+2. **Citește structura** → blocks, stairs, apartments
+3. **Aplică reguli** → shouldExpandBlock() și shouldExpandStair()
+4. **Set state** → setExpandedBlocks și setExpandedStairs
+5. **UI render** → Componente expandate conform regulilor
+
+#### **Beneficii:**
+- ✅ **User-friendly UX** - Vezi direct apartamentele când ai 1 bloc cu 1 scară
+- ✅ **Smart defaults** - Expandează automat doar când e necesar
+- ✅ **Consistent behavior** - Aceleași reguli în useEffect și render
+- ✅ **No manual clicks** - User nu trebuie să deschidă manual când e evident
+
+### **3. SUPPLIER MANAGEMENT IMPROVEMENTS**
+
+#### **A. Auto-Update Supplier Names în Expense Configurations**
+Când se modifică numele unui furnizor, se actualizează automat în toate configurațiile de cheltuieli care folosesc acel furnizor.
+
+```javascript
+// useSuppliers.js - updateSupplier
+if (updates.name) {
+  const currentConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+  const updatedConfigurations = {};
+
+  Object.keys(currentConfigurations).forEach(expenseType => {
+    const config = currentConfigurations[expenseType];
+    if (config.supplierId === supplierId) {
+      updatedConfigurations[expenseType] = {
+        ...config,
+        supplierName: updates.name  // ✅ Auto-update
+      };
+    } else {
+      updatedConfigurations[expenseType] = config;
+    }
+  });
+
+  updateData['configSnapshot.expenseConfigurations'] = updatedConfigurations;
+}
+```
+
+#### **B. Auto-Clear Supplier Data on Delete**
+Când se șterge un furnizor, se elimină automat din toate configurațiile de cheltuieli, inclusiv contractNumber și contactPerson.
+
+```javascript
+// useSuppliers.js - deleteSupplier
+Object.keys(currentConfigurations).forEach(expenseType => {
+  const config = currentConfigurations[expenseType];
+  if (config.supplierId === supplierId) {
+    updatedConfigurations[expenseType] = {
+      ...config,
+      supplierId: null,
+      supplierName: '',
+      contractNumber: '',      // ✅ Clear
+      contactPerson: ''        // ✅ Clear
+    };
+  }
+});
+```
+
+#### **C. UI Improvements**
+- ✅ **Removed CUI display** - Nu se mai afișează CUI în liste și dropdown-uri
+- ✅ **No delete confirmation** - Ștergerea furnizorilor fără dialog de confirmare
+- ✅ **Button text changed** - "Adaugă nou" → "Adaugă furnizor"
+
+### **🎯 UX PRINCIPLES STABILITE**
+
+#### **1. Optimistic Updates Pattern**
+- Update state local instant
+- Save în background
+- Track cu useRef pentru a preveni overwrite
+- Rollback automat în caz de eroare
+
+#### **2. Smart Defaults**
+- UI-ul trebuie să prezică ce vrea user-ul
+- Expandare automată când e evident
+- Auto-selecție după adăugare
+
+#### **3. Data Consistency**
+- Modificările se propagă automat
+- Ștergerea curăță toate referințele
+- Zero date orfane
+
+#### **4. Clean UI**
+- No unnecessary confirmation dialogs
+- No information overload (removed CUI)
+- Clear, descriptive button text
+
+### **FILES MODIFIED - 5 OCTOMBRIE 2025**
+1. **`useBalanceManagement.js`** - Optimistic updates pentru toggle expense status
+2. **`ExpenseConfigModal.js`** - Auto-select supplier după add cu ref flag
+3. **`SetupView.js`** - Auto-expand logic pentru 1 bloc cu 1 scară
+4. **`useSuppliers.js`** - Auto-update names, auto-clear on delete
+5. **`ExpensesViewNew.js`** - UI improvements (removed CUI, confirmations)
+
 ---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*
