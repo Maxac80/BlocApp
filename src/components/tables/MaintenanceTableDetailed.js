@@ -22,7 +22,7 @@ const MaintenanceTableDetailed = ({
               Proprietar
             </th>
             <th className="px-2 py-3 text-center text-xs font-medium text-gray-700 whitespace-nowrap min-w-[60px]">
-              Pers.
+              Persoane
             </th>
             <th className="px-2 py-3 text-right text-xs font-medium text-gray-700 whitespace-nowrap min-w-[90px]">
               Întreținere
@@ -31,7 +31,7 @@ const MaintenanceTableDetailed = ({
               Restanță
             </th>
             <th className="px-2 py-3 text-right text-xs font-medium text-gray-700 whitespace-nowrap min-w-[90px]">
-              Total Întrețin.
+              Total Întreținere
             </th>
             <th className="px-2 py-3 text-right text-xs font-medium text-gray-700 whitespace-nowrap min-w-[80px]">
               Penalități
@@ -145,8 +145,11 @@ const MaintenanceTableDetailed = ({
       </tbody>
         <tfoot className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
         <tr>
-          <td colSpan="3" className={`px-2 py-3 font-semibold text-sm sticky left-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
+          <td colSpan="2" className={`px-2 py-3 font-semibold text-sm sticky left-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             TOTAL:
+          </td>
+          <td className="px-2 py-3 font-bold text-gray-800 text-center text-sm">
+            {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
           </td>
           <td className="px-2 py-3 font-bold text-indigo-600 text-right text-sm">
             {maintenanceData.reduce((sum, d) => sum + d.currentMaintenance, 0).toFixed(2)}

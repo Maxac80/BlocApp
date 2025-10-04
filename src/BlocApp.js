@@ -198,23 +198,21 @@ export default function BlocApp() {
         // STRUCTURE operations
         updateStructureSnapshot
       };
+
     }
   }, [addBlockToSheet, addStairToSheet, addApartmentToSheet, deleteBlockFromSheet, deleteStairFromSheet, deleteApartmentFromSheet, updateBlockInSheet, updateStairInSheet, updateApartmentInSheet, updateStructureSnapshot, updateConfigSnapshot, currentSheet]);
 
-  // Pentru debug - expune funcțiile în window
+  // Pentru debug - expune funcțiile în window (silent)
   useEffect(() => {
     if (fixTransferredBalances) {
       window.fixTransferredBalances = fixTransferredBalances;
-      console.log('🔧 fixTransferredBalances available in window for debugging');
     }
     if (createInitialSheet && association) {
       window.createInitialSheet = () => createInitialSheet(association);
-      console.log('🔧 createInitialSheet available in window for debugging');
     }
 
     // Expune migration tools pentru debugging
     exposeMigrationTools();
-    console.log('🔧 Migration tools available in window.dataMigration for debugging');
 
   }, [fixTransferredBalances, createInitialSheet, association, currentSheet, publishedSheet, sheets]);
 
@@ -267,18 +265,25 @@ export default function BlocApp() {
     updateCurrentSheetMaintenanceTable
   });
 
+  // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI (trebuie înainte de useExpenseManagement)
+  const {
+    configurations: expenseConfigurations,
+    loading: configLoading,
+    getExpenseConfig: getFirestoreExpenseConfig,
+    updateExpenseConfig: updateFirestoreExpenseConfig,
+    deleteExpenseConfig: deleteFirestoreExpenseConfig,
+    saveApartmentParticipations,
+    fixFirestoreConfigurations
+  } = useExpenseConfigurations(currentSheet);
+
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
   const {
-    expenseConfig,
-    setExpenseConfig,
     expenseParticipation,
     setExpenseParticipation,
     newExpense,
     setNewExpense,
     newCustomExpense,
     setNewCustomExpense,
-    getExpenseConfig,
-    updateExpenseConfig,
     getApartmentParticipation,
     setApartmentParticipation,
     getAssociationExpenseTypes,
@@ -297,30 +302,17 @@ export default function BlocApp() {
     expenses: currentSheet?.expenses || [], // SHEET-BASED: folosește cheltuielile din sheet
     customExpenses,
     currentMonth,
+    currentSheet, // SHEET-BASED: adăugat pentru a folosi sheet.id în loc de monthYear
     disabledExpenses,
     addMonthlyExpense: addExpenseToSheet, // SHEET-BASED: folosește addExpenseToSheet
     updateMonthlyExpense,
     deleteMonthlyExpense: removeExpenseFromSheet, // SHEET-BASED: folosește removeExpenseFromSheet
     addCustomExpense,
-    deleteCustomExpense
+    deleteCustomExpense,
+    getExpenseConfig: getFirestoreExpenseConfig  // FIREBASE: funcția pentru configurări din useExpenseConfigurations
   });
 
-  // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI
-  const {
-    configurations: expenseConfigurations,
-    loading: configLoading,
-    getExpenseConfig: getFirestoreExpenseConfig,
-    updateExpenseConfig: updateFirestoreExpenseConfig,
-    deleteExpenseConfig: deleteFirestoreExpenseConfig,
-    fixFirestoreConfigurations
-  } = useExpenseConfigurations(currentSheet);
-
-  // 🔧 Corectează configurațiile greșite din Firestore o singură dată
-  React.useEffect(() => {
-    if (association?.id && !configLoading && Object.keys(expenseConfigurations).length > 0) {
-      fixFirestoreConfigurations();
-    }
-  }, [association?.id, configLoading, expenseConfigurations, fixFirestoreConfigurations]);
+  // 🔧 Auto-fix configurations DISABLED - users can configure manually
 
   // 🧾 HOOK PENTRU FACTURI
   const {
@@ -695,6 +687,7 @@ useEffect(() => {
               getAssociationExpenseTypes={getAssociationExpenseTypes}
               getExpenseConfig={getFirestoreExpenseConfig}
               updateExpenseConfig={updateFirestoreExpenseConfig}
+              saveApartmentParticipations={saveApartmentParticipations}
               getApartmentParticipation={getApartmentParticipation}
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}

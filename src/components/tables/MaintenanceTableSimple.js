@@ -82,8 +82,35 @@ const MaintenanceTableSimple = ({
           </tr>
         ))}
       </tbody>
-      {isMonthReadOnly && (
-        <tfoot className="bg-gray-50">
+      <tfoot className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
+        <tr>
+          <td colSpan="2" className="px-3 py-3 font-semibold">TOTAL:</td>
+          <td className="px-3 py-3 font-bold text-gray-800 text-center">
+            {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
+          </td>
+          <td className="px-3 py-3 font-bold text-indigo-600">
+            {maintenanceData.reduce((sum, d) => sum + d.currentMaintenance, 0).toFixed(2)}
+          </td>
+          <td className="px-3 py-3 font-bold text-red-600">
+            {maintenanceData.reduce((sum, d) => sum + d.restante, 0).toFixed(2)}
+          </td>
+          <td className="px-3 py-3 font-bold text-purple-600">
+            {maintenanceData.reduce((sum, d) => sum + d.totalMaintenance, 0).toFixed(2)}
+          </td>
+          <td className="px-3 py-3 font-bold text-orange-600">
+            {maintenanceData.reduce((sum, d) => sum + d.penalitati, 0).toFixed(2)}
+          </td>
+          <td className="px-3 py-3 font-bold text-gray-800 text-lg">
+            {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
+          </td>
+          {isMonthReadOnly && (
+            <>
+              <td className="px-3 py-3"></td>
+              {!isHistoricMonth && <td className="px-3 py-3"></td>}
+            </>
+          )}
+        </tr>
+        {isMonthReadOnly && (
           <tr>
             <td colSpan="3" className="px-3 py-3 font-semibold">TOTAL ÎNCASAT:</td>
             <td className="px-3 py-3 font-bold text-green-600">
@@ -94,8 +121,8 @@ const MaintenanceTableSimple = ({
               {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
             </td>
           </tr>
-        </tfoot>
-      )}
+        )}
+      </tfoot>
     </table>
   );
 };

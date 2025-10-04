@@ -33,13 +33,10 @@ const useInvoices = (associationId, currentSheet) => {
   // 🔄 ÎNCĂRCAREA FACTURILOR LA SCHIMBAREA ASOCIAȚIEI
   useEffect(() => {
     if (!associationId) {
-      console.log('⚠️ useInvoices: Nu există associationId, resetez facturile');
       setInvoices([]);
       setLoading(false);
       return;
     }
-
-    console.log('📥 Încarc facturile pentru asociația:', associationId);
     
     // Query pentru toate facturile asociației (fără orderBy pentru a evita problema cu index-ul)
     const invoicesQuery = query(
@@ -59,8 +56,6 @@ const useInvoices = (associationId, currentSheet) => {
         
         setInvoices(invoicesData);
         setLoading(false);
-        
-        console.log('✅ Facturi încărcate:', invoicesData.length);
         // console.log('📋 Lista facturilor încărcate:', invoicesData.map(inv => ({
         //   id: inv.id,
         //   month: inv.month,
@@ -722,12 +717,6 @@ const useInvoices = (associationId, currentSheet) => {
     };
   }, [invoices, getOverdueInvoices]);
 
-  console.log('🔄 useInvoices render:', {
-    associationId,
-    associationIdExists: !!associationId,
-    invoicesCount: invoices.length,
-    loading
-  });
 
   // 🎯 RETURN API
   return {

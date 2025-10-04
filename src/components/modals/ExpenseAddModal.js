@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Settings, Users, Building2 } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
+import { defaultExpenseTypes } from '../../data/expenseTypes';
+
+// Funcție pentru normalizarea textului (elimină diacriticele și convertește la lowercase)
+const normalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
 
 const ExpenseAddModal = ({
   isOpen,
@@ -105,11 +115,23 @@ const ExpenseAddModal = ({
       return;
     }
 
-    // Verifică dacă numele cheltuielii există deja
+    const normalizedInputName = normalizeText(expenseName);
+
+    // Verifică dacă numele există în cheltuielile standard (inclusiv cele dezactivate)
+    const standardExpenseExists = defaultExpenseTypes.some(expense =>
+      normalizeText(expense.name) === normalizedInputName
+    );
+
+    if (standardExpenseExists) {
+      alert(`Cheltuiala cu numele "${expenseName.trim()}" există deja în cheltuielile standard. Vă rugăm să alegeți un alt nume.`);
+      return;
+    }
+
+    // Verifică dacă numele cheltuielii există deja în cheltuielile custom
     if (getAssociationExpenseTypes) {
       const existingExpenseTypes = getAssociationExpenseTypes();
       const nameExists = existingExpenseTypes.some(expense =>
-        expense.name.toLowerCase().trim() === expenseName.toLowerCase().trim()
+        normalizeText(expense.name) === normalizedInputName
       );
 
       if (nameExists) {
@@ -323,7 +345,7 @@ const ExpenseAddModal = ({
                         <option value="">Fără furnizor</option>
                         {suppliers.map(supplier => (
                           <option key={supplier.id} value={supplier.id}>
-                            {supplier.name} {supplier.cui ? `(CUI: ${supplier.cui})` : ''}
+                            {supplier.name}
                           </option>
                         ))}
                       </select>

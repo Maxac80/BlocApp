@@ -26,8 +26,7 @@ export const initAppCheck = () => {
       console.warn('App Check not configured - missing ReCaptcha site key');
     }
   } else {
-    // For development, App Check is optional
-    console.info('App Check skipped in development mode');
+    // For development, App Check is optional (silent)
   }
   
   return null;

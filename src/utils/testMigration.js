@@ -86,5 +86,4 @@ const verifyMigration = async () => {
 // Expune funcția pentru browser console
 if (typeof window !== 'undefined') {
   window.testSheetMigration = testSheetBasedMigration;
-  console.log('🔧 testSheetMigration() available in browser console');
 }

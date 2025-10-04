@@ -295,6 +295,5 @@ export const exposeMigrationTools = () => {
         return { analysis, migration };
       }
     };
-    console.log('🔧 Unelte de migrare disponibile în window.dataMigration');
   }
 };

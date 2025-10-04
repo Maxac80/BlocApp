@@ -309,5 +309,4 @@ if (typeof window !== 'undefined') {
     verify: verifyStructureMigration,
     safeMigration: safeStructureMigration
   };
-  console.log('🔧 Structure migration tools available in window.structureMigration');
 }

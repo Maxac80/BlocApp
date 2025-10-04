@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { SHEET_STATUS } from './useSheetManagement';
 
 /**
  * 💰 Custom Hook pentru Gestionarea Soldurilor
- * 
+ *
  * RESPONSABILITĂȚI:
  * - Încărcarea și salvarea soldurilor inițiale
  * - Gestionarea ajustărilor de solduri
@@ -20,6 +21,10 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     defaultPenaltyRate: 0.02, // 2% default
     daysBeforePenalty: 30
   });
+  const [currentSheetId, setCurrentSheetId] = useState(null);
+
+  // 🔒 REF pentru a urmări update-urile optimiste în curs
+  const pendingUpdatesRef = useRef(new Map());
 
 
   // 🔄 ÎNCĂRCAREA CONFIGURĂRILOR LA SCHIMBAREA ASOCIAȚIEI
@@ -30,13 +35,63 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
   }, [association?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 🔄 SINCRONIZARE AUTOMATĂ disabledExpenses DIN currentSheet
+  useEffect(() => {
+    if (sheetOperations?.currentSheet && association?.id) {
+      const sheetData = sheetOperations.currentSheet;
+      const sheetDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
+      const key = `${association.id}-${sheetData.id}`;
+
+      // Verifică dacă există un update optimist în curs pentru acest key
+      const pendingUpdate = pendingUpdatesRef.current.get(key);
+
+      if (pendingUpdate) {
+        // Compară cu update-ul optimist pentru a vedea dacă Firebase s-a sincronizat
+        const firebaseSynced =
+          pendingUpdate.length === sheetDisabledExpenses.length &&
+          pendingUpdate.every(exp => sheetDisabledExpenses.includes(exp));
+
+        if (firebaseSynced) {
+          // Firebase s-a sincronizat - elimină update-ul din pending
+          pendingUpdatesRef.current.delete(key);
+        } else {
+          // Update-ul optimist este încă în curs - ignoră Firebase sync
+          return;
+        }
+      }
+
+      // Actualizează doar dacă datele s-au schimbat (evită bucla infinită)
+      setDisabledExpenses(prev => {
+        const currentExpenses = prev[key] || [];
+
+        // Compară array-urile pentru a vedea dacă sunt diferite
+        const hasChanged =
+          currentExpenses.length !== sheetDisabledExpenses.length ||
+          !currentExpenses.every((exp, idx) => exp === sheetDisabledExpenses[idx]);
+
+        if (hasChanged) {
+          return {
+            ...prev,
+            [key]: sheetDisabledExpenses
+          };
+        }
+
+        return prev; // Nu actualiza dacă nu s-a schimbat nimic
+      });
+
+      // Actualizează currentSheetId
+      if (sheetData.id !== currentSheetId) {
+        setCurrentSheetId(sheetData.id);
+      }
+    }
+  });
+
 
   // 📥 ÎNCĂRCAREA SOLDURILOR ȘI CONFIGURĂRILOR DIN FIRESTORE
   const loadInitialBalances = useCallback(async () => {
     if (!association?.id) return;
-    
+
     try {
-      console.log('📥 Încarc configurațiile pentru asociația:', association.id);
       
       // 1. Încarcă soldurile inițiale
       const balancesQuery = query(
@@ -225,16 +280,55 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
   }, [association?.id, sheetOperations]);
 
-  // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE
-  const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
-    if (!association?.id) return;
-
-    const disabledKey = `${association.id}-${currentMonth}`;
+  // 💾 SALVAREA CHELTUIELILOR ELIMINATE ÎN SHEET
+  const saveDisabledExpenses = useCallback(async (sheetId, expenseName, disable) => {
+    if (!sheetId) {
+      console.error('❌ INVALID sheetId:', sheetId);
+      return;
+    }
 
     try {
-      console.log(`${disable ? '🚫' : '✅'} ${disable ? 'Elimin' : 'Reactiv'} cheltuiala:`, expenseName);
-      
-      // Actualizează starea locală
+      // Citește sheet-ul direct folosind ID-ul
+      const sheetDoc = await getDoc(doc(db, 'sheets', sheetId));
+
+      if (!sheetDoc.exists()) {
+        console.warn('⚠️ Nu există sheet-ul cu ID-ul', sheetId);
+        return;
+      }
+
+      const sheetData = sheetDoc.data();
+      const currentDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
+
+      let updatedExpenseNames;
+      if (disable) {
+        // Adaugă cheltuiala la lista celor dezactivate
+        updatedExpenseNames = [...new Set([...currentDisabledExpenses, expenseName])];
+      } else {
+        // Elimină cheltuiala din lista celor dezactivate
+        updatedExpenseNames = currentDisabledExpenses.filter(name => name !== expenseName);
+      }
+
+      // Actualizează direct în Firebase
+      await updateDoc(doc(db, 'sheets', sheetDoc.id), {
+        'configSnapshot.disabledExpenses': updatedExpenseNames
+      });
+    } catch (error) {
+      console.error('❌ Eroare la salvarea cheltuielilor eliminate:', error);
+      throw error;
+    }
+  }, []);
+
+  // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE
+  const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
+    if (!association?.id || !sheetOperations?.currentSheet?.id) return;
+
+    // Folosim ID-ul sheet-ului în loc de lună
+    const sheetId = sheetOperations.currentSheet.id;
+    const disabledKey = `${association.id}-${sheetId}`;
+
+    try {
+      // Actualizează starea locală INSTANT pentru feedback imediat
+      let optimisticState;
       setDisabledExpenses(prev => {
         const currentDisabled = prev[disabledKey] || [];
 
@@ -245,84 +339,44 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
           newDisabled = currentDisabled.filter(name => name !== expenseName);
         }
 
+        optimisticState = newDisabled;
+
         return {
           ...prev,
           [disabledKey]: newDisabled
         };
       });
-      
-      // Salvează în Firestore
-      await saveDisabledExpenses(disabledKey, expenseName, disable);
-      
+
+      // Marchează update-ul ca fiind în curs
+      pendingUpdatesRef.current.set(disabledKey, optimisticState);
+
+      // Salvează în Firebase în fundal (fără await pentru a nu bloca UI)
+      saveDisabledExpenses(sheetId, expenseName, disable).catch(error => {
+        console.error('❌ Eroare la salvarea în Firebase:', error);
+        // Elimină update-ul din pending și rollback
+        pendingUpdatesRef.current.delete(disabledKey);
+
+        // Rollback state local dacă salvarea eșuează
+        setDisabledExpenses(prev => {
+          const currentDisabled = prev[disabledKey] || [];
+          let revertedDisabled;
+          if (disable) {
+            revertedDisabled = currentDisabled.filter(name => name !== expenseName);
+          } else {
+            revertedDisabled = [...currentDisabled, expenseName];
+          }
+          return {
+            ...prev,
+            [disabledKey]: revertedDisabled
+          };
+        });
+      });
+
     } catch (error) {
       console.error('❌ Eroare la actualizarea statusului cheltuielii:', error);
       throw error;
     }
-  }, [association?.id]);
-
-  // 💾 SALVAREA CHELTUIELILOR ELIMINATE ÎN SHEET
-  const saveDisabledExpenses = useCallback(async (monthKey, expenseName, disable) => {
-    // Verificare de siguranță - dacă monthKey nu conține '-', probabil parametrii sunt inversați
-    if (!monthKey || !monthKey.includes('-')) {
-      console.error('❌ INVALID monthKey format! Expected format: "associationId-month", got:', monthKey);
-      return;
-    }
-
-    try {
-      const [associationId, month] = monthKey.split('-');
-
-      // Găsim sheet-ul curent din Firebase
-      const sheetsQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', associationId)
-      );
-      const sheetsSnapshot = await getDocs(sheetsQuery);
-
-      console.log('📋 Sheets found:', sheetsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        status: doc.data().status,
-        monthYear: doc.data().monthYear
-      })));
-
-      // Caută sheet-ul IN_PROGRESS sau cel mai recent
-      const inProgressSheet = sheetsSnapshot.docs.find(doc => doc.data().status === 'IN_PROGRESS');
-      const sheetDoc = inProgressSheet || sheetsSnapshot.docs[0];
-
-      if (sheetDoc) {
-        const sheetData = sheetDoc.data();
-        console.log('📋 Using sheet:', { id: sheetDoc.id, status: sheetData.status, monthYear: sheetData.monthYear });
-        const currentDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
-
-        let updatedExpenseNames;
-        if (disable) {
-          // Adaugă cheltuiala la lista celor dezactivate
-          updatedExpenseNames = [...new Set([...currentDisabledExpenses, expenseName])];
-        } else {
-          // Elimină cheltuiala din lista celor dezactivate
-          updatedExpenseNames = currentDisabledExpenses.filter(name => name !== expenseName);
-        }
-
-        // Actualizează direct în Firebase
-        await updateDoc(doc(db, 'sheets', sheetDoc.id), {
-          'configSnapshot.disabledExpenses': updatedExpenseNames
-        });
-
-        // Actualizează state-ul local pentru afișare imediată
-        const key = `${associationId}-${sheetData.monthYear}`;
-        setDisabledExpenses(prev => ({
-          ...prev,
-          [key]: updatedExpenseNames
-        }));
-
-        console.log(`✅ Cheltuiala "${expenseName}" ${disable ? 'eliminată' : 'reactivată'} în sheet ${sheetData.monthYear}`);
-      } else {
-        console.warn('⚠️ Nu există sheet în lucru pentru a salva disabled expenses');
-      }
-    } catch (error) {
-      console.error('❌ Eroare la salvarea cheltuielilor eliminate:', error);
-      throw error;
-    }
-  }, []);
+  }, [association?.id, sheetOperations, saveDisabledExpenses]);
 
   // 📋 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI
   const loadBalanceAdjustments = useCallback(async () => {

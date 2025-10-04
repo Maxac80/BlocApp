@@ -11,7 +11,8 @@ const ExpenseConfigModal = ({
   getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
-  currentSheet
+  currentSheet,
+  saveApartmentParticipations
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [localConfig, setLocalConfig] = useState({
@@ -21,9 +22,13 @@ const ExpenseConfigModal = ({
     contractNumber: '',
     contactPerson: ''
   });
-  
+
+  // 🏠 State local pentru participările apartamentelor (se salvează în Firebase)
+  const [localParticipations, setLocalParticipations] = useState({});
+
   const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
   const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
+  const justAddedSupplierRef = React.useRef(false);
   const [newSupplierData, setNewSupplierData] = useState({
     name: '',
     cui: '',
@@ -36,8 +41,9 @@ const ExpenseConfigModal = ({
   });
 
 
+
   useEffect(() => {
-    if (expenseConfig) {
+    if (expenseConfig && !justAddedSupplierRef.current) {
       setLocalConfig({
         distributionType: expenseConfig.distributionType || 'apartment',
         supplierId: expenseConfig.supplierId || null,
@@ -47,6 +53,26 @@ const ExpenseConfigModal = ({
       });
     }
   }, [expenseConfig]);
+
+  // 🔄 Încarcă participările din Firebase la deschiderea modalului
+  useEffect(() => {
+    if (isOpen && currentSheet && expenseName) {
+      const savedParticipations = currentSheet.configSnapshot?.apartmentParticipations || {};
+
+      // Filtrează doar participările pentru cheltuiala curentă
+      const expenseParticipations = {};
+      Object.keys(savedParticipations).forEach(key => {
+        if (key.includes(`-${expenseName}`)) {
+          expenseParticipations[key] = savedParticipations[key];
+        }
+      });
+
+      setLocalParticipations(expenseParticipations);
+    } else if (!isOpen) {
+      // Resetează participările când modalul se închide
+      setLocalParticipations({});
+    }
+  }, [isOpen, currentSheet, expenseName]);
 
   const handleAddNewSupplier = async () => {
     if (!newSupplierData.name.trim()) {
@@ -60,12 +86,20 @@ const ExpenseConfigModal = ({
         serviceTypes: [expenseName]
       });
 
+      // Setează flag-ul că tocmai am adăugat un furnizor
+      justAddedSupplierRef.current = true;
+
       // Update local config with new supplier
       setLocalConfig(prev => ({
         ...prev,
         supplierId: newSupplier.id,
         supplierName: newSupplier.name
       }));
+
+      // Resetează flag-ul după 2 secunde
+      setTimeout(() => {
+        justAddedSupplierRef.current = false;
+      }, 2000);
 
       // Reset the form and exit add mode
       setIsAddingNewSupplier(false);
@@ -79,8 +113,6 @@ const ExpenseConfigModal = ({
         iban: '',
         notes: ''
       });
-
-      console.log('✅ Furnizor adăugat cu succes:', newSupplier.name);
     } catch (error) {
       console.error('Error adding supplier:', error);
       console.error('Error details:', {
@@ -103,19 +135,71 @@ const ExpenseConfigModal = ({
   };
 
   const handleSave = async () => {
-    // Save configuration
-    updateExpenseConfig(expenseName, localConfig);
-    onClose();
+    try {
+      // Validare participări - verifică dacă există sume/procente necompletate
+      const apartments = getAssociationApartments();
+      const incompleteParticipations = [];
+
+      apartments.forEach(apartment => {
+        const participationKey = `${apartment.id}-${expenseName}`;
+        const participation = localParticipations[participationKey] || { type: 'integral', value: null };
+
+        if (participation.type === 'percentage' || participation.type === 'fixed') {
+          if (!participation.value || participation.value <= 0) {
+            incompleteParticipations.push({
+              apartment: apartment.number,
+              type: participation.type === 'percentage' ? 'procent' : 'sumă fixă'
+            });
+          }
+        }
+      });
+
+      // Dacă există participări incomplete, afișează eroare
+      if (incompleteParticipations.length > 0) {
+        const messages = incompleteParticipations.map(p =>
+          `Apt ${p.apartment}: completați ${p.type}`
+        ).join('\n');
+        alert(`Participări incomplete:\n\n${messages}\n\nVă rog completați toate valorile înainte de a salva.`);
+        return;
+      }
+
+      // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
+      onClose();
+
+      // Salvează în fundal (după închidere)
+      // Save configuration
+      await updateExpenseConfig(expenseName, localConfig);
+
+      // Save apartment participations to Firebase
+      if (saveApartmentParticipations) {
+        // Merge cu participările existente pentru alte cheltuieli
+        const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
+        const mergedParticipations = { ...allParticipations, ...localParticipations };
+        await saveApartmentParticipations(mergedParticipations);
+      }
+    } catch (error) {
+      console.error('Eroare la salvarea configurației:', error);
+      alert('Eroare la salvarea configurației. Verificați consola.');
+    }
   };
 
   const handleSupplierChange = (supplierId) => {
-    const supplier = suppliers.find(s => s.id === supplierId);
-    if (supplier) {
+    if (!supplierId) {
+      // Dacă se selectează "Fără furnizor"
       setLocalConfig({
         ...localConfig,
-        supplierId: supplier.id,
-        supplierName: supplier.name
+        supplierId: null,
+        supplierName: ''
       });
+    } else {
+      const supplier = suppliers.find(s => s.id === supplierId);
+      if (supplier) {
+        setLocalConfig({
+          ...localConfig,
+          supplierId: supplier.id,
+          supplierName: supplier.name
+        });
+      }
     }
   };
 
@@ -214,7 +298,9 @@ const ExpenseConfigModal = ({
               {apartments.length > 0 ? (
                 <div className="space-y-2">
                   {apartments.map(apartment => {
-                    const participation = getApartmentParticipation(apartment.id, expenseName);
+                    const participationKey = `${apartment.id}-${expenseName}`;
+                    const participation = localParticipations[participationKey] || { type: 'integral', value: null };
+
                     return (
                       <div key={apartment.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <span className="w-20 font-medium">Apt {apartment.number}</span>
@@ -222,11 +308,11 @@ const ExpenseConfigModal = ({
                           value={participation.type}
                           onChange={(e) => {
                             const type = e.target.value;
-                            if (type === "integral" || type === "excluded") {
-                              setApartmentParticipation(apartment.id, expenseName, type);
-                            } else {
-                              setApartmentParticipation(apartment.id, expenseName, type, participation.value || (type === "percentage" ? 50 : 0));
-                            }
+                            const newValue = type === "percentage" ? 50 : type === "fixed" ? 0 : null;
+                            setLocalParticipations({
+                              ...localParticipations,
+                              [participationKey]: { type, value: newValue }
+                            });
                           }}
                           className="flex-1 p-2 border border-gray-300 rounded-lg"
                         >
@@ -238,11 +324,27 @@ const ExpenseConfigModal = ({
                         {(participation.type === "percentage" || participation.type === "fixed") && (
                           <input
                             type="text"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             value={participation.value || ""}
-                            onChange={(e) => setApartmentParticipation(apartment.id, expenseName, participation.type, parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Permite doar numere și punct zecimal
+                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                setLocalParticipations({
+                                  ...localParticipations,
+                                  [participationKey]: {
+                                    ...participation,
+                                    value: value === '' ? 0 : parseFloat(value) || 0
+                                  }
+                                });
+                              }
+                            }}
                             placeholder={participation.type === "percentage" ? "%" : "RON"}
-                            className="w-24 p-2 border border-gray-300 rounded-lg"
+                            className={`w-24 p-2 border rounded-lg ${
+                              (!participation.value || participation.value <= 0)
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-300'
+                            }`}
                           />
                         )}
                       </div>
@@ -275,7 +377,7 @@ const ExpenseConfigModal = ({
                         <option value="">Fără furnizor</option>
                         {suppliers.map(supplier => (
                           <option key={supplier.id} value={supplier.id}>
-                            {supplier.name} {supplier.cui ? `(CUI: ${supplier.cui})` : ''}
+                            {supplier.name}
                           </option>
                         ))}
                       </select>
@@ -283,7 +385,7 @@ const ExpenseConfigModal = ({
                         onClick={() => setIsAddingNewSupplier(true)}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                       >
-                        Adaugă nou
+                        Adaugă furnizor
                       </button>
                     </div>
                   </div>

@@ -456,7 +456,7 @@ return (
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    📊 Template Excel
+                    Template Excel
                   </button>
                   <button
                     onClick={() => setShowExcelUploadModal(true)}
@@ -466,7 +466,7 @@ return (
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    📤 Încarcă Excel
+                    Încarcă Excel
                   </button>
                 </>
               )}
@@ -783,65 +783,24 @@ return (
                           {isExpanded ? '▼' : '▸'}
                         </div>
                         
-                        {editingItem?.type === 'block' && editingItem?.id === block.id ? (
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="text"
-                              value={editingData.name || ''}
-                              onChange={(e) => setEditingData({...editingData, name: e.target.value})}
-                              className="px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              autoFocus
-                              placeholder="Numele blocului"
-                            />
-                            <button
-                              onClick={async () => {
-                                if (!editingData.name?.trim()) {
-                                  alert('Introduceți numele blocului');
-                                  return;
-                                }
-                                try {
-                                  await updateBlock(editingItem.id, { name: editingData.name.trim() });
-                                  setEditingItem(null);
-                                  setEditingData({});
-                                } catch (error) {
-                                  console.error('Error updating block:', error);
-                                  alert('Eroare la actualizarea blocului: ' + error.message);
-                                }
-                              }}
-                              className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600"
-                            >
-                              ✓ Salvează
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingItem(null);
-                                setEditingData({});
-                              }}
-                              className="bg-gray-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-600"
-                            >
-                              ✕ Anulează
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 rounded-lg p-2 -m-2 transition-colors"
-                            onClick={() => {
-                              setExpandedBlocks(prev => ({
-                                ...prev,
-                                [block.id]: !isExpanded
-                              }));
-                            }}
-                          >
-                            <span className="text-lg font-medium text-gray-800">
-                              🏢 {block.name}
-                            </span>
-                            <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded-full">
-                              {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
-                                return sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length;
-                              }, 0)} apartamente
-                            </span>
-                          </div>
-                        )}
+                        <div
+                          className="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 rounded-lg p-2 -m-2 transition-colors"
+                          onClick={() => {
+                            setExpandedBlocks(prev => ({
+                              ...prev,
+                              [block.id]: !isExpanded
+                            }));
+                          }}
+                        >
+                          <span className="text-lg font-medium text-gray-800">
+                            🏢 {block.name}
+                          </span>
+                          <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded-full">
+                            {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
+                              return sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length;
+                            }, 0)} apartamente
+                          </span>
+                        </div>
                       </div>
                       
                       <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -919,10 +878,7 @@ return (
                           // Butoane individuale pentru blocuri fără scări
                           <>
                             <button
-                              onClick={() => {
-                                setEditingItem({ type: 'block', id: block.id });
-                                setEditingData({ name: block.name });
-                              }}
+                              onClick={() => openEditBlockModal(block)}
                               className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                               title={`Editează blocul ${block.name}`}
                             >

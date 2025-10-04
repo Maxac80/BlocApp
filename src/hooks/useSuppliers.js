@@ -27,7 +27,7 @@ const useSuppliers = (currentSheet) => {
   }, [currentSheet]);
 
   const addSupplier = useCallback(async (supplierData) => {
-    if (!currentSheet || !currentSheet.id) return;
+    if (!currentSheet || !currentSheet.id) return null;
 
     try {
       const newSupplier = {
@@ -52,7 +52,7 @@ const useSuppliers = (currentSheet) => {
       setSuppliers(updatedSuppliers);
 
       console.log('✅ SHEET-BASED: Furnizor adăugat în sheet:', currentSheet.monthYear);
-      return newSupplier;
+      return newSupplier; // Returnează furnizorul nou creat
     } catch (error) {
       console.error('Error adding supplier to sheet:', error);
       setError(error.message);
@@ -71,11 +71,37 @@ const useSuppliers = (currentSheet) => {
           : supplier
       );
 
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
-      await updateDoc(sheetRef, {
+      // Dacă se schimbă numele furnizorului, actualizează și în expenseConfigurations
+      const updateData = {
         'configSnapshot.suppliers': updatedSuppliers,
         'configSnapshot.updatedAt': serverTimestamp()
-      });
+      };
+
+      if (updates.name) {
+        const currentConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+        const updatedConfigurations = {};
+
+        // Actualizează supplierName în toate configurațiile care folosesc acest furnizor
+        Object.keys(currentConfigurations).forEach(expenseType => {
+          const config = currentConfigurations[expenseType];
+          if (config.supplierId === supplierId) {
+            updatedConfigurations[expenseType] = {
+              ...config,
+              supplierName: updates.name
+            };
+          } else {
+            updatedConfigurations[expenseType] = config;
+          }
+        });
+
+        // Adaugă configurațiile actualizate la update
+        if (Object.keys(updatedConfigurations).length > 0) {
+          updateData['configSnapshot.expenseConfigurations'] = updatedConfigurations;
+        }
+      }
+
+      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      await updateDoc(sheetRef, updateData);
 
       setSuppliers(updatedSuppliers);
       console.log('✅ SHEET-BASED: Furnizor actualizat în sheet:', currentSheet.monthYear);
@@ -93,14 +119,35 @@ const useSuppliers = (currentSheet) => {
       const currentSuppliers = currentSheet.configSnapshot?.suppliers || [];
       const updatedSuppliers = currentSuppliers.filter(supplier => supplier.id !== supplierId);
 
+      // Actualizează și expenseConfigurations pentru a elimina furnizorul
+      const currentConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+      const updatedConfigurations = {};
+
+      Object.keys(currentConfigurations).forEach(expenseType => {
+        const config = currentConfigurations[expenseType];
+        if (config.supplierId === supplierId) {
+          // Elimină furnizorul și datele asociate din configurația cheltuielii
+          updatedConfigurations[expenseType] = {
+            ...config,
+            supplierId: null,
+            supplierName: '',
+            contractNumber: '',
+            contactPerson: ''
+          };
+        } else {
+          updatedConfigurations[expenseType] = config;
+        }
+      });
+
       const sheetRef = doc(db, 'sheets', currentSheet.id);
       await updateDoc(sheetRef, {
         'configSnapshot.suppliers': updatedSuppliers,
+        'configSnapshot.expenseConfigurations': updatedConfigurations,
         'configSnapshot.updatedAt': serverTimestamp()
       });
 
       setSuppliers(updatedSuppliers);
-      console.log('✅ SHEET-BASED: Furnizor șters din sheet:', currentSheet.monthYear);
+      console.log('✅ SHEET-BASED: Furnizor șters din sheet și eliminat din configurații:', currentSheet.monthYear);
     } catch (error) {
       console.error('Error deleting supplier from sheet:', error);
       setError(error.message);

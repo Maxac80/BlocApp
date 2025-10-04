@@ -171,5 +171,4 @@ if (typeof window !== 'undefined') {
     cleanup: cleanupRedundantCollections,
     safeCleanup: safeCleanupAfterMigration
   };
-  console.log('🔧 Cleanup tools available in window.cleanupOldCollections');
 }

@@ -28,11 +28,41 @@ export const useAssociationData = (sheetOperationsRef = null) => {
   const [apartments, setApartments] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [customExpenses, setCustomExpenses] = useState([]);
+  const [currentSheetId, setCurrentSheetId] = useState(null);
+
+  // 🔄 SINCRONIZARE AUTOMATĂ customExpenses DIN currentSheet
+  useEffect(() => {
+    if (sheetOperationsRef?.current?.currentSheet) {
+      const currentSheet = sheetOperationsRef.current.currentSheet;
+      const sheetCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+
+      // Verifică dacă datele s-au schimbat (nu doar sheet-ul)
+      setCustomExpenses(prev => {
+        // Compară array-urile pentru a vedea dacă sunt diferite
+        const hasChanged =
+          prev.length !== sheetCustomExpenses.length ||
+          !prev.every((exp, idx) => {
+            const sheetExp = sheetCustomExpenses[idx];
+            return sheetExp && exp.id === sheetExp.id && exp.name === sheetExp.name;
+          });
+
+        if (hasChanged) {
+          return sheetCustomExpenses;
+        }
+
+        return prev; // Nu actualiza dacă nu s-a schimbat nimic
+      });
+
+      // Actualizează currentSheetId pentru tracking
+      if (currentSheet.id !== currentSheetId) {
+        setCurrentSheetId(currentSheet.id);
+      }
+    }
+  });
 
   // Funcții pentru încărcarea datelor - CORECTATE
   const loadBlocks = async (associationId) => {
     try {
-      console.log("🔍 BLOCKS DEBUG - Loading blocks for associationId:", associationId);
       const blocksQuery = query(
         collection(db, "blocks"),
         where("associationId", "==", associationId)
@@ -46,13 +76,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       const sortedBlocks = blocksData.sort((a, b) => a.name.localeCompare(b.name));
 
       setBlocks(sortedBlocks);
-      console.log("✅ Blocuri încărcate și sortate:", sortedBlocks.length, sortedBlocks);
-      console.log("🔍 BLOCKS DEBUG - Blocks loaded result:", {
-        requestedAssociationId: associationId,
-        blocksFound: sortedBlocks.length,
-        blockIds: sortedBlocks.map(b => b.id),
-        blockAssociationIds: sortedBlocks.map(b => b.associationId)
-      });
     } catch (err) {
       console.error("❌ Eroare la încărcarea blocurilor:", err);
       setBlocks([]);
@@ -92,7 +115,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
 
   const loadApartments = async (associationId) => {
     try {
-      console.log('🔍 loadApartments called for associationId:', associationId);
 
       // Încarcă blocurile asociației
       const blocksQuery = query(
@@ -101,11 +123,9 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       );
       const blocksSnapshot = await getDocs(blocksQuery);
       const blockIds = blocksSnapshot.docs.map((doc) => doc.id);
-      console.log('🔍 Blocks found:', blocksSnapshot.docs.length, 'Block IDs:', blockIds);
 
       if (blockIds.length === 0) {
         setApartments([]);
-        console.log("⚠️ Nu există blocuri, deci nu există apartamente");
         return;
       }
 
@@ -113,11 +133,9 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       const stairsQuery = query(collection(db, "stairs"), where("blockId", "in", blockIds));
       const stairsSnapshot = await getDocs(stairsQuery);
       const stairIds = stairsSnapshot.docs.map((doc) => doc.id);
-      console.log('🔍 Stairs found:', stairsSnapshot.docs.length, 'Stair IDs:', stairIds);
 
       if (stairIds.length === 0) {
         setApartments([]);
-        console.log("⚠️ Nu există scări, deci nu există apartamente");
         return;
       }
 
@@ -183,7 +201,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
         const customExpensesData = sheetData.configSnapshot?.customExpenses || [];
 
         setCustomExpenses(customExpensesData);
-        console.log("✅ Cheltuieli custom încărcate din sheet:", customExpensesData.length);
       } else {
         // Fallback la colecție dacă nu există sheet
         const customExpensesQuery = query(
@@ -196,7 +213,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
           ...doc.data(),
         }));
         setCustomExpenses(customExpensesData);
-        console.log("⚠️ Cheltuieli custom încărcate din colecție (fallback):", customExpensesData.length);
       }
     } catch (err) {
       console.error("❌ Eroare la încărcarea cheltuielilor custom:", err);
@@ -210,9 +226,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.updateBlockInSheet) {
-        console.log('📝 SHEET-BASED: Actualizăm blocul direct în sheet...');
         await sheetOperationsRef.current.updateBlockInSheet(blockId, updates);
-        console.log('✅ Bloc actualizat direct în sheet:', blockId);
         return;
       }
 
@@ -395,8 +409,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       setError(null);
 
       try {
-        console.log("🔄 Încărcare date pentru utilizator:", activeUser.uid);
-
         // 1. Încarcă asociația utilizatorului
         const associationQuery = query(
           collection(db, "associations"),
@@ -404,15 +416,10 @@ export const useAssociationData = (sheetOperationsRef = null) => {
         );
         const associationSnapshot = await getDocs(associationQuery);
 
-        console.log("🔍 Căutare asociație - rezultate:", associationSnapshot.docs.length);
-        console.log("🔍 Căutare pentru adminId:", activeUser.uid);
-
         if (!associationSnapshot.empty) {
           const associationDoc = associationSnapshot.docs[0];
           const associationData = { id: associationDoc.id, ...associationDoc.data() };
           setAssociation(associationData);
-          console.log("✅ Asociație găsită și setată:", associationData.name, "ID:", associationData.id);
-          console.log("🔍 ASSOCIATION DEBUG - Full association data:", associationData);
 
           // 2. Încarcă toate datele asociate - TRANSMITE associationId
           await Promise.all([

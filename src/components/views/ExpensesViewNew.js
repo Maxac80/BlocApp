@@ -25,6 +25,7 @@ const ExpensesViewNew = ({
   getAssociationExpenseTypes,
   getExpenseConfig,
   updateExpenseConfig,
+  saveApartmentParticipations,
   getApartmentParticipation,
   setApartmentParticipation,
   getDisabledExpenseTypes,
@@ -40,6 +41,7 @@ const ExpensesViewNew = ({
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [selectedSupplierId, setSelectedSupplierId] = useState(null);
 
   const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(currentSheet);
 
@@ -78,7 +80,11 @@ const ExpensesViewNew = ({
       await updateSupplier(editingSupplier.id, formData);
     } else {
       // Adăugare furnizor nou
-      await addSupplier(formData);
+      const newSupplier = await addSupplier(formData);
+      // Selectează furnizorul nou adăugat
+      if (newSupplier?.id) {
+        setSelectedSupplierId(newSupplier.id);
+      }
     }
   };
 
@@ -126,12 +132,10 @@ const ExpensesViewNew = ({
 
 
   const handleDeleteSupplier = async (supplierId) => {
-    if (window.confirm('Sigur doriți să ștergeți acest furnizor?')) {
-      try {
-        await deleteSupplier(supplierId);
-      } catch (error) {
-        console.error('Error deleting supplier:', error);
-      }
+    try {
+      await deleteSupplier(supplierId);
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
     }
   };
 
@@ -454,9 +458,18 @@ const ExpensesViewNew = ({
                       {suppliers.map((supplier, index, array) => {
                         const isLastItem = index >= array.length - 2; // ultimele 2 iteme
                         const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
+                        const isSelected = selectedSupplierId === supplier.id;
 
                         return (
-                        <div key={supplier.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div
+                          key={supplier.id}
+                          onClick={() => setSelectedSupplierId(isSelected ? null : supplier.id)}
+                          className={`p-4 rounded-lg transition-all duration-200 cursor-pointer ${
+                            isSelected
+                              ? 'bg-green-100 border-2 border-green-500 shadow-md'
+                              : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                          }`}
+                        >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <div className="font-medium text-lg text-gray-900">{supplier.name}</div>
@@ -468,9 +481,6 @@ const ExpensesViewNew = ({
                                     </span>
                                   ))}
                                 </div>
-                              )}
-                              {supplier.cui && (
-                                <div className="text-sm text-gray-500 mt-1">CUI: {supplier.cui}</div>
                               )}
                             </div>
                             <div className="relative" data-dropdown-container>
@@ -540,6 +550,7 @@ const ExpensesViewNew = ({
           expenseName={selectedExpense}
           expenseConfig={selectedExpense ? getExpenseConfig(selectedExpense) : null}
           updateExpenseConfig={updateExpenseConfig}
+          saveApartmentParticipations={saveApartmentParticipations}
           getAssociationApartments={getAssociationApartments}
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}

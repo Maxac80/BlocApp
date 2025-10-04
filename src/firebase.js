@@ -18,12 +18,7 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Log config to debug (remove this in production!)
-console.log('Firebase Config:', {
-  hasApiKey: !!firebaseConfig.apiKey,
-  hasAuthDomain: !!firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId
-});
+// Firebase config validation (silent in production)
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

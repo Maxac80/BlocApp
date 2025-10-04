@@ -721,5 +721,298 @@ Acest redesign stabilește pattern-ul standard pentru toate modalurile din aplic
 2. **`ExpensesViewNew.js`** - Updated supplier section UI
 3. **Import statements** - Cleaned up unused Lucide icons
 
+## 🐛 DISABLED EXPENSES SYNC BUG - 4 OCTOMBRIE 2025
+
+### **PROBLEMA IDENTIFICATĂ**
+Cheltuielile dezactivate (disabledExpenses) se salvau corect în Firebase, dar după refresh nu apăreau ca dezactivate în UI.
+
+### **SIMPTOME**
+1. ✅ User elimină "Apă caldă" → Apare în secțiunea "Cheltuieli dezactivate"
+2. ✅ Firebase se actualizează → `configSnapshot.disabledExpenses: ["Apă caldă"]`
+3. ❌ După refresh → "Apă caldă" apare înapoi în lista activă
+4. 🔴 Eroare: "Maximum update depth exceeded" în consolă
+
+### **ROOT CAUSE ANALYSIS**
+
+#### **1. MONTH vs SHEET ID Confusion** ⚠️ **CRITICA**
+**Problema principală:** În mai multe locuri din cod se folosea `currentMonth` (luna/eticheta) în loc de `currentSheet.id` (ID-ul unic al sheet-ului) pentru crearea key-urilor.
+
+**Impact:**
+- Key-ul pentru sincronizare: `${association.id}-${sheetData.id}` ✅
+- Key-ul pentru salvare: `${association.id}-${currentMonth}` ❌
+- **Result:** Datele se salvau sub un key, dar se citeau din alt key
+
+**Exemplu concret:**
+```javascript
+// ❌ GREȘIT - în toggleExpenseStatus
+const disabledKey = `${association.id}-${currentMonth}`;  // "assoc123-octombrie 2025"
+
+// ✅ CORECT - ar trebui să fie
+const disabledKey = `${association.id}-${sheetId}`;       // "assoc123-D8EyUPcU42OL3cLwNrJ3"
+```
+
+#### **2. Case Sensitivity în Firebase Query**
+**Problema:** Query-ul căuta `'IN_PROGRESS'` (uppercase), dar Firebase stochează `'in_progress'` (lowercase).
+
+```javascript
+// ❌ GREȘIT
+where('status', '==', 'IN_PROGRESS')
+
+// ✅ CORECT
+where('status', '==', SHEET_STATUS.IN_PROGRESS)  // 'in_progress'
+```
+
+#### **3. Infinite Loop în useEffect**
+**Problema:** useEffect care actualiza state-ul la fiecare render fără verificare.
+
+```javascript
+// ❌ GREȘIT - infinite loop
+useEffect(() => {
+  setDisabledExpenses(prev => ({
+    ...prev,
+    [key]: sheetDisabledExpenses
+  }));
+});
+
+// ✅ CORECT - cu verificare de schimbare
+useEffect(() => {
+  setDisabledExpenses(prev => {
+    const currentExpenses = prev[key] || [];
+    const hasChanged = /* compare arrays */;
+
+    if (hasChanged) {
+      return { ...prev, [key]: sheetDisabledExpenses };
+    }
+    return prev;  // No update if unchanged
+  });
+});
+```
+
+### **SOLUȚIA IMPLEMENTATĂ**
+
+#### **1. Exportat SHEET_STATUS Constant**
+**File:** `useSheetManagement.js`
+```javascript
+// ✅ FIXED: Exportat constanta pentru consistență
+export const SHEET_STATUS = {
+  IN_PROGRESS: 'in_progress',
+  PUBLISHED: 'published',
+  ARCHIVED: 'archived'
+};
+```
+
+#### **2. Updated useBalanceManagement.js**
+
+##### **2.1 Sincronizare din currentSheet**
+```javascript
+// ✅ FIXED: Folosește sheet.id în loc de monthYear pentru key
+useEffect(() => {
+  if (sheetOperations?.currentSheet && association?.id) {
+    const sheetData = sheetOperations.currentSheet;
+    const sheetDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
+    const key = `${association.id}-${sheetData.id}`;  // ✅ ID-ul sheet-ului, nu monthYear
+
+    setDisabledExpenses(prev => {
+      const currentExpenses = prev[key] || [];
+      const hasChanged = /* array comparison */;
+
+      if (hasChanged) {
+        return { ...prev, [key]: sheetDisabledExpenses };
+      }
+      return prev;  // Evită bucla infinită
+    });
+  }
+});
+```
+
+##### **2.2 Toggle Expense Status**
+```javascript
+// ✅ FIXED: Folosește currentSheet.id în loc de currentMonth
+const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
+  if (!association?.id || !sheetOperations?.currentSheet?.id) return;
+
+  const sheetId = sheetOperations.currentSheet.id;  // ✅ Sheet ID
+  const disabledKey = `${association.id}-${sheetId}`;  // ✅ Consistent cu sincronizarea
+
+  // Salvează direct folosind sheet ID
+  await saveDisabledExpenses(sheetId, expenseName, disable);
+}, [association?.id, sheetOperations]);
+```
+
+##### **2.3 Save Disabled Expenses**
+```javascript
+// ✅ FIXED: Primește direct sheetId, nu monthKey
+const saveDisabledExpenses = useCallback(async (sheetId, expenseName, disable) => {
+  if (!sheetId) return;
+
+  try {
+    // Citește sheet-ul direct folosind ID-ul
+    const sheetDoc = await getDoc(doc(db, 'sheets', sheetId));
+    const sheetData = sheetDoc.data();
+
+    // Update direct în Firebase
+    await updateDoc(doc(db, 'sheets', sheetDoc.id), {
+      'configSnapshot.disabledExpenses': updatedExpenseNames
+    });
+  } catch (error) {
+    console.error('❌ Eroare la salvarea cheltuielilor eliminate:', error);
+  }
+}, []);
+```
+
+#### **3. Updated useExpenseManagement.js**
+
+##### **3.1 Added currentSheet Parameter**
+```javascript
+// ✅ FIXED: Adăugat currentSheet pentru a accesa sheet.id
+export const useExpenseManagement = ({
+  association,
+  expenses,
+  customExpenses,
+  currentMonth,
+  currentSheet,  // ✅ NEW parameter
+  disabledExpenses,
+  // ...
+}) => {
+```
+
+##### **3.2 Updated Key Generation**
+```javascript
+// ✅ FIXED: Folosește sheet.id când este disponibil
+const getAssociationExpenseTypes = useCallback(() => {
+  if (!association?.id) return defaultExpenseTypes;
+
+  // Folosește ID-ul sheet-ului, nu luna
+  const disabledKey = currentSheet?.id
+    ? `${association.id}-${currentSheet.id}`
+    : `${association.id}-${currentMonth}`;
+
+  const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
+  // ...
+}, [association?.id, currentMonth, currentSheet?.id, disabledExpenses, customExpenses]);
+```
+
+#### **4. Updated BlocApp.js**
+```javascript
+// ✅ FIXED: Trimite currentSheet către useExpenseManagement
+const {...} = useExpenseManagement({
+  association,
+  expenses: currentSheet?.expenses || [],
+  customExpenses,
+  currentMonth,
+  currentSheet,  // ✅ NEW parameter
+  disabledExpenses,
+  // ...
+});
+```
+
+### **WORKFLOW NOU - COMPLET SHEET-BASED**
+
+#### **Save Flow:**
+1. User elimină "Apă caldă" → `toggleExpenseStatus("Apă caldă", currentMonth, true)`
+2. Extrage `sheetId` din `sheetOperations.currentSheet.id` → Ex: `"D8EyUPcU42OL3cLwNrJ3"`
+3. Creează key: `"assoc123-D8EyUPcU42OL3cLwNrJ3"` ✅
+4. Salvează în state local cu acest key
+5. Apelează `saveDisabledExpenses(sheetId, "Apă caldă", true)`
+6. Update direct în Firebase: `sheets/D8EyUPcU42OL3cLwNrJ3/configSnapshot.disabledExpenses`
+
+#### **Sync Flow (după refresh):**
+1. Firebase onSnapshot detectează sheet-ul încărcat
+2. `currentSheet` se populează cu datele din Firebase
+3. useEffect din `useBalanceManagement` se execută
+4. Extrage `sheetDisabledExpenses` din `currentSheet.configSnapshot.disabledExpenses`
+5. Creează același key: `"assoc123-D8EyUPcU42OL3cLwNrJ3"` ✅
+6. Verifică dacă s-a schimbat (array comparison)
+7. Update state doar dacă diferă → Evită infinite loop
+8. UI se actualizează automat cu cheltuielile dezactivate
+
+### **BENEFICII OBȚINUTE**
+- ✅ **Consistență completă**: Toate key-urile folosesc `sheet.id`, nu `monthYear`
+- ✅ **Persistență garantată**: Datele se salvează și se citesc din aceleași key-uri
+- ✅ **Zero infinite loops**: Verificare de schimbare înainte de state update
+- ✅ **Code safety**: Folosim constante (`SHEET_STATUS`) în loc de string-uri hardcodate
+- ✅ **Sheet isolation**: Fiecare sheet are propriile cheltuieli dezactivate independent
+
+### **⚠️ LECȚIA CRITICĂ - MONTH vs SHEET CONFUSION**
+
+**REȚINE:** În arhitectura sheet-based, **NU mai folosim luni ca identificatori!**
+
+#### **Regula de Aur:**
+```javascript
+// ❌ GREȘIT - NU folosi currentMonth pentru key-uri
+const key = `${association.id}-${currentMonth}`;
+
+// ✅ CORECT - Folosește ÎNTOTDEAUNA currentSheet.id
+const key = `${association.id}-${currentSheet.id}`;
+```
+
+#### **De ce este critică această distincție:**
+1. **Luni sunt etichete editabile** - User poate schimba "octombrie 2025" în "Luna 1"
+2. **Sheet ID-uri sunt unice și permanente** - Nu se schimbă niciodată
+3. **Izolare temporală** - Fiecare sheet trebuie identificat unic, nu după etichetă
+4. **Multiple sheets cu aceeași etichetă** - Teoretic posibil în viitor
+
+#### **Locuri unde apare confusion:**
+- ✅ **useBalanceManagement.js** - Key-uri pentru disabledExpenses
+- ✅ **useExpenseManagement.js** - Key-uri pentru filtrare cheltuieli
+- ⚠️ **Potențial în alte hook-uri** - Caută după pattern-uri similare!
+
+### **🔍 DEBUGGING CHECKLIST PENTRU VIITOR**
+
+Când cheltuieli/configurări nu persistă după refresh:
+
+1. **Verifică KEY-URILE:**
+   - [ ] Key-ul de salvare folosește `currentSheet.id`?
+   - [ ] Key-ul de citire folosește `currentSheet.id`?
+   - [ ] Sunt identice în ambele locuri?
+
+2. **Verifică QUERY-URILE Firebase:**
+   - [ ] Folosesc constante (`SHEET_STATUS.IN_PROGRESS`) nu string-uri?
+   - [ ] Case sensitivity corectă?
+   - [ ] Query-ul găsește sheet-ul corect?
+
+3. **Verifică SINCRONIZAREA:**
+   - [ ] useEffect are dependency array corect?
+   - [ ] Verifică schimbarea înainte de state update?
+   - [ ] Nu creează infinite loops?
+
+4. **Verifică CONSOLE LOGS:**
+   - [ ] Key-urile afișate sunt identice la save și load?
+   - [ ] Sheet ID-ul este corect?
+   - [ ] Datele se citesc din Firebase?
+
+### **📝 TODO - REFACTORING VIITOR**
+
+**IMPORTANT:** Trebuie să eliminăm complet confuzia între `month` și `sheet`:
+
+#### **Refactoring Plan:**
+1. **Redenumire parametri** în toate hook-urile:
+   - `currentMonth` → `currentSheetLabel` (când este doar eticheta)
+   - Eliminat complet când nu este necesar
+
+2. **Standardizare naming:**
+   - `sheet.monthYear` → `sheet.label` (mai clar că e doar etichetă)
+   - Toate key-urile să folosească `sheet.id` explicit
+
+3. **Code audit:**
+   - Caută toate instanțele de `currentMonth` în cod
+   - Verifică dacă sunt folosite pentru key-uri (❌ greșit)
+   - Înlocuiește cu `currentSheet.id` unde este cazul
+
+4. **Type safety (viitor):**
+   - Consideră TypeScript pentru a preveni astfel de erori
+   - Interface clear între `SheetLabel` și `SheetID`
+
+### **FILES MODIFIED - 4 OCTOMBRIE 2025**
+1. **`useSheetManagement.js`** - Exportat `SHEET_STATUS` constant
+2. **`useBalanceManagement.js`** - Fixed all key generation to use `sheet.id`
+3. **`useExpenseManagement.js`** - Added `currentSheet` parameter, fixed key generation
+4. **`BlocApp.js`** - Pass `currentSheet` to `useExpenseManagement`
+
+### **DEBUGGING REMOVED**
+- ✅ Removed all `console.log` debugging statements
+- ✅ Kept only `console.error` and `console.warn` for production debugging
+- ✅ Clean console output
+
 ---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*

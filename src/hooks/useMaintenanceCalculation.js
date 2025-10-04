@@ -214,6 +214,7 @@ const useMaintenanceCalculation = ({
         return {
           apartmentId: apartment.id,
           apartment: apartment.number,
+          owner: apartment.owner,
           building: apartment.buildingNumber,
           persons: apartment.persons,
           currentMaintenance: Math.round(currentMaintenance * 100) / 100,

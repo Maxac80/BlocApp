@@ -16,15 +16,16 @@ export const useExpenseManagement = ({
   expenses,
   customExpenses,
   currentMonth,
+  currentSheet,
   disabledExpenses,
   addMonthlyExpense,
   updateMonthlyExpense,
   deleteMonthlyExpense,
   addCustomExpense,
-  deleteCustomExpense
+  deleteCustomExpense,
+  getExpenseConfig  // Funcția din useExpenseConfigurations pentru configurări Firebase
 }) => {
-  // 📊 STATE LOCAL PENTRU CONFIGURĂRI
-  const [expenseConfig, setExpenseConfig] = useState({});
+  // 📊 STATE LOCAL PENTRU PARTICIPARE APARTAMENTE (configurările sunt în useExpenseConfigurations)
   const [expenseParticipation, setExpenseParticipation] = useState({});
   const [newExpense, setNewExpense] = useState({
     name: "",
@@ -38,33 +39,8 @@ export const useExpenseManagement = ({
   });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
 
-  // 🔧 GESTIONAREA CONFIGURAȚIEI CHELTUIELILOR
-  const getExpenseConfig = useCallback((expenseType) => {
-    const key = `${association?.id}-${expenseType}`;
-    const config = expenseConfig[key];
-    if (config) return config;
-    
-    const defaultExpense = defaultExpenseTypes.find(exp => exp.name === expenseType);
-    const customExpense = customExpenses.find(exp => exp.name === expenseType);
-    return {
-      distributionType: defaultExpense?.defaultDistribution || customExpense?.defaultDistribution || "apartment",
-      supplierId: null,
-      supplierName: '',
-      contractNumber: '',
-      contactPerson: ''
-    };
-  }, [association?.id, expenseConfig, customExpenses]);
-
-  const updateExpenseConfig = useCallback((expenseType, config) => {
-    const key = `${association?.id}-${expenseType}`;
-    setExpenseConfig(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        ...config
-      }
-    }));
-  }, [association?.id]);
+  // ⚠️ DEPRECATED: getExpenseConfig și updateExpenseConfig au fost mutate în useExpenseConfigurations
+  // Nu mai folosim state local pentru configurări - totul e în Firebase prin useExpenseConfigurations
 
   // 🏠 GESTIONAREA PARTICIPĂRII APARTAMENTELOR
   const setApartmentParticipation = useCallback((apartmentId, expenseType, participationType, value = null) => {
@@ -89,7 +65,8 @@ export const useExpenseManagement = ({
       return defaultExpenseTypes;
     }
 
-    const disabledKey = `${association.id}-${currentMonth}`;
+    // SHEET-BASED: folosim ID-ul sheet-ului în loc de lună
+    const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
     const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
 
     const activeDefaultExpenses = defaultExpenseTypes.filter(exp =>
@@ -102,13 +79,14 @@ export const useExpenseManagement = ({
     );
     
     return [...activeDefaultExpenses, ...activeCustomExpenses];
-  }, [association?.id, currentMonth, disabledExpenses, customExpenses]);
+  }, [association?.id, currentMonth, currentSheet?.id, disabledExpenses, customExpenses]);
 
   // 📋 TIPURILE DE CHELTUIELI DEZACTIVATE
   const getDisabledExpenseTypes = useCallback(() => {
     if (!association?.id) return [];
-    
-    const disabledKey = `${association.id}-${currentMonth}`;
+
+    // SHEET-BASED: folosim ID-ul sheet-ului în loc de lună
+    const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
     const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
     
     // Cheltuieli standard dezactivate
@@ -123,7 +101,7 @@ export const useExpenseManagement = ({
     );
     
     return [...disabledDefaultExpenses, ...disabledCustomExpenses];
-  }, [association?.id, customExpenses, currentMonth, disabledExpenses]);
+  }, [association?.id, customExpenses, currentMonth, currentSheet?.id, disabledExpenses]);
 
   // 📋 TIPURILE DE CHELTUIELI DISPONIBILE PENTRU ADĂUGARE - OPTIMIZAT
   const getAvailableExpenseTypes = useCallback(() => {
@@ -446,19 +424,15 @@ export const useExpenseManagement = ({
 
   // 🎯 RETURN API
   return {
-    // 📊 State și configurări
-    expenseConfig,
-    setExpenseConfig,
+    // 📊 State și configurări (doar participare - configurările sunt în useExpenseConfigurations)
     expenseParticipation,
     setExpenseParticipation,
     newExpense,
     setNewExpense,
     newCustomExpense,
     setNewCustomExpense,
-    
+
     // 🔧 Funcții de configurare
-    getExpenseConfig,
-    updateExpenseConfig,
     getApartmentParticipation,
     setApartmentParticipation,
     

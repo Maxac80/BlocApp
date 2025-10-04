@@ -99,7 +99,7 @@ const useExpenseConfigurations = (currentSheet) => {
       // Actualizează state-ul local pentru feedback instant
       setConfigurations(updatedConfigs);
 
-      console.log('✅ SHEET-BASED: Configurație actualizată pentru:', expenseType, 'în sheet:', currentSheet.monthYear);
+      console.log('✅ SHEET-BASED: Configurație actualizată pentru:', expenseType, 'în sheet:', currentSheet.id, `(${currentSheet.monthYear})`);
     } catch (error) {
       console.error('Error updating expense configuration in sheet:', error);
       throw error;
@@ -160,6 +160,29 @@ const useExpenseConfigurations = (currentSheet) => {
     }
   }, [currentSheet]);
 
+  // 🏠 SALVARE PARTICIPĂRI APARTAMENTE
+  const saveApartmentParticipations = useCallback(async (participations) => {
+    if (!currentSheet?.id) {
+      console.warn('⚠️ Nu există sheet pentru salvarea participărilor');
+      return;
+    }
+
+    try {
+      const sheetRef = doc(db, 'sheets', currentSheet.id);
+
+      // Salvează participările în sheet
+      await updateDoc(sheetRef, {
+        'configSnapshot.apartmentParticipations': participations,
+        'configSnapshot.updatedAt': serverTimestamp()
+      });
+
+      console.log('✅ SHEET-BASED: Participări apartamente salvate în sheet:', currentSheet.id, `(${currentSheet.monthYear})`);
+    } catch (error) {
+      console.error('❌ Eroare la salvarea participărilor apartamente în sheet:', error);
+      throw error;
+    }
+  }, [currentSheet]);
+
   return {
     configurations,
     suppliers,
@@ -167,6 +190,7 @@ const useExpenseConfigurations = (currentSheet) => {
     getExpenseConfig,
     updateExpenseConfig,
     deleteExpenseConfig,
+    saveApartmentParticipations,
     fixFirestoreConfigurations
   };
 };

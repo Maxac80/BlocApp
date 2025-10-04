@@ -25,7 +25,7 @@ import { db } from '../firebase';
  * - PUBLISHED: Luna publicată (se pot face doar încasări)
  * - ARCHIVED: Luna arhivată (doar vizualizare)
  */
-const SHEET_STATUS = {
+export const SHEET_STATUS = {
   IN_PROGRESS: 'in_progress',
   PUBLISHED: 'published',
   ARCHIVED: 'archived'
