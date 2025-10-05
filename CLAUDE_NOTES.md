@@ -1534,4 +1534,194 @@ Cheltuială: [Lift ▼]
 *→ Implementat 5 octombrie 2025*
 
 ---
+
+## 🎨 MODAL HIERARCHY & SUPPLIER INTEGRATION - 5 OCTOMBRIE 2025
+
+### **CERINȚA UTILIZATORULUI**
+Modernizarea adăugării furnizorilor pentru a folosi modal separat în loc de formular inline, cu ierarhie vizuală clară între modale.
+
+### **PROBLEMA IDENTIFICATĂ**
+1. **Formular inline** - Adăugarea furnizorului se făcea inline în ExpenseConfigModal și ExpenseAddModal
+2. **Sizing inconsistent** - Modalele aveau dimensiuni diferite
+3. **No visual hierarchy** - Nu se vedea clar care modal e "părinte" și care "copil"
+
+### **SOLUȚIA IMPLEMENTATĂ**
+
+#### **1. Creat SupplierModal Dedicat**
+- **File:** `src/components/modals/SupplierModal.js`
+- **Pattern:** Modal separat cu formular complet pentru add/edit furnizor
+- **Design:** Green gradient header matching expense modals
+- **Validation:** Nume obligatoriu, restul câmpuri opționale
+
+#### **2. Modal Size Hierarchy (Visual Nesting)**
+Stabilit ierarhie vizuală prin dimensiuni descrescătoare:
+```javascript
+// Base modal (widest)
+ExpenseAddModal: max-w-2xl
+
+// First nesting level
+ExpenseConfigModal: max-w-xl
+
+// Second nesting level
+SupplierModal: max-w-lg
+```
+
+**Z-index hierarchy:**
+```javascript
+ExpenseEntryModal: z-50        // Base
+ExpenseConfigModal: z-[60]     // Over base
+SupplierModal: z-[70]          // Over config
+```
+
+**Beneficii:**
+- ✅ **Visual hierarchy** - Se vede clar succesiunea: Adaugă Cheltuială (albastru) → Configurare (mov) → Adaugă Furnizor (verde)
+- ✅ **Context awareness** - User știe întotdeauna unde se află în flow
+- ✅ **Professional look** - Titlurile precedente rămân vizibile pe laterale
+
+#### **3. Integrated în ExpenseConfigModal și ExpenseAddModal**
+**Changes:**
+- ✅ Eliminat `isAddingNewSupplier` state și `newSupplierData` state
+- ✅ Adăugat `isSupplierModalOpen` state
+- ✅ Eliminat formular inline (60+ lines removed per modal)
+- ✅ Înlocuit cu buton "+" Adaugă furnizor" care deschide SupplierModal
+- ✅ Actualizat `handleAddNewSupplier` să primească `supplierData` ca parametru
+
+**Code pattern stabilit:**
+```javascript
+// State management
+const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+const justAddedSupplierRef = React.useRef(false);
+
+// Handler pentru salvare
+const handleAddNewSupplier = async (supplierData) => {
+  const newSupplier = await addSupplier({ ...supplierData, serviceTypes: [expenseName] });
+
+  // Auto-select nou-adăugat
+  justAddedSupplierRef.current = true;
+  setLocalConfig(prev => ({
+    ...prev,
+    supplierId: newSupplier.id,
+    supplierName: newSupplier.name
+  }));
+
+  setTimeout(() => {
+    justAddedSupplierRef.current = false;
+  }, 2000);
+};
+
+// Render modal
+<SupplierModal
+  isOpen={isSupplierModalOpen}
+  onClose={() => setIsSupplierModalOpen(false)}
+  onSave={handleAddNewSupplier}
+  supplier={null}
+  title="Adaugă furnizor nou"
+/>
+```
+
+### **4. RECEPTION MODE CONSISTENCY - TOATE TIPURILE DE DISTRIBUȚIE**
+
+#### **Problema:**
+`individual` distribution type nu suporta `per_block` / `per_stair` reception modes.
+
+#### **Soluția:**
+**File:** `ExpenseEntryModal.js`
+
+Adăugat support complet pentru `individual` să fie consistent cu `apartment`, `person`, și `consumption`:
+
+```javascript
+// ✅ ÎNAINTE: individual era hardcodat pentru 'total' only
+{config.distributionType === 'individual' && (
+  <div>
+    <label>Total de distribuit luna aceasta (RON) *</label>
+    <input value={totalAmount} onChange={...} />
+  </div>
+)}
+
+// ✅ DUPĂ: individual verifică receptionMode
+{config.distributionType === 'individual' && (
+  <>
+    {config.receptionMode === 'total' && <div>/* Total input */</div>}
+    {config.receptionMode === 'per_block' && <div>/* Per block inputs */</div>}
+    {config.receptionMode === 'per_stair' && <div>/* Per stair inputs */</div>}
+  </>
+)}
+```
+
+**Updated save logic:**
+```javascript
+// Handle individual distribution cu per_block/per_stair
+else if (config.distributionType === 'individual') {
+  if (config.receptionMode === 'total') {
+    newExpense.amount = totalAmount;
+  } else if (config.receptionMode === 'per_block') {
+    newExpense.amountsByBlock = amounts;
+  } else if (config.receptionMode === 'per_stair') {
+    newExpense.amountsByStair = amounts;
+  }
+}
+```
+
+#### **Pattern Stabilit:**
+**TOATE tipurile de distribuție** (`apartment`, `person`, `consumption`, `individual`) acum suportă **TOATE modurile de introducere** (`total`, `per_block`, `per_stair`).
+
+**Logica uniformă:**
+1. **total** → Un singur câmp pentru suma totală
+2. **per_block** → Câmpuri separate pentru fiecare bloc bifat
+3. **per_stair** → Câmpuri separate pentru fiecare scară bifată
+
+### **BENEFICII FINALE**
+
+#### **1. Code Quality**
+- ✅ **DRY principle** - Un singur SupplierModal refolosit în 2 locuri
+- ✅ **Reduced complexity** - 120+ linii de cod eliminate (60 per modal)
+- ✅ **Consistent patterns** - Same modal pattern across app
+- ✅ **Better separation** - Supplier logic izolat în propriul modal
+
+#### **2. User Experience**
+- ✅ **Visual clarity** - Ierarhie clară prin sizing și z-index
+- ✅ **Consistent interactions** - Toate modalurile funcționează identic
+- ✅ **No context loss** - Vezi întotdeauna unde ești în flow
+- ✅ **Professional appearance** - Modal hierarchy feels native
+
+#### **3. Flexibility**
+- ✅ **Complete reception mode support** - Toate distribution types pot folosi per_block/per_stair
+- ✅ **Consistent data capture** - Aceeași logică pentru toate cazurile
+- ✅ **Easy to extend** - Pattern clar pentru viitoare modale
+
+### **LESSONS LEARNED**
+
+#### **1. Modal Hierarchy Best Practices**
+- **Size matters** - Folosește sizing pentru a indica nesting level
+- **Z-index consistency** - Incrementează cu 10 pentru fiecare level
+- **Visual feedback** - Lasă space să se vadă titlurile din spate
+- **User context** - User trebuie să știe întotdeauna unde se află
+
+#### **2. Refactoring Strategy**
+- **Identify duplicates** - Căută cod duplicat între componente
+- **Extract to components** - Creează componente refolosite
+- **Maintain state flow** - Asigură-te că state-ul se propagă corect
+- **Test thoroughly** - Verifică toate flow-urile după refactoring
+
+#### **3. Distribution Type Consistency**
+- **Same rules for all** - Nu face excepții pentru anumite tipuri
+- **Check all combinations** - Testează toate combinațiile de config
+- **Unified logic** - Folosește aceeași logică pentru toate cazurile
+- **Clear error messages** - Validări specifice pentru fiecare caz
+
+### **FILES MODIFIED - 5 OCTOMBRIE 2025**
+1. **`SupplierModal.js`** - Reduced size to `max-w-lg`, z-index `z-[70]`
+2. **`ExpenseConfigModal.js`** - Integrated SupplierModal, size `max-w-xl`, removed inline form
+3. **`ExpenseAddModal.js`** - Integrated SupplierModal, size remains `max-w-2xl`, removed inline form
+4. **`ExpenseEntryModal.js`** - Added full per_block/per_stair support for `individual` and `consumption`
+
+### **ARCHITECTURAL DECISION**
+**Standardized modal nesting pattern:**
+- Level 0 (base): `max-w-2xl`, `z-50`
+- Level 1 (config): `max-w-xl`, `z-[60]`
+- Level 2 (sub-actions): `max-w-lg` sau `max-w-md`, `z-[70]`
+
+Acest pattern se va folosi pentru toate viitoarele modale nested din aplicație.
+
+---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*
