@@ -68,8 +68,8 @@ const SupplierModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
         {/* Header verde similar cu modalul de cheltuieli */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5">
           <div className="flex items-center justify-between">
@@ -213,7 +213,7 @@ const SupplierModal = ({
         {/* Footer cu butoane */}
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
           <div className="text-sm text-gray-500">
-            * Câmpuri obligatorii
+            * Obligatoriu
           </div>
           <div className="flex gap-3">
             <button
@@ -225,9 +225,9 @@ const SupplierModal = ({
             <button
               onClick={handleSave}
               disabled={!formData.name.trim()}
-              className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+              className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg whitespace-nowrap"
             >
-              {supplier ? 'Actualizează furnizor' : 'Adaugă furnizor'}
+              {supplier ? 'Salvează' : 'Salvează furnizor'}
             </button>
           </div>
         </div>

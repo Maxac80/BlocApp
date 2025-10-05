@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Settings, Users, Building2 } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
+import SupplierModal from './SupplierModal';
 
 // Funcție pentru normalizarea textului (elimină diacriticele și convertește la lowercase)
 const normalizeText = (text) => {
@@ -20,30 +21,28 @@ const ExpenseAddModal = ({
   getApartmentParticipation,
   setApartmentParticipation,
   getAssociationExpenseTypes,
-  currentSheet
+  currentSheet,
+  blocks,
+  stairs
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [expenseName, setExpenseName] = useState('');
   const [localConfig, setLocalConfig] = useState({
     distributionType: 'apartment',
+    invoiceMode: 'single',
     supplierId: null,
     supplierName: '',
     contractNumber: '',
-    contactPerson: ''
+    contactPerson: '',
+    receptionMode: 'total', // 'total' | 'per_block' | 'per_stair'
+    appliesTo: {
+      blocks: [],
+      stairs: []
+    }
   });
 
   const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
-  const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false);
-  const [newSupplierData, setNewSupplierData] = useState({
-    name: '',
-    cui: '',
-    address: '',
-    phone: '',
-    email: '',
-    website: '',
-    iban: '',
-    notes: ''
-  });
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -51,52 +50,29 @@ const ExpenseAddModal = ({
       setExpenseName('');
       setLocalConfig({
         distributionType: 'apartment',
+        invoiceMode: 'single',
         supplierId: null,
         supplierName: '',
         contractNumber: '',
-        contactPerson: ''
+        contactPerson: '',
+        receptionMode: 'total',
+        appliesTo: {
+          blocks: [],
+          stairs: []
+        }
       });
       setActiveTab('general');
-      setIsAddingNewSupplier(false);
-      setNewSupplierData({
-        name: '',
-        cui: '',
-        address: '',
-        phone: '',
-        email: '',
-        website: '',
-        iban: '',
-        notes: ''
-      });
     }
   }, [isOpen]);
 
-  const handleAddNewSupplier = async () => {
-    if (!newSupplierData.name.trim()) {
-      alert('Numele furnizorului este obligatoriu');
-      return;
-    }
-
+  const handleAddNewSupplier = async (supplierData) => {
     try {
-      const newSupplier = await addSupplier(newSupplierData);
+      const newSupplier = await addSupplier(supplierData);
       setLocalConfig(prev => ({
         ...prev,
         supplierId: newSupplier.id,
         supplierName: newSupplier.name
       }));
-
-      // Reset supplier form and go back to supplier selection
-      setIsAddingNewSupplier(false);
-      setNewSupplierData({
-        name: '',
-        cui: '',
-        address: '',
-        phone: '',
-        email: '',
-        website: '',
-        iban: '',
-        notes: ''
-      });
 
       console.log('✅ Furnizor nou adăugat și selectat:', newSupplier.name);
     } catch (error) {
@@ -112,6 +88,16 @@ const ExpenseAddModal = ({
   const handleSave = async () => {
     if (!expenseName.trim()) {
       alert('Numele cheltuielii este obligatoriu');
+      return;
+    }
+
+    // Validare Mod introducere: dacă e per_block sau per_stair, trebuie să aibă cel puțin un element selectat
+    if (localConfig.receptionMode === 'per_block' && localConfig.appliesTo.blocks.length === 0) {
+      alert('Selectați cel puțin un bloc sau alegeți "Pe asociație (total)"');
+      return;
+    }
+    if (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.length === 0) {
+      alert('Selectați cel puțin o scară sau alegeți "Pe asociație (total)"');
       return;
     }
 
@@ -141,13 +127,15 @@ const ExpenseAddModal = ({
     }
 
     try {
-      // Add the expense with configuration
+      // Add the expense with configuration including reception mode and applies to
       await onAddExpense({
         name: expenseName.trim(),
-        defaultDistribution: localConfig.distributionType
+        defaultDistribution: localConfig.distributionType,
+        receptionMode: localConfig.receptionMode,
+        appliesTo: localConfig.appliesTo
       }, localConfig);
 
-      console.log('✅ Cheltuială adăugată cu succes:', expenseName.trim());
+      console.log('✅ Cheltuială adăugată cu succes:', expenseName.trim(), 'cu mod introducere:', localConfig.receptionMode, 'se aplică pe:', localConfig.appliesTo);
       onClose();
     } catch (error) {
       console.error('Eroare la adăugarea cheltuielii:', error);
@@ -166,13 +154,57 @@ const ExpenseAddModal = ({
     }
   };
 
+  // Funcții pentru gestionarea Mod introducere și bife
+  const handleReceptionModeChange = (mode) => {
+    setLocalConfig({
+      ...localConfig,
+      receptionMode: mode,
+      appliesTo: {
+        blocks: mode === 'per_block' ? blocks.map(b => b.id) : [],
+        stairs: mode === 'per_stair' ? stairs.map(s => s.id) : []
+      }
+    });
+  };
+
+  const handleBlockToggle = (blockId) => {
+    const isSelected = localConfig.appliesTo.blocks.includes(blockId);
+    setLocalConfig({
+      ...localConfig,
+      appliesTo: {
+        ...localConfig.appliesTo,
+        blocks: isSelected
+          ? localConfig.appliesTo.blocks.filter(id => id !== blockId)
+          : [...localConfig.appliesTo.blocks, blockId]
+      }
+    });
+  };
+
+  const handleStairToggle = (stairId) => {
+    const isSelected = localConfig.appliesTo.stairs.includes(stairId);
+    setLocalConfig({
+      ...localConfig,
+      appliesTo: {
+        ...localConfig.appliesTo,
+        stairs: isSelected
+          ? localConfig.appliesTo.stairs.filter(id => id !== stairId)
+          : [...localConfig.appliesTo.stairs, stairId]
+      }
+    });
+  };
+
   if (!isOpen) return null;
 
   const apartments = getAssociationApartments();
 
+  // Group stairs by block for display
+  const blocksWithStairs = blocks.map(block => ({
+    ...block,
+    stairs: stairs.filter(stair => stair.blockId === block.id)
+  }));
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
         <div className="p-6 bg-gradient-to-r from-green-600 to-green-700 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -265,6 +297,92 @@ const ExpenseAddModal = ({
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza consumului'}
                 </p>
               </div>
+
+              {/* Invoice Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mod introducere facturi
+                </label>
+                <select
+                  value={localConfig.invoiceMode}
+                  onChange={(e) => setLocalConfig({ ...localConfig, invoiceMode: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="single">Factură unică (defalcată)</option>
+                  <option value="separate">Facturi separate (per scară/bloc)</option>
+                </select>
+                <p className="mt-2 text-sm text-gray-600">
+                  {localConfig.invoiceMode === 'single' && 'O singură factură pentru întreaga cheltuială, distribuită pe entități'}
+                  {localConfig.invoiceMode === 'separate' && 'Facturi separate pentru fiecare entitate (scară/bloc)'}
+                </p>
+              </div>
+
+              {/* Mod introducere cheltuială */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mod introducere cheltuială
+                </label>
+                <select
+                  value={localConfig.receptionMode}
+                  onChange={(e) => handleReceptionModeChange(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="total">Pe asociație (total)</option>
+                  {(blocks.length > 1 || localConfig.receptionMode === 'per_block') && <option value="per_block">Defalcat pe blocuri</option>}
+                  {(stairs.length > 1 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Defalcat pe scări</option>}
+                </select>
+                <p className="mt-2 text-sm text-gray-600">
+                  {localConfig.receptionMode === 'total' && 'Suma se introduce o singură dată pentru întreaga asociație'}
+                  {localConfig.receptionMode === 'per_block' && 'Sume separate pentru fiecare bloc'}
+                  {localConfig.receptionMode === 'per_stair' && 'Sume separate pentru fiecare scară'}
+                </p>
+              </div>
+
+              {/* Se aplică pe (bife) - doar pentru per_block și per_stair */}
+              {localConfig.receptionMode !== 'total' && (
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    🏢 Se aplică pe: (bifează)
+                  </label>
+
+                  {localConfig.receptionMode === 'per_block' && (
+                    <div className="space-y-2">
+                      {blocks.map(block => (
+                        <label key={block.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={localConfig.appliesTo.blocks.includes(block.id)}
+                            onChange={() => handleBlockToggle(block.id)}
+                            className="w-4 h-4 text-green-600 rounded"
+                          />
+                          <span className="text-sm">{block.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {localConfig.receptionMode === 'per_stair' && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {blocksWithStairs.map(block => (
+                        <div key={block.id} className="space-y-1">
+                          <div className="text-xs font-medium text-gray-600 px-2">{block.name}</div>
+                          {block.stairs.map(stair => (
+                            <label key={stair.id} className="flex items-center gap-2 p-2 ml-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                              <input
+                                type="checkbox"
+                                checked={localConfig.appliesTo.stairs.includes(stair.id)}
+                                onChange={() => handleStairToggle(stair.id)}
+                                className="w-4 h-4 text-green-600 rounded"
+                              />
+                              <span className="text-sm">{stair.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -329,205 +447,61 @@ const ExpenseAddModal = ({
 
           {activeTab === 'supplier' && (
             <div className="space-y-6">
-              {!isAddingNewSupplier ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selectează furnizor
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={localConfig.supplierId || ''}
+                    onChange={(e) => handleSupplierChange(e.target.value)}
+                    className="flex-1 p-3 border border-gray-300 rounded-lg"
+                    disabled={loading}
+                  >
+                    <option value="">Fără furnizor</option>
+                    {suppliers.map(supplier => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setIsSupplierModalOpen(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    + Adaugă furnizor
+                  </button>
+                </div>
+              </div>
+
+              {localConfig.supplierId && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selectează furnizor
+                      Număr contract
                     </label>
-                    <div className="flex gap-2">
-                      <select
-                        value={localConfig.supplierId || ''}
-                        onChange={(e) => handleSupplierChange(e.target.value)}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg"
-                        disabled={loading}
-                      >
-                        <option value="">Fără furnizor</option>
-                        {suppliers.map(supplier => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => setIsAddingNewSupplier(true)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Adaugă nou
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={localConfig.contractNumber}
+                      onChange={(e) => setLocalConfig({ ...localConfig, contractNumber: e.target.value })}
+                      placeholder="ex: 12345/2024"
+                      className="w-full p-3 border border-gray-300 rounded-lg"
+                    />
                   </div>
 
-                  {localConfig.supplierId && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Număr contract
-                        </label>
-                        <input
-                          type="text"
-                          value={localConfig.contractNumber}
-                          onChange={(e) => setLocalConfig({ ...localConfig, contractNumber: e.target.value })}
-                          placeholder="ex: 12345/2024"
-                          className="w-full p-3 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Persoană de contact
-                        </label>
-                        <input
-                          type="text"
-                          value={localConfig.contactPerson}
-                          onChange={(e) => setLocalConfig({ ...localConfig, contactPerson: e.target.value })}
-                          placeholder="ex: Ion Popescu"
-                          className="w-full p-3 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                    </>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Persoană de contact
+                    </label>
+                    <input
+                      type="text"
+                      value={localConfig.contactPerson}
+                      onChange={(e) => setLocalConfig({ ...localConfig, contactPerson: e.target.value })}
+                      placeholder="ex: Ion Popescu"
+                      className="w-full p-3 border border-gray-300 rounded-lg"
+                    />
+                  </div>
                 </>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium">Adaugă furnizor nou</h3>
-                    <button
-                      onClick={() => {
-                        setIsAddingNewSupplier(false);
-                        setNewSupplierData({
-                          name: '',
-                          cui: '',
-                          address: '',
-                          phone: '',
-                          email: '',
-                          website: '',
-                          iban: '',
-                          notes: ''
-                        });
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nume furnizor *
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.name}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, name: e.target.value })}
-                        placeholder="ex: EON Energie"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        CUI
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.cui}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, cui: e.target.value })}
-                        placeholder="ex: 22043010"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Adresă
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.address}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, address: e.target.value })}
-                        placeholder="ex: Str. Example 123, București"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Telefon
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.phone}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, phone: e.target.value })}
-                        placeholder="ex: 0800 800 800"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={newSupplierData.email}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, email: e.target.value })}
-                        placeholder="ex: contact@eon.ro"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Website
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.website}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, website: e.target.value })}
-                        placeholder="ex: www.eon.ro"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        IBAN
-                      </label>
-                      <input
-                        type="text"
-                        value={newSupplierData.iban}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, iban: e.target.value })}
-                        placeholder="ex: RO12BTRL0000000000000"
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Note
-                      </label>
-                      <textarea
-                        value={newSupplierData.notes}
-                        onChange={(e) => setNewSupplierData({ ...newSupplierData, notes: e.target.value })}
-                        placeholder="Informații adiționale..."
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={handleAddNewSupplier}
-                      disabled={!newSupplierData.name.trim()}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Salvează furnizor
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
           )}
@@ -550,6 +524,14 @@ const ExpenseAddModal = ({
           </button>
         </div>
       </div>
+
+      <SupplierModal
+        isOpen={isSupplierModalOpen}
+        onClose={() => setIsSupplierModalOpen(false)}
+        onSave={handleAddNewSupplier}
+        supplier={null}
+        title="Adaugă furnizor nou"
+      />
     </div>
   );
 };

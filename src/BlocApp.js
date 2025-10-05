@@ -169,6 +169,8 @@ export default function BlocApp() {
   const sheetApartments = currentSheet?.associationSnapshot?.apartments || [];
 
   // 🎯 USE SHEET DATA: Folosește datele din sheet dacă sunt disponibile, altfel fallback la colecții
+  // IMPORTANT: Folosește ÎNTOTDEAUNA finalBlocks/finalStairs/finalApartments în loc de blocks/stairs/apartments
+  // când pasezi props către componente, pentru a asigura consistența datelor
   const finalBlocks = sheetBlocks.length > 0 ? sheetBlocks : (blocks || []);
   const finalStairs = sheetStairs.length > 0 ? sheetStairs : (stairs || []);
   const finalApartments = sheetApartments.length > 0 ? sheetApartments : (apartments || []);
@@ -695,6 +697,8 @@ useEffect(() => {
               deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               getMonthType={getMonthType}
               currentSheet={currentSheet}
+              blocks={finalBlocks}
+              stairs={finalStairs}
             />
           )}
 

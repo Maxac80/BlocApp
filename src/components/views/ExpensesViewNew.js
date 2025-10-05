@@ -32,7 +32,9 @@ const ExpensesViewNew = ({
   toggleExpenseStatus,
   deleteCustomExpense,
   getMonthType,
-  currentSheet
+  currentSheet,
+  blocks,
+  stairs
 }) => {
   const [activeTab, setActiveTab] = useState('expenses');
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -103,10 +105,12 @@ const ExpensesViewNew = ({
         return;
       }
 
-      // Add custom expense directly
+      // Add custom expense directly with reception mode and applies to
       await addCustomExpense({
         name: expenseData.name,
-        defaultDistribution: expenseData.defaultDistribution || "apartment"
+        defaultDistribution: expenseData.defaultDistribution || "apartment",
+        receptionMode: expenseData.receptionMode || 'total',
+        appliesTo: expenseData.appliesTo || { blocks: [], stairs: [] }
       });
 
       // Update configuration if provided
@@ -117,11 +121,13 @@ const ExpensesViewNew = ({
           supplierId: configData.supplierId,
           supplierName: configData.supplierName,
           contractNumber: configData.contractNumber,
-          contactPerson: configData.contactPerson
+          contactPerson: configData.contactPerson,
+          receptionMode: configData.receptionMode || 'total',
+          appliesTo: configData.appliesTo || { blocks: [], stairs: [] }
         });
       }
 
-      console.log('✅ Cheltuială adăugată cu succes din modal');
+      console.log('✅ Cheltuială adăugată cu succes din modal cu mod introducere:', expenseData.receptionMode, 'se aplică pe:', expenseData.appliesTo);
       return true;
     } catch (error) {
       console.error('❌ Eroare la adăugarea cheltuielii din modal:', error);
@@ -555,6 +561,8 @@ const ExpensesViewNew = ({
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
           currentSheet={currentSheet}
+          blocks={blocks}
+          stairs={stairs}
         />
 
         <ExpenseAddModal
@@ -566,6 +574,8 @@ const ExpensesViewNew = ({
           setApartmentParticipation={setApartmentParticipation}
           getAssociationExpenseTypes={getAssociationExpenseTypes}
           currentSheet={currentSheet}
+          blocks={blocks || []}
+          stairs={stairs || []}
         />
 
         <SupplierModal

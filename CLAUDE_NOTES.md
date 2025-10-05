@@ -1277,5 +1277,261 @@ Object.keys(currentConfigurations).forEach(expenseType => {
 4. **`useSuppliers.js`** - Auto-update names, auto-clear on delete
 5. **`ExpensesViewNew.js`** - UI improvements (removed CUI, confirmations)
 
+## ⚠️ REGULA CRITICĂ - finalBlocks/finalStairs/finalApartments - 5 OCTOMBRIE 2025
+
+### **PROBLEMA RECURENTĂ**
+În `BlocApp.js` există două seturi de variabile pentru blocks/stairs/apartments:
+- `blocks`, `stairs`, `apartments` - Date RAW din Firebase (colecții vechi)
+- `finalBlocks`, `finalStairs`, `finalApartments` - Date PROCESATE (din sheet cu fallback)
+
+### **REGULA DE AUR**
+**ÎNTOTDEAUNA folosește `final*` variabilele când pasezi props către componente!**
+
+```javascript
+// ❌ GREȘIT - va rezulta în arrays goale
+<ExpensesView blocks={blocks} stairs={stairs} />
+
+// ✅ CORECT - conține datele din sheet
+<ExpensesView blocks={finalBlocks} stairs={finalStairs} />
+```
+
+### **DE CE ESTE CRITICĂ?**
+1. **Sheet-based architecture** - Datele sunt în sheet-uri, nu în colecții
+2. **`blocks/stairs/apartments` sunt goale** - Colecțiile vechi nu mai sunt populate
+3. **`final*` conține datele corecte** - Citesc din `currentSheet.associationSnapshot`
+4. **Componentele nu vor primi date** - Dacă primesc `blocks` în loc de `finalBlocks`
+
+### **UNDE SE APLICĂ?**
+```javascript
+// ✅ TOATE view-urile trebuie să primească final* variables
+<DashboardView blocks={finalBlocks} stairs={finalStairs} />
+<MaintenanceView blocks={finalBlocks} stairs={finalStairs} />
+<SetupView blocks={finalBlocks} stairs={finalStairs} apartments={finalApartments} />
+<AssociationView blocks={finalBlocks} stairs={finalStairs} />
+<ExpensesView blocks={finalBlocks} stairs={finalStairs} />  // ✅ FIXED 5 octombrie
+```
+
+### **CODUL DIN BlocApp.js**
+```javascript
+// 🎯 USE SHEET DATA: Folosește datele din sheet dacă sunt disponibile, altfel fallback la colecții
+// IMPORTANT: Folosește ÎNTOTDEAUNA finalBlocks/finalStairs/finalApartments în loc de blocks/stairs/apartments
+// când pasezi props către componente, pentru a asigura consistența datelor
+const finalBlocks = sheetBlocks.length > 0 ? sheetBlocks : (blocks || []);
+const finalStairs = sheetStairs.length > 0 ? sheetStairs : (stairs || []);
+const finalApartments = sheetApartments.length > 0 ? sheetApartments : (apartments || []);
+```
+
+### **SIMPTOME CÂND SE UITĂ REGULA**
+- ✅ Firebase se actualizează corect
+- ❌ UI-ul nu afișează datele (arrays goale în props)
+- ❌ Console log: `blocks: Array(0), stairs: Array(0)`
+- ❌ Componente afișează mesaje "Nu există date"
+
+### **FIX RAPID**
+Când vezi componente care nu afișează date:
+1. **Verifică în DevTools** → Console → Caută log-uri cu `Array(0)`
+2. **Verifică props-urile** → Sunt `blocks` sau `finalBlocks`?
+3. **Schimbă în BlocApp.js** → `blocks={finalBlocks}` `stairs={finalStairs}`
+4. **Refresh** → Datele vor apărea instant
+
+### **LECȚIE ÎNVĂȚATĂ - 5 OCTOMBRIE 2025**
+**Context:** La implementarea sistemului de distribuție cheltuieli, bifele nu apăreau în modal deși blocurile și scările existau în Firebase.
+
+**Cauza:** `ExpensesView` primea `blocks={blocks}` și `stairs={stairs}` în loc de `finalBlocks` și `finalStairs`.
+
+**Rezultat:** Arrays goale ajungeau până la `ExpenseAddModal`, condiția `(blocks.length > 1 || stairs.length > 1)` era `false`, bifele nu se afișau.
+
+**Fix:** Schimbat în `blocks={finalBlocks}` și `stairs={finalStairs}` → Bifele au apărut instant.
+
+### **REMINDER PENTRU VIITOR**
+- Caută în cod toate instanțele de `blocks={blocks}` și înlocuiește cu `blocks={finalBlocks}`
+- Same pentru `stairs` și `apartments`
+- Adaugă linter rule sau TypeScript pentru a preveni această greșeală
+
+## 📊 FLUX DE LUCRU - GESTIONAREA CHELTUIELILOR - 5 OCTOMBRIE 2025
+
+### **CONCEPTUL DE BAZĂ - Cheltuieli vs Facturi**
+
+#### **1. CHELTUIELI = CATEGORII (Template-uri)**
+- **11 tipuri standard predefinite** în aplicație (Apă caldă, Apă rece, Lift, etc.)
+- **Configurate în**: "Configurare cheltuieli"
+- **Reprezintă**: Categorii generale de cheltuieli comune la asociații
+- **Pentru 1 bloc + 1 scară**: O cheltuială = echivalent cu o singură factură
+- **Pot fi**: Eliminate (dezactivate) sau adăugate (custom)
+
+#### **2. FLOW-UL COMPLET**
+
+##### **Pasul 1: Configurare Cheltuieli (Setup-ul inițial)**
+```
+📍 Pagina: "Configurare cheltuieli"
+1. Aplicația vine cu 11 cheltuieli standard predefinite
+2. Administrator ELIMINĂ cheltuielile nefolosite (ex: elimină 1 → rămân 10)
+3. Administrator ADAUGĂ cheltuieli custom dacă e nevoie
+4. Rezultat: Lista de cheltuieli ACTIVE pentru asociație
+```
+
+##### **Pasul 2: Adăugare Facturi (Workflow lunar)**
+```
+📍 Pagina: "🧮 Calcul întreținere" → "💰 Adaugă Cheltuială"
+
+1. Dropdown afișează DOAR cheltuielile ACTIVE din "Configurare cheltuieli"
+   - Sincronizare automată între pagini
+   - Cheltuielile eliminate NU apar în dropdown
+
+2. Administrator selectează cheltuială din dropdown
+   - Introduce suma
+   - Atașează/asociază factura
+   - Salvează
+
+3. Repetă pentru toate cheltuielile
+
+4. Când TOATE cheltuielile au fost adăugate:
+   - Apare mesaj: "Ai adăugat toate cheltuielile"
+   - Se activează butonul "Publică"
+   - Administrator poate publica luna
+```
+
+#### **3. SINCRONIZARE ÎNTRE PAGINI**
+
+**Configurare cheltuieli** ←→ **Calcul întreținere**
+- Dezactivezi "Apă caldă" în Config → Dispare din dropdown în Calcul
+- Adaugi "Internet" custom în Config → Apare în dropdown în Calcul
+- Lista e MEREU sincronizată
+
+#### **4. PENTRU 1 BLOC + 1 SCARĂ (Cazul simplu)**
+- **1 cheltuială** (ex: "Apă caldă") = **1 factură** (factura de la furnizor)
+- **Workflow simplu**: Selectezi cheltuială → Adaugi suma → Atașezi factura → Gata
+- **Nu e nevoie de distribuție** - toate apartamentele primesc aceeași cheltuială
+
+#### **5. PENTRU MULTIPLE BLOCURI/SCĂRI (Cazul complex)**
+- **1 cheltuială** poate avea **MULTIPLE facturi** (câte una per scară/bloc)
+- **Exemplu**: "Apă caldă" poate avea:
+  - Factură pentru Bloc B4 Scara A
+  - Factură pentru Bloc B5 Scara B
+  - Factură pentru Bloc B5 Scara C
+- **Aici intervine SISTEMUL DE BIFE** pentru distribuție
+
+### **🎯 SOLUȚIA FINALĂ - MOD INTRODUCERE CHELTUIALĂ - 5 OCTOMBRIE 2025**
+
+#### **CONCEPTUL CLARIFICAT**
+
+**PROBLEMĂ:** Cum gestionăm cheltuieli care vin diferit (pe asociație vs pe bloc vs pe scară)?
+
+**SOLUȚIE:** Configurare în 2 pași:
+1. **Mod introducere cheltuială** (cum vine factura)
+2. **Se aplică pe** (bife pentru entități relevante)
+
+---
+
+#### **ÎN CONFIGURARE CHELTUIELI**
+
+```javascript
+expenseConfig: {
+  "Apă caldă": {
+    receptionMode: "per_stair",  // 'total' | 'per_stair' | 'per_block'
+    appliesTo: {
+      stairs: ["stair_A_id", "stair_B_id"]  // DOAR scările bifate
+    },
+    distributionType: "consumption",
+    supplierId: "xyz123"
+  }
+}
+```
+
+**UI în ExpenseConfigModal:**
+```
+📊 Mod introducere cheltuială:
+   ○ Pe asociație (total)
+   ● Defalcat pe scări
+   ○ Defalcat pe blocuri
+
+🏢 Se aplică pe: (bifează)
+   ☑ Bloc B4 - Scara A
+   ☑ Bloc B5 - Scara B
+   ☐ Bloc B5 - Scara C
+```
+
+---
+
+#### **ÎN CALCUL ÎNTREȚINERE → ADAUGĂ CHELTUIALĂ**
+
+**UI-ul se ADAPTEAZĂ automat bazat pe configurare:**
+
+**Caz 1: Pe asociație (total)**
+```
+Cheltuială: [Administrare ▼]
+─────────────────────────────
+Sumă totală: [1200] RON
+📄 [Selectează factură]
+
+→ 1 CÂMP
+```
+
+**Caz 2: Defalcat pe scări (2 bifate)**
+```
+Cheltuială: [Apă caldă ▼]
+─────────────────────────────
+🏢 Bloc B4 - Scara A
+   Sumă: [___] | Consum: [___] mc
+   📄 [Selectează factură]
+
+🏢 Bloc B5 - Scara B
+   Sumă: [___] | Consum: [___] mc
+   📄 [Selectează factură]
+
+ℹ️ Scara C nu are Apă caldă
+
+→ 2 CÂMPURI (doar pentru scările bifate)
+```
+
+**Caz 3: Defalcat pe blocuri (1 bifat)**
+```
+Cheltuială: [Lift ▼]
+─────────────────────────────
+🏢 Bloc B5
+   Sumă: [300] RON
+   📄 [Selectează factură]
+
+ℹ️ Bloc B4 nu are lift
+
+→ 1 CÂMP (doar pentru blocul bifat)
+```
+
+---
+
+#### **AVANTAJE SOLUȚIE**
+
+✅ **Configurare o dată** - se replică la fiecare sheet nou
+✅ **UI dinamic** - afișează DOAR câmpurile necesare
+✅ **Counter corect** - 1 cheltuială = 1 adăugare (indiferent de câmpuri)
+✅ **Flexibilitate** - poți exclude entități care nu au acea cheltuială
+✅ **Validare** - știi exact câte cheltuieli trebuie adăugate
+
+---
+
+#### **FLOW COMPLET**
+
+**Pasul 1: Configurare (o dată)**
+1. Mergi la "Configurare cheltuieli"
+2. Pentru fiecare cheltuială setezi:
+   - Mod introducere (total/per_stair/per_block)
+   - Se aplică pe (bife pentru entități)
+   - Mod distribuție
+   - Furnizor
+
+**Pasul 2: Adăugare lunară**
+1. Mergi la "Calcul întreținere" → "Adaugă Cheltuială"
+2. Selectezi cheltuială din dropdown
+3. UI afișează câmpuri bazat pe configurare
+4. Completezi sume + aloci facturi
+5. Counter: X/10 cheltuieli adăugate
+
+**Pasul 3: Publicare**
+1. Când counter = 10/10
+2. Apare buton "Publică"
+3. Sheet-ul se publică
+
+*→ Implementat 5 octombrie 2025*
+
 ---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*

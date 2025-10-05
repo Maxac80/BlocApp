@@ -13,6 +13,8 @@ const ExpenseForm = ({
   setShowExpenseConfig,
   setSelectedExpenseForConfig,
   monthType,
+  blocks,
+  stairs,
   // Funcții noi pentru facturi parțiale
   getPartiallyDistributedInvoices,
   getInvoiceByNumber,

@@ -1,9 +1,9 @@
 // src/components/views/MaintenanceView.js
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calculator, Plus, Settings } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
-import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal } from '../modals';
+import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal } from '../modals';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
@@ -98,6 +98,12 @@ const MaintenanceView = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
+  // State pentru modalul de adăugare cheltuială
+  const [showExpenseEntryModal, setShowExpenseEntryModal] = useState(false);
+
+  // State pentru tab-urile de scări
+  const [selectedStairTab, setSelectedStairTab] = useState('all');
+
   // Hook pentru gestionarea încasărilor
   const { addIncasare } = useIncasari(association || null, currentMonth);
 
@@ -184,6 +190,40 @@ const MaintenanceView = ({
   // Calculează datele actualizate pentru afișare în tabel
   // Acestea vor reflecta datoriile reale după încasări
   const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+
+  // Grupează scările pentru tab-uri
+  const stairTabs = useMemo(() => {
+    if (!association || !blocks || !stairs) return [];
+
+    const associationBlocks = blocks.filter(block => block.associationId === association.id);
+    const associationStairs = stairs.filter(stair =>
+      associationBlocks.some(block => block.id === stair.blockId)
+    );
+
+    // Sortează scările în ordinea în care apar în Firebase (ordinea definită de utilizator)
+    return associationStairs.map(stair => {
+      const block = blocks.find(b => b.id === stair.blockId);
+      return {
+        id: stair.id,
+        name: stair.name,
+        blockName: block?.name || '',
+        label: `${block?.name || ''} - ${stair.name}`
+      };
+    });
+  }, [association, blocks, stairs]);
+
+  // Filtrează datele de întreținere pe scara selectată
+  const filteredMaintenanceData = useMemo(() => {
+    if (selectedStairTab === 'all') return updatedMaintenanceData;
+
+    const apartments = getAssociationApartments();
+    const stairApartments = apartments.filter(apt => apt.stairId === selectedStairTab);
+    const apartmentNumbers = stairApartments.map(apt => apt.number);
+
+    return updatedMaintenanceData.filter(data =>
+      apartmentNumbers.includes(data.apartment)
+    );
+  }, [selectedStairTab, updatedMaintenanceData, getAssociationApartments]);
 
   // DEBUGGING TEMPORAR
   console.log('🔍 DEBUGGING:', {
@@ -788,26 +828,36 @@ const MaintenanceView = ({
           // Conținutul care va fi afișat în tab-uri
           tabContent={
             <>
-              {/* Adaugă Cheltuială - pe întreaga lățime */}
+              {/* Adaugă Cheltuială - Buton pentru modal */}
               <div className="p-6 border-b">
-                <ExpenseForm
-                  newExpense={newExpense}
-                  setNewExpense={setNewExpense}
-                  availableExpenseTypes={getAvailableExpenseTypes()}
-                  associationExpenses={associationExpenses}
-                  getExpenseConfig={getExpenseConfig}
-                  handleAddExpense={handleAddExpenseWithInvoice}
-                  isMonthReadOnly={isMonthReadOnly}
-                  currentMonth={currentMonth}
-                  setShowExpenseConfig={setShowExpenseConfig}
-                  setSelectedExpenseForConfig={setSelectedExpenseForConfig}
-                  monthType={monthType}
-                  // Funcții noi pentru facturi parțiale
-                  getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
-                  getInvoiceByNumber={getInvoiceByNumber}
-                  syncSuppliersForExpenseType={syncSuppliersForExpenseType}
-                  getAssociationApartments={getAssociationApartments}
-                />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <span>💰</span> Adaugă Cheltuială
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {getAvailableExpenseTypes().length > 0
+                          ? `${getAvailableExpenseTypes().length} cheltuieli disponibile pentru adăugare`
+                          : 'Toate cheltuielile au fost adăugate'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowExpenseEntryModal(true)}
+                      disabled={isMonthReadOnly || getAvailableExpenseTypes().length === 0}
+                      className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                        isMonthReadOnly || getAvailableExpenseTypes().length === 0
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : monthType === 'next'
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      <Plus className="w-5 h-5" />
+                      Adaugă Cheltuială
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Cheltuieli și Consumuri - pe 2 coloane */}
@@ -951,6 +1001,40 @@ const MaintenanceView = ({
                         </div>
                       </div>
 
+                      {/* Tab-uri pentru scări - doar dacă sunt mai multe scări */}
+                      {stairTabs.length > 1 && (
+                        <div className="border-t border-indigo-100 pt-3 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-gray-700">Filtrare pe scară:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => setSelectedStairTab('all')}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                selectedStairTab === 'all'
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              Toate
+                            </button>
+                            {stairTabs.map(tab => (
+                              <button
+                                key={tab.id}
+                                onClick={() => setSelectedStairTab(tab.id)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  selectedStairTab === tab.id
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex space-x-4 border-t border-indigo-100 pt-3">
                         <button
                           onClick={() => setActiveMaintenanceTab("simple")}
@@ -978,7 +1062,7 @@ const MaintenanceView = ({
                     <div className="overflow-x-auto">
                       {activeMaintenanceTab === "simple" ? (
                         <MaintenanceTableSimple
-                          maintenanceData={updatedMaintenanceData}
+                          maintenanceData={filteredMaintenanceData}
                           isMonthReadOnly={isMonthReadOnly}
                           togglePayment={togglePayment}
                           onOpenPaymentModal={handleOpenPaymentModal}
@@ -986,7 +1070,7 @@ const MaintenanceView = ({
                         />
                       ) : (
                         <MaintenanceTableDetailed
-                          maintenanceData={updatedMaintenanceData}
+                          maintenanceData={filteredMaintenanceData}
                           expenses={expenses}
                           association={association}
                           isMonthReadOnly={isMonthReadOnly}
@@ -1040,6 +1124,8 @@ const MaintenanceView = ({
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
           currentSheet={currentSheet}
+          blocks={blocks}
+          stairs={stairs}
         />
 
         <PaymentModal
@@ -1048,6 +1134,36 @@ const MaintenanceView = ({
           currentMonth={currentMonth}
           selectedApartment={selectedApartment}
           onSavePayment={handleSavePayment}
+        />
+
+        <ExpenseEntryModal
+          isOpen={showExpenseEntryModal}
+          onClose={() => setShowExpenseEntryModal(false)}
+          blocks={blocks}
+          stairs={stairs}
+          availableExpenseTypes={getAvailableExpenseTypes()}
+          getExpenseConfig={getExpenseConfig}
+          handleAddExpense={async (newExpenseData) => {
+            // Convertește din structura modalului în structura așteptată de handleAddExpense
+            setNewExpense(newExpenseData);
+            await handleAddExpenseWithInvoice();
+            // Reset după adăugare
+            setNewExpense({
+              name: "",
+              amount: "",
+              billAmount: "",
+              unitPrice: "",
+              amountsByBlock: {},
+              amountsByStair: {}
+            });
+          }}
+          currentMonth={currentMonth}
+          monthType={monthType}
+          getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
+          getInvoiceByNumber={getInvoiceByNumber}
+          syncSuppliersForExpenseType={syncSuppliersForExpenseType}
+          setShowExpenseConfig={setShowExpenseConfig}
+          setSelectedExpenseForConfig={setSelectedExpenseForConfig}
         />
 
         {/* All modals are already rendered above in the component, no duplicates needed */}
