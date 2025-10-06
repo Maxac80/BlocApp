@@ -124,12 +124,6 @@ const InvoiceDetailsModal = ({
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          {supplierName && (
-            <div className="text-sm text-blue-700 font-medium bg-blue-50 p-3 rounded-lg">
-              🏢 Furnizor: {supplierName}
-            </div>
-          )}
-
           {/* Dropdown pentru facturi existente parțiale */}
           {getPartiallyDistributedInvoices && (() => {
             const allPartialInvoices = getPartiallyDistributedInvoices();
@@ -170,6 +164,12 @@ const InvoiceDetailsModal = ({
                   });
                 })()}
               </select>
+            </div>
+          )}
+
+          {supplierName && (
+            <div className="text-sm text-blue-700 font-medium bg-blue-50 p-3 rounded-lg">
+              🏢 Furnizor: {supplierName}
             </div>
           )}
 

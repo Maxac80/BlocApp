@@ -1,13 +1,68 @@
 export const defaultExpenseTypes = [
-  { name: "Apă caldă", defaultDistribution: "consumption" },
-  { name: "Apă rece", defaultDistribution: "consumption" },
-  { name: "Canal", defaultDistribution: "consumption" },
-  { name: "Întreținere lift", defaultDistribution: "apartment" },
-  { name: "Energie electrică", defaultDistribution: "person" },
-  { name: "Service interfon", defaultDistribution: "apartment" },
-  { name: "Cheltuieli cu asociația", defaultDistribution: "apartment" },
-  { name: "Salarii NETE", defaultDistribution: "apartment" },
-  { name: "Impozit ANAF", defaultDistribution: "apartment" },
-  { name: "Spații în folosință", defaultDistribution: "apartment" },
-  { name: "Căldură", defaultDistribution: "individual" }
+  {
+    name: "Apă caldă",
+    defaultDistribution: "consumption",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  },
+  {
+    name: "Apă rece",
+    defaultDistribution: "consumption",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  },
+  {
+    name: "Canal",
+    defaultDistribution: "consumption",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  },
+  {
+    name: "Întreținere lift",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  },
+  {
+    name: "Energie electrică",
+    defaultDistribution: "person",
+    invoiceEntryMode: "separate",
+    expenseEntryMode: "building"
+  },
+  {
+    name: "Service interfon",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "total"
+  },
+  {
+    name: "Cheltuieli cu asociația",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "total"
+  },
+  {
+    name: "Salarii NETE",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "total"
+  },
+  {
+    name: "Impozit ANAF",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "total"
+  },
+  {
+    name: "Spații în folosință",
+    defaultDistribution: "apartment",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "total"
+  },
+  {
+    name: "Căldură",
+    defaultDistribution: "individual",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  }
 ];

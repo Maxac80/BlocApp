@@ -45,26 +45,22 @@ const ExpenseList = ({
 
   return (
     <>
-      <div className={`p-6 rounded-xl shadow-lg ${
-        monthType === 'historic' 
-          ? 'bg-gray-50 border-2 border-gray-300' 
-          : isMonthReadOnly 
-          ? 'bg-purple-50 border-2 border-purple-200' 
-          : 'bg-white'
+      <div className={`p-6 rounded-xl shadow-lg border-2 ml-2 ${
+        monthType === 'historic'
+          ? 'bg-gray-50 border-gray-300'
+          : isMonthReadOnly
+          ? 'bg-purple-50 border-purple-300'
+          : 'bg-white border-gray-200'
       }`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-lg font-semibold ${
-            monthType === 'historic' 
-              ? 'text-gray-800' 
-              : isMonthReadOnly 
-              ? 'text-purple-800' 
+            monthType === 'historic'
+              ? 'text-gray-800'
+              : isMonthReadOnly
+              ? 'text-purple-800'
               : ''
           }`}>
-            📋 Cheltuieli {currentMonth} {monthType === 'historic' ? (
-              <span className="text-sm bg-gray-200 px-2 py-1 rounded-full ml-2">(ARHIVATĂ)</span>
-            ) : isMonthReadOnly ? (
-              <span className="text-sm bg-purple-100 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>
-            ) : null}
+            📋 Cheltuieli distribuite
           </h3>
           <div className="flex items-center gap-3">
             <div className="text-right text-sm">
@@ -90,8 +86,8 @@ const ExpenseList = ({
       {associationExpenses.length === 0 ? (
         <div className="text-center py-8">
           <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Nu există cheltuieli adăugate</p>
-          <p className="text-gray-500 text-sm">Adaugă prima cheltuială pentru a calcula întreținerea</p>
+          <p className="text-gray-600">Nu există cheltuieli distribuite</p>
+          <p className="text-gray-500 text-sm">Distribuie prima cheltuială pentru a calcula întreținerea</p>
         </div>
       ) : (
         <div className="space-y-3 max-h-64 overflow-y-auto">

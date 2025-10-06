@@ -20,6 +20,7 @@ export const useMonthManagement = (associationId) => {
     publishCurrentSheet,
     addExpenseToSheet,
     removeExpenseFromSheet,
+    updateExpenseInSheet,
     addPaymentToPublishedSheet,
     SHEET_STATUS,
     updateStructureSnapshot,
@@ -603,6 +604,7 @@ export const useMonthManagement = (associationId) => {
     // Sheet expense management
     addExpenseToSheet,
     removeExpenseFromSheet,
+    updateExpenseInSheet,
 
     getCurrentSheetBalance: useCallback((apartmentId) => {
       if (!currentSheet) return { restante: 0, penalitati: 0 };

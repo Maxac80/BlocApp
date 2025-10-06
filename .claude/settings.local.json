@@ -41,7 +41,8 @@
       "Bash(git rm:*)",
       "Bash(copy .env.example .env.backup)",
       "Bash(firebase deploy:*)",
-      "Bash(start https://console.firebase.google.com/project/blocapp-production/firestore/databases/default/data/~2Fsheets)"
+      "Bash(start https://console.firebase.google.com/project/blocapp-production/firestore/databases/default/data/~2Fsheets)",
+      "Bash(npx grep:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -3,6 +3,8 @@ import React from 'react';
 
 const DashboardHeader = ({
   association,
+  blocks = [],
+  stairs = [],
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
@@ -26,10 +28,10 @@ const DashboardHeader = ({
                 `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim() 
                 : "Adresa asociației"}
             </p>
-            {/* Informații apartamente și persoane */}
+            {/* Informații blocuri, scări, apartamente și persoane */}
             {association && getAssociationApartments && getAssociationApartments().length > 0 && (
               <p className="text-gray-500 text-xs mt-1">
-                {getAssociationApartments().length} apartamente • {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
+                {blocks.length === 1 ? '1 bloc' : `${blocks.length} blocuri`} • {stairs.length === 1 ? '1 scară' : `${stairs.length} scări`} • {getAssociationApartments().length === 1 ? '1 apartament' : `${getAssociationApartments().length} apartamente`} • {getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0)} persoane
               </p>
             )}
           </div>

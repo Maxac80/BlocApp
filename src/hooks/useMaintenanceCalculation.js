@@ -187,14 +187,73 @@ const useMaintenanceCalculation = ({
             // Mapează distributionType din Firebase la logica de calcul
             const distributionType = expense.distributionType || expense.distributionMethod;
 
+            // Mapează expenseEntryMode/receptionMode la nomenclatura folosită în calcule
+            let receptionMode = expense.receptionMode || 'total';
+            if (expense.expenseEntryMode) {
+              // Mapare din nomenclatura UI
+              if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
+              else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
+              else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+            } else if (receptionMode === 'per_blocuri') {
+              receptionMode = 'per_block';
+            } else if (receptionMode === 'per_scari') {
+              receptionMode = 'per_stair';
+            }
+
+            // Găsește blockId și stairId pentru apartamentul curent
+            const apartmentStair = stairs?.find(s => s.id === apartment.stairId);
+            const apartmentBlockId = apartmentStair?.blockId;
+
+            // Determină amount-ul relevant pentru acest apartament bazat pe receptionMode
+            let relevantAmount = expense.amount || 0;
+
+            if (receptionMode === 'per_block' && expense.amountsByBlock && apartmentBlockId) {
+              // Folosește suma specifică blocului acestui apartament
+              relevantAmount = parseFloat(expense.amountsByBlock[apartmentBlockId] || 0);
+            } else if (receptionMode === 'per_stair' && expense.amountsByStair && apartment.stairId) {
+              // Folosește suma specifică scării acestui apartament
+              relevantAmount = parseFloat(expense.amountsByStair[apartment.stairId] || 0);
+            }
+
+            // Calculează cât din relevantAmount revine acestui apartament
             switch (distributionType) {
               case 'apartment':
               case 'perApartment':
-                apartmentExpense = expense.amount / totalApartments;
+                if (receptionMode === 'per_block' && apartmentBlockId) {
+                  // Împarte suma blocului la apartamentele din acel bloc
+                  const blockApartments = associationApartments.filter(apt => {
+                    const aptStair = stairs?.find(s => s.id === apt.stairId);
+                    return aptStair?.blockId === apartmentBlockId;
+                  });
+                  apartmentExpense = relevantAmount / blockApartments.length;
+                } else if (receptionMode === 'per_stair' && apartment.stairId) {
+                  // Împarte suma scării la apartamentele din acea scară
+                  const stairApartments = associationApartments.filter(apt => apt.stairId === apartment.stairId);
+                  apartmentExpense = relevantAmount / stairApartments.length;
+                } else {
+                  // Mod total - împarte la toate apartamentele
+                  apartmentExpense = relevantAmount / totalApartments;
+                }
                 break;
               case 'person':
               case 'perPerson':
-                apartmentExpense = (expense.amount / totalPersons) * apartment.persons;
+                if (receptionMode === 'per_block' && apartmentBlockId) {
+                  // Împarte suma blocului la persoanele din acel bloc
+                  const blockApartments = associationApartments.filter(apt => {
+                    const aptStair = stairs?.find(s => s.id === apt.stairId);
+                    return aptStair?.blockId === apartmentBlockId;
+                  });
+                  const blockPersons = blockApartments.reduce((sum, apt) => sum + apt.persons, 0);
+                  apartmentExpense = (relevantAmount / blockPersons) * apartment.persons;
+                } else if (receptionMode === 'per_stair' && apartment.stairId) {
+                  // Împarte suma scării la persoanele din acea scară
+                  const stairApartments = associationApartments.filter(apt => apt.stairId === apartment.stairId);
+                  const stairPersons = stairApartments.reduce((sum, apt) => sum + apt.persons, 0);
+                  apartmentExpense = (relevantAmount / stairPersons) * apartment.persons;
+                } else {
+                  // Mod total - împarte la toate persoanele
+                  apartmentExpense = (relevantAmount / totalPersons) * apartment.persons;
+                }
                 break;
               case 'fixed':
                 apartmentExpense = expense.fixedAmounts?.[apartment.id] || 0;
@@ -204,7 +263,7 @@ const useMaintenanceCalculation = ({
             }
 
             currentMaintenance += apartmentExpense;
-            expenseDetails[expense.id] = apartmentExpense;
+            expenseDetails[expense.name] = apartmentExpense;  // Folosește expense.name pentru a se potrivi cu tabelul
           });
         }
 

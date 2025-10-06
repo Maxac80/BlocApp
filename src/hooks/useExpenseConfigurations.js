@@ -60,10 +60,14 @@ const useExpenseConfigurations = (currentSheet) => {
     // Altfel, folosește configurația default din expenseTypes
     const defaultType = defaultExpenseTypes.find(def => def.name === expenseType);
     const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
-    
-    
+    const defaultInvoiceEntryMode = defaultType?.invoiceEntryMode || 'single';
+    const defaultExpenseEntryMode = defaultType?.expenseEntryMode || 'total';
+
+
     return {
       distributionType: defaultDistribution,
+      invoiceEntryMode: defaultInvoiceEntryMode,
+      expenseEntryMode: defaultExpenseEntryMode,
       supplierId: null,
       supplierName: '',
       contractNumber: '',

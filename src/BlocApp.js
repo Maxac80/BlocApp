@@ -149,6 +149,7 @@ export default function BlocApp() {
     fixTransferredBalances,
     addExpenseToSheet,
     removeExpenseFromSheet,
+    updateExpenseInSheet,
     updateStructureSnapshot,
     updateConfigSnapshot,
     // 🆕 SHEET-BASED STRUCTURE OPERATIONS
@@ -308,6 +309,7 @@ export default function BlocApp() {
     disabledExpenses,
     addMonthlyExpense: addExpenseToSheet, // SHEET-BASED: folosește addExpenseToSheet
     updateMonthlyExpense,
+    updateExpenseInSheet, // SHEET-BASED: adăugat pentru actualizare cheltuieli în sheet
     deleteMonthlyExpense: removeExpenseFromSheet, // SHEET-BASED: folosește removeExpenseFromSheet
     addCustomExpense,
     deleteCustomExpense,
@@ -577,13 +579,13 @@ useEffect(() => {
                 return await publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments || (() => []), calculateMaintenanceWithDetails());
               }}
               getAvailableMonths={getAvailableMonths}
-              expenses={expenses}
+              expenses={currentSheet?.expenses || []}
               newExpense={newExpense}
               setNewExpense={setNewExpense}
               getAvailableExpenseTypes={getAvailableExpenseTypes}
               areAllExpensesFullyCompleted={areAllExpensesFullyCompleted}
               getExpenseConfig={getFirestoreExpenseConfig}
-              handleAddExpense={() => handleAddExpense(addInvoice)}
+              handleAddExpense={handleAddExpense}
               handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}

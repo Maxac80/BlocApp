@@ -307,14 +307,22 @@ export const useSheetManagement = (associationId) => {
    * SNAPSHOT: Păstrează TOATE cheltuielile ca entități independente
    */
   const addExpenseToSheet = useCallback(async (expense) => {
+    console.log('📥 addExpenseToSheet called with:', expense);
+    console.log('📥 currentSheet:', { id: currentSheet?.id, status: currentSheet?.status });
+
     if (!currentSheet || currentSheet.status !== SHEET_STATUS.IN_PROGRESS) {
+      console.error('❌ Cannot add expense - invalid sheet status');
       throw new Error('Nu se pot adăuga cheltuieli - sheet-ul nu este în lucru');
     }
 
     try {
       const sheetRef = doc(db, 'sheets', currentSheet.id);
-      
-      // Creează copie completă a cheltuielii cu toate datele
+
+      // Creează copie completă a cheltuielii cu toate datele, eliminând undefined
+      const cleanedExpense = Object.fromEntries(
+        Object.entries(expense).filter(([_, value]) => value !== undefined)
+      );
+
       const expenseSnapshot = {
         id: expense.id || Date.now().toString(),
         name: expense.name || '',
@@ -326,19 +334,26 @@ export const useSheetManagement = (associationId) => {
         dueDate: expense.dueDate || '',
         month: expense.month || '',
         consumptionData: expense.consumptionData ? [...expense.consumptionData] : [],
-        // Păstrează TOATE proprietățile cheltuielii
-        ...expense,
+        // Păstrează TOATE proprietățile cheltuielii (fără undefined)
+        ...cleanedExpense,
         // Timestamp când a fost adăugată în acest sheet
         addedToSheet: new Date().toISOString(),
         sheetId: currentSheet.id
       };
-      
+
+      console.log('📥 Created expense snapshot:', expenseSnapshot);
+
       const updatedExpenses = [...(currentSheet.expenses || []), expenseSnapshot];
-      
+
+      console.log('📥 Saving to Firebase - expenses array length:', updatedExpenses.length);
+
       await setDoc(sheetRef, {
         expenses: updatedExpenses,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      console.log('✅ Expense added to sheet successfully:', expenseSnapshot.id);
+      return expenseSnapshot.id; // Returnează ID-ul cheltuielii
 
     } catch (error) {
       console.error('❌ Error adding expense snapshot:', error);
@@ -378,6 +393,52 @@ export const useSheetManagement = (associationId) => {
 
     } catch (error) {
       console.error('❌ Error removing expense from sheet:', error);
+      throw error;
+    }
+  }, [currentSheet]);
+
+  /**
+   * Actualizează o cheltuială existentă în sheet-ul curent
+   */
+  const updateExpenseInSheet = useCallback(async (expenseId, updatedExpenseData) => {
+    if (!currentSheet || currentSheet.status !== SHEET_STATUS.IN_PROGRESS) {
+      console.error('❌ Cannot update expense - invalid sheet status');
+      throw new Error('Nu se pot actualiza cheltuieli - sheet-ul nu este în lucru');
+    }
+
+    try {
+      const sheetRef = doc(db, 'sheets', currentSheet.id);
+
+      // Obține cheltuielile actuale din sheet
+      const currentExpenses = currentSheet.expenses || [];
+
+      // Găsește index-ul cheltuielii de actualizat
+      const expenseIndex = currentExpenses.findIndex(expense => expense.id === expenseId);
+      if (expenseIndex === -1) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        throw new Error('Cheltuiala nu a fost găsită în sheet');
+      }
+
+      // Creează array-ul actualizat de cheltuieli
+      const updatedExpenses = [...currentExpenses];
+      updatedExpenses[expenseIndex] = {
+        ...currentExpenses[expenseIndex],
+        ...updatedExpenseData,
+        updatedAt: new Date().toISOString()
+      };
+
+      console.log('📝 Updating expense in sheet:', { expenseId, updatedData: updatedExpenseData });
+
+      await setDoc(sheetRef, {
+        expenses: updatedExpenses,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      console.log('✅ Expense updated in sheet successfully:', expenseId);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error updating expense in sheet:', error);
       throw error;
     }
   }, [currentSheet]);
@@ -1356,6 +1417,7 @@ export const useSheetManagement = (associationId) => {
     updateConfigSnapshot,
     addExpenseToSheet,
     removeExpenseFromSheet,
+    updateExpenseInSheet,
     publishCurrentSheet,
     addPaymentToPublishedSheet,
     getSheetByMonth,

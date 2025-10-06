@@ -592,9 +592,10 @@ const useInvoices = (associationId, currentSheet) => {
     });
     
     // Debug simplificat - doar pentru probleme
-    if (filtered.length === 0 && expenseType) {
-      console.log('⚠️ Nicio factură găsită pentru:', expenseType);
-    }
+    // Dezactivat pentru a reduce noise-ul din consolă
+    // if (filtered.length === 0 && expenseType) {
+    //   console.log('⚠️ Nicio factură găsită pentru:', expenseType);
+    // }
     
     // Verifică dacă există facturi care au nevoie de sincronizare
     if (expenseType && filtered.length === 0) {

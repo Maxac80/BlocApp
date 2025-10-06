@@ -166,6 +166,32 @@ const ExpenseAddModal = ({
     });
   };
 
+  const handleInvoiceModeChange = (mode) => {
+    const newConfig = {
+      ...localConfig,
+      invoiceMode: mode
+    };
+
+    // Dacă se alege "separate" și receptionMode este "total", schimbă automat la per_block
+    if (mode === 'separate' && localConfig.receptionMode === 'total') {
+      if (blocks.length > 1) {
+        newConfig.receptionMode = 'per_block';
+        newConfig.appliesTo = {
+          blocks: blocks.map(b => b.id),
+          stairs: []
+        };
+      } else if (stairs.length > 1) {
+        newConfig.receptionMode = 'per_stair';
+        newConfig.appliesTo = {
+          blocks: [],
+          stairs: stairs.map(s => s.id)
+        };
+      }
+    }
+
+    setLocalConfig(newConfig);
+  };
+
   const handleBlockToggle = (blockId) => {
     const isSelected = localConfig.appliesTo.blocks.includes(blockId);
     setLocalConfig({
@@ -305,10 +331,10 @@ const ExpenseAddModal = ({
                 </label>
                 <select
                   value={localConfig.invoiceMode}
-                  onChange={(e) => setLocalConfig({ ...localConfig, invoiceMode: e.target.value })}
+                  onChange={(e) => handleInvoiceModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
-                  <option value="single">Factură unică (defalcată)</option>
+                  <option value="single">O factură unică</option>
                   <option value="separate">Facturi separate (per scară/bloc)</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
@@ -327,7 +353,7 @@ const ExpenseAddModal = ({
                   onChange={(e) => handleReceptionModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
-                  <option value="total">Pe asociație (total)</option>
+                  {localConfig.invoiceMode !== 'separate' && <option value="total">Pe asociație (total)</option>}
                   {(blocks.length > 1 || localConfig.receptionMode === 'per_block') && <option value="per_block">Defalcat pe blocuri</option>}
                   {(stairs.length > 1 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Defalcat pe scări</option>}
                 </select>
@@ -336,6 +362,11 @@ const ExpenseAddModal = ({
                   {localConfig.receptionMode === 'per_block' && 'Sume separate pentru fiecare bloc'}
                   {localConfig.receptionMode === 'per_stair' && 'Sume separate pentru fiecare scară'}
                 </p>
+                {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'total' && (
+                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                    ⚠️ Mod "Facturi separate" necesită "Defalcat pe blocuri" sau "Defalcat pe scări"
+                  </p>
+                )}
               </div>
 
               {/* Se aplică pe (bife) - doar pentru per_block și per_stair */}

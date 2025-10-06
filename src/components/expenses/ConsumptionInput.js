@@ -103,12 +103,12 @@ const ConsumptionInput = ({
 
   return (
     <>
-      <div className={`p-6 rounded-xl shadow-lg ${
-        monthType === 'historic' 
-          ? 'bg-gray-50 border-2 border-gray-300' 
-          : isMonthReadOnly 
-          ? 'bg-purple-50 border-2 border-purple-200' 
-          : 'bg-white'
+      <div className={`p-6 rounded-xl shadow-lg border-2 mr-2 ${
+        monthType === 'historic'
+          ? 'bg-gray-50 border-gray-300'
+          : isMonthReadOnly
+          ? 'bg-purple-50 border-purple-300'
+          : 'bg-white border-gray-200'
       }`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-lg font-semibold ${
@@ -118,12 +118,7 @@ const ConsumptionInput = ({
               ? 'text-purple-800' 
               : ''
           }`}>
-            {monthType === 'historic' ?
-              "📊 Consumuri & Sume (ARHIVATĂ)" :
-              isMonthReadOnly ? 
-              "📊 Consumuri & Sume (PUBLICATĂ)" :
-              "📊 Introducere Consumuri & Sume"
-            }
+            📊 Consumuri și Sume individuale
           </h3>
           {consumptionExpenses.length > 0 && (
             <button
@@ -396,14 +391,14 @@ const ConsumptionInput = ({
                                     </span>
                                     {isMonthReadOnly ? (
                                       <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-600">
-                                        {expense.consumption[apartment.id] || "0"} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
+                                        {expense.consumption?.[apartment.id] || "0"} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
                                       </div>
                                     ) : (
                                       <input
                                         type="text"
                                         inputMode="decimal"
                                         placeholder={expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
-                                        value={expense.consumption[apartment.id] || ""}
+                                        value={expense.consumption?.[apartment.id] || ""}
                                         onChange={(e) => {
                                           const value = e.target.value;
                                           if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
@@ -419,9 +414,9 @@ const ConsumptionInput = ({
                                         className={`flex-1 p-2 border rounded text-sm ${hasBlankField ? 'border-red-300 bg-red-50' : ''}`}
                                       />
                                     )}
-                                    {(parseFloat(expense.consumption[apartment.id]) || 0) > 0 && (
+                                    {(parseFloat(expense.consumption?.[apartment.id]) || 0) > 0 && (
                                       <span className="text-sm text-green-600 w-20 text-right">
-                                        {((parseFloat(expense.consumption[apartment.id]) || 0) * expense.unitPrice).toFixed(2)} RON
+                                        {((parseFloat(expense.consumption?.[apartment.id]) || 0) * expense.unitPrice).toFixed(2)} RON
                                       </span>
                                     )}
                                   </div>

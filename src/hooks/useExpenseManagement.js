@@ -20,6 +20,7 @@ export const useExpenseManagement = ({
   disabledExpenses,
   addMonthlyExpense,
   updateMonthlyExpense,
+  updateExpenseInSheet,  // SHEET-BASED: funcție pentru actualizare cheltuieli în sheet
   deleteMonthlyExpense,
   addCustomExpense,
   deleteCustomExpense,
@@ -103,23 +104,28 @@ export const useExpenseManagement = ({
     return [...disabledDefaultExpenses, ...disabledCustomExpenses];
   }, [association?.id, customExpenses, currentMonth, currentSheet?.id, disabledExpenses]);
 
-  // 📋 TIPURILE DE CHELTUIELI DISPONIBILE PENTRU ADĂUGARE - OPTIMIZAT
+  // 📋 TIPURILE DE CHELTUIELI DISPONIBILE PENTRU ADĂUGARE - SHEET-BASED
   const getAvailableExpenseTypes = useCallback(() => {
     if (!association?.id) return [];
-    
-    const associationExpenses = expenses.filter(exp => 
-      exp.associationId === association.id && exp.month === currentMonth
-    );
-    
+
+    // SHEET-BASED: Folosește cheltuielile din sheet-ul curent, nu din colecția veche
+    const sheetExpenses = currentSheet?.expenses || [];
+
     const allAvailableExpenses = getAssociationExpenseTypes();
-    
-    // Exclude toate cheltuielile deja adăugate pentru această lună
-    const usedExpenseNames = associationExpenses.map(exp => exp.name);
-    
-    return allAvailableExpenses.filter(expenseType => 
+
+    // Exclude toate cheltuielile deja adăugate în sheet-ul curent
+    const usedExpenseNames = sheetExpenses.map(exp => exp.name);
+
+    // console.log('🔍 getAvailableExpenseTypes:', {
+    //   allAvailable: allAvailableExpenses.map(e => e.name),
+    //   usedNames: usedExpenseNames,
+    //   filtered: allAvailableExpenses.filter(expenseType => !usedExpenseNames.includes(expenseType.name)).map(e => e.name)
+    // });
+
+    return allAvailableExpenses.filter(expenseType =>
       !usedExpenseNames.includes(expenseType.name)
     );
-  }, [association?.id, expenses, currentMonth, getAssociationExpenseTypes, getExpenseConfig]);
+  }, [association?.id, currentSheet, getAssociationExpenseTypes]);
 
   // 🔍 VERIFICARE DACĂ TOATE CHELTUIELILE SUNT COMPLET COMPLETATE
   const areAllExpensesFullyCompleted = useCallback((getAssociationApartments) => {
@@ -154,49 +160,98 @@ export const useExpenseManagement = ({
   }, [association?.id, expenses, currentMonth, getExpenseConfig]);
 
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
-  const handleAddExpense = useCallback(async (addInvoiceFn = null) => {
+  // NOTE: NU folosim useCallback aici pentru a evita probleme cu parametrii
+  const addExpenseInternal = async (expenseDataParam, addInvoiceFn = null) => {
+    console.log('🔥 handleAddExpense RAW params:', {
+      param1: expenseDataParam,
+      param1Type: typeof expenseDataParam,
+      param2: addInvoiceFn,
+      param2Type: typeof addInvoiceFn
+    });
 
-    if (!newExpense.name || !association) {
+    // Primește datele direct ca prim parametru
+    const expenseData = expenseDataParam;
+
+    console.log('🔥 handleAddExpense START:', {
+      expenseData,
+      hasName: !!expenseData?.name,
+      hasAssociation: !!association
+    });
+
+    if (!expenseData?.name || !association) {
+      console.log('❌ Validation failed:', {
+        expenseDataName: expenseData?.name,
+        hasAssociation: !!association
+      });
       return false;
     }
-    
-    const expenseSettings = getExpenseConfig(newExpense.name);
+
+    const expenseSettings = getExpenseConfig(expenseData.name);
     const isConsumptionBased = expenseSettings.distributionType === "consumption";
     const isIndividualBased = expenseSettings.distributionType === "individual";
-    
-    // Validări
-    if (isConsumptionBased && (!newExpense.unitPrice || !newExpense.billAmount)) {
+
+    console.log('🔥 Expense settings:', { expenseSettings, isConsumptionBased, isIndividualBased });
+    console.log('🔥 Expense data received:', expenseData);
+
+    // Calculează amount-ul total bazat pe receptionMode
+    let totalAmount = 0;
+
+    if (expenseData.amountsByBlock) {
+      // Sumă per bloc
+      totalAmount = Object.values(expenseData.amountsByBlock).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    } else if (expenseData.amountsByStair) {
+      // Sumă per scară
+      totalAmount = Object.values(expenseData.amountsByStair).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    } else if (expenseData.amount) {
+      // Sumă totală directă
+      totalAmount = parseFloat(expenseData.amount);
+    } else if (expenseData.billAmount) {
+      // Pentru consumption - billAmount
+      totalAmount = parseFloat(expenseData.billAmount);
+    }
+
+    console.log('🔥 Calculated total amount:', totalAmount);
+
+    // Validări actualizate
+    if (isConsumptionBased && (!expenseData.unitPrice || !expenseData.billAmount)) {
       alert("Pentru cheltuielile pe consum trebuie să introduci atât prețul pe unitate cât și totalul facturii!");
       return false;
     }
-    
-    if (!isConsumptionBased && !isIndividualBased && !newExpense.amount) {
+
+    if (!isConsumptionBased && !isIndividualBased && totalAmount === 0) {
       alert("Introduceți suma cheltuielii!");
       return false;
     }
-    
-    if (isIndividualBased && !newExpense.amount) {
+
+    if (isIndividualBased && totalAmount === 0) {
       alert("Introduceți suma totală pentru cheltuiala individuală!");
       return false;
     }
-    
+
     try {
-      
+
       // 1. Adaugă cheltuiala lunară
-      const expenseData = {
-        name: newExpense.name,
-        amount: isConsumptionBased ? 0 : parseFloat(newExpense.amount || 0),
+      const expensePayload = {
+        name: expenseData.name,
+        amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
+        receptionMode: expenseSettings.receptionMode,
+        expenseEntryMode: expenseSettings.expenseEntryMode,  // Adaugă expenseEntryMode pentru a ști cum să distribuie
         isUnitBased: isConsumptionBased,
-        unitPrice: isConsumptionBased ? parseFloat(newExpense.unitPrice) : 0,
-        billAmount: isConsumptionBased ? parseFloat(newExpense.billAmount) : 0,
+        unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
+        billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
         consumption: {},
         individualAmounts: {},
-        month: currentMonth
+        amountsByBlock: expenseData.amountsByBlock || {},
+        amountsByStair: expenseData.amountsByStair || {},
+        month: currentMonth,
+        isDistributed: true  // Marchează cheltuiala ca fiind distribuită
       };
-      
-      const expenseId = await addMonthlyExpense(expenseData);
-      
+
+      console.log('🔥 Calling addMonthlyExpense with:', expensePayload);
+      const expenseId = await addMonthlyExpense(expensePayload);
+      console.log('🔥 addMonthlyExpense returned ID:', expenseId);
+
       // 2. Dacă avem detalii factură, salvăm și factura
       // console.log('🔍 DEBUG Condiții salvare factură:', {
       //   hasInvoiceData: !!newExpense.invoiceData,
@@ -216,9 +271,9 @@ export const useExpenseManagement = ({
       //   conditionResult: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
       // });
       
-      if (newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn) {
+      if (expenseData.invoiceData && expenseData.invoiceData.invoiceNumber && addInvoiceFn) {
         // console.log('🔍 expenseSettings detailed breakdown:', {
-        //   expenseType: newExpense.name,
+        //   expenseType: expenseData.name,
         //   supplierId: expenseSettings.supplierId,
         //   supplierName: expenseSettings.supplierName,
         //   hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName),
@@ -231,25 +286,25 @@ export const useExpenseManagement = ({
         //   supplierName: expenseSettings.supplierName,
         //   hasSupplier: !!(expenseSettings.supplierId && expenseSettings.supplierName)
         // });
-        
+
         // console.log('🏢 invoiceData will be created with supplier:', {
         //   supplierId: expenseSettings.supplierId || null,
         //   supplierName: expenseSettings.supplierName || 'Fără furnizor'
         // });
-        
+
         // Calculează valorile pentru distribuție parțială
-        const currentDistribution = parseFloat(newExpense.amount || newExpense.billAmount || 0);
-        const totalInvoiceAmount = parseFloat(newExpense.invoiceData.totalInvoiceAmount || currentDistribution);
-        const distributedAmount = parseFloat(newExpense.invoiceData.distributedAmount || 0);
-        
+        const currentDistribution = parseFloat(expenseData.amount || expenseData.billAmount || 0);
+        const totalInvoiceAmount = parseFloat(expenseData.invoiceData.totalInvoiceAmount || currentDistribution);
+        const distributedAmount = parseFloat(expenseData.invoiceData.distributedAmount || 0);
+
         const invoiceData = {
           expenseId: expenseId,
           supplierId: expenseSettings.supplierId || null,
           supplierName: expenseSettings.supplierName || null, // NU pune 'Fără furnizor' aici!
-          expenseType: newExpense.name,
-          invoiceNumber: newExpense.invoiceData.invoiceNumber,
-          invoiceDate: newExpense.invoiceData.invoiceDate,
-          dueDate: newExpense.invoiceData.dueDate,
+          expenseType: expenseData.name,
+          invoiceNumber: expenseData.invoiceData.invoiceNumber,
+          invoiceDate: expenseData.invoiceData.invoiceDate,
+          dueDate: expenseData.invoiceData.dueDate,
           amount: currentDistribution,
           vatAmount: 0,
           totalAmount: currentDistribution,
@@ -257,17 +312,17 @@ export const useExpenseManagement = ({
           totalInvoiceAmount: totalInvoiceAmount,
           currentDistribution: currentDistribution,
           distributedAmount: distributedAmount,
-          notes: newExpense.invoiceData.notes || '',
+          notes: expenseData.invoiceData.notes || '',
           month: currentMonth
         };
-        
+
         try {
           // console.log('🚀 ABOUT TO CALL addInvoiceFn with:', {
           //   invoiceData: invoiceData,
-          //   pdfFile: newExpense.pdfFile?.name,
+          //   pdfFile: expenseData.pdfFile?.name,
           //   addInvoiceFnExists: !!addInvoiceFn
           // });
-          await addInvoiceFn(invoiceData, newExpense.pdfFile);
+          await addInvoiceFn(invoiceData, expenseData.pdfFile);
         } catch (invoiceError) {
           console.warn('⚠️ Cheltuiala a fost salvată, dar factura nu a putut fi salvată:', invoiceError);
           
@@ -302,7 +357,7 @@ export const useExpenseManagement = ({
       alert('Eroare la adăugarea cheltuielii: ' + error.message);
       return false;
     }
-  }, [newExpense, association, getExpenseConfig, addMonthlyExpense, currentMonth]);
+  };
 
   // ➕ ADĂUGAREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleAddCustomExpense = useCallback(async () => {
@@ -328,30 +383,58 @@ export const useExpenseManagement = ({
   // 🔄 ACTUALIZAREA CONSUMURILOR - OPTIMIZAT
   const updateExpenseConsumption = useCallback(async (expenseId, apartmentId, consumption) => {
     try {
-      const expense = expenses.find(exp => exp.id === expenseId);
-      if (expense) {
-        await updateMonthlyExpense(expenseId, {
-          consumption: { ...expense.consumption, [apartmentId]: consumption }
-        });
+      // SHEET-BASED: Actualizează cheltuiala în sheet-ul curent
+      if (!currentSheet || !currentSheet.expenses) {
+        console.error('❌ No current sheet or expenses');
+        return;
       }
+
+      const expense = currentSheet.expenses.find(exp => exp.id === expenseId);
+      if (!expense) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        return;
+      }
+
+      // Actualizează consumul în sheet folosind updateExpenseInSheet
+      const updatedExpense = {
+        ...expense,
+        consumption: { ...expense.consumption, [apartmentId]: consumption }
+      };
+
+      await updateExpenseInSheet(expenseId, updatedExpense);
+      console.log('✅ Consumption updated in sheet for apartment:', apartmentId);
     } catch (error) {
       console.error('❌ Eroare la actualizarea consumului:', error);
     }
-  }, [expenses, updateMonthlyExpense]);
+  }, [currentSheet, updateExpenseInSheet]);
 
-  // 💰 ACTUALIZAREA SUMELOR INDIVIDUALE - OPTIMIZAT
+  // 💰 ACTUALIZAREA SUMELOR INDIVIDUALE - SHEET-BASED
   const updateExpenseIndividualAmount = useCallback(async (expenseId, apartmentId, amount) => {
     try {
-      const expense = expenses.find(exp => exp.id === expenseId);
-      if (expense) {
-        await updateMonthlyExpense(expenseId, {
-          individualAmounts: { ...expense.individualAmounts, [apartmentId]: amount }
-        });
+      // SHEET-BASED: Actualizează cheltuiala în sheet-ul curent
+      if (!currentSheet || !currentSheet.expenses) {
+        console.error('❌ No current sheet or expenses');
+        return;
       }
+
+      const expense = currentSheet.expenses.find(exp => exp.id === expenseId);
+      if (!expense) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        return;
+      }
+
+      // Actualizează suma individuală în sheet folosind updateExpenseInSheet
+      const updatedExpense = {
+        ...expense,
+        individualAmounts: { ...expense.individualAmounts, [apartmentId]: amount }
+      };
+
+      await updateExpenseInSheet(expenseId, updatedExpense);
+      console.log('✅ Individual amount updated in sheet for apartment:', apartmentId);
     } catch (error) {
       console.error('❌ Eroare la actualizarea sumei individuale:', error);
     }
-  }, [expenses, updateMonthlyExpense]);
+  }, [currentSheet, updateExpenseInSheet]);
 
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleDeleteCustomExpense = useCallback(async (expenseName) => {
@@ -422,6 +505,16 @@ export const useExpenseManagement = ({
     };
   }, [association?.id, expenses, currentMonth]);
 
+  // Wrapper pentru a expune funcția cu numele corect - CU PARAMETRI EXPLICIȚI
+  const handleAddExpense = async (expenseDataParam, addInvoiceFn = null) => {
+    console.log('🎯 WRAPPER in hook - param1 type:', typeof expenseDataParam);
+    console.log('🎯 WRAPPER in hook - param1 value:', expenseDataParam);
+    console.log('🎯 WRAPPER in hook - param2 type:', typeof addInvoiceFn);
+    console.log('🎯 WRAPPER in hook - param2 value:', addInvoiceFn);
+
+    return addExpenseInternal(expenseDataParam, addInvoiceFn);
+  };
+
   // 🎯 RETURN API
   return {
     // 📊 State și configurări (doar participare - configurările sunt în useExpenseConfigurations)
@@ -435,13 +528,13 @@ export const useExpenseManagement = ({
     // 🔧 Funcții de configurare
     getApartmentParticipation,
     setApartmentParticipation,
-    
+
     // 📋 Funcții pentru tipuri de cheltuieli
     getAssociationExpenseTypes,
     getDisabledExpenseTypes,
     getAvailableExpenseTypes,
     areAllExpensesFullyCompleted,
-    
+
     // ➕ Funcții de adăugare și actualizare
     handleAddExpense,
     handleAddCustomExpense,
@@ -449,7 +542,7 @@ export const useExpenseManagement = ({
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
-    
+
     // 📊 Statistici și date
     expenseStats
   };

@@ -1724,4 +1724,258 @@ else if (config.distributionType === 'individual') {
 Acest pattern se va folosi pentru toate viitoarele modale nested din aplicație.
 
 ---
+
+## 💰 EXPENSE DISTRIBUTION SYSTEM - 7 OCTOMBRIE 2025
+
+### **SISTEMUL COMPLET DE CONFIGURARE ȘI DISTRIBUȚIE CHELTUIELI**
+
+#### **1. CONFIGURĂRI DEFAULT COMPLETE**
+Implementat configurări implicite pentru toate cele 11 cheltuieli standard:
+
+**File:** `src/data/expenseTypes.js`
+```javascript
+export const defaultExpenseTypes = [
+  {
+    name: "Apă caldă",
+    defaultDistribution: "consumption",
+    invoiceEntryMode: "single",
+    expenseEntryMode: "staircase"
+  },
+  // ... toate cele 11 cheltuieli cu configurări complete
+];
+```
+
+**Câmpuri configurate:**
+- ✅ `defaultDistribution` - Cum se distribuie suma (consumption/apartment/person/individual)
+- ✅ `invoiceEntryMode` - Cum se introduce factura (single/separate)
+- ✅ `expenseEntryMode` - Defalcare (staircase/building/total)
+
+**Beneficii:**
+- Prima creare a asociației → toate cheltuielile vin pre-configurate
+- User poate modifica și se salvează în `currentSheet.configSnapshot.expenseConfigurations`
+- Configurările NU se suprascriu niciodată după salvare
+
+#### **2. TABEL DETALIAT CU COLOANE PENTRU FIECARE CHELTUIALĂ**
+
+**Cerința:** În tab-ul "Detaliat" din Calcul Întreținere, fiecare cheltuială distribuită trebuie să aibă propria coloană cu sumele per apartament.
+
+**Implementare:**
+
+##### **A. MaintenanceTableDetailed.js**
+```javascript
+// Header cu coloane dinamice pentru fiecare cheltuială
+{expenses.map(expense => (
+  <th key={expense.id} className="bg-blue-50">
+    {expense.name}
+  </th>
+))}
+
+// Celule cu sume per apartament
+{expenses.map(expense => (
+  <td key={expense.id} className="bg-blue-50">
+    {data.expenseDetails?.[expense.name]?.toFixed(2) || '0.00'}
+  </td>
+))}
+```
+
+##### **B. useMaintenanceCalculation.js - expenseDetails**
+**CRITICAL FIX:** Folosește `expense.name` ca key, NU `expense.id`:
+```javascript
+// ✅ CORECT
+expenseDetails[expense.name] = apartmentExpense;
+
+// ❌ GREȘIT (nu funcționa)
+expenseDetails[expense.id] = apartmentExpense;
+```
+
+**Motiv:** Tabelul caută după `expense.name`, deci key-urile trebuie să se potrivească.
+
+##### **C. distributedExpenses Filter**
+```javascript
+// MaintenanceView.js
+const distributedExpenses = useMemo(() => {
+  if (!expenses) return [];
+  return expenses;  // Toate cheltuielile din currentSheet
+}, [expenses]);
+```
+
+**Important:** Cheltuielile vin din `currentSheet.expenses`, deci toate sunt deja ale sheet-ului curent.
+
+##### **D. Data Flow Fix în BlocApp.js**
+**Problema:** `expenses` veneau din `useAssociationData` (colecții globale), nu din sheet.
+
+**Soluția:**
+```javascript
+// ✅ FIXED: Folosește expenses din currentSheet
+expenses={currentSheet?.expenses || []}
+```
+
+#### **3. NOMENCLATURĂ ȘI MAPPING - expenseEntryMode**
+
+**Problema critică:** Inconsistență între nomenclatura din configurări vs logica de calcul.
+
+**În configurări (UI):**
+- `expenseEntryMode: "building"` = defalcat pe blocuri
+- `expenseEntryMode: "staircase"` = defalcat pe scări
+- `expenseEntryMode: "total"` = total asociație
+
+**În calcule (logică):**
+- `receptionMode: "per_block"` = defalcat pe blocuri
+- `receptionMode: "per_stair"` = defalcat pe scări
+- `receptionMode: "total"` = total asociație
+
+**Soluția - Mapping în useMaintenanceCalculation.js:**
+```javascript
+let receptionMode = expense.receptionMode || 'total';
+if (expense.expenseEntryMode) {
+  if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
+  else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
+  else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+}
+```
+
+#### **4. SALVARE CHELTUIELI - CURĂȚARE undefined**
+
+**Problema:** Firebase nu acceptă valori `undefined` în documente.
+
+**Eroare:**
+```
+Function setDoc() called with invalid data.
+Unsupported field value: undefined
+```
+
+**Soluția în useSheetManagement.js:**
+```javascript
+// Curăță toate valorile undefined înainte de salvare
+const cleanedExpense = Object.fromEntries(
+  Object.entries(expense).filter(([_, value]) => value !== undefined)
+);
+
+const expenseSnapshot = {
+  // ... câmpuri default
+  ...cleanedExpense,  // Spread doar valorile non-undefined
+  addedToSheet: new Date().toISOString()
+};
+```
+
+#### **5. VALIDARE expenseEntryMode în PAYLOAD**
+
+**Problema:** `expenseEntryMode` nu era salvat în cheltuială.
+
+**Soluția în useExpenseManagement.js:**
+```javascript
+const expensePayload = {
+  name: expenseData.name,
+  amount: isConsumptionBased ? 0 : totalAmount,
+  distributionType: expenseSettings.distributionType,
+  receptionMode: expenseSettings.receptionMode,
+  expenseEntryMode: expenseSettings.expenseEntryMode,  // ✅ ADĂUGAT
+  // ... rest
+};
+```
+
+### **FLOW COMPLET DISTRIBUȚIE CHELTUIELI**
+
+#### **Setup (o dată):**
+1. Administrator creează asociația
+2. Aplicația creează primul sheet cu configurări default pentru 11 cheltuieli
+3. Admin poate modifica configurările în "Configurare cheltuieli"
+
+#### **Distribuție lunară:**
+1. Admin merge la "Calcul întreținere" → "Distribuie Cheltuială"
+2. Selectează cheltuială din dropdown
+3. **UI se adaptează automat** bazat pe `expenseEntryMode`:
+   - `total` → un singur câmp pentru sumă
+   - `building` → câmpuri separate per bloc
+   - `staircase` → câmpuri separate per scară
+4. Completează sume și salvează
+5. Backend:
+   - `useExpenseManagement.js` creează `expensePayload` cu toate câmpurile
+   - Curăță `undefined` values
+   - Salvează în `currentSheet.expenses` via `addExpenseToSheet`
+
+#### **Calcul și afișare:**
+1. `useMaintenanceCalculation.js` citește `currentSheet.expenses`
+2. Pentru fiecare apartament:
+   - Extrage `expenseEntryMode` și mapează la `receptionMode`
+   - Determină `relevantAmount` bazat pe receptionMode (per_block/per_stair/total)
+   - Calculează `apartmentExpense` bazat pe `distributionType`
+   - Salvează în `expenseDetails[expense.name] = apartmentExpense`
+3. `MaintenanceTableDetailed` afișează:
+   - Coloane separate pentru fiecare cheltuială
+   - Sume per apartament din `expenseDetails[expense.name]`
+   - Scroll orizontal pentru multe cheltuieli
+
+### **PROBLEME REZOLVATE - 7 OCTOMBRIE 2025**
+
+#### **1. Coloanele cheltuielilor nu apăreau**
+- **Cauza:** `expenses` veneau din colecții globale (goale), nu din sheet
+- **Fix:** `expenses={currentSheet?.expenses || []}`
+
+#### **2. Toate valorile erau 0.00**
+- **Cauza:** `expenseDetails` folosea `expense.id` ca key, tabelul căuta după `expense.name`
+- **Fix:** `expenseDetails[expense.name] = apartmentExpense`
+
+#### **3. Distribuția pe blocuri nu funcționa**
+- **Cauza:** Missing mapping între `expenseEntryMode` și `receptionMode`
+- **Fix:** Adăugat mapping explicit în `useMaintenanceCalculation.js`
+
+#### **4. Eroare "Unsupported field value: undefined"**
+- **Cauza:** `...expense` spread includea câmpuri `undefined`
+- **Fix:** Filter `undefined` values înainte de salvare
+
+#### **5. Eroare "Missing semicolon" după refactoring**
+- **Cauza:** Comentariu multi-line greșit formatat
+- **Fix:** Șters comentariul problematic
+
+### **LECȚII CHEIE**
+
+#### **1. Nomenclatură Consistentă**
+- **Între UI și logică** trebuie mapping explicit
+- **Documentare clară** a termenilor folosiți în fiecare layer
+- **evită confuzia** - user vede "Defalcat pe blocuri", codul vede "per_block"
+
+#### **2. Firebase Constraints**
+- **Nu acceptă `undefined`** - întotdeauna curăță înainte de save
+- **Use `null` instead** dacă vrei să marchezi "no value"
+- **Validate before save** - previne errori runtime
+
+#### **3. Key Matching**
+- **Consistency is critical** - dacă salvezi cu `expense.name`, citești cu `expense.name`
+- **Document key choices** - explică de ce alegi un anumit key
+- **Test round-trip** - salvează și citește pentru a verifica
+
+#### **4. Data Flow Transparency**
+- **Log strategically** - adaugă log-uri la points critice
+- **Clean console output** - șterge log-urile după debugging
+- **Comment data transformations** - explică mapping-urile
+
+### **FILES MODIFIED - 7 OCTOMBRIE 2025**
+
+1. **`src/data/expenseTypes.js`** - Adăugat configurări complete default
+2. **`src/hooks/useExpenseManagement.js`** - Adăugat `expenseEntryMode` în payload, `isDistributed` flag
+3. **`src/hooks/useMaintenanceCalculation.js`** - Mapping `expenseEntryMode` → `receptionMode`, fix `expenseDetails` key
+4. **`src/hooks/useSheetManagement.js`** - Curățare `undefined` values
+5. **`src/hooks/useExpenseConfigurations.js`** - Return `expenseEntryMode` în default config
+6. **`src/components/views/MaintenanceView.js`** - Filter `distributedExpenses`, cleanup debug logs
+7. **`src/components/tables/MaintenanceTableDetailed.js`** - Render coloane dinamice, removed `associationId` filter
+8. **`src/BlocApp.js`** - Pass `currentSheet.expenses` to MaintenanceView
+9. **`src/hooks/useInvoices.js`** - Disabled repetitive log messages
+
+### **URMĂTORII PAȘI**
+
+#### **Testare Sistematică:**
+- [ ] **Pe consum** (Apă caldă/rece/Canal) - cu preț/mc și total factură
+- [ ] **Pe persoană** (Energie electrică) - distribuție corectă per număr persoane
+- [ ] **Pe scări** (Întreținere lift) - sume separate per scară
+- [ ] **Individual** (Căldură) - sume diferite per apartament
+- [ ] **Toate modurile** × **toate distribuțiile** = matrice completă de testare
+
+#### **Optimizări Viitoare:**
+- [ ] TypeScript pentru type safety pe nomenclatură
+- [ ] Validation layer pentru configurări
+- [ ] UI tests pentru flow-ul complet
+- [ ] Performance profiling pentru sheet-uri mari
+
+---
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*
