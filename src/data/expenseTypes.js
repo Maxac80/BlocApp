@@ -2,18 +2,21 @@ export const defaultExpenseTypes = [
   {
     name: "Apă caldă",
     defaultDistribution: "consumption",
+    consumptionUnit: "mc",
     invoiceEntryMode: "single",
     expenseEntryMode: "staircase"
   },
   {
     name: "Apă rece",
     defaultDistribution: "consumption",
+    consumptionUnit: "mc",
     invoiceEntryMode: "single",
     expenseEntryMode: "staircase"
   },
   {
     name: "Canal",
     defaultDistribution: "consumption",
+    consumptionUnit: "mc",
     invoiceEntryMode: "single",
     expenseEntryMode: "staircase"
   },

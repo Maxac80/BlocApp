@@ -398,6 +398,28 @@ export const useSheetManagement = (associationId) => {
   }, [currentSheet]);
 
   /**
+   * Funcție helper pentru a elimina recursiv toate valorile undefined
+   */
+  const removeUndefinedValues = (obj) => {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(removeUndefinedValues);
+
+    return Object.keys(obj).reduce((acc, key) => {
+      const value = obj[key];
+      if (value !== undefined) {
+        // Dacă valoarea este un obiect, curăță-l recursiv
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          acc[key] = removeUndefinedValues(value);
+        } else {
+          acc[key] = value;
+        }
+      }
+      return acc;
+    }, {});
+  };
+
+  /**
    * Actualizează o cheltuială existentă în sheet-ul curent
    */
   const updateExpenseInSheet = useCallback(async (expenseId, updatedExpenseData) => {
@@ -419,15 +441,21 @@ export const useSheetManagement = (associationId) => {
         throw new Error('Cheltuiala nu a fost găsită în sheet');
       }
 
-      // Creează array-ul actualizat de cheltuieli
-      const updatedExpenses = [...currentExpenses];
-      updatedExpenses[expenseIndex] = {
+      // Creează obiectul actualizat cu date curățate
+      const mergedExpense = {
         ...currentExpenses[expenseIndex],
         ...updatedExpenseData,
         updatedAt: new Date().toISOString()
       };
 
-      console.log('📝 Updating expense in sheet:', { expenseId, updatedData: updatedExpenseData });
+      // Curăță recursiv valorile undefined
+      const cleanedExpense = removeUndefinedValues(mergedExpense);
+
+      // Creează array-ul actualizat de cheltuieli
+      const updatedExpenses = [...currentExpenses];
+      updatedExpenses[expenseIndex] = cleanedExpense;
+
+      console.log('📝 Updating expense in sheet:', { expenseId, updatedData: cleanedExpense });
 
       await setDoc(sheetRef, {
         expenses: updatedExpenses,

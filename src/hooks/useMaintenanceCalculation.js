@@ -21,6 +21,7 @@ const useMaintenanceCalculation = ({
   getSheetBalances,
   getCurrentSheetBalance,
   updateCurrentSheetMaintenanceTable,
+  getExpenseConfig,
   ...otherProps
 }) => {
   const [monthlyBalances, setMonthlyBalances] = useState({});
@@ -204,6 +205,27 @@ const useMaintenanceCalculation = ({
             const apartmentStair = stairs?.find(s => s.id === apartment.stairId);
             const apartmentBlockId = apartmentStair?.blockId;
 
+            // 🏠 VERIFICARE PARTICIPARE APARTAMENT
+            let participation = null;
+            if (getExpenseConfig) {
+              const config = getExpenseConfig(expense.name);
+              participation = config?.apartmentParticipation?.[apartment.id];
+            }
+
+            // Dacă apartamentul este exclus, nu participă deloc
+            if (participation?.type === 'excluded') {
+              expenseDetails[expense.name] = 0;
+              return; // Continue to next expense
+            }
+
+            // Dacă participarea e sumă fixă, folosește doar acea sumă
+            if (participation?.type === 'fixed') {
+              const fixedAmount = parseFloat(participation.value || 0);
+              currentMaintenance += fixedAmount;
+              expenseDetails[expense.name] = fixedAmount;
+              return; // Continue to next expense
+            }
+
             // Determină amount-ul relevant pentru acest apartament bazat pe receptionMode
             let relevantAmount = expense.amount || 0;
 
@@ -218,7 +240,7 @@ const useMaintenanceCalculation = ({
             // Calculează cât din relevantAmount revine acestui apartament
             switch (distributionType) {
               case 'apartment':
-              case 'perApartment':
+              case 'perApartament':
                 if (receptionMode === 'per_block' && apartmentBlockId) {
                   // Împarte suma blocului la apartamentele din acel bloc
                   const blockApartments = associationApartments.filter(apt => {
@@ -260,6 +282,14 @@ const useMaintenanceCalculation = ({
                 break;
               default:
                 apartmentExpense = 0;
+            }
+
+            // 📊 APLICARE PARTICIPARE PROCENTUALĂ
+            if (participation?.type === 'percentage') {
+              const percent = participation.value;
+              // Dacă valoarea e între 0-1, e fracție; dacă e între 1-100, e procent
+              const multiplier = percent < 1 ? percent : (percent / 100);
+              apartmentExpense = apartmentExpense * multiplier;
             }
 
             currentMaintenance += apartmentExpense;

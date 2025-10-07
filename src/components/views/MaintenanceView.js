@@ -1,5 +1,5 @@
 // src/components/views/MaintenanceView.js
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
@@ -37,10 +37,13 @@ const MaintenanceView = ({
   areAllExpensesFullyCompleted,
   getExpenseConfig,
   handleAddExpense: addExpenseFromHook,  // Redenumit pentru a evita conflict de nume
+  handleUpdateExpense,
   handleDeleteMonthlyExpense,
   updateExpenseConsumption,
   updateExpenseIndividualAmount,
-  
+  updatePendingConsumption,
+  updatePendingIndividualAmount,
+
   // Maintenance calculation
   maintenanceData,
   togglePayment,
@@ -96,8 +99,30 @@ const MaintenanceView = ({
   // State pentru modalul de cheltuieli disponibile
   const [showAvailableExpensesModal, setShowAvailableExpensesModal] = useState(false);
 
+  // State pentru editarea cheltuielilor
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  // Handler pentru editarea cheltuielilor
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setShowExpenseEntryModal(true);
+  };
+
   // State pentru tab-urile de scări
   const [selectedStairTab, setSelectedStairTab] = useState('all');
+
+  // State pentru tab-urile Cheltuieli/Consumuri
+  const [selectedContentTab, setSelectedContentTab] = useState('expenses'); // 'expenses' sau 'consumptions'
+
+  // State pentru auto-expandare cheltuială în tab Consumuri
+  const [expenseToExpand, setExpenseToExpand] = useState(null);
+
+  // Reset expenseToExpand când schimbăm tab-ul sau luna
+  useEffect(() => {
+    if (selectedContentTab === 'expenses') {
+      setExpenseToExpand(null);
+    }
+  }, [selectedContentTab, currentMonth]);
 
   // Hook pentru gestionarea încasărilor
   const { addIncasare } = useIncasari(association || null, currentMonth);
@@ -938,28 +963,76 @@ const MaintenanceView = ({
                 </div>
               </div>
 
-              {/* Conținut tab - Cheltuieli și Consumuri (carduri separate) */}
-              <div className="grid lg:grid-cols-2 gap-6 mb-6">
-                <ExpenseList
-                  associationExpenses={associationExpenses}
-                  currentMonth={currentMonth}
-                  getExpenseConfig={getExpenseConfig}
-                  getAssociationApartments={getAssociationApartments}
-                  handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
-                  isMonthReadOnly={isMonthReadOnly}
-                  monthType={monthType}
-                />
+              {/* Tab-uri pentru Cheltuieli și Consumuri */}
+              <div className="mb-6">
+                <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200">
+                  <div className="flex">
+                    <button
+                      onClick={() => setSelectedContentTab('expenses')}
+                      className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
+                        selectedContentTab === 'expenses'
+                          ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700'
+                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      📋 Cheltuieli distribuite
+                    </button>
+                    <button
+                      onClick={() => setSelectedContentTab('consumptions')}
+                      className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                        selectedContentTab === 'consumptions'
+                          ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
+                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      📊 Consumuri
+                    </button>
+                  </div>
+                </div>
 
-                <ConsumptionInput
-                  associationExpenses={associationExpenses}
-                  getExpenseConfig={getExpenseConfig}
-                  getAssociationApartments={getAssociationApartments}
-                  updateExpenseConsumption={updateExpenseConsumption}
-                  updateExpenseIndividualAmount={updateExpenseIndividualAmount}
-                  isMonthReadOnly={isMonthReadOnly}
-                  currentMonth={currentMonth}
-                  monthType={monthType}
-                />
+                {/* Conținut tab-uri */}
+                <div className="bg-white rounded-b-xl shadow-sm border border-t-0 border-gray-200 p-6">
+                  {selectedContentTab === 'expenses' ? (
+                    <ExpenseList
+                      associationExpenses={associationExpenses}
+                      currentMonth={currentMonth}
+                      currentSheet={currentSheet}
+                      getExpenseConfig={getExpenseConfig}
+                      getAssociationApartments={getAssociationApartments}
+                      handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
+                      isMonthReadOnly={isMonthReadOnly}
+                      monthType={monthType}
+                      selectedStairTab={selectedStairTab}
+                      blocks={blocks}
+                      stairs={stairs}
+                      onEditExpense={handleEditExpense}
+                      onConsumptionClick={(expenseName) => {
+                        setExpenseToExpand(expenseName);
+                        setSelectedContentTab('consumptions');
+                      }}
+                    />
+                  ) : (
+                    <ConsumptionInput
+                      associationExpenses={associationExpenses}
+                      getExpenseConfig={getExpenseConfig}
+                      getAssociationApartments={getAssociationApartments}
+                      updateExpenseConsumption={updateExpenseConsumption}
+                      updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+                      updatePendingConsumption={updatePendingConsumption}
+                      updatePendingIndividualAmount={updatePendingIndividualAmount}
+                      currentSheet={currentSheet}
+                      isMonthReadOnly={isMonthReadOnly}
+                      currentMonth={currentMonth}
+                      monthType={monthType}
+                      blocks={blocks}
+                      stairs={stairs}
+                      selectedStairTab={selectedStairTab}
+                      setSelectedStairTab={setSelectedStairTab}
+                      getDisabledExpenseTypes={getDisabledExpenseTypes}
+                      expandExpenseName={expenseToExpand}
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Tabelul de întreținere - card separat */}
@@ -1140,11 +1213,15 @@ const MaintenanceView = ({
 
         <ExpenseEntryModal
           isOpen={showExpenseEntryModal}
-          onClose={() => setShowExpenseEntryModal(false)}
+          onClose={() => {
+            setShowExpenseEntryModal(false);
+            setEditingExpense(null);
+          }}
           blocks={blocks}
           stairs={stairs}
           availableExpenseTypes={getAvailableExpenseTypes()}
           getExpenseConfig={getExpenseConfig}
+          editingExpense={editingExpense}
           handleAddExpense={async (newExpenseData) => {
             console.log('🎯 WRAPPER received from modal:', newExpenseData);
             console.log('🎯 WRAPPER typeof PARAM1:', typeof newExpenseData);
@@ -1158,6 +1235,19 @@ const MaintenanceView = ({
             console.log('🎯 WRAPPER returned:', result);
             if (result !== false) {
               setShowExpenseEntryModal(false);
+              setEditingExpense(null);
+            }
+            return result;
+          }}
+          handleUpdateExpense={async (expenseId, updatedExpenseData) => {
+            console.log('✏️ UPDATE WRAPPER received:', { expenseId, updatedExpenseData });
+
+            const result = await handleUpdateExpense(expenseId, updatedExpenseData);
+
+            console.log('✏️ UPDATE WRAPPER returned:', result);
+            if (result !== false) {
+              setShowExpenseEntryModal(false);
+              setEditingExpense(null);
             }
             return result;
           }}

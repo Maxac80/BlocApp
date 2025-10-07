@@ -436,6 +436,76 @@ export const useExpenseManagement = ({
     }
   }, [currentSheet, updateExpenseInSheet]);
 
+  // 📝 SALVARE CONSUMURI PENDING (pentru cheltuieli nedistribuite)
+  const updatePendingConsumption = useCallback(async (expenseTypeName, apartmentId, consumption) => {
+    try {
+      if (!currentSheet?.id) {
+        console.error('❌ No current sheet');
+        return;
+      }
+
+      // Obține datele existente
+      const pendingConsumptions = currentSheet.pendingConsumptions || {};
+      const expenseConsumptions = pendingConsumptions[expenseTypeName] || {};
+
+      // Actualizează cu noua valoare
+      const updatedPendingConsumptions = {
+        ...pendingConsumptions,
+        [expenseTypeName]: {
+          ...expenseConsumptions,
+          [apartmentId]: consumption
+        }
+      };
+
+      // Salvează în sheet folosind updateDoc direct pe sheet
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+
+      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+        pendingConsumptions: updatedPendingConsumptions
+      });
+
+      console.log('✅ Pending consumption saved for:', expenseTypeName, apartmentId);
+    } catch (error) {
+      console.error('❌ Error saving pending consumption:', error);
+    }
+  }, [currentSheet]);
+
+  // 📝 SALVARE SUME INDIVIDUALE PENDING (pentru cheltuieli nedistribuite)
+  const updatePendingIndividualAmount = useCallback(async (expenseTypeName, apartmentId, amount) => {
+    try {
+      if (!currentSheet?.id) {
+        console.error('❌ No current sheet');
+        return;
+      }
+
+      // Obține datele existente
+      const pendingIndividualAmounts = currentSheet.pendingIndividualAmounts || {};
+      const expenseAmounts = pendingIndividualAmounts[expenseTypeName] || {};
+
+      // Actualizează cu noua valoare
+      const updatedPendingAmounts = {
+        ...pendingIndividualAmounts,
+        [expenseTypeName]: {
+          ...expenseAmounts,
+          [apartmentId]: amount
+        }
+      };
+
+      // Salvează în sheet folosind updateDoc direct pe sheet
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+
+      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+        pendingIndividualAmounts: updatedPendingAmounts
+      });
+
+      console.log('✅ Pending individual amount saved for:', expenseTypeName, apartmentId);
+    } catch (error) {
+      console.error('❌ Error saving pending individual amount:', error);
+    }
+  }, [currentSheet]);
+
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleDeleteCustomExpense = useCallback(async (expenseName) => {
     try {
@@ -515,6 +585,118 @@ export const useExpenseManagement = ({
     return addExpenseInternal(expenseDataParam, addInvoiceFn);
   };
 
+  // ✏️ ACTUALIZAREA CHELTUIELII
+  const handleUpdateExpense = async (expenseId, expenseDataParam) => {
+    console.log('✏️ handleUpdateExpense START:', {
+      expenseId,
+      expenseData: expenseDataParam
+    });
+
+    const expenseData = expenseDataParam;
+
+    if (!expenseId || !expenseData?.name || !association) {
+      console.log('❌ Validation failed:', {
+        expenseId,
+        expenseDataName: expenseData?.name,
+        hasAssociation: !!association
+      });
+      return false;
+    }
+
+    const expenseSettings = getExpenseConfig(expenseData.name);
+    const isConsumptionBased = expenseSettings.distributionType === "consumption";
+    const isIndividualBased = expenseSettings.distributionType === "individual";
+
+    console.log('✏️ Expense settings:', { expenseSettings, isConsumptionBased, isIndividualBased });
+
+    // Calculează amount-ul total bazat pe receptionMode
+    let totalAmount = 0;
+
+    if (expenseData.amountsByBlock) {
+      totalAmount = Object.values(expenseData.amountsByBlock).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    } else if (expenseData.amountsByStair) {
+      totalAmount = Object.values(expenseData.amountsByStair).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    } else if (expenseData.amount) {
+      totalAmount = parseFloat(expenseData.amount);
+    } else if (expenseData.billAmount) {
+      totalAmount = parseFloat(expenseData.billAmount);
+    }
+
+    console.log('✏️ Calculated total amount:', totalAmount);
+
+    // Validări
+    if (isConsumptionBased && (!expenseData.unitPrice || !expenseData.billAmount)) {
+      alert("Pentru cheltuielile pe consum trebuie să introduci atât prețul pe unitate cât și totalul facturii!");
+      return false;
+    }
+
+    if (!isConsumptionBased && !isIndividualBased && totalAmount === 0) {
+      alert("Introduceți suma cheltuielii!");
+      return false;
+    }
+
+    if (isIndividualBased && totalAmount === 0) {
+      alert("Introduceți suma totală pentru cheltuiala individuală!");
+      return false;
+    }
+
+    // Funcție helper pentru a elimina recursiv toate valorile undefined
+    const removeUndefined = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(removeUndefined);
+
+      return Object.keys(obj).reduce((acc, key) => {
+        const value = obj[key];
+        if (value !== undefined) {
+          // Dacă valoarea este un obiect, curăță-l recursiv
+          if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+            acc[key] = removeUndefined(value);
+          } else {
+            acc[key] = value;
+          }
+        }
+        return acc;
+      }, {});
+    };
+
+    try {
+      // Găsește cheltuiala existentă pentru a păstra consumption și individualAmounts
+      const existingExpense = currentSheet?.expenses?.find(exp => exp.id === expenseId);
+
+      // Actualizează cheltuiala
+      const updatedExpenseRaw = {
+        ...existingExpense,
+        name: expenseData.name,
+        amount: isConsumptionBased ? 0 : totalAmount,
+        distributionType: expenseSettings.distributionType,
+        receptionMode: expenseSettings.receptionMode,
+        expenseEntryMode: expenseSettings.expenseEntryMode,
+        isUnitBased: isConsumptionBased,
+        unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
+        billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
+        amountsByBlock: expenseData.amountsByBlock || {},
+        amountsByStair: expenseData.amountsByStair || {},
+        // Păstrează consumption și individualAmounts existente
+        consumption: existingExpense?.consumption || {},
+        individualAmounts: existingExpense?.individualAmounts || {}
+      };
+
+      // Curăță recursiv toate valorile undefined pentru Firestore
+      const updatedExpense = removeUndefined(updatedExpenseRaw);
+
+      console.log('✏️ Calling updateExpenseInSheet with:', updatedExpense);
+      await updateExpenseInSheet(expenseId, updatedExpense);
+      console.log('✏️ Expense updated successfully');
+
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la actualizarea cheltuielii:', error);
+      alert('Eroare la actualizarea cheltuielii: ' + error.message);
+      return false;
+    }
+  };
+
   // 🎯 RETURN API
   return {
     // 📊 State și configurări (doar participare - configurările sunt în useExpenseConfigurations)
@@ -537,11 +719,14 @@ export const useExpenseManagement = ({
 
     // ➕ Funcții de adăugare și actualizare
     handleAddExpense,
+    handleUpdateExpense,
     handleAddCustomExpense,
     handleDeleteCustomExpense,
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
+    updatePendingConsumption,
+    updatePendingIndividualAmount,
 
     // 📊 Statistici și date
     expenseStats

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Edit3, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp, Calculator } from 'lucide-react';
+import { defaultExpenseTypes } from '../../data/expenseTypes';
 
 const ConsumptionInput = ({
   associationExpenses,
@@ -7,496 +8,454 @@ const ConsumptionInput = ({
   getAssociationApartments,
   updateExpenseConsumption,
   updateExpenseIndividualAmount,
+  updatePendingConsumption,
+  updatePendingIndividualAmount,
+  currentSheet,
   isMonthReadOnly,
   currentMonth,
-  monthType
+  monthType,
+  blocks,
+  stairs,
+  selectedStairTab,
+  setSelectedStairTab,
+  getDisabledExpenseTypes,
+  expandExpenseName
 }) => {
-  const [showConsumptionModal, setShowConsumptionModal] = useState(false);
+  // State pentru expandarea cheltuielilor (accordion)
   const [expandedExpenses, setExpandedExpenses] = useState({});
-  
-  // Funcție pentru sortarea cheltuielilor ca în dropdown
-  const sortExpenses = (expenses) => {
-    return expenses.sort((a, b) => {
-      // Sortare ca în dropdown: mai întâi cele standard (în ordinea din defaultExpenseTypes), apoi cele personalizate
-      const defaultTypes = [
-        "Apă caldă", "Apă rece", "Canal", "Întreținere lift", "Energie electrică", 
-        "Service interfon", "Cheltuieli cu asociația", "Salarii NETE", "Impozit ANAF", 
+
+  // Auto-expandare când se primește un expense name
+  useEffect(() => {
+    if (expandExpenseName) {
+      // Expandează DOAR această cheltuială (resetează restul)
+      setExpandedExpenses({
+        [expandExpenseName]: true
+      });
+    } else {
+      // Când nu avem expense name, strânge toate
+      setExpandedExpenses({});
+    }
+  }, [expandExpenseName]);
+
+  // Toggle expand pentru o cheltuială
+  const toggleExpense = (expenseKey) => {
+    setExpandedExpenses(prev => ({
+      ...prev,
+      [expenseKey]: !prev[expenseKey]
+    }));
+  };
+
+  // Obține toate tipurile de cheltuieli care POT avea consum (chiar dacă nu sunt distribuite)
+  // FILTREAZĂ DOAR CELE ACTIVE (nu disabled)
+  const getAllConsumptionExpenseTypes = () => {
+    const disabledTypes = getDisabledExpenseTypes ? getDisabledExpenseTypes() : [];
+
+    // Tipurile default care sunt pe consum sau individual ȘI ACTIVE
+    const defaultConsumptionTypes = defaultExpenseTypes.filter(type =>
+      (type.defaultDistribution === 'consumption' || type.defaultDistribution === 'individual') &&
+      !disabledTypes.some(dt => dt.name === type.name)
+    );
+
+    // Adaugă și cheltuielile custom care au distribuție pe consum/individual ȘI ACTIVE
+    const customTypes = [];
+    associationExpenses.forEach(expense => {
+      const config = getExpenseConfig(expense.name);
+      if ((config.distributionType === 'consumption' || config.distributionType === 'individual') &&
+          !defaultConsumptionTypes.some(dt => dt.name === expense.name) &&
+          !disabledTypes.some(dt => dt.name === expense.name)) {
+        customTypes.push({
+          name: expense.name,
+          defaultDistribution: config.distributionType
+        });
+      }
+    });
+
+    return [...defaultConsumptionTypes, ...customTypes];
+  };
+
+  // Funcție pentru sortarea cheltuielilor
+  const sortExpenseTypes = (types) => {
+    return types.sort((a, b) => {
+      const defaultOrder = [
+        "Apă caldă", "Apă rece", "Canal", "Întreținere lift", "Energie electrică",
+        "Service interfon", "Cheltuieli cu asociația", "Salarii NETE", "Impozit ANAF",
         "Spații în folosință", "Căldură"
       ];
-      
-      const aIndex = defaultTypes.indexOf(a.name);
-      const bIndex = defaultTypes.indexOf(b.name);
-      
-      // Dacă ambele sunt standard, sortez după index
+
+      const aIndex = defaultOrder.indexOf(a.name);
+      const bIndex = defaultOrder.indexOf(b.name);
+
       if (aIndex !== -1 && bIndex !== -1) {
         return aIndex - bIndex;
       }
-      
-      // Cheltuielile standard vin înaintea celor personalizate
+
       if (aIndex !== -1 && bIndex === -1) return -1;
       if (aIndex === -1 && bIndex !== -1) return 1;
-      
-      // Ambele sunt personalizate, sortez alfabetic
+
       return a.name.localeCompare(b.name);
     });
   };
-  
-  const consumptionExpenses = sortExpenses(associationExpenses.filter(expense => 
-    getExpenseConfig(expense.name).distributionType === "consumption" || 
-    getExpenseConfig(expense.name).distributionType === "individual"
-  ));
-  
-  // Funcție pentru a determina dacă un apartament are câmpuri goale
-  const getApartmentBlankFields = (apartment, expense) => {
-    const expenseSettings = getExpenseConfig(expense.name);
-    if (expenseSettings.distributionType === "individual") {
-      const value = expense.individualAmounts?.[apartment.id];
-      return !value || parseFloat(value) === 0;
-    } else {
-      const value = expense.consumption?.[apartment.id];
-      return !value || parseFloat(value) === 0;
-    }
-  };
-  
-  // Funcție pentru a comuta expansiunea unei cheltuieli
-  const toggleExpenseExpansion = (expenseId) => {
-    // console.log('Toggling expense:', expenseId, 'Current state:', expandedExpenses[expenseId]);
-    setExpandedExpenses(prev => {
-      const newState = {
-        ...prev,
-        [expenseId]: !prev[expenseId]
-      };
-      // console.log('New state:', newState);
-      return newState;
-    });
-  };
-  
-  // Inițializez toate cheltuielile ca fiind colapsate
-  React.useEffect(() => {
-    // console.log('Initializing expanded state for expenses:', consumptionExpenses);
-    const initialExpanded = {};
-    consumptionExpenses.forEach(expense => {
-      initialExpanded[expense.id] = false;
-    });
-    // console.log('Setting initial expanded state:', initialExpanded);
-    setExpandedExpenses(initialExpanded);
-  }, [consumptionExpenses.length]); // Schimb dependency pentru a evita loop-uri
 
-  // Calculez câmpurile completate vs total
-  const apartments = getAssociationApartments();
-  const totalFields = consumptionExpenses.length * apartments.length;
-  
-  const completedFields = consumptionExpenses.reduce((total, expense) => {
-    const expenseSettings = getExpenseConfig(expense.name);
-    return total + apartments.filter(apartment => {
-      if (expenseSettings.distributionType === "individual") {
-        const value = expense.individualAmounts?.[apartment.id];
-        return value && parseFloat(value) > 0;
+  const allConsumptionTypes = sortExpenseTypes(getAllConsumptionExpenseTypes());
+
+  // Găsește cheltuiala distribuită pentru un tip (dacă există)
+  const getDistributedExpense = (expenseTypeName) => {
+    return associationExpenses.find(exp => exp.name === expenseTypeName);
+  };
+
+  // Determină blocul și scara pentru filtrul activ
+  const getFilterInfo = () => {
+    if (selectedStairTab === 'all') return { type: 'all' };
+
+    const selectedStair = stairs?.find(s => s.id === selectedStairTab);
+    if (!selectedStair) return { type: 'all' };
+
+    const selectedBlock = blocks?.find(b => b.id === selectedStair.blockId);
+    return {
+      type: 'stair',
+      stairId: selectedStair.id,
+      blockId: selectedBlock?.id,
+      stairName: selectedStair.name,
+      blockName: selectedBlock?.name
+    };
+  };
+
+  // Filtrează apartamentele pe baza filtrului activ
+  const getFilteredApartments = () => {
+    const allApartments = getAssociationApartments();
+    const filterInfo = getFilterInfo();
+
+    if (filterInfo.type === 'all') return allApartments;
+
+    return allApartments.filter(apt => apt.stairId === filterInfo.stairId);
+  };
+
+  // Calculează status pentru o cheltuială
+  const getExpenseStatus = (expenseTypeName) => {
+    const expense = getDistributedExpense(expenseTypeName);
+    const config = getExpenseConfig(expenseTypeName);
+    const apartments = getFilteredApartments();
+    const isConsumption = config.distributionType === 'consumption';
+
+    // Obține datele din expense SAU din pending
+    let dataObject = {};
+    if (expense) {
+      dataObject = isConsumption ? (expense.consumption || {}) : (expense.fixedAmounts || {});
+    } else {
+      // Cheltuială nedistribuită - verifică pending data
+      if (isConsumption) {
+        dataObject = currentSheet?.pendingConsumptions?.[expenseTypeName] || {};
       } else {
-        const value = expense.consumption?.[apartment.id];
-        return value && parseFloat(value) > 0;
+        dataObject = currentSheet?.pendingIndividualAmounts?.[expenseTypeName] || {};
       }
+    }
+
+    const completed = apartments.filter(apt => {
+      const value = dataObject?.[apt.id];
+      return value && parseFloat(value) >= 0;
     }).length;
-  }, 0);
-  
-  const emptyFields = totalFields - completedFields;
+
+    return {
+      status: expense
+        ? (completed === apartments.length ? 'complete' : 'incomplete')
+        : 'not_distributed',
+      completed,
+      total: apartments.length,
+      isComplete: completed === apartments.length && apartments.length > 0
+    };
+  };
 
   return (
     <>
-      <div className={`p-6 rounded-xl shadow-lg border-2 mr-2 ${
-        monthType === 'historic'
-          ? 'bg-gray-50 border-gray-300'
-          : isMonthReadOnly
-          ? 'bg-purple-50 border-purple-300'
-          : 'bg-white border-gray-200'
-      }`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg font-semibold ${
-            monthType === 'historic' 
-              ? 'text-gray-800' 
-              : isMonthReadOnly 
-              ? 'text-purple-800' 
-              : ''
-          }`}>
-            📊 Consumuri și Sume individuale
+      {/* Header cu total */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {allConsumptionTypes.length} {allConsumptionTypes.length === 1 ? 'tip de cheltuială' : 'tipuri de cheltuieli'}
+            {getFilterInfo().type !== 'all' && (
+              <span className="text-sm font-normal text-gray-600 ml-2">
+                ({getFilterInfo().blockName} - {getFilterInfo().stairName})
+              </span>
+            )}
           </h3>
-          {consumptionExpenses.length > 0 && (
-            <button
-              onClick={() => setShowConsumptionModal(true)}
-              className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 text-sm"
-              title="Deschide editorul complet"
-            >
-              {isMonthReadOnly ? <Eye className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-              {isMonthReadOnly ? "Vezi" : "Editează"}
-            </button>
-          )}
         </div>
-      {consumptionExpenses.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="text-gray-400 mb-2">📏</div>
-          <p className="text-gray-600 text-sm">Nu există cheltuieli pe consum sau individuale</p>
-          <p className="text-gray-500 text-xs">Adaugă cheltuieli precum Apă, Căldură, etc.</p>
+      </div>
+
+      {allConsumptionTypes.length === 0 ? (
+        <div className="text-center py-12">
+          <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Nu există cheltuieli pe consum sau individuale</p>
+          <p className="text-gray-500 text-sm mt-1">Configurează tipuri de cheltuieli cu distribuție pe consum</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Preview - informații generale */}
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">{consumptionExpenses.length}</div>
-              <div className="text-sm text-blue-800">Cheltuieli cu consumuri</div>
-            </div>
-            <div className="p-3 bg-orange-50 rounded-lg">
-              <div className="text-lg font-bold text-orange-600">{emptyFields}</div>
-              <div className="text-sm text-orange-800">câmpuri de completat din {totalFields}</div>
-            </div>
-          </div>
-          
-          {/* Preview listă cheltuieli cu scroll */}
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {consumptionExpenses.map(expense => {
-              const expenseSettings = getExpenseConfig(expense.name);
-              
-              // Calculez câmpurile completate pentru această cheltuială
-              const completedForExpense = apartments.filter(apartment => {
-                if (expenseSettings.distributionType === "individual") {
-                  const value = expense.individualAmounts?.[apartment.id];
-                  return value && parseFloat(value) > 0;
-                } else {
-                  const value = expense.consumption?.[apartment.id];
-                  return value && parseFloat(value) > 0;
-                }
-              }).length;
-              
-              const isFullyCompleted = completedForExpense === apartments.length;
-              const isPartiallyCompleted = completedForExpense > 0;
-              
-              return (
-                <div key={expense.id} className={`p-3 rounded-lg flex items-center justify-between ${
-                  monthType === 'historic' ? 'bg-gray-200' : 'bg-gray-50'
-                }`}>
-                  <div>
-                    <span className="font-medium">{expense.name}</span>
-                    <span className="text-sm text-gray-600 ml-2">
-                      ({expenseSettings.distributionType === "individual" ? "Sume individuale" : "Pe consum"})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isFullyCompleted ? (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Completat</span>
-                    ) : isPartiallyCompleted ? (
-                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                        {completedForExpense}/{apartments.length}
-                      </span>
-                    ) : (
-                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Necompletat</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      </div>
+          {allConsumptionTypes.map(expenseType => {
+            const expense = getDistributedExpense(expenseType.name);
+            const config = getExpenseConfig(expenseType.name);
+            const status = getExpenseStatus(expenseType.name);
+            const isExpanded = expandedExpenses[expenseType.name];
+            const apartments = getFilteredApartments();
 
-      {/* Modal pentru editarea consumurilor */}
-      {showConsumptionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-6 bg-green-50 border-b flex items-center justify-between">
-              <h3 className="text-xl font-semibold">
-                📊 {isMonthReadOnly ? 'Vizualizare' : 'Editare'} Consumuri & Sume - {currentMonth}
-              </h3>
-              <button
-                onClick={() => setShowConsumptionModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-              <div className="space-y-6">
-                {consumptionExpenses.map(expense => {
-                  const expenseSettings = getExpenseConfig(expense.name);
-                  const isExpanded = expandedExpenses[expense.id];
-                  const apartmentsWithBlanks = getAssociationApartments().filter(apt => 
-                    getApartmentBlankFields(apt, expense)
-                  );
-                  const totalApartments = getAssociationApartments().length;
-                  const isFullyCompleted = apartmentsWithBlanks.length === 0 && totalApartments > 0;
-                  
-                  return (
-                    <div key={expense.id} className="border-2 border-gray-200 rounded-xl overflow-hidden">
-                      {/* Header colapsabil */}
-                      <div 
-                        className="p-4 bg-indigo-50 border-b cursor-pointer hover:bg-indigo-100 transition-colors"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleExpenseExpansion(expense.id);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-indigo-600 flex items-center">
-                              {isMonthReadOnly && (
-                                <span className="bg-gray-400 text-white text-xs px-2 py-1 rounded mr-2">🔒 PUBLICATĂ</span>
-                              )}
-                              {expense.name}
-                              {isFullyCompleted ? (
-                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded ml-2">
-                                  Completat
-                                </span>
-                              ) : apartmentsWithBlanks.length > 0 && (
-                                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded ml-2">
-                                  {apartmentsWithBlanks.length} câmpuri goale
-                                </span>
-                              )}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {expenseSettings.distributionType === "individual" ? 
-                                `Sume individuale - Total facturat: ${expense.amount} RON` :
-                                expense.isUnitBased ? 
-                                  `${expense.unitPrice} RON/${expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"} | Factură: ${expense.billAmount} RON` :
-                                  `${expense.amount} RON total`
-                              }
-                            </p>
-                            
-                            {/* Totals pentru consum în header când e colapsat */}
-                            {!isExpanded && expenseSettings.distributionType === "consumption" && (
-                              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-                                <div className="p-2 bg-blue-50 rounded text-center">
-                                  <div className="text-gray-500">Total consum</div>
-                                  <div className="font-medium text-blue-600">
-                                    {Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
-                                  </div>
-                                </div>
-                                <div className="p-2 bg-green-50 rounded text-center">
-                                  <div className="text-gray-500">Total calculat</div>
-                                  <div className="font-medium text-green-600">
-                                    {(Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice).toFixed(2)} RON
-                                  </div>
-                                </div>
-                                <div className="p-2 bg-orange-50 rounded text-center">
-                                  <div className="text-gray-500">Diferența</div>
-                                  <div className={`font-medium ${(() => {
-                                    const totalCalculat = Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice;
-                                    const diferenta = totalCalculat - expense.billAmount;
-                                    const procentDiferenta = expense.billAmount > 0 ? Math.abs(diferenta / expense.billAmount * 100) : 0;
-                                    
-                                    if (procentDiferenta < 5) return "text-green-600";
-                                    else if (procentDiferenta <= 10) return "text-yellow-600";
-                                    else return "text-red-600";
-                                  })()}`}>
-                                    {(Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice - expense.billAmount).toFixed(2)} RON
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Totals pentru individual în header când e colapsat */}
-                            {!isExpanded && expenseSettings.distributionType === "individual" && (
-                              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-                                <div className="p-2 bg-blue-50 rounded text-center">
-                                  <div className="text-gray-500">Total introdus</div>
-                                  <div className="font-medium text-blue-600">
-                                    {Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} RON
-                                  </div>
-                                </div>
-                                <div className="p-2 bg-green-50 rounded text-center">
-                                  <div className="text-gray-500">Total facturat</div>
-                                  <div className="font-medium text-green-600">{expense.amount} RON</div>
-                                </div>
-                                <div className="p-2 bg-orange-50 rounded text-center">
-                                  <div className="text-gray-500">Diferența</div>
-                                  <div className={`font-medium ${(() => {
-                                    const totalIntrodus = Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
-                                    const diferenta = totalIntrodus - expense.amount;
-                                    const procentDiferenta = expense.amount > 0 ? Math.abs(diferenta / expense.amount * 100) : 0;
-                                    
-                                    if (procentDiferenta < 5) return "text-green-600";
-                                    else if (procentDiferenta <= 10) return "text-yellow-600";
-                                    else return "text-red-600";
-                                  })()}`}>
-                                    {(Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) - expense.amount).toFixed(2)} RON
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
-                              {isExpanded ? 'Închide' : 'Deschide'}
+            const isConsumption = config.distributionType === 'consumption';
+
+            // Obține date din expense distribuit SAU din pending consumptions
+            let dataObject = {};
+            if (expense) {
+              // Cheltuială distribuită - folosește datele din expense
+              dataObject = isConsumption
+                ? (expense.consumption || {})
+                : (expense.fixedAmounts || {});
+            } else {
+              // Cheltuială nedistribuită - folosește datele pending din sheet
+              if (isConsumption) {
+                dataObject = currentSheet?.pendingConsumptions?.[expenseType.name] || {};
+              } else {
+                dataObject = currentSheet?.pendingIndividualAmounts?.[expenseType.name] || {};
+              }
+            }
+
+            return (
+              <div key={expenseType.name} className="border border-gray-300 rounded-lg overflow-hidden hover:border-indigo-400 transition-colors">
+                {/* Header - întotdeauna vizibil */}
+                <div
+                  className={`p-3 ${
+                    status.status === 'not_distributed'
+                      ? 'bg-gray-50'
+                      : 'bg-gradient-to-r from-blue-50 to-white'
+                  } cursor-pointer hover:from-blue-100`}
+                  onClick={() => toggleExpense(expenseType.name)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Nume și sumă pe același rând */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-base text-gray-900">{expenseType.name}</h4>
+                          {status.status === 'not_distributed' && (
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                              Nedistribuită
                             </span>
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-gray-500" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-gray-500" />
-                            )}
+                          )}
+                        </div>
+                        {expense && (
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-blue-600 ml-4">
+                              {isConsumption && expense.unitPrice ? (
+                                `${parseFloat(expense.unitPrice).toFixed(2)} RON/${expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}`
+                              ) : (
+                                `${(expense.amount || 0).toFixed(2)} RON`
+                              )}
+                            </div>
                           </div>
+                        )}
+                      </div>
+
+                      {/* Status badge */}
+                      <div className="mt-2">
+                        {status.isComplete ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            ✓ {isConsumption ? 'Consumuri complete' : 'Sume complete'}
+                          </span>
+                        ) : status.status === 'not_distributed' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                            ⊘ Nedistribuită - {status.total} apartamente
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                            ⚠ {isConsumption ? 'Consumuri' : 'Sume'} incomplete: {status.completed}/{status.total} apartamente
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Informații pe linie compactă */}
+                      <div className="space-y-1 text-xs mt-2">
+                        <div className="flex items-center gap-3 text-gray-600">
+                          <span className="font-medium">Tip:</span>
+                          <span>
+                            {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
+                            {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
+                          </span>
                         </div>
                       </div>
-                      
-                      {/* Conținutul colapsabil */}
-                      {isExpanded && (
-                        <div className="p-6">
-                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {getAssociationApartments().map(apartment => {
-                              const hasBlankField = getApartmentBlankFields(apartment, expense);
-                              const containerClass = hasBlankField 
-                                ? "flex items-center gap-2 p-2 border-2 border-red-300 bg-red-50 rounded" 
-                                : "flex items-center gap-2 p-2 border rounded";
-                              
-                              if (expenseSettings.distributionType === "individual") {
-                                return (
-                                  <div key={apartment.id} className={containerClass}>
-                                    <span className={`text-sm font-medium w-16 ${hasBlankField ? 'text-red-700' : ''}`}>
-                                      Apt {apartment.number}
-                                      {hasBlankField && <span className="text-red-500 ml-1">⚠️</span>}
-                                    </span>
-                                    {isMonthReadOnly ? (
-                                      <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-600">
-                                        {expense.individualAmounts?.[apartment.id] || "0"} RON
-                                      </div>
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        placeholder="RON"
-                                        value={expense.individualAmounts?.[apartment.id] || ""}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                                            const normalizedValue = value.replace(',', '.');
-                                            updateExpenseIndividualAmount(expense.id, apartment.id, normalizedValue);
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          const value = e.target.value.replace(',', '.');
-                                          const numericValue = parseFloat(value) || 0;
-                                          updateExpenseIndividualAmount(expense.id, apartment.id, numericValue);
-                                        }}
-                                        className={`flex-1 p-2 border rounded text-sm ${hasBlankField ? 'border-red-300 bg-red-50' : ''}`}
-                                      />
-                                    )}
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div key={apartment.id} className={containerClass}>
-                                    <span className={`text-sm font-medium w-16 ${hasBlankField ? 'text-red-700' : ''}`}>
-                                      Apt {apartment.number}
-                                      {hasBlankField && <span className="text-red-500 ml-1">⚠️</span>}
-                                    </span>
-                                    {isMonthReadOnly ? (
-                                      <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-600">
-                                        {expense.consumption?.[apartment.id] || "0"} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
-                                      </div>
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        placeholder={expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
-                                        value={expense.consumption?.[apartment.id] || ""}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          if (value === "" || /^\d*[.,]?\d*$/.test(value)) {
-                                            const normalizedValue = value.replace(',', '.');
-                                            updateExpenseConsumption(expense.id, apartment.id, normalizedValue);
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          const value = e.target.value.replace(',', '.');
-                                          const numericValue = parseFloat(value) || 0;
-                                          updateExpenseConsumption(expense.id, apartment.id, numericValue);
-                                        }}
-                                        className={`flex-1 p-2 border rounded text-sm ${hasBlankField ? 'border-red-300 bg-red-50' : ''}`}
-                                      />
-                                    )}
-                                    {(parseFloat(expense.consumption?.[apartment.id]) || 0) > 0 && (
-                                      <span className="text-sm text-green-600 w-20 text-right">
-                                        {((parseFloat(expense.consumption?.[apartment.id]) || 0) * expense.unitPrice).toFixed(2)} RON
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              }
-                            })}
-                          </div>
-                          
-                          {/* Totaluri pentru fiecare cheltuială */}
-                          {expenseSettings.distributionType === "consumption" && (
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                          <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-3 bg-blue-50 rounded">
-                              <div className="text-sm text-gray-500">Total consum</div>
-                              <div className="font-bold text-blue-600">
-                                {Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
-                              </div>
-                            </div>
-                            <div className="p-3 bg-green-50 rounded">
-                              <div className="text-sm text-gray-500">Total calculat</div>
-                              <div className="font-bold text-green-600">
-                                {(Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice).toFixed(2)} RON
-                              </div>
-                            </div>
-                            <div className="p-3 bg-orange-50 rounded">
-                              <div className="text-sm text-gray-500">Diferența vs factură</div>
-                              <div className={`font-bold ${(() => {
-                                const totalCalculat = Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice;
-                                const diferenta = totalCalculat - expense.billAmount;
-                                const procentDiferenta = expense.billAmount > 0 ? Math.abs(diferenta / expense.billAmount * 100) : 0;
-                                
-                                if (procentDiferenta < 5) return "text-green-600";
-                                else if (procentDiferenta <= 10) return "text-yellow-600";
-                                else return "text-red-600";
-                              })()}`}>
-                                {(Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice - expense.billAmount).toFixed(2)} RON
-                              </div>
-                            </div>
-                          </div>
-                            </div>
-                          )}
-                          
-                          {expenseSettings.distributionType === "individual" && (
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                          <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-3 bg-blue-50 rounded">
-                              <div className="text-sm text-gray-500">Total introdus</div>
-                              <div className="font-bold text-blue-600">
-                                {Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} RON
-                              </div>
-                            </div>
-                            <div className="p-3 bg-green-50 rounded">
-                              <div className="text-sm text-gray-500">Total facturat</div>
-                              <div className="font-bold text-green-600">{expense.amount} RON</div>
-                            </div>
-                            <div className="p-3 bg-orange-50 rounded">
-                              <div className="text-sm text-gray-500">Diferența</div>
-                              <div className={`font-bold ${(() => {
-                                const totalIntrodus = Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
-                                const diferenta = totalIntrodus - expense.amount;
-                                const procentDiferenta = expense.amount > 0 ? Math.abs(diferenta / expense.amount * 100) : 0;
-                                
-                                if (procentDiferenta < 5) return "text-green-600";
-                                else if (procentDiferenta <= 10) return "text-yellow-600";
-                                else return "text-red-600";
-                              })()}`}>
-                                {(Object.values(expense.individualAmounts || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) - expense.amount).toFixed(2)} RON
-                              </div>
-                            </div>
-                          </div>
-                            </div>
-                          )}
-                        </div>
+                    </div>
+
+                    {/* Chevron pentru expand/collapse */}
+                    <div className="flex-shrink-0 pt-1">
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-500" />
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+
+                {/* Detalii expandabile */}
+                {isExpanded && (
+                  <div className="p-4 bg-white border-t border-gray-200 space-y-4">
+                    {status.status === 'not_distributed' && (
+                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                          💡 <strong>Notă:</strong> Această cheltuială nu a fost încă distribuită pentru {currentMonth}.
+                          Poți introduce {isConsumption ? 'consumurile' : 'sumele'} acum, iar când vei distribui cheltuiala, datele vor fi preluate automat.
+                        </p>
+                      </div>
+                    )}
+                    {/* Grid cu apartamente - afișat MEREU, chiar dacă nu e distribuită */}
+                    <>
+                      {/* Grid cu apartamente */}
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {apartments.map(apartment => {
+                            const value = dataObject[apartment.id] || '';
+                            const hasValue = value && parseFloat(value) >= 0;
+                            const isDisabled = isMonthReadOnly; // Permite editare chiar dacă nu e distribuită!
+                            const containerClass = hasValue
+                              ? "flex items-center gap-2 p-2 border rounded"
+                              : "flex items-center gap-2 p-2 border-2 border-orange-300 bg-orange-50 rounded";
+
+                            return (
+                              <div key={apartment.id} className={containerClass}>
+                                <span className={`text-sm font-medium w-16 ${!hasValue ? 'text-orange-700' : ''}`}>
+                                  Apt {apartment.number}
+                                  {!hasValue && !isDisabled && <span className="text-orange-500 ml-1">⚠️</span>}
+                                </span>
+                                {isDisabled ? (
+                                  <div className="flex-1 p-2 bg-gray-100 border rounded text-sm text-gray-500">
+                                    {value ? `${value} ${isConsumption ? (expenseType.name.toLowerCase().includes("apă") || expenseType.name.toLowerCase().includes("canal") ? "mc" : "Gcal") : "RON"}` : "-"}
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder={isConsumption ? (expenseType.name.toLowerCase().includes("apă") || expenseType.name.toLowerCase().includes("canal") ? "mc" : "Gcal") : "RON"}
+                                    value={value}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value;
+                                      if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
+                                        const normalizedValue = inputValue.replace(',', '.');
+                                        // Folosește funcția corectă în funcție de starea cheltuielii
+                                        if (expense) {
+                                          // Cheltuială distribuită - salvează în expense
+                                          if (isConsumption) {
+                                            updateExpenseConsumption(expense.id, apartment.id, normalizedValue);
+                                          } else {
+                                            updateExpenseIndividualAmount(expense.id, apartment.id, normalizedValue);
+                                          }
+                                        } else {
+                                          // Cheltuială nedistribuită - salvează în pending
+                                          if (isConsumption) {
+                                            updatePendingConsumption(expenseType.name, apartment.id, normalizedValue);
+                                          } else {
+                                            updatePendingIndividualAmount(expenseType.name, apartment.id, normalizedValue);
+                                          }
+                                        }
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      const inputValue = e.target.value.replace(',', '.');
+                                      const numericValue = parseFloat(inputValue) || 0;
+                                      // Folosește funcția corectă în funcție de starea cheltuielii
+                                      if (expense) {
+                                        // Cheltuială distribuită - salvează în expense
+                                        if (isConsumption) {
+                                          updateExpenseConsumption(expense.id, apartment.id, numericValue);
+                                        } else {
+                                          updateExpenseIndividualAmount(expense.id, apartment.id, numericValue);
+                                        }
+                                      } else {
+                                        // Cheltuială nedistribuită - salvează în pending
+                                        if (isConsumption) {
+                                          updatePendingConsumption(expenseType.name, apartment.id, numericValue);
+                                        } else {
+                                          updatePendingIndividualAmount(expenseType.name, apartment.id, numericValue);
+                                        }
+                                      }
+                                    }}
+                                    className={`flex-1 p-2 border rounded text-sm ${!hasValue ? 'border-orange-300 bg-orange-50' : ''}`}
+                                  />
+                                )}
+                                {isConsumption && hasValue && expense?.unitPrice && (
+                                  <span className="text-sm text-green-600 w-20 text-right">
+                                    {((parseFloat(value) || 0) * expense.unitPrice).toFixed(2)} RON
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Totaluri */}
+                        {isConsumption && expense && expense.unitPrice && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div className="p-3 bg-blue-50 rounded">
+                                <div className="text-sm text-gray-500">Total consum</div>
+                                <div className="font-bold text-blue-600">
+                                  {Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} {expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"}
+                                </div>
+                              </div>
+                              <div className="p-3 bg-green-50 rounded">
+                                <div className="text-sm text-gray-500">Total calculat</div>
+                                <div className="font-bold text-green-600">
+                                  {(Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice).toFixed(2)} RON
+                                </div>
+                              </div>
+                              {expense.billAmount && (
+                                <div className="p-3 bg-orange-50 rounded">
+                                  <div className="text-sm text-gray-500">Diferența</div>
+                                  <div className={`font-bold ${(() => {
+                                    const totalCalculat = Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice;
+                                    const diferenta = totalCalculat - expense.billAmount;
+                                    const procentDiferenta = expense.billAmount > 0 ? Math.abs(diferenta / expense.billAmount * 100) : 0;
+
+                                    if (procentDiferenta < 5) return "text-green-600";
+                                    else if (procentDiferenta <= 10) return "text-yellow-600";
+                                    else return "text-red-600";
+                                  })()}`}>
+                                    {(Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) * expense.unitPrice - expense.billAmount).toFixed(2)} RON
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {!isConsumption && expense && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div className="p-3 bg-blue-50 rounded">
+                                <div className="text-sm text-gray-500">Total introdus</div>
+                                <div className="font-bold text-blue-600">
+                                  {Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)} RON
+                                </div>
+                              </div>
+                              <div className="p-3 bg-green-50 rounded">
+                                <div className="text-sm text-gray-500">Total facturat</div>
+                                <div className="font-bold text-green-600">{expense.amount.toFixed(2)} RON</div>
+                              </div>
+                              <div className="p-3 bg-orange-50 rounded">
+                                <div className="text-sm text-gray-500">Diferența</div>
+                                <div className={`font-bold ${(() => {
+                                  const totalIntrodus = Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                                  const diferenta = totalIntrodus - expense.amount;
+                                  const procentDiferenta = expense.amount > 0 ? Math.abs(diferenta / expense.amount * 100) : 0;
+
+                                  if (procentDiferenta < 5) return "text-green-600";
+                                  else if (procentDiferenta <= 10) return "text-yellow-600";
+                                  else return "text-red-600";
+                                })()}`}>
+                                  {(Object.values(dataObject).reduce((sum, val) => sum + (parseFloat(val) || 0), 0) - expense.amount).toFixed(2)} RON
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
     </>

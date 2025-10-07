@@ -33,7 +33,19 @@ const useExpenseConfigurations = (currentSheet) => {
   const getExpenseConfig = useCallback((expenseType) => {
     // Încearcă să găsească configurația în Firestore
     const firestoreConfig = configurations[expenseType];
-    
+
+    // Obține participările apartamentelor pentru acest tip de cheltuială
+    const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
+    const apartmentParticipation = {};
+
+    // Filtrează doar participările pentru acest tip de cheltuială
+    Object.keys(allParticipations).forEach(key => {
+      if (key.endsWith(`-${expenseType}`)) {
+        const apartmentId = key.replace(`-${expenseType}`, '');
+        apartmentParticipation[apartmentId] = allParticipations[key];
+      }
+    });
+
     if (firestoreConfig) {
       // Verifică dacă lipsește distributionType și completează cu default-ul
       if (!firestoreConfig.distributionType) {
@@ -41,7 +53,7 @@ const useExpenseConfigurations = (currentSheet) => {
         const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
         firestoreConfig.distributionType = defaultDistribution;
       }
-      
+
       // Sincronizează numele furnizorului din lista actuală de furnizori
       if (firestoreConfig.supplierId) {
         const currentSupplier = suppliers.find(s => s.id === firestoreConfig.supplierId);
@@ -49,14 +61,18 @@ const useExpenseConfigurations = (currentSheet) => {
           // Returnează configurația cu numele actualizat în timp real
           return {
             ...firestoreConfig,
+            apartmentParticipation,
             supplierName: currentSupplier.name
           };
         }
       }
-      
-      return firestoreConfig;
+
+      return {
+        ...firestoreConfig,
+        apartmentParticipation
+      };
     }
-    
+
     // Altfel, folosește configurația default din expenseTypes
     const defaultType = defaultExpenseTypes.find(def => def.name === expenseType);
     const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
@@ -71,9 +87,10 @@ const useExpenseConfigurations = (currentSheet) => {
       supplierId: null,
       supplierName: '',
       contractNumber: '',
-      contactPerson: ''
+      contactPerson: '',
+      apartmentParticipation
     };
-  }, [configurations, suppliers]);
+  }, [configurations, suppliers, currentSheet]);
 
   const updateExpenseConfig = useCallback(async (expenseType, config) => {
     if (!currentSheet || !currentSheet.id) return;

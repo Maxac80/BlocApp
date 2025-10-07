@@ -240,6 +240,17 @@ export default function BlocApp() {
     currentSheet: currentSheet
   });
 
+  // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI (trebuie înainte de useMaintenanceCalculation și useExpenseManagement)
+  const {
+    configurations: expenseConfigurations,
+    loading: configLoading,
+    getExpenseConfig: getFirestoreExpenseConfig,
+    updateExpenseConfig: updateFirestoreExpenseConfig,
+    deleteExpenseConfig: deleteFirestoreExpenseConfig,
+    saveApartmentParticipations,
+    fixFirestoreConfigurations
+  } = useExpenseConfigurations(currentSheet);
+
   // 🔥 HOOK PENTRU CALCULUL ÎNTREȚINERII
   const {
     getAssociationApartments,
@@ -265,19 +276,10 @@ export default function BlocApp() {
     getSheetBalances: getSheetBalances || (() => null),
     getCurrentSheetBalance: getCurrentSheetBalance || (() => ({ restante: 0, penalitati: 0 })),
     // Adăugăm funcția pentru salvarea automată a tabelului calculat
-    updateCurrentSheetMaintenanceTable
+    updateCurrentSheetMaintenanceTable,
+    // Pasăm funcția pentru a obține configurația cheltuielii (inclusiv participarea)
+    getExpenseConfig: getFirestoreExpenseConfig
   });
-
-  // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI (trebuie înainte de useExpenseManagement)
-  const {
-    configurations: expenseConfigurations,
-    loading: configLoading,
-    getExpenseConfig: getFirestoreExpenseConfig,
-    updateExpenseConfig: updateFirestoreExpenseConfig,
-    deleteExpenseConfig: deleteFirestoreExpenseConfig,
-    saveApartmentParticipations,
-    fixFirestoreConfigurations
-  } = useExpenseConfigurations(currentSheet);
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
   const {
@@ -294,11 +296,14 @@ export default function BlocApp() {
     getAvailableExpenseTypes,
     areAllExpensesFullyCompleted,
     handleAddExpense,
+    handleUpdateExpense,
     handleAddCustomExpense,
     handleDeleteCustomExpense,
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
+    updatePendingConsumption,
+    updatePendingIndividualAmount,
     expenseStats
   } = useExpenseManagement({
     association,
@@ -586,9 +591,12 @@ useEffect(() => {
               areAllExpensesFullyCompleted={areAllExpensesFullyCompleted}
               getExpenseConfig={getFirestoreExpenseConfig}
               handleAddExpense={handleAddExpense}
+              handleUpdateExpense={handleUpdateExpense}
               handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+              updatePendingConsumption={updatePendingConsumption}
+              updatePendingIndividualAmount={updatePendingIndividualAmount}
               maintenanceData={maintenanceData}
               togglePayment={() => {}}
               activeMaintenanceTab={activeMaintenanceTab}

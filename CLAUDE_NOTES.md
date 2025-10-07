@@ -1978,4 +1978,1071 @@ const expensePayload = {
 - [ ] Performance profiling pentru sheet-uri mari
 
 ---
+
+## 🎨 UI/UX SIMPLIFICATION & TERMINOLOGY - 7 OCTOMBRIE 2025
+
+### **CERINȚA UTILIZATORULUI - Simplificare Interfață**
+Modernizarea și simplificarea terminologiei în modalele de configurare cheltuieli pentru o experiență mai curată și mai ușor de înțeles.
+
+### **1. ELIMINAREA "DEFALCAT" - Terminologie Nouă**
+
+#### **Înainte:**
+- "Defalcat pe blocuri"
+- "Defalcat pe scări"
+
+#### **După:**
+- "Per bloc"
+- "Per scară"
+
+**Motivație:** Termenul "Defalcat" era confuz și tehnic. "Per bloc/Per scară" este mai direct și mai ușor de înțeles.
+
+**Files Modified:**
+- `ExpenseConfigModal.js`
+- `ExpenseAddModal.js`
+- `ExpenseEntryModal.js`
+- `expenseTypes.js` (pentru default configs)
+
+---
+
+### **2. SIMPLIFICAREA ETICHETELOR - "Mod de X" → "X"**
+
+#### **Înainte:**
+- "Mod de distribuție"
+- "Mod de factură"
+- "Mod de introducere"
+- "Mod furnizor"
+
+#### **După:**
+- "Distribuție"
+- "Factură"
+- "Introducere sume"
+- "Furnizor"
+
+**Motivație:** Prefixul "Mod de" adăuga zgomot vizual fără valoare. Etichete directe sunt mai clare.
+
+**Ordinea finală în modal:**
+1. Factură
+2. Introducere sume
+3. Distribuție
+4. Furnizor
+
+---
+
+### **3. SIMPLIFICĂRI SPECIFICE**
+
+#### **A. "Pe asociație (total)" → "Pe asociație"**
+**Motivație:** Este evident că înseamnă totalul, nu e nevoie să specificăm.
+
+#### **B. "Pe unități de consum" → "Pe consum"**
+**Motivație:** Mai scurt, la fel de clar. Unitatea se specifică separat în dropdown.
+
+#### **C. "O factură unică" → "O singură factură"**
+**Motivație:** Gramatică mai naturală în română.
+
+#### **D. "Introducere sume" → "Sume"**
+**Motivație:** În context (la afișare în ExpenseEntryModal), "💡 Sume: Per scară" este suficient de clar.
+
+---
+
+### **4. SISTEM UNITĂȚI DE MĂSURĂ - Pentru "Pe consum"**
+
+#### **Problema:**
+Cheltuielile pe consum (apă, energie, căldură) au unități diferite de măsură.
+
+#### **Soluția - Dropdown cu Unități:**
+```javascript
+<select value={config.consumptionUnit}>
+  <option value="mc">mc (metri cubi) - Apă, Canalizare, Gaz</option>
+  <option value="Gcal">Gcal (gigacalorii) - Căldură</option>
+  <option value="kWh">kWh (kilowați-oră) - Electricitate</option>
+  <option value="MWh">MWh (megawați-oră) - Electricitate</option>
+  <option value="custom">✏️ Altă unitate...</option>
+</select>
+
+{/* Câmp pentru unitate personalizată */}
+{showCustomUnit && (
+  <input
+    type="text"
+    placeholder="Ex: litri, m³, kW, etc."
+    value={config.customConsumptionUnit}
+    required
+  />
+)}
+```
+
+#### **Storage în Firebase:**
+```javascript
+{
+  consumptionUnit: "mc" | "Gcal" | "kWh" | "MWh" | "custom",
+  customConsumptionUnit: "string sau empty"  // doar când custom
+}
+```
+
+#### **Afișare în UI:**
+```javascript
+// Helper function
+const getConsumptionUnit = (config) => {
+  if (!config) return 'unitate';
+  if (config.consumptionUnit === 'custom') {
+    return config.customConsumptionUnit || 'unitate';
+  }
+  return config.consumptionUnit || 'mc';
+};
+
+// Usage în label
+<label>Preț pe unitate (RON/{getConsumptionUnit(config)}) *</label>
+```
+
+#### **Validare:**
+- Câmpul pentru unitate personalizată este **obligatoriu** când se selectează "Altă unitate"
+- Alert dacă se încearcă salvarea fără completare
+
+---
+
+### **5. MESAJE DINAMICE - Mod Factură**
+
+#### **Cerința:**
+Mesajele pentru "Factură" trebuie să fie contextuale și să se adapteze la "Introducere sume".
+
+#### **Implementare:**
+```javascript
+<p className="mt-2 text-sm text-gray-600">
+  {invoiceMode === 'single' && receptionMode === 'total' &&
+    'O factură pe asociație'}
+
+  {invoiceMode === 'single' && receptionMode === 'per_block' &&
+    'O factură cu suma totală distribuită pe blocuri'}
+
+  {invoiceMode === 'single' && receptionMode === 'per_stair' &&
+    'O factură cu suma totală distribuită pe scări'}
+
+  {invoiceMode === 'separate' && receptionMode === 'per_block' &&
+    'Facturi separate pentru fiecare bloc'}
+
+  {invoiceMode === 'separate' && receptionMode === 'per_stair' &&
+    'Facturi separate pentru fiecare scară'}
+</p>
+```
+
+#### **Validare Warning:**
+Când combinația "Facturi separate" + "Pe asociație" este selectată:
+```javascript
+{invoiceMode === 'separate' && receptionMode === 'total' && (
+  <p className="mt-2 text-sm text-orange-600 font-medium">
+    ⚠️ Mod "Facturi separate" necesită "Per bloc" sau "Per scară"
+  </p>
+)}
+```
+
+**IMPORTANT:** Opțiunea "Facturi separate" NU se ascunde când receptionMode = 'total'. Rămâne vizibilă, dar se afișează warning-ul.
+
+---
+
+### **6. TAB PARTICIPARE - Structură și Corelație**
+
+#### **Cerința:**
+Tab-ul "Participare" din modalele de configurare trebuie să aibă tab-uri pe scări (ca la Calcul Întreținere) și să coreleze cu bifele din tab-ul "General".
+
+#### **A. Tab-uri pe Scări**
+```javascript
+// State pentru tab selection
+const [selectedStairTab, setSelectedStairTab] = useState('all');
+
+// Generare tab-uri
+const stairTabs = useMemo(() => {
+  return stairs.map(stair => {
+    const block = blocks.find(b => b.id === stair.blockId);
+    return {
+      id: stair.id,
+      label: `${block?.name || ''} - ${stair.name}`
+    };
+  });
+}, [blocks, stairs]);
+
+// Filtrare apartamente bazat pe tab selectat
+const filteredApartments = useMemo(() => {
+  if (selectedStairTab === 'all') return apartments;
+  return apartments.filter(apt => apt.stairId === selectedStairTab);
+}, [selectedStairTab, apartments]);
+```
+
+#### **B. Afișare Nume Proprietar**
+**Pattern stabilit:** Afișare DIRECTĂ a numelui, FĂRĂ tooltip.
+
+```javascript
+<span className={`flex-1 ${!isActive ? 'text-gray-500' : 'text-gray-700'}`}>
+  {apartment.owner || 'Fără proprietar'}
+  {!isActive && ' (Dezactivat)'}
+</span>
+```
+
+**LECȚIE:** Utilizatorii preferă informații directe, simple. Tooltip-urile complexe sunt "too much".
+
+#### **C. Corelație cu Bifele din General**
+**CRITICAL:** Apartamentele din scări/blocuri DEBIFATE trebuie să apară ca DEZACTIVATE în Participare.
+
+```javascript
+// Verifică dacă apartamentul este activ
+const isApartmentActive =
+  localConfig.receptionMode === 'total' ||
+  (localConfig.receptionMode === 'per_stair' &&
+   localConfig.appliesTo.stairs.includes(apartment.stairId)) ||
+  (localConfig.receptionMode === 'per_block' && block &&
+   localConfig.appliesTo.blocks.includes(block.id));
+
+// UI adaptation
+<div className={`${!isApartmentActive ? 'bg-gray-200 opacity-60' : 'bg-gray-50'}`}>
+  <select disabled={!isApartmentActive} className={!isApartmentActive ? 'cursor-not-allowed' : ''}>
+    {/* options */}
+  </select>
+  <input disabled={!isApartmentActive} />
+</div>
+```
+
+#### **D. Tab-uri Dezactivate**
+Scările care nu sunt bifate în "General" apar ca tab-uri disabled în "Participare":
+
+```javascript
+{stairTabs.map(stair => {
+  const isStairActive =
+    localConfig.receptionMode === 'total' ||
+    (localConfig.receptionMode === 'per_stair' &&
+     localConfig.appliesTo.stairs.includes(stair.id)) ||
+    (localConfig.receptionMode === 'per_block' && /* logic pentru bloc */);
+
+  return (
+    <button
+      disabled={!isStairActive}
+      className={`${
+        !isStairActive
+          ? 'text-gray-400 cursor-not-allowed opacity-50'
+          : 'text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      {stair.label} {!isStairActive && '(Dezactivat)'}
+    </button>
+  );
+})}
+```
+
+#### **E. Evidențiere Vizuală pentru Celule Modificate**
+Apartamentele cu participare diferită de "Integral" primesc styling special:
+
+```javascript
+const isModified = participation.type !== 'integral';
+
+<div className={`${
+  !isApartmentActive ? 'bg-gray-200 opacity-60' :
+  isModified ? 'bg-purple-50 border border-purple-200' :  // ExpenseConfigModal
+  'bg-gray-50'
+}`}>
+```
+
+**Pentru ExpenseAddModal:** Folosește `bg-green-50 border border-green-200` pentru consistență cu headerul verde.
+
+---
+
+### **7. REACT HOOKS RULES - CRITICAL**
+
+#### **Problema Identificată:**
+Eroare: `Error: Rendered fewer hooks than expected. This may be caused by an accidental early return statement.`
+
+#### **Root Cause:**
+Hook-uri (useMemo, useEffect, useState) apelate DUPĂ un `return` condiționat:
+
+```javascript
+// ❌ GREȘIT - causează eroare
+const Component = () => {
+  if (!isOpen) return null;  // Early return
+
+  const data = useMemo(() => { /* ... */ }, []);  // ❌ Hook după return
+
+  return <div>...</div>;
+};
+```
+
+#### **Soluția:**
+**TOATE hook-urile TREBUIE apelate ÎNAINTE de orice return condiționat:**
+
+```javascript
+// ✅ CORECT
+const Component = () => {
+  const data = useMemo(() => { /* ... */ }, []);  // ✅ Hook înainte de return
+
+  if (!isOpen) return null;  // Return condiționat după hooks
+
+  return <div>...</div>;
+};
+```
+
+#### **Pattern Stabilit pentru Modale:**
+```javascript
+const Modal = ({ isOpen, ... }) => {
+  // 1. TOATE hook-urile PRIMELE
+  const [state, setState] = useState(initial);
+  const stairTabs = useMemo(() => { /* ... */ }, [deps]);
+  const filteredData = useMemo(() => { /* ... */ }, [deps]);
+
+  useEffect(() => { /* ... */ }, [deps]);
+
+  // 2. Early return DUPĂ toate hook-urile
+  if (!isOpen) return null;
+
+  // 3. Logic și render
+  const apartments = getAssociationApartments();
+
+  return <div>...</div>;
+};
+```
+
+#### **LECȚIA CRITICĂ:**
+- React hooks TREBUIE apelate în **aceeași ordine** la fiecare render
+- Condiții înainte de hooks **schimbă ordinea** → eroare
+- Folosește linter rule `react-hooks/rules-of-hooks` pentru a preveni
+
+---
+
+### **8. CONSISTENȚĂ ExpenseConfigModal vs ExpenseAddModal**
+
+#### **Cerința:**
+Ambele modale trebuie să aibă **aceeași funcționalitate și UX** pentru tab-ul "Participare".
+
+#### **Implementare Synchronized:**
+
+**Caracteristici comune:**
+- ✅ Tab-uri pe scări cu "Toate" + individual tabs
+- ✅ Afișare nume proprietar direct
+- ✅ Evidențiere vizuală pentru celule modificate
+- ✅ Corelație cu bifele din General (dezactivare automată)
+- ✅ Dropdown-uri și input-uri disabled pentru apartamente inactive
+
+**Diferențe styling (doar culori):**
+- **ExpenseConfigModal:** Purple theme (`bg-purple-50`, `border-purple-200`)
+- **ExpenseAddModal:** Green theme (`bg-green-50`, `border-green-200`)
+
+**Code pattern identic:**
+```javascript
+// Același logic în ambele modale
+const isApartmentActive = /* same condition */;
+const isModified = participation.type !== 'integral';
+
+<div className={`${
+  !isApartmentActive ? 'bg-gray-200 opacity-60' :
+  isModified ? 'bg-[color]-50 border border-[color]-200' :
+  'bg-gray-50'
+}`}>
+```
+
+---
+
+### **BENEFICII FINALE - UI/UX SIMPLIFICATION**
+
+#### **1. Claritate**
+- ✅ Terminologie mai simplă și mai directă
+- ✅ Etichete concise fără redundanță
+- ✅ Mesaje contextuale care se adaptează automat
+- ✅ Informații directe fără interacțiuni suplimentare
+
+#### **2. Consistență**
+- ✅ Același pattern în ExpenseConfigModal și ExpenseAddModal
+- ✅ Corelație clară între tab-uri și configurări
+- ✅ Evidențiere vizuală uniformă
+
+#### **3. User Feedback**
+- ✅ Validări clare cu mesaje orange pentru erori
+- ✅ Dezactivare vizibilă pentru opțiuni indisponibile
+- ✅ Highlighting pentru modificări (purple/green)
+
+#### **4. Technical Quality**
+- ✅ React Hooks rules respectate
+- ✅ useMemo pentru optimizare performance
+- ✅ Code reusability între modale
+- ✅ Clean dependencies în useEffect
+
+---
+
+### **FILES MODIFIED - 7 OCTOMBRIE 2025**
+
+1. **`ExpenseConfigModal.js`**
+   - Simplified labels ("Factură", "Introducere sume", "Distribuție")
+   - Added consumption unit dropdown cu validare
+   - Implemented dynamic invoice messages
+   - Added stair tabs în Participare
+   - Implemented correlation cu bifele din General
+   - Removed tooltip, direct name display
+   - Moved all hooks before early return
+
+2. **`ExpenseAddModal.js`**
+   - Same changes as ExpenseConfigModal
+   - Green theme pentru consistență cu header
+   - Synchronized functionality
+
+3. **`ExpenseEntryModal.js`**
+   - Updated labels ("Sume" instead of "Introducere sume")
+   - Updated distribution display ("Pe consum (mc)" cu dynamic unit)
+   - Updated invoice labels ("O singură factură")
+
+4. **`expenseTypes.js`**
+   - Added `consumptionUnit: 'mc'` to default water/canal expenses
+
+---
+
+### **PATTERNS STABILITE PENTRU VIITOR**
+
+#### **1. Terminologie UI**
+- **Avoid** "Mod de X" → Use doar "X"
+- **Be direct** - informații clare, fără artificii
+- **Context matters** - adaptează mesajele la situație
+
+#### **2. Modale Structure**
+- **All hooks first** - before any conditional return
+- **Memoize filters** - pentru performance
+- **Consistent styling** - între modale similare
+- **Visual hierarchy** - disabled/modified states
+
+#### **3. User Feedback**
+- **Orange warnings** pentru combinații invalide
+- **Gray disabled** pentru opțiuni inactive
+- **Color highlights** pentru modificări
+- **Direct display** în loc de tooltips
+
+#### **4. Code Quality**
+- **DRY principle** - refolosește logic între componente
+- **Type safety** - validează input-uri
+- **Clear dependencies** - în useEffect și useMemo
+- **Comment tricky logic** - pentru viitoare debugging
+
+---
+
 *Acest fișier trebuie updatat cu orice concept important descoperit în timpul dezvoltării.*
+
+---
+
+## **SESIUNE 7 OCTOMBRIE 2025 (SEARA) - PENDING CONSUMPTIONS & NAVIGATION**
+
+### **PROBLEMA INIȚIALĂ**
+Utilizatorii trebuiau să distribuie mai întâi o cheltuială înainte de a putea introduce consumurile/sumele individuale. Acest workflow era ineficient - dacă voiau să introducă consumurile mai întâi și să distribuie după, trebuia să șteargă și să redistribuie cheltuiala.
+
+### **SOLUȚIA IMPLEMENTATĂ - PENDING CONSUMPTIONS SYSTEM**
+
+#### **1. Arhitectura Datelor**
+Am creat două noi field-uri în `currentSheet`:
+- `pendingConsumptions` - obiect cu consumuri pentru cheltuieli nedistribuite
+- `pendingIndividualAmounts` - obiect cu sume individuale pentru cheltuieli nedistribuite
+
+**Structura:**
+```javascript
+currentSheet: {
+  pendingConsumptions: {
+    "Apă caldă": {
+      "apt-id-1": "5.2",
+      "apt-id-2": "6.8"
+    }
+  },
+  pendingIndividualAmounts: {
+    "Căldură": {
+      "apt-id-1": "150.00",
+      "apt-id-2": "200.00"
+    }
+  }
+}
+```
+
+#### **2. Noi Funcții în useExpenseManagement.js**
+
+**`updatePendingConsumption(expenseTypeName, apartmentId, consumption)`** (lines 439-473)
+- Salvează consumuri pentru cheltuieli nedistribuite
+- Update direct în Firestore pe `currentSheet.pendingConsumptions`
+- Nu necesită ca expense-ul să fie distribuit
+
+**`updatePendingIndividualAmount(expenseTypeName, apartmentId, amount)`** (lines 475-507)
+- Similar cu updatePendingConsumption dar pentru sume individuale
+- Salvează în `currentSheet.pendingIndividualAmounts`
+
+#### **3. Modificări în ConsumptionInput.js**
+
+**Dual data loading logic (lines 183-212):**
+```javascript
+let dataObject = {};
+if (expense) {
+  // Cheltuială distribuită - folosește datele din expense
+  dataObject = isConsumption
+    ? (expense.consumption || {})
+    : (expense.fixedAmounts || {});
+} else {
+  // Cheltuială nedistribuită - folosește datele pending din sheet
+  if (isConsumption) {
+    dataObject = currentSheet?.pendingConsumptions?.[expenseType.name] || {};
+  } else {
+    dataObject = currentSheet?.pendingIndividualAmounts?.[expenseType.name] || {};
+  }
+}
+```
+
+**Routing save calls (lines 334-370):**
+- Dacă `expense` există → salvează în `expense.consumption` sau `expense.fixedAmounts`
+- Dacă `expense` nu există → salvează în `pendingConsumptions` sau `pendingIndividualAmounts`
+
+**Enable editing for undistributed expenses (line 308):**
+```javascript
+const isDisabled = isMonthReadOnly; // NU mai verifică status === 'not_distributed'
+```
+
+#### **4. Filtering Active Expenses (Bug Fix)**
+
+**Problema:** Cheltuieli dezactivate apăreau în listă
+**Cauza:** `disabledTypes.includes(type.name)` când `disabledTypes` e array de obiecte
+**Fix (lines 40-56):**
+```javascript
+const disabledTypes = getDisabledExpenseTypes ? getDisabledExpenseTypes() : [];
+
+const defaultConsumptionTypes = defaultExpenseTypes.filter(type =>
+  (type.defaultDistribution === 'consumption' || type.defaultDistribution === 'individual') &&
+  !disabledTypes.some(dt => dt.name === type.name)  // ✅ Correct
+);
+```
+
+---
+
+### **BADGE SYNCHRONIZATION & CLICKABLE NAVIGATION**
+
+#### **1. Problema Badge Sync**
+Badge-urile din "Cheltuieli distribuite" și "Consumuri" arătau status diferit pentru aceeași cheltuială.
+
+**Root Causes:**
+1. ExpenseList mergea date din `expense.consumption` + `pendingConsumptions` ❌
+2. ExpenseList verifica `Object.keys()` în loc de toate apartamentele ❌
+3. ExpenseList nu respecta filtrul de scară ❌
+
+**Fix Final (ExpenseList.js lines 368-382):**
+```javascript
+// 1. NU merge cu pending - doar expense.consumption
+const dataObject = expense.consumption || {};
+
+// 2. Verifică toate apartamentele filtrate
+const filteredApartments = getFilteredApartments();
+
+const apartmentsWithConsumption = filteredApartments.filter(apt => {
+  const value = dataObject?.[apt.id];
+  return value && parseFloat(value) >= 0; // Exact ca în ConsumptionInput
+}).length;
+```
+
+**Diferența key:** ConsumptionInput folosește `value && parseFloat(value) >= 0`, NU `!isNaN(value) && value >= 0`
+
+#### **2. Clickable Badges → Tab Navigation**
+
+**Flow implementat:**
+1. Badge în ExpenseList (incomplete/complete) → `onConsumptionClick(expense.name)`
+2. MaintenanceView → `setExpenseToExpand(expenseName)` + `setSelectedContentTab('consumptions')`
+3. ConsumptionInput → primește `expandExpenseName` prop
+4. useEffect expandează automat acea cheltuială specifică
+
+**Auto-collapse behavior (ConsumptionInput.js lines 28-38):**
+```javascript
+useEffect(() => {
+  if (expandExpenseName) {
+    // Expandează DOAR această cheltuială (resetează restul)
+    setExpandedExpenses({
+      [expandExpenseName]: true
+    });
+  } else {
+    // Când nu avem expense name, strânge toate
+    setExpandedExpenses({});
+  }
+}, [expandExpenseName]);
+```
+
+**Reset on tab switch (MaintenanceView.js lines 121-125):**
+```javascript
+useEffect(() => {
+  if (selectedContentTab === 'expenses') {
+    setExpenseToExpand(null);
+  }
+}, [selectedContentTab, currentMonth]);
+```
+
+---
+
+### **UI/UX IMPROVEMENTS**
+
+#### **1. Clarified Labels**
+- `"Pe consum"` → `"Pe consum (mc/apartament)"`
+- `"Sume individuale"` → `"Sume individuale (RON/apartament)"`
+- `"Consumuri și Sume individuale"` → `"Consumuri"` (tab name)
+
+#### **2. All Badges Clickable**
+- ✅ "Consumuri complete" → click → go to Consumuri tab + expand
+- ✅ "Consumuri incomplete" → click → go to Consumuri tab + expand
+- ✅ "Sume complete" → click → go to Consumuri tab + expand
+- ✅ "Sume incomplete" → click → go to Consumuri tab + expand
+
+#### **3. Visual Bug Fixes**
+- Fixed `)}` appearing between cards (wrong conditional nesting)
+- Fixed duplicate `-mc` and unit display issues
+
+---
+
+### **PROP CHAIN COMPLETĂ**
+
+**Pentru pending consumptions:**
+```
+useExpenseManagement
+  ↓ updatePendingConsumption, updatePendingIndividualAmount
+BlocApp.js (lines 305-306, 598-599)
+  ↓
+MaintenanceView.js (lines 44-45, 1014-1015)
+  ↓
+ConsumptionInput.js (props + routing logic)
+```
+
+**Pentru navigation:**
+```
+ExpenseList.js
+  ↓ onConsumptionClick(expense.name)
+MaintenanceView.js (callback lines 1002-1005)
+  ↓ setExpenseToExpand + setSelectedContentTab
+ConsumptionInput.js
+  ↓ expandExpenseName prop → useEffect auto-expand
+```
+
+---
+
+### **KEY LEARNINGS - FLOW & CONNECTIONS**
+
+#### **1. State Management Pattern**
+Când ai date care pot exista în două forme (distributed vs pending):
+- **NU** merge-ui datele în UI layer
+- **FOLOSEȘTE** source-ul corect bazat pe context
+- **VALIDEAZĂ** că verificările sunt identice în ambele locuri
+
+#### **2. Badge Synchronization Pattern**
+Pentru a sincroniza badge-uri între componente:
+1. **Same data source** - verifică că folosești exact aceleași date
+2. **Same filtering** - aplică exact același filtru (de ex. stair filter)
+3. **Same validation** - folosește EXACT aceeași condiție (`value && parseFloat(value) >= 0`)
+4. **Same apartments list** - nu compara `Object.keys()` vs `allApartments.filter()`
+
+#### **3. Navigation with State Pattern**
+Pentru navigare între tab-uri cu auto-expand:
+1. **State in parent** (`expenseToExpand` în MaintenanceView)
+2. **Pass as prop** to child component
+3. **useEffect** în child pentru a reacționa la schimbare
+4. **Reset on navigation** pentru clean state
+
+#### **4. Conditional JSX Nesting**
+⚠️ **ATENȚIE la ordinea închiderilor:**
+```javascript
+// ❌ WRONG
+<div>
+  {condition && (
+    <content />
+  )}  // closes condition
+</div>  // closes div
+)}  // ← DUPLICATE CLOSING!
+
+// ✅ CORRECT
+<div>
+  {condition && (
+    <content />
+  )}
+</div>
+```
+
+---
+
+### **FILES MODIFIED - 7 OCTOMBRIE 2025 (SEARA)**
+
+1. **`useExpenseManagement.js`** (lines 439-507, 728-729)
+   - Added `updatePendingConsumption` function
+   - Added `updatePendingIndividualAmount` function
+   - Exported new functions
+
+2. **`ConsumptionInput.js`**
+   - Fixed disabled expense filtering (lines 40-56)
+   - Dual data loading logic (lines 183-212)
+   - Routing save calls based on distributed status (lines 334-370)
+   - Enable editing for undistributed expenses (line 308)
+   - Auto-expand with cleanup (lines 28-38)
+   - Updated labels for clarity (lines 272-273)
+   - Fixed `)}` display bug
+
+3. **`ExpenseList.js`**
+   - Fixed badge sync - no merging with pending (lines 372, 402)
+   - Apply stair filtering to badges (lines 369, 399)
+   - Exact same validation as ConsumptionInput (lines 376-377, 406-407)
+   - All badges clickable with navigation (lines 386-400, 424-438)
+   - Updated labels (lines 452-453)
+
+4. **`BlocApp.js`** (lines 305-306, 598-599)
+   - Destructured pending functions from hook
+   - Passed to MaintenanceView
+
+5. **`MaintenanceView.js`**
+   - Added `useEffect` import (line 2)
+   - Added `expenseToExpand` state (line 118)
+   - Reset state on tab switch (lines 121-125)
+   - Pass navigation callback (lines 1002-1005)
+   - Pass `expandExpenseName` to ConsumptionInput (line 1025)
+   - Updated tab name to just "Consumuri" (line 981)
+   - Added props to component signature (lines 44-45)
+
+---
+
+### **IMPACT & BENEFITS**
+
+#### **Workflow Improvement**
+- ✅ Utilizatorii pot introduce consumuri ÎNAINTE de distribuție
+- ✅ Nu mai trebuie să șteargă și redistribuie pentru a adăuga consumuri
+- ✅ Datele introduse se salvează automat și se preiau la distribuție
+- ✅ Flow natural: completează consumuri → distribuie cheltuială
+
+#### **User Experience**
+- ✅ Badge-uri sincronizate perfect între tab-uri
+- ✅ Navigare rapidă prin click pe badge
+- ✅ Auto-expand pe cheltuiala relevantă
+- ✅ Toate cheltuielile collapsed când intri direct pe tab
+- ✅ Labels clare care explică exact ce reprezintă fiecare câmp
+
+#### **Code Quality**
+- ✅ Separation of concerns - pending vs distributed data
+- ✅ Reusable functions în useExpenseManagement
+- ✅ Consistent prop chain
+- ✅ Clean state management cu useEffect cleanup
+
+---
+
+### **NEXT STEPS / FUTURE CONSIDERATIONS**
+
+1. **Migration când distribuim expense:**
+   - Când distribuim o cheltuială care are pending data
+   - Trebuie să copiem datele din `pendingConsumptions` → `expense.consumption`
+   - Apoi să ștergem din pending
+
+2. **Validation:**
+   - Consider validating că consumption data e completă înainte de distribuție
+   - Poate warning dacă distribuim fără să avem toate consumurile
+
+3. **Performance:**
+   - Monitor Firestore writes pentru pending data
+   - Consider batching updates dacă utilizatorul introduce multe valori rapid
+
+---
+
+*Această sesiune a demonstrat importanța de a înțelege exact cum circulă datele prin aplicație și de a menține consistență perfectă între componente care afișează aceeași informație.*
+
+
+---
+
+## **SESIUNE 7 OCTOMBRIE 2025 (SEARA) - PENDING CONSUMPTIONS & NAVIGATION**
+
+### **PROBLEMA INIȚIALĂ**
+Utilizatorii trebuiau să distribuie mai întâi o cheltuială înainte de a putea introduce consumurile/sumele individuale. Acest workflow era ineficient - dacă voiau să introducă consumurile mai întâi și să distribuie după, trebuia să șteargă și să redistribuie cheltuiala.
+
+### **SOLUȚIA IMPLEMENTATĂ - PENDING CONSUMPTIONS SYSTEM**
+
+#### **1. Arhitectura Datelor**
+Am creat două noi field-uri în `currentSheet`:
+- `pendingConsumptions` - obiect cu consumuri pentru cheltuieli nedistribuite
+- `pendingIndividualAmounts` - obiect cu sume individuale pentru cheltuieli nedistribuite
+
+**Structura:**
+```javascript
+currentSheet: {
+  pendingConsumptions: {
+    "Apă caldă": {
+      "apt-id-1": "5.2",
+      "apt-id-2": "6.8"
+    }
+  },
+  pendingIndividualAmounts: {
+    "Căldură": {
+      "apt-id-1": "150.00",
+      "apt-id-2": "200.00"
+    }
+  }
+}
+```
+
+#### **2. Noi Funcții în useExpenseManagement.js**
+
+**`updatePendingConsumption(expenseTypeName, apartmentId, consumption)`** (lines 439-473)
+- Salvează consumuri pentru cheltuieli nedistribuite
+- Update direct în Firestore pe `currentSheet.pendingConsumptions`
+- Nu necesită ca expense-ul să fie distribuit
+
+**`updatePendingIndividualAmount(expenseTypeName, apartmentId, amount)`** (lines 475-507)
+- Similar cu updatePendingConsumption dar pentru sume individuale
+- Salvează în `currentSheet.pendingIndividualAmounts`
+
+#### **3. Modificări în ConsumptionInput.js**
+
+**Dual data loading logic (lines 183-212):**
+```javascript
+let dataObject = {};
+if (expense) {
+  // Cheltuială distribuită - folosește datele din expense
+  dataObject = isConsumption
+    ? (expense.consumption || {})
+    : (expense.fixedAmounts || {});
+} else {
+  // Cheltuială nedistribuită - folosește datele pending din sheet
+  if (isConsumption) {
+    dataObject = currentSheet?.pendingConsumptions?.[expenseType.name] || {};
+  } else {
+    dataObject = currentSheet?.pendingIndividualAmounts?.[expenseType.name] || {};
+  }
+}
+```
+
+**Routing save calls (lines 334-370):**
+- Dacă `expense` există → salvează în `expense.consumption` sau `expense.fixedAmounts`
+- Dacă `expense` nu există → salvează în `pendingConsumptions` sau `pendingIndividualAmounts`
+
+**Enable editing for undistributed expenses (line 308):**
+```javascript
+const isDisabled = isMonthReadOnly; // NU mai verifică status === 'not_distributed'
+```
+
+#### **4. Filtering Active Expenses (Bug Fix)**
+
+**Problema:** Cheltuieli dezactivate apăreau în listă
+**Cauza:** `disabledTypes.includes(type.name)` când `disabledTypes` e array de obiecte
+**Fix (lines 40-56):**
+```javascript
+const disabledTypes = getDisabledExpenseTypes ? getDisabledExpenseTypes() : [];
+
+const defaultConsumptionTypes = defaultExpenseTypes.filter(type =>
+  (type.defaultDistribution === 'consumption' || type.defaultDistribution === 'individual') &&
+  !disabledTypes.some(dt => dt.name === type.name)  // ✅ Correct
+);
+```
+
+---
+
+### **BADGE SYNCHRONIZATION & CLICKABLE NAVIGATION**
+
+#### **1. Problema Badge Sync**
+Badge-urile din "Cheltuieli distribuite" și "Consumuri" arătau status diferit pentru aceeași cheltuială.
+
+**Root Causes:**
+1. ExpenseList mergea date din `expense.consumption` + `pendingConsumptions` ❌
+2. ExpenseList verifica `Object.keys()` în loc de toate apartamentele ❌
+3. ExpenseList nu respecta filtrul de scară ❌
+
+**Fix Final (ExpenseList.js lines 368-382):**
+```javascript
+// 1. NU merge cu pending - doar expense.consumption
+const dataObject = expense.consumption || {};
+
+// 2. Verifică toate apartamentele filtrate
+const filteredApartments = getFilteredApartments();
+
+const apartmentsWithConsumption = filteredApartments.filter(apt => {
+  const value = dataObject?.[apt.id];
+  return value && parseFloat(value) >= 0; // Exact ca în ConsumptionInput
+}).length;
+```
+
+**Diferența key:** ConsumptionInput folosește `value && parseFloat(value) >= 0`, NU `!isNaN(value) && value >= 0`
+
+#### **2. Clickable Badges → Tab Navigation**
+
+**Flow implementat:**
+1. Badge în ExpenseList (incomplete/complete) → `onConsumptionClick(expense.name)`
+2. MaintenanceView → `setExpenseToExpand(expenseName)` + `setSelectedContentTab('consumptions')`
+3. ConsumptionInput → primește `expandExpenseName` prop
+4. useEffect expandează automat acea cheltuială specifică
+
+**Auto-collapse behavior (ConsumptionInput.js lines 28-38):**
+```javascript
+useEffect(() => {
+  if (expandExpenseName) {
+    // Expandează DOAR această cheltuială (resetează restul)
+    setExpandedExpenses({
+      [expandExpenseName]: true
+    });
+  } else {
+    // Când nu avem expense name, strânge toate
+    setExpandedExpenses({});
+  }
+}, [expandExpenseName]);
+```
+
+**Reset on tab switch (MaintenanceView.js lines 121-125):**
+```javascript
+useEffect(() => {
+  if (selectedContentTab === 'expenses') {
+    setExpenseToExpand(null);
+  }
+}, [selectedContentTab, currentMonth]);
+```
+
+---
+
+### **UI/UX IMPROVEMENTS**
+
+#### **1. Clarified Labels**
+- `"Pe consum"` → `"Pe consum (mc/apartament)"`
+- `"Sume individuale"` → `"Sume individuale (RON/apartament)"`
+- `"Consumuri și Sume individuale"` → `"Consumuri"` (tab name)
+
+#### **2. All Badges Clickable**
+- ✅ "Consumuri complete" → click → go to Consumuri tab + expand
+- ✅ "Consumuri incomplete" → click → go to Consumuri tab + expand
+- ✅ "Sume complete" → click → go to Consumuri tab + expand
+- ✅ "Sume incomplete" → click → go to Consumuri tab + expand
+
+#### **3. Visual Bug Fixes**
+- Fixed `)}` appearing between cards (wrong conditional nesting)
+- Fixed duplicate `-mc` and unit display issues
+
+---
+
+### **PROP CHAIN COMPLETĂ**
+
+**Pentru pending consumptions:**
+```
+useExpenseManagement
+  ↓ updatePendingConsumption, updatePendingIndividualAmount
+BlocApp.js (lines 305-306, 598-599)
+  ↓
+MaintenanceView.js (lines 44-45, 1014-1015)
+  ↓
+ConsumptionInput.js (props + routing logic)
+```
+
+**Pentru navigation:**
+```
+ExpenseList.js
+  ↓ onConsumptionClick(expense.name)
+MaintenanceView.js (callback lines 1002-1005)
+  ↓ setExpenseToExpand + setSelectedContentTab
+ConsumptionInput.js
+  ↓ expandExpenseName prop → useEffect auto-expand
+```
+
+---
+
+### **KEY LEARNINGS - FLOW & CONNECTIONS**
+
+#### **1. State Management Pattern**
+Când ai date care pot exista în două forme (distributed vs pending):
+- **NU** merge-ui datele în UI layer
+- **FOLOSEȘTE** source-ul corect bazat pe context
+- **VALIDEAZĂ** că verificările sunt identice în ambele locuri
+
+#### **2. Badge Synchronization Pattern**
+Pentru a sincroniza badge-uri între componente:
+1. **Same data source** - verifică că folosești exact aceleași date
+2. **Same filtering** - aplică exact același filtru (de ex. stair filter)
+3. **Same validation** - folosește EXACT aceeași condiție (`value && parseFloat(value) >= 0`)
+4. **Same apartments list** - nu compara `Object.keys()` vs `allApartments.filter()`
+
+#### **3. Navigation with State Pattern**
+Pentru navigare între tab-uri cu auto-expand:
+1. **State in parent** (`expenseToExpand` în MaintenanceView)
+2. **Pass as prop** to child component
+3. **useEffect** în child pentru a reacționa la schimbare
+4. **Reset on navigation** pentru clean state
+
+#### **4. Conditional JSX Nesting**
+⚠️ **ATENȚIE la ordinea închiderilor:**
+```javascript
+// ❌ WRONG
+<div>
+  {condition && (
+    <content />
+  )}  // closes condition
+</div>  // closes div
+)}  // ← DUPLICATE CLOSING!
+
+// ✅ CORRECT
+<div>
+  {condition && (
+    <content />
+  )}
+</div>
+```
+
+---
+
+### **FILES MODIFIED - 7 OCTOMBRIE 2025 (SEARA)**
+
+1. **`useExpenseManagement.js`** (lines 439-507, 728-729)
+   - Added `updatePendingConsumption` function
+   - Added `updatePendingIndividualAmount` function
+   - Exported new functions
+
+2. **`ConsumptionInput.js`**
+   - Fixed disabled expense filtering (lines 40-56)
+   - Dual data loading logic (lines 183-212)
+   - Routing save calls based on distributed status (lines 334-370)
+   - Enable editing for undistributed expenses (line 308)
+   - Auto-expand with cleanup (lines 28-38)
+   - Updated labels for clarity (lines 272-273)
+   - Fixed `)}` display bug
+
+3. **`ExpenseList.js`**
+   - Fixed badge sync - no merging with pending (lines 372, 402)
+   - Apply stair filtering to badges (lines 369, 399)
+   - Exact same validation as ConsumptionInput (lines 376-377, 406-407)
+   - All badges clickable with navigation (lines 386-400, 424-438)
+   - Updated labels (lines 452-453)
+
+4. **`BlocApp.js`** (lines 305-306, 598-599)
+   - Destructured pending functions from hook
+   - Passed to MaintenanceView
+
+5. **`MaintenanceView.js`**
+   - Added `useEffect` import (line 2)
+   - Added `expenseToExpand` state (line 118)
+   - Reset state on tab switch (lines 121-125)
+   - Pass navigation callback (lines 1002-1005)
+   - Pass `expandExpenseName` to ConsumptionInput (line 1025)
+   - Updated tab name to just "Consumuri" (line 981)
+   - Added props to component signature (lines 44-45)
+
+---
+
+### **IMPACT & BENEFITS**
+
+#### **Workflow Improvement**
+- ✅ Utilizatorii pot introduce consumuri ÎNAINTE de distribuție
+- ✅ Nu mai trebuie să șteargă și redistribuie pentru a adăuga consumuri
+- ✅ Datele introduse se salvează automat și se preiau la distribuție
+- ✅ Flow natural: completează consumuri → distribuie cheltuială
+
+#### **User Experience**
+- ✅ Badge-uri sincronizate perfect între tab-uri
+- ✅ Navigare rapidă prin click pe badge
+- ✅ Auto-expand pe cheltuiala relevantă
+- ✅ Toate cheltuielile collapsed când intri direct pe tab
+- ✅ Labels clare care explică exact ce reprezintă fiecare câmp
+
+#### **Code Quality**
+- ✅ Separation of concerns - pending vs distributed data
+- ✅ Reusable functions în useExpenseManagement
+- ✅ Consistent prop chain
+- ✅ Clean state management cu useEffect cleanup
+
+---
+
+### **NEXT STEPS / FUTURE CONSIDERATIONS**
+
+1. **Migration când distribuim expense:**
+   - Când distribuim o cheltuială care are pending data
+   - Trebuie să copiem datele din `pendingConsumptions` → `expense.consumption`
+   - Apoi să ștergem din pending
+
+2. **Validation:**
+   - Consider validating că consumption data e completă înainte de distribuție
+   - Poate warning dacă distribuim fără să avem toate consumurile
+
+3. **Performance:**
+   - Monitor Firestore writes pentru pending data
+   - Consider batching updates dacă utilizatorul introduce multe valori rapid
+
+---
+
+*Această sesiune a demonstrat importanța de a înțelege exact cum circulă datele prin aplicație și de a menține consistență perfectă între componente care afișează aceeași informație.*

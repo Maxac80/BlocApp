@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Settings, Users, Building2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Settings, Users, Building2, Info } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import SupplierModal from './SupplierModal';
 
@@ -18,8 +18,11 @@ const ExpenseConfigModal = ({
   stairs = []
 }) => {
   const [activeTab, setActiveTab] = useState('general');
+  const [selectedStairTab, setSelectedStairTab] = useState('all');
   const [localConfig, setLocalConfig] = useState({
     distributionType: 'apartment',
+    consumptionUnit: 'mc',
+    customConsumptionUnit: '',
     invoiceMode: 'single',
     receptionMode: 'total',
     appliesTo: {
@@ -31,6 +34,8 @@ const ExpenseConfigModal = ({
     contractNumber: '',
     contactPerson: ''
   });
+
+  const [showCustomUnit, setShowCustomUnit] = useState(false);
 
   // 🏠 State local pentru participările apartamentelor (se salvează în Firebase)
   const [localParticipations, setLocalParticipations] = useState({});
@@ -45,6 +50,8 @@ const ExpenseConfigModal = ({
     if (expenseConfig && !justAddedSupplierRef.current) {
       setLocalConfig({
         distributionType: expenseConfig.distributionType || 'apartment',
+        consumptionUnit: expenseConfig.consumptionUnit || 'mc',
+        customConsumptionUnit: expenseConfig.customConsumptionUnit || '',
         invoiceMode: expenseConfig.invoiceMode || 'single',
         receptionMode: expenseConfig.receptionMode || 'total',
         appliesTo: expenseConfig.appliesTo || {
@@ -56,6 +63,9 @@ const ExpenseConfigModal = ({
         contractNumber: expenseConfig.contractNumber || '',
         contactPerson: expenseConfig.contactPerson || ''
       });
+
+      // Setează showCustomUnit dacă unitatea e custom
+      setShowCustomUnit(expenseConfig.consumptionUnit === 'custom');
     }
   }, [expenseConfig]);
 
@@ -123,6 +133,14 @@ const ExpenseConfigModal = ({
 
   const handleSave = async () => {
     try {
+      // Validare unitate de măsură custom
+      if (localConfig.distributionType === 'consumption' &&
+          localConfig.consumptionUnit === 'custom' &&
+          !localConfig.customConsumptionUnit?.trim()) {
+        alert('Vă rog completați unitatea de măsură personalizată');
+        return;
+      }
+
       // Validare participări - verifică dacă există sume/procente necompletate
       const apartments = getAssociationApartments();
       const incompleteParticipations = [];
@@ -263,6 +281,29 @@ const ExpenseConfigModal = ({
     stairs: stairs.filter(stair => stair.blockId === block.id)
   }));
 
+  // Creează tab-uri pentru scări (pentru tab-ul Participare) - ÎNAINTE de return
+  const stairTabs = useMemo(() => {
+    if (!blocks || !stairs) return [];
+
+    return stairs.map(stair => {
+      const block = blocks.find(b => b.id === stair.blockId);
+      return {
+        id: stair.id,
+        name: stair.name,
+        blockName: block?.name || '',
+        label: `${block?.name || ''} - ${stair.name}`
+      };
+    });
+  }, [blocks, stairs]);
+
+  // Filtrează apartamentele pe baza tab-ului selectat - ÎNAINTE de return
+  const filteredApartments = useMemo(() => {
+    if (!getAssociationApartments) return [];
+    const apartments = getAssociationApartments();
+    if (selectedStairTab === 'all') return apartments;
+    return apartments.filter(apt => apt.stairId === selectedStairTab);
+  }, [selectedStairTab, getAssociationApartments]);
+
   if (!isOpen) return null;
 
   const apartments = getAssociationApartments();
@@ -328,7 +369,7 @@ const ExpenseConfigModal = ({
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mod de distribuție
+                  Distribuție
                 </label>
                 <select
                   value={localConfig.distributionType}
@@ -338,56 +379,107 @@ const ExpenseConfigModal = ({
                   <option value="apartment">Pe apartament (egal)</option>
                   <option value="individual">Pe apartament (individual)</option>
                   <option value="person">Pe persoană</option>
-                  <option value="consumption">Pe consum (mc/Gcal/kWh)</option>
+                  <option value="consumption">Pe consum</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.distributionType === 'apartment' && 'Cheltuiala se împarte egal între toate apartamentele'}
                   {localConfig.distributionType === 'individual' && 'Fiecare apartament are suma proprie'}
                   {localConfig.distributionType === 'person' && 'Cheltuiala se împarte pe numărul de persoane'}
-                  {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza consumului'}
+                  {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
                 </p>
               </div>
 
+              {/* Unitate de măsură - apare doar pentru consumption */}
+              {localConfig.distributionType === 'consumption' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unitate de măsură
+                  </label>
+                  <select
+                    value={showCustomUnit ? 'custom' : localConfig.consumptionUnit}
+                    onChange={(e) => {
+                      if (e.target.value === 'custom') {
+                        setShowCustomUnit(true);
+                        setLocalConfig({ ...localConfig, consumptionUnit: 'custom', customConsumptionUnit: '' });
+                      } else {
+                        setShowCustomUnit(false);
+                        setLocalConfig({ ...localConfig, consumptionUnit: e.target.value, customConsumptionUnit: '' });
+                      }
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
+                    <option value="mc">mc (metri cubi) - Apă, Canalizare, Gaz</option>
+                    <option value="Gcal">Gcal (gigacalorii) - Căldură</option>
+                    <option value="kWh">kWh (kilowați-oră) - Electricitate</option>
+                    <option value="MWh">MWh (megawați-oră) - Electricitate</option>
+                    <option value="custom">✏️ Altă unitate...</option>
+                  </select>
+
+                  {showCustomUnit && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Unitatea personalizată *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: litri, m³, kW, etc."
+                        value={localConfig.customConsumptionUnit || ''}
+                        onChange={(e) => setLocalConfig({ ...localConfig, customConsumptionUnit: e.target.value })}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  <p className="mt-2 text-sm text-gray-600">
+                    Unitatea folosită pentru măsurarea consumului
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mod introducere facturi
+                  Factură
                 </label>
                 <select
                   value={localConfig.invoiceMode}
                   onChange={(e) => handleInvoiceModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
-                  <option value="single">O factură unică</option>
+                  <option value="single">O singură factură</option>
                   <option value="separate">Facturi separate (per scară/bloc)</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
-                  {localConfig.invoiceMode === 'single' && 'O singură factură pentru întreaga cheltuială, distribuită pe entități'}
-                  {localConfig.invoiceMode === 'separate' && 'Facturi separate pentru fiecare entitate (scară/bloc)'}
+                  {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'total' && 'O factură pe asociație'}
+                  {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_block' && 'O factură cu suma totală distribuită pe blocuri'}
+                  {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_stair' && 'O factură cu suma totală distribuită pe scări'}
+                  {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_block' && 'Facturi separate pentru fiecare bloc'}
+                  {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_stair' && 'Facturi separate pentru fiecare scară'}
                 </p>
               </div>
 
-              {/* Mod introducere cheltuială */}
+              {/* Introducere sume */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mod introducere cheltuială
+                  Introducere sume
                 </label>
                 <select
                   value={localConfig.receptionMode}
                   onChange={(e) => handleReceptionModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
-                  {localConfig.invoiceMode !== 'separate' && <option value="total">Pe asociație (total)</option>}
-                  {(blocks.length > 1 || localConfig.receptionMode === 'per_block') && <option value="per_block">Defalcat pe blocuri</option>}
-                  {(stairs.length > 1 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Defalcat pe scări</option>}
+                  {localConfig.invoiceMode !== 'separate' && <option value="total">Pe asociație</option>}
+                  {(blocks.length > 1 || localConfig.receptionMode === 'per_block') && <option value="per_block">Per bloc</option>}
+                  {(stairs.length > 1 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Per scară</option>}
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.receptionMode === 'total' && 'Suma se introduce o singură dată pentru întreaga asociație'}
-                  {localConfig.receptionMode === 'per_block' && 'Sume separate pentru fiecare bloc'}
-                  {localConfig.receptionMode === 'per_stair' && 'Sume separate pentru fiecare scară'}
+                  {localConfig.receptionMode === 'per_block' && 'Sume separate per bloc'}
+                  {localConfig.receptionMode === 'per_stair' && 'Sume separate per scară'}
                 </p>
                 {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'total' && (
                   <p className="mt-2 text-sm text-orange-600 font-medium">
-                    ⚠️ Mod "Facturi separate" necesită "Defalcat pe blocuri" sau "Defalcat pe scări"
+                    ⚠️ Mod "Facturi separate" necesită "Per bloc" sau "Per scară"
                   </p>
                 )}
               </div>
@@ -445,15 +537,80 @@ const ExpenseConfigModal = ({
               <div className="text-sm text-gray-600 mb-4">
                 Configurează participarea fiecărui apartament la această cheltuială
               </div>
-              {apartments.length > 0 ? (
+
+              {/* Tab-uri pentru scări */}
+              {stairs.length > 0 && (
+                <div className="border-b overflow-x-auto">
+                  <div className="flex">
+                    <button
+                      onClick={() => setSelectedStairTab('all')}
+                      className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                        selectedStairTab === 'all'
+                          ? 'bg-purple-50 text-purple-700 border-purple-700'
+                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      Toate
+                    </button>
+                    {stairTabs.map(stair => {
+                      // Verifică dacă scara este activă în configurație
+                      const isStairActive = localConfig.receptionMode === 'total' ||
+                        (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(stair.id)) ||
+                        (localConfig.receptionMode === 'per_block' && (() => {
+                          const stairObj = stairs.find(s => s.id === stair.id);
+                          return stairObj && localConfig.appliesTo.blocks.includes(stairObj.blockId);
+                        })());
+
+                      return (
+                        <button
+                          key={stair.id}
+                          onClick={() => setSelectedStairTab(stair.id)}
+                          disabled={!isStairActive}
+                          className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                            selectedStairTab === stair.id
+                              ? 'bg-purple-50 text-purple-700 border-purple-700'
+                              : isStairActive
+                                ? 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                : 'border-transparent text-gray-400 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          {stair.label} {!isStairActive && '(Dezactivat)'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {filteredApartments.length > 0 ? (
                 <div className="space-y-2">
-                  {apartments.map(apartment => {
+                  {filteredApartments.map(apartment => {
                     const participationKey = `${apartment.id}-${expenseName}`;
                     const participation = localParticipations[participationKey] || { type: 'integral', value: null };
+                    const isModified = participation.type !== 'integral';
+
+                    // Date pentru tooltip
+                    const stair = stairs.find(s => s.id === apartment.stairId);
+                    const block = stair ? blocks.find(b => b.id === stair.blockId) : null;
+
+                    // Verifică dacă apartamentul este activ (scara/blocul este selectat)
+                    const isApartmentActive = localConfig.receptionMode === 'total' ||
+                      (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(apartment.stairId)) ||
+                      (localConfig.receptionMode === 'per_block' && block && localConfig.appliesTo.blocks.includes(block.id));
 
                     return (
-                      <div key={apartment.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={apartment.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                          !isApartmentActive ? 'bg-gray-200 opacity-60' :
+                          isModified ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50'
+                        }`}
+                      >
                         <span className="w-20 font-medium">Apt {apartment.number}</span>
+                        <span className={`flex-1 ${!isApartmentActive ? 'text-gray-500' : 'text-gray-700'}`}>
+                          {apartment.owner || 'Fără proprietar'}
+                          {!isApartmentActive && ' (Dezactivat)'}
+                        </span>
                         <select
                           value={participation.type}
                           onChange={(e) => {
@@ -464,7 +621,10 @@ const ExpenseConfigModal = ({
                               [participationKey]: { type, value: newValue }
                             });
                           }}
-                          className="flex-1 p-2 border border-gray-300 rounded-lg"
+                          disabled={!isApartmentActive}
+                          className={`flex-1 p-2 border rounded-lg ${
+                            !isApartmentActive ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'
+                          }`}
                         >
                           <option value="integral">Integral</option>
                           <option value="percentage">Procent</option>
@@ -489,8 +649,10 @@ const ExpenseConfigModal = ({
                                 });
                               }
                             }}
+                            disabled={!isApartmentActive}
                             placeholder={participation.type === "percentage" ? "%" : "RON"}
                             className={`w-24 p-2 border rounded-lg ${
+                              !isApartmentActive ? 'bg-gray-100 cursor-not-allowed' :
                               (!participation.value || participation.value <= 0)
                                 ? 'border-red-500 bg-red-50'
                                 : 'border-gray-300'
