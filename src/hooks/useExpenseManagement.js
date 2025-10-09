@@ -506,6 +506,71 @@ export const useExpenseManagement = ({
     }
   }, [currentSheet]);
 
+  // 📊 ACTUALIZAREA INDECȘILOR - SHEET-BASED
+  const updateExpenseIndexes = useCallback(async (expenseId, apartmentId, indexes) => {
+    try {
+      if (!currentSheet || !currentSheet.expenses) {
+        console.error('❌ No current sheet or expenses');
+        return;
+      }
+
+      const expense = currentSheet.expenses.find(exp => exp.id === expenseId);
+      if (!expense) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        return;
+      }
+
+      // Actualizează indecșii în sheet folosind updateExpenseInSheet
+      const updatedExpense = {
+        ...expense,
+        indexes: {
+          ...expense.indexes,
+          [apartmentId]: indexes
+        }
+      };
+
+      await updateExpenseInSheet(expenseId, updatedExpense);
+      console.log('✅ Indexes updated in sheet for apartment:', apartmentId);
+    } catch (error) {
+      console.error('❌ Eroare la actualizarea indecșilor:', error);
+    }
+  }, [currentSheet, updateExpenseInSheet]);
+
+  // 📝 SALVARE INDECȘI PENDING (pentru cheltuieli nedistribuite)
+  const updatePendingIndexes = useCallback(async (expenseTypeName, apartmentId, indexes) => {
+    try {
+      if (!currentSheet?.id) {
+        console.error('❌ No current sheet');
+        return;
+      }
+
+      // Obține datele existente
+      const pendingIndexes = currentSheet.pendingIndexes || {};
+      const expenseIndexes = pendingIndexes[expenseTypeName] || {};
+
+      // Actualizează cu noile valori
+      const updatedPendingIndexes = {
+        ...pendingIndexes,
+        [expenseTypeName]: {
+          ...expenseIndexes,
+          [apartmentId]: indexes
+        }
+      };
+
+      // Salvează în sheet folosind updateDoc direct pe sheet
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+
+      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+        pendingIndexes: updatedPendingIndexes
+      });
+
+      console.log('✅ Pending indexes saved for:', expenseTypeName, apartmentId);
+    } catch (error) {
+      console.error('❌ Error saving pending indexes:', error);
+    }
+  }, [currentSheet]);
+
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleDeleteCustomExpense = useCallback(async (expenseName) => {
     try {
@@ -727,6 +792,8 @@ export const useExpenseManagement = ({
     updateExpenseIndividualAmount,
     updatePendingConsumption,
     updatePendingIndividualAmount,
+    updateExpenseIndexes,
+    updatePendingIndexes,
 
     // 📊 Statistici și date
     expenseStats

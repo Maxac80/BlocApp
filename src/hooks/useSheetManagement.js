@@ -602,6 +602,52 @@ export const useSheetManagement = (associationId) => {
         nextConsumptionMonth = prevDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
       }
 
+      // 🔄 TRANSFER INDECȘI: newIndex → oldIndex pentru luna următoare
+      const transferIndexesToNewSheet = (expenses) => {
+        if (!expenses || expenses.length === 0) return [];
+
+        return expenses.map(expense => {
+          // Dacă nu e cheltuială pe consum cu indecși, returnează-o neschimbată
+          if (!expense.isUnitBased || !expense.indexes) {
+            return { ...expense };
+          }
+
+          // Transferă indecșii: newIndex → oldIndex, șterge newIndex
+          const transferredIndexes = {};
+          Object.keys(expense.indexes).forEach(apartmentId => {
+            const apartmentIndexes = expense.indexes[apartmentId];
+            const transferredApartmentIndexes = {};
+
+            Object.keys(apartmentIndexes).forEach(meterId => {
+              const meterData = apartmentIndexes[meterId];
+              if (meterData.newIndex) {
+                // Transferă newIndex ca oldIndex pentru luna următoare
+                transferredApartmentIndexes[meterId] = {
+                  oldIndex: meterData.newIndex,
+                  // newIndex va fi completat în luna următoare
+                  meterName: meterData.meterName,
+                  transferredFrom: currentSheet.id,
+                  transferredAt: new Date().toISOString()
+                };
+              }
+            });
+
+            if (Object.keys(transferredApartmentIndexes).length > 0) {
+              transferredIndexes[apartmentId] = transferredApartmentIndexes;
+            }
+          });
+
+          return {
+            ...expense,
+            indexes: transferredIndexes,
+            // Resetează consumption pentru luna nouă (va fi recalculat din indecși)
+            consumption: {},
+            // Resetează billAmount pentru luna nouă (va fi introdus din nou)
+            billAmount: 0
+          };
+        });
+      };
+
       const newSheetRef = doc(collection(db, 'sheets'));
       const newSheetData = {
         associationId: currentSheet.associationId, // IMPORTANT: folosim associationId din sheet-ul curent!
@@ -611,7 +657,7 @@ export const useSheetManagement = (associationId) => {
         status: SHEET_STATUS.IN_PROGRESS,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        
+
         // SNAPSHOT COMPLET - copiază TOATE datele din momentul publicării
         associationSnapshot: {
           // Informații asociație (din sheet-ul actual)
@@ -619,12 +665,12 @@ export const useSheetManagement = (associationId) => {
           cui: currentSheet.associationSnapshot?.cui || '',
           address: currentSheet.associationSnapshot?.address || {},
           bankAccount: currentSheet.associationSnapshot?.bankAccount || {},
-          
+
           // Structura completă de apartamente din momentul publicării
           totalApartments: currentSheet.associationSnapshot?.totalApartments || 0,
           blocks: currentSheet.associationSnapshot?.blocks ? [...currentSheet.associationSnapshot.blocks] : [],
           stairs: currentSheet.associationSnapshot?.stairs ? [...currentSheet.associationSnapshot.stairs] : [],
-          apartments: currentSheet.associationSnapshot?.apartments ? 
+          apartments: currentSheet.associationSnapshot?.apartments ?
             currentSheet.associationSnapshot.apartments.map(apt => ({
               id: apt.id || '',
               number: apt.number || '',
@@ -637,8 +683,8 @@ export const useSheetManagement = (associationId) => {
             })) : []
         },
 
-        // CHELTUIELI - copiază TOATE cheltuielile active din momentul publicării
-        expenses: currentSheet.expenses ? [...currentSheet.expenses] : [],
+        // CHELTUIELI - copiază cu transfer automat de indecși
+        expenses: transferIndexesToNewSheet(currentSheet.expenses || []),
         
         // Date financiare pentru noul sheet
         maintenanceTable: [],

@@ -162,6 +162,149 @@ const useMaintenanceCalculation = ({
     [association?.id, currentMonth]
   );
 
+  // 💧 CALCUL DIFERENȚĂ PENTRU CHELTUIELI PE CONSUM CU INDECȘI
+  const calculateExpenseDifferences = useCallback((expense, apartments) => {
+    if (!expense.isUnitBased || !expense.billAmount) {
+      return {}; // Nu e cheltuială pe consum sau nu are billAmount
+    }
+
+    const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+    const differenceConfig = config?.differenceDistribution;
+
+    if (!differenceConfig) {
+      return {}; // Nu are configurare diferență
+    }
+
+    // 1. Calculează consumul total declarat din indecși sau consumption
+    let totalDeclaredConsumption = 0;
+    const apartmentConsumptions = {};
+
+    apartments.forEach(apt => {
+      let aptConsumption = 0;
+
+      // Verifică dacă are indecși
+      const indexes = expense.indexes?.[apt.id];
+      if (indexes) {
+        // Calculează consum din indecși
+        Object.values(indexes).forEach(indexData => {
+          if (indexData.newIndex && indexData.oldIndex) {
+            aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+          }
+        });
+      } else {
+        // Folosește consumul declarat manual
+        aptConsumption = parseFloat(expense.consumption?.[apt.id] || 0);
+      }
+
+      apartmentConsumptions[apt.id] = aptConsumption;
+      totalDeclaredConsumption += aptConsumption;
+    });
+
+    // 2. Calculează diferența
+    const totalCalculated = totalDeclaredConsumption * (expense.unitPrice || 0);
+    const difference = expense.billAmount - totalCalculated;
+
+    if (Math.abs(difference) < 0.01) {
+      return {}; // Diferența e neglijabilă
+    }
+
+    // 3. Calculează participarea fiecărui apartament la diferență
+    const differenceByApartment = {};
+
+    // Filtrează apartamentele care participă la diferență
+    const participatingApartments = apartments.filter(apt => {
+      const participation = config?.apartmentParticipation?.[apt.id];
+
+      // Exclude apartamentele excluse dacă nu e bifat includeExcludedInDifference
+      if (participation?.type === 'excluded' && !differenceConfig.includeExcludedInDifference) {
+        return false;
+      }
+
+      // Exclude apartamentele cu sumă fixă dacă nu e bifat includeFixedAmountInDifference
+      if (participation?.type === 'fixed' && !differenceConfig.includeFixedAmountInDifference) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (participatingApartments.length === 0) {
+      return {};
+    }
+
+    // 4. Distribuie diferența conform metodei configurate
+    participatingApartments.forEach(apt => {
+      let apartmentShare = 0;
+
+      // PASUL 1: Calculează diferența de bază conform metodei alese
+      switch (differenceConfig.method) {
+        case 'apartment':
+          // Egal pe apartament
+          apartmentShare = difference / participatingApartments.length;
+          break;
+
+        case 'person':
+          // Proporțional cu persoanele
+          const totalParticipatingPersons = participatingApartments.reduce((sum, a) => sum + a.persons, 0);
+          apartmentShare = (difference / totalParticipatingPersons) * apt.persons;
+          break;
+
+        case 'consumption':
+          // Proporțional cu consumul
+          const totalParticipatingConsumption = participatingApartments.reduce(
+            (sum, a) => sum + apartmentConsumptions[a.id], 0
+          );
+          if (totalParticipatingConsumption > 0) {
+            apartmentShare = (difference / totalParticipatingConsumption) * apartmentConsumptions[apt.id];
+          }
+          break;
+
+        default:
+          apartmentShare = 0;
+      }
+
+      // PASUL 2: Aplică procentele de participare dacă e selectat modul 'participation'
+      if (differenceConfig.adjustmentMode === 'participation') {
+        const participation = config?.apartmentParticipation?.[apt.id];
+        if (participation?.type === 'percentage') {
+          const percent = participation.value;
+          const multiplier = percent < 1 ? percent : (percent / 100);
+          apartmentShare = apartmentShare * multiplier;
+        }
+      }
+
+      differenceByApartment[apt.id] = apartmentShare;
+    });
+
+    // PASUL 3: Aplică ajustarea pe tip de apartament (cu REPONDERARE pentru a păstra suma totală)
+    if (differenceConfig.adjustmentMode === 'apartmentType') {
+      // Calculează greutățile pentru fiecare apartament
+      let totalWeights = 0;
+      let totalToDistribute = 0;
+      const weights = {};
+
+      participatingApartments.forEach(apt => {
+        const apartmentType = apt.apartmentType;
+        const typeRatio = differenceConfig.apartmentTypeRatios?.[apartmentType];
+        const ratio = (typeRatio !== undefined && typeRatio !== null) ? (typeRatio / 100) : 1;
+
+        // Greutatea = suma după pasul 2 × ratio tip apartament
+        weights[apt.id] = differenceByApartment[apt.id] * ratio;
+        totalWeights += weights[apt.id];
+        totalToDistribute += differenceByApartment[apt.id];
+      });
+
+      // Redistribuie proporțional cu greutățile (REPONDERARE - suma totală rămâne aceeași)
+      if (totalWeights > 0) {
+        participatingApartments.forEach(apt => {
+          differenceByApartment[apt.id] = (weights[apt.id] / totalWeights) * totalToDistribute;
+        });
+      }
+    }
+
+    return differenceByApartment;
+  }, [getExpenseConfig]);
+
   // 🧮 CALCULUL PRINCIPAL AL ÎNTREȚINERII CU DETALII
   const calculateMaintenanceWithDetails = useCallback(() => {
     const associationApartments = getAssociationApartments();
@@ -174,6 +317,14 @@ const useMaintenanceCalculation = ({
 
     const totalPersons = associationApartments.reduce((sum, apt) => sum + apt.persons, 0);
     const totalApartments = associationApartments.length;
+
+    // PRE-CALCUL: Calculează diferențele pentru toate cheltuielile pe consum
+    const expenseDifferences = {};
+    sheetExpenses.forEach(expense => {
+      if (expense.isUnitBased && expense.billAmount) {
+        expenseDifferences[expense.name] = calculateExpenseDifferences(expense, associationApartments);
+      }
+    });
 
     const tableData = associationApartments
       .map((apartment) => {
@@ -297,6 +448,20 @@ const useMaintenanceCalculation = ({
           });
         }
 
+        // 💧 ADAUGĂ DIFERENȚELE CALCULATE (pierderi/scurgeri)
+        Object.keys(expenseDifferences).forEach(expenseName => {
+          const apartmentDifference = expenseDifferences[expenseName][apartment.id] || 0;
+          if (apartmentDifference !== 0) {
+            currentMaintenance += apartmentDifference;
+            // Adaugă diferența la detalii (pentru a fi vizibilă în tabel, dacă e necesar)
+            if (expenseDetails[expenseName]) {
+              expenseDetails[expenseName] += apartmentDifference;
+            } else {
+              expenseDetails[expenseName] = apartmentDifference;
+            }
+          }
+        });
+
         const { restante, penalitati } = getApartmentBalance(apartment.id);
         const totalDatorat = currentMaintenance + restante + penalitati;
 
@@ -325,7 +490,10 @@ const useMaintenanceCalculation = ({
   }, [
     getAssociationApartments,
     currentSheet,
-    getApartmentBalance
+    getApartmentBalance,
+    calculateExpenseDifferences,
+    stairs,
+    getExpenseConfig
   ]);
 
   // 🧮 DATE CALCULATE PENTRU TABEL - MEMOIZED
