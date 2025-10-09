@@ -43,6 +43,8 @@ const MaintenanceView = ({
   updateExpenseIndividualAmount,
   updatePendingConsumption,
   updatePendingIndividualAmount,
+  updateExpenseIndexes,
+  updatePendingIndexes,
 
   // Maintenance calculation
   maintenanceData,
@@ -117,10 +119,15 @@ const MaintenanceView = ({
   // State pentru auto-expandare cheltuială în tab Consumuri
   const [expenseToExpand, setExpenseToExpand] = useState(null);
 
+  // State pentru auto-expandare cheltuială în tab Cheltuieli distribuite
+  const [expenseToExpandInList, setExpenseToExpandInList] = useState(null);
+
   // Reset expenseToExpand când schimbăm tab-ul sau luna
   useEffect(() => {
     if (selectedContentTab === 'expenses') {
       setExpenseToExpand(null);
+    } else if (selectedContentTab === 'consumptions') {
+      setExpenseToExpandInList(null);
     }
   }, [selectedContentTab, currentMonth]);
 
@@ -1010,6 +1017,7 @@ const MaintenanceView = ({
                         setExpenseToExpand(expenseName);
                         setSelectedContentTab('consumptions');
                       }}
+                      expandExpenseName={expenseToExpandInList}
                     />
                   ) : (
                     <ConsumptionInput
@@ -1020,6 +1028,8 @@ const MaintenanceView = ({
                       updateExpenseIndividualAmount={updateExpenseIndividualAmount}
                       updatePendingConsumption={updatePendingConsumption}
                       updatePendingIndividualAmount={updatePendingIndividualAmount}
+                      updateExpenseIndexes={updateExpenseIndexes}
+                      updatePendingIndexes={updatePendingIndexes}
                       currentSheet={currentSheet}
                       isMonthReadOnly={isMonthReadOnly}
                       currentMonth={currentMonth}
@@ -1029,7 +1039,12 @@ const MaintenanceView = ({
                       selectedStairTab={selectedStairTab}
                       setSelectedStairTab={setSelectedStairTab}
                       getDisabledExpenseTypes={getDisabledExpenseTypes}
+                      getApartmentParticipation={getApartmentParticipation}
                       expandExpenseName={expenseToExpand}
+                      onExpenseNameClick={(expenseName) => {
+                        setExpenseToExpandInList(expenseName);
+                        setSelectedContentTab('expenses');
+                      }}
                     />
                   )}
                 </div>

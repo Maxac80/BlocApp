@@ -9,6 +9,8 @@ import 'jspdf-autotable';
 
 const AccountingView = ({
   association,
+  blocks = [],
+  stairs = [],
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
@@ -324,6 +326,8 @@ const AccountingView = ({
         {/* Header standard */}
         <DashboardHeader
           association={association}
+          blocks={blocks}
+          stairs={stairs}
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
           getAvailableMonths={getAvailableMonths}

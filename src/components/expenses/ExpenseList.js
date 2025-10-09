@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2 } from 'lucide-react';
 
 const ExpenseList = ({
@@ -14,10 +14,39 @@ const ExpenseList = ({
   blocks,
   stairs,
   onEditExpense,
-  onConsumptionClick
+  onConsumptionClick,
+  expandExpenseName
 }) => {
   // State pentru expandarea cheltuielilor (accordion)
   const [expandedExpenses, setExpandedExpenses] = useState({});
+
+  // Refs pentru scroll automat la cheltuieli
+  const expenseRefs = useRef({});
+
+  // Auto-expandare când se primește un expense name
+  useEffect(() => {
+    if (expandExpenseName) {
+      // Găsește expense-ul după nume
+      const expenseToExpand = associationExpenses.find(exp => exp.name === expandExpenseName);
+      if (expenseToExpand) {
+        // Expandează DOAR această cheltuială (resetează restul)
+        setExpandedExpenses({
+          [expenseToExpand.id]: true
+        });
+
+        // Scroll automat la cheltuială după un mic delay pentru a permite rendering-ul
+        setTimeout(() => {
+          const expenseElement = expenseRefs.current[expenseToExpand.id];
+          if (expenseElement) {
+            expenseElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }, 100);
+      }
+    }
+  }, [expandExpenseName, associationExpenses]);
 
   // Toggle expand pentru o cheltuială
   const toggleExpense = (expenseId) => {
@@ -303,7 +332,11 @@ const ExpenseList = ({
             }
 
             return (
-              <div key={expense.id} className="border border-gray-300 rounded-lg overflow-hidden hover:border-indigo-400 transition-colors">
+              <div
+                key={expense.id}
+                ref={(el) => expenseRefs.current[expense.id] = el}
+                className="border border-gray-300 rounded-lg overflow-hidden hover:border-indigo-400 transition-colors"
+              >
                 {/* Header - întotdeauna vizibil */}
                 <div
                   className="p-3 bg-gradient-to-r from-indigo-50 to-white cursor-pointer hover:from-indigo-100"
@@ -369,15 +402,22 @@ const ExpenseList = ({
                       {config.distributionType === 'consumption' && (() => {
                         const filteredApartments = getFilteredApartments();
 
+                        // Exclude apartamentele EXCLUSE din calcul
+                        const apartmentParticipations = config.apartmentParticipation || {};
+                        const nonExcludedApartments = filteredApartments.filter(apt => {
+                          const participation = apartmentParticipations[apt.id];
+                          return participation?.type !== 'excluded';
+                        });
+
                         // Folosește DOAR datele din expense (nu merge cu pending)
                         const dataObject = expense.consumption || {};
 
-                        // Verifică pentru apartamentele filtrate (Toate sau scară specifică)
-                        const apartmentsWithConsumption = filteredApartments.filter(apt => {
+                        // Verifică pentru apartamentele filtrate (Toate sau scară specifică) NON-EXCLUSE
+                        const apartmentsWithConsumption = nonExcludedApartments.filter(apt => {
                           const value = dataObject?.[apt.id];
                           return value && parseFloat(value) >= 0; // Exact ca în ConsumptionInput
                         }).length;
-                        const totalApartments = filteredApartments.length;
+                        const totalApartments = nonExcludedApartments.length;
                         const isComplete = apartmentsWithConsumption === totalApartments && totalApartments > 0;
 
                         return (
@@ -407,15 +447,22 @@ const ExpenseList = ({
                       {config.distributionType === 'individual' && (() => {
                         const filteredApartments = getFilteredApartments();
 
-                        // Folosește DOAR datele din expense (nu merge cu pending)
-                        const dataObject = expense.fixedAmounts || {};
+                        // Exclude apartamentele EXCLUSE din calcul
+                        const apartmentParticipations = config.apartmentParticipation || {};
+                        const nonExcludedApartments = filteredApartments.filter(apt => {
+                          const participation = apartmentParticipations[apt.id];
+                          return participation?.type !== 'excluded';
+                        });
 
-                        // Verifică pentru apartamentele filtrate (Toate sau scară specifică)
-                        const apartmentsWithAmounts = filteredApartments.filter(apt => {
+                        // Folosește DOAR datele din expense (nu merge cu pending)
+                        const dataObject = expense.individualAmounts || {}; // FIX: individualAmounts nu fixedAmounts
+
+                        // Verifică pentru apartamentele filtrate (Toate sau scară specifică) NON-EXCLUSE
+                        const apartmentsWithAmounts = nonExcludedApartments.filter(apt => {
                           const value = dataObject?.[apt.id];
                           return value && parseFloat(value) >= 0; // Exact ca în ConsumptionInput
                         }).length;
-                        const totalApartments = filteredApartments.length;
+                        const totalApartments = nonExcludedApartments.length;
                         const isComplete = apartmentsWithAmounts === totalApartments && totalApartments > 0;
 
                         return (

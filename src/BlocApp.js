@@ -46,9 +46,9 @@ export default function BlocApp() {
     loading,
     error,
     association,
-    blocks,
-    stairs,
-    apartments,
+    blocks: firestoreBlocks,
+    stairs: firestoreStairs,
+    apartments: firestoreApartments,
     expenses,
     customExpenses,
     createAssociation,
@@ -169,12 +169,11 @@ export default function BlocApp() {
   const sheetStairs = currentSheet?.associationSnapshot?.stairs || [];
   const sheetApartments = currentSheet?.associationSnapshot?.apartments || [];
 
-  // 🎯 USE SHEET DATA: Folosește datele din sheet dacă sunt disponibile, altfel fallback la colecții
-  // IMPORTANT: Folosește ÎNTOTDEAUNA finalBlocks/finalStairs/finalApartments în loc de blocks/stairs/apartments
-  // când pasezi props către componente, pentru a asigura consistența datelor
-  const finalBlocks = sheetBlocks.length > 0 ? sheetBlocks : (blocks || []);
-  const finalStairs = sheetStairs.length > 0 ? sheetStairs : (stairs || []);
-  const finalApartments = sheetApartments.length > 0 ? sheetApartments : (apartments || []);
+  // 🎯 USE SHEET DATA: Folosește datele din sheet dacă sunt disponibile, altfel fallback la colecții Firestore
+  // Simplificat: folosim direct blocks/stairs/apartments peste tot (nu mai există finalBlocks/finalStairs/finalApartments)
+  const blocks = sheetBlocks.length > 0 ? sheetBlocks : (firestoreBlocks || []);
+  const stairs = sheetStairs.length > 0 ? sheetStairs : (firestoreStairs || []);
+  const apartments = sheetApartments.length > 0 ? sheetApartments : (firestoreApartments || []);
 
 
 
@@ -264,9 +263,9 @@ export default function BlocApp() {
     monthlyBalances
   } = useMaintenanceCalculation({
     association: association || null,
-    blocks: finalBlocks || [],
-    stairs: finalStairs || [],
-    apartments: finalApartments || [],
+    blocks: blocks || [],
+    stairs: stairs || [],
+    apartments: apartments || [],
     expenses: expenses || [],
     currentMonth: currentMonth || null,
     calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
@@ -304,6 +303,8 @@ export default function BlocApp() {
     updateExpenseIndividualAmount,
     updatePendingConsumption,
     updatePendingIndividualAmount,
+    updateExpenseIndexes,
+    updatePendingIndexes,
     expenseStats
   } = useExpenseManagement({
     association,
@@ -351,9 +352,9 @@ export default function BlocApp() {
     getAvailableStairs
   } = useDataOperations({
     association,
-    blocks: finalBlocks,
-    stairs: finalStairs,
-    apartments: finalApartments,
+    blocks: blocks,
+    stairs: stairs,
+    apartments: apartments,
     createAssociation,
     addBlock,
     addStair,
@@ -404,10 +405,10 @@ export default function BlocApp() {
 
 // 🔥 AUTO-EXPAND ENTITIES LA ÎNCĂRCAREA DATELOR - OPTIMIZAT
 useEffect(() => {
-  if (association?.id && finalBlocks.length > 0 && currentView === 'setup') {
-    autoExpandEntities(finalBlocks, finalStairs, association.id);
+  if (association?.id && blocks.length > 0 && currentView === 'setup') {
+    autoExpandEntities(blocks, stairs, association.id);
   }
-}, [association?.id, currentView, finalBlocks.length, finalStairs.length, autoExpandEntities]);
+}, [association?.id, currentView, blocks.length, stairs.length, autoExpandEntities]);
 
 // 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI SAU SHEET-ULUI
 // ACTIVAT - încarcă ajustările din sheet-ul curent
@@ -539,8 +540,8 @@ useEffect(() => {
           {currentView === "dashboard" && (
             <DashboardView
               association={association}
-              blocks={finalBlocks}
-              stairs={finalStairs}
+              blocks={blocks}
+              stairs={stairs}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available');
                 return [];
@@ -565,15 +566,15 @@ useEffect(() => {
           {currentView === "maintenance" && (
             <MaintenanceView
               association={association}
-              blocks={finalBlocks}
-              stairs={finalStairs}
+              blocks={blocks}
+              stairs={stairs}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available from useMaintenanceCalculation');
                 return [];
               })}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
-              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              isMonthReadOnly={currentSheet?.status !== 'in_progress'}
               shouldShowPublishButton={shouldShowPublishButton}
               shouldShowAdjustButton={shouldShowAdjustButton}
               getCurrentActiveMonth={getCurrentActiveMonth}
@@ -597,6 +598,8 @@ useEffect(() => {
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               updatePendingConsumption={updatePendingConsumption}
               updatePendingIndividualAmount={updatePendingIndividualAmount}
+              updateExpenseIndexes={updateExpenseIndexes}
+              updatePendingIndexes={updatePendingIndexes}
               maintenanceData={maintenanceData}
               togglePayment={() => {}}
               activeMaintenanceTab={activeMaintenanceTab}
@@ -636,9 +639,9 @@ useEffect(() => {
           {currentView === "setup" && (
             <SetupView
               association={association}
-              blocks={finalBlocks}
-              stairs={finalStairs}
-              apartments={finalApartments}
+              blocks={blocks}
+              stairs={stairs}
+              apartments={apartments}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available');
                 return [];
@@ -680,6 +683,8 @@ useEffect(() => {
           {currentView === "expenses" && (
             <ExpensesView
               association={association}
+              blocks={blocks}
+              stairs={stairs}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
@@ -707,8 +712,8 @@ useEffect(() => {
               deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               getMonthType={getMonthType}
               currentSheet={currentSheet}
-              blocks={finalBlocks}
-              stairs={finalStairs}
+              blocks={blocks}
+              stairs={stairs}
             />
           )}
 
@@ -720,8 +725,8 @@ useEffect(() => {
               setNewAssociation={setNewAssociation}
               handleAddAssociation={handleAssociationSubmit}
               updateAssociation={updateAssociation}
-              blocks={finalBlocks}
-              stairs={finalStairs}
+              blocks={blocks}
+              stairs={stairs}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available');
                 return [];
@@ -741,6 +746,8 @@ useEffect(() => {
           {currentView === "profile" && (
             <ProfileView
               association={association}
+              blocks={blocks}
+              stairs={stairs}
               updateAssociation={updateAssociation}
               userProfile={userProfile}
               currentUser={currentUser}
@@ -770,6 +777,8 @@ useEffect(() => {
           {currentView === "accounting" && (
             <AccountingView
               association={association}
+              blocks={blocks}
+              stairs={stairs}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
               getAvailableMonths={getAvailableMonths}
@@ -795,6 +804,8 @@ useEffect(() => {
           {currentView === "settings" && (
             <SettingsView
               association={association}
+              blocks={blocks}
+              stairs={stairs}
               updateAssociation={updateAssociation}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}

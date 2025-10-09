@@ -19,6 +19,8 @@ const romanianMonths = [
 const SettingsView = ({
   association,
   updateAssociation,
+  blocks = [],
+  stairs = [],
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
@@ -214,6 +216,8 @@ const SettingsView = ({
         {/* Header standard */}
         <DashboardHeader
           association={association}
+          blocks={blocks}
+          stairs={stairs}
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
           getAvailableMonths={getAvailableMonths}

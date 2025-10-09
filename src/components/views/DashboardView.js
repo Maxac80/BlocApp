@@ -120,6 +120,8 @@ const DashboardView = ({
       <div className="w-full">
         <DashboardHeader
           association={association}
+          blocks={blocks}
+          stairs={stairs}
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
           getAvailableMonths={getAvailableMonths}

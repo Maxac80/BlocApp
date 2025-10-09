@@ -19,6 +19,8 @@ import DashboardHeader from '../dashboard/DashboardHeader';
  */
 const ProfileView = ({
   association,
+  blocks = [],
+  stairs = [],
   updateAssociation,
   userProfile,
   currentUser,
@@ -481,6 +483,8 @@ const ProfileView = ({
         {/* Header */}
         <DashboardHeader
           association={association}
+          blocks={blocks}
+          stairs={stairs}
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
           getAvailableMonths={getAvailableMonths}

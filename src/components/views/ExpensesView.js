@@ -5,6 +5,8 @@ import DashboardHeader from '../dashboard/DashboardHeader';
 
 const ExpensesView = ({
   association,
+  blocks = [],
+  stairs = [],
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
@@ -42,6 +44,8 @@ return (
     <div className="w-full">
       <DashboardHeader
         association={association}
+        blocks={blocks}
+        stairs={stairs}
         currentMonth={currentMonth}
         setCurrentMonth={setCurrentMonth}
         getAvailableMonths={getAvailableMonths}
