@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building2, Package, MoreVertical } from 'lucide-react';
+import { Plus, Settings, Trash2, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
@@ -262,14 +262,21 @@ const ExpensesViewNew = ({
                                   <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Custom</span>
                                 )}
                               </div>
-                              <div className="mt-1 text-sm text-gray-600">
-                                <span className="mr-4">
-                                  {config.distributionType === "apartment" ? "📊 Pe apartament (egal)" : 
-                                   config.distributionType === "individual" ? "📋 Pe apartament (individual)" :
-                                   config.distributionType === "person" ? "👥 Pe persoană" : 
-                                   "📈 Pe consum"}
+                              <div className="mt-1 text-sm text-gray-600 flex items-center gap-3">
+                                <span className="flex items-center gap-1">
+                                  {config.distributionType === "apartment" ? (
+                                    <><Home className="w-4 h-4 inline" /> Pe apartament (egal)</>
+                                  ) : config.distributionType === "individual" ? (
+                                    <><User className="w-4 h-4 inline" /> Pe apartament (individual)</>
+                                  ) : config.distributionType === "person" ? (
+                                    <><Users className="w-4 h-4 inline" /> Pe persoană</>
+                                  ) : (
+                                    <><BarChart3 className="w-4 h-4 inline" /> Pe consum</>
+                                  )}
                                 </span>
-                                <span>• 🏢 {supplierName}</span>
+                                <span className="flex items-center gap-1">
+                                  <Building2 className="w-4 h-4 inline" /> {supplierName}
+                                </span>
                               </div>
                             </div>
                             <div className="relative" data-dropdown-container>
