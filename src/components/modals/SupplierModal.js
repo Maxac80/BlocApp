@@ -69,9 +69,9 @@ const SupplierModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header verde similar cu modalul de cheltuieli */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg">
@@ -90,7 +90,7 @@ const SupplierModal = ({
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+        <div className="flex-1 p-6 overflow-y-auto min-h-0">
           <div className="space-y-6">
             {/* Nume furnizor - obligatoriu */}
             <div>
@@ -211,7 +211,7 @@ const SupplierModal = ({
         </div>
 
         {/* Footer cu butoane */}
-        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
           <div className="text-sm text-gray-500">
             * Obligatoriu
           </div>

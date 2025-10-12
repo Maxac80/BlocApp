@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { XCircle } from 'lucide-react';
+import { XCircle, Layers } from 'lucide-react';
 
 const StairModal = ({
   isOpen,
@@ -75,7 +75,7 @@ const StairModal = ({
         <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 rounded-lg p-2">
-              <span className="text-2xl">🪜</span>
+              <Layers className="w-8 h-8 text-white" />
             </div>
             <div>
               <h3 className="text-xl font-semibold">

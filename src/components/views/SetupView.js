@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Layers, Building2, Home, Users } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGenerator';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
@@ -1071,7 +1071,7 @@ return (
                                       <div className="text-green-600">
                                         {isStairExpanded ? '▼' : '▸'}
                                       </div>
-                                      <span className="text-green-600 text-lg">🪜</span>
+                                      <Layers className="w-6 h-6 text-green-600" />
                                       
                                       {editingItem?.type === 'stair' && editingItem?.id === currentStair.id ? (
                                         <div className="flex items-center space-x-2">
@@ -1774,7 +1774,7 @@ return (
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                  <span className="text-2xl">🪜</span>
+                                  <Layers className="w-7 h-7 text-green-600" />
                                 </div>
                                 <div className="text-left">
                                   <div className="flex items-center gap-2 mb-1">

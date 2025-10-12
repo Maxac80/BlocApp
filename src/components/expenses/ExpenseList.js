@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2 } from 'lucide-react';
+import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2, Layers, Building2, BarChart } from 'lucide-react';
 
 const ExpenseList = ({
   associationExpenses,
@@ -500,8 +500,8 @@ const ExpenseList = ({
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
                           </span>
                           {receptionMode === 'total' && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded">🏘️ Pe asociație</span>}
-                          {receptionMode === 'per_block' && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">🏢 Pe bloc</span>}
-                          {receptionMode === 'per_stair' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded">🪜 Pe scară</span>}
+                          {receptionMode === 'per_block' && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded flex items-center gap-1"><Building2 className="w-4 h-4" /> Pe bloc</span>}
+                          {receptionMode === 'per_stair' && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded flex items-center gap-1"><Layers className="w-4 h-4" /> Pe scară</span>}
                         </div>
 
                         {/* Linia 2: Participare */}
@@ -545,7 +545,14 @@ const ExpenseList = ({
                     {/* Defalcare pe blocuri/scări */}
                     {receptionMode !== 'total' && getFilterInfo().type === 'all' && (
                       <div>
-                        <h5 className="font-semibold text-gray-700 mb-2">📊 Defalcare pe {receptionMode === 'per_block' ? 'blocuri 🏢' : 'scări 🪜'}:</h5>
+                        <h5 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                          <BarChart className="w-5 h-5" /> 
+                          Defalcare pe {receptionMode === 'per_block' ? (
+                            <><span>blocuri</span> <Building2 className="w-4 h-4 inline" /></>
+                          ) : (
+                            <><span>scări</span> <Layers className="w-4 h-4 inline" /></>
+                          )}:
+                        </h5>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {receptionMode === 'per_block' && expense.amountsByBlock && blocks && (
                             blocks.map(block => {
