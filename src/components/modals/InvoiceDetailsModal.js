@@ -99,9 +99,9 @@ const InvoiceDetailsModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 60 }}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className={`p-6 ${
+        <div className={`p-6 flex-shrink-0 ${
           monthType === 'historic'
             ? 'bg-gradient-to-r from-gray-600 to-gray-700'
             : monthType === 'next'
@@ -123,7 +123,7 @@ const InvoiceDetailsModal = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Dropdown pentru facturi existente parțiale */}
           {getPartiallyDistributedInvoices && (() => {
             const allPartialInvoices = getPartiallyDistributedInvoices();
@@ -288,7 +288,7 @@ const InvoiceDetailsModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
+        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

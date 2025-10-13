@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
 
 const ApartmentModal = ({
@@ -11,7 +12,6 @@ const ApartmentModal = ({
   stairs, // toate scările pentru a găsi scara apartamentului în editare
   onSave
 }) => {
-  const [activeTab, setActiveTab] = useState('general');
   const [formData, setFormData] = useState({
     number: '',
     owner: '',
@@ -26,7 +26,6 @@ const ApartmentModal = ({
   // Resetează sau populează datele când se deschide modalul
   useEffect(() => {
     if (isOpen) {
-      setActiveTab('general'); // Reset la primul tab
       if (mode === 'edit' && apartment) {
         setFormData({
           number: apartment.number || '',
@@ -52,6 +51,7 @@ const ApartmentModal = ({
       }
     }
   }, [isOpen, mode, apartment]);
+
 
   if (!isOpen) return null;
 
@@ -107,11 +107,11 @@ const ApartmentModal = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[600px] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header cu gradient orange */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 flex items-center justify-between text-white">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 flex items-center justify-between text-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 rounded-lg p-2">
               <span className="text-2xl">🏠</span>
@@ -135,46 +135,13 @@ const ApartmentModal = ({
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-gray-50 pt-4">
-          <div className="flex space-x-1">
-            <button
-              onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-all ${
-                activeTab === 'general'
-                  ? 'bg-white text-orange-600 shadow-sm border-b-2 border-orange-500'
-                  : 'text-gray-600 hover:text-orange-600 hover:bg-white/50'
-              }`}
-            >
-              <span className="text-lg">🏡</span>
-              General
-            </button>
-            <button
-              onClick={() => setActiveTab('contact')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-all ${
-                activeTab === 'contact'
-                  ? 'bg-white text-orange-600 shadow-sm border-b-2 border-orange-500'
-                  : 'text-gray-600 hover:text-orange-600 hover:bg-white/50'
-              }`}
-            >
-              <span className="text-lg">📱</span>
-              Contact
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="flex-1 bg-white overflow-hidden">
-          <div className="h-full relative">
-            {/* General Tab */}
-            <div className={`absolute inset-0 p-6 pb-0 transition-transform duration-200 ease-in-out ${
-              activeTab === 'general' ? 'translate-x-0' : '-translate-x-full'
-            }`}>
-              <div className="space-y-4 h-full">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">Informații generale</h4>
+        {/* Content */}
+        <div className="p-4 overflow-y-auto flex-1 min-h-0">
+          <div className="space-y-3">
+            <h4 className="text-base font-medium text-gray-800 mb-3">Informații generale</h4>
 
                 {/* Rândul 1: Numărul apartamentului (doar pentru add) și Proprietarul */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {mode === 'add' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -209,7 +176,7 @@ const ApartmentModal = ({
                 </div>
 
                 {/* Rândul 2: Numărul de persoane și Tipul apartamentului */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Numărul de persoane *
@@ -247,7 +214,7 @@ const ApartmentModal = ({
                 </div>
 
                 {/* Rândul 3: Suprafața și Sursa de încălzire */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Suprafața (mp)
@@ -283,18 +250,11 @@ const ApartmentModal = ({
                     </select>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Contact Tab */}
-            <div className={`absolute inset-0 p-6 pb-0 transition-transform duration-200 ease-in-out ${
-              activeTab === 'contact' ? 'translate-x-0' : 'translate-x-full'
-            }`}>
-              <div className="space-y-4 h-full">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">Informații de contact</h4>
+                <h4 className="text-base font-medium text-gray-800 mb-3 mt-4">Informații de contact</h4>
 
                 {/* Email și Telefon pe aceeași linie */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Adresă email
@@ -323,32 +283,29 @@ const ApartmentModal = ({
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
         </div>
 
-        {/* Butoane fixe la baza modalului */}
-        <div className="bg-white border-t border-gray-200 p-6">
-          <form onSubmit={handleSubmit}>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-              >
-                Anulează
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-              >
-                {mode === 'edit' ? 'Salvează' : 'Adaugă'}
-              </button>
-            </div>
+        {/* Butoane fixe */}
+        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
+          <form onSubmit={handleSubmit} className="contents">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Anulează
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+            >
+              {mode === 'edit' ? 'Salvează' : 'Adaugă'}
+            </button>
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

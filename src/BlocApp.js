@@ -642,6 +642,7 @@ useEffect(() => {
               blocks={blocks}
               stairs={stairs}
               apartments={apartments}
+              firestoreApartments={firestoreApartments}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available');
                 return [];

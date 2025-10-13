@@ -621,6 +621,17 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     if (!association) throw new Error("Nu există asociație");
 
     try {
+      // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
+      if (sheetOperationsRef?.current?.updateApartmentInSheet) {
+        console.log('📝 SHEET-BASED: Actualizăm apartamentul direct în sheet...');
+        await sheetOperationsRef.current.updateApartmentInSheet(apartmentId, updates);
+        console.log('✅ Apartament actualizat direct în sheet:', apartmentId);
+        return;
+      }
+
+      // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
+      console.log('📝 COLLECTION-FALLBACK: Actualizăm apartamentul în colecții...');
+
       const updateData = {
         ...updates,
         updatedAt: new Date().toISOString(),
@@ -631,7 +642,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       // Reîncarcă apartamentele pentru sincronizare
       await loadApartments(association.id);
 
-      // console.log("✅ Apartament actualizat și date reîncărcate");
+      console.log("✅ Apartament actualizat în colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la actualizarea apartamentului:", err);
       throw err;

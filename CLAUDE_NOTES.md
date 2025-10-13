@@ -2,6 +2,149 @@
 
 ---
 
+### **GLOBAL FIXED AMOUNT MODE & UI TEXT SIMPLIFICATION - 13 OCTOMBRIE 2025**
+
+#### **GLOBAL FIXED AMOUNT MODE IMPLEMENTATION**
+
+**Problem**: Pentru cheltuielile cu sumă fixă și distribuție pe persoană, administratorii trebuiau să introducă manual valoarea pentru fiecare apartament (de ex., 10 RON × 2 persoane = 20 RON). Acest lucru era foarte ineficient pentru sume fixe standard care se aplică tuturor apartamentelor.
+
+**Solution**: Mod global de sumă fixă care permite introducerea unei singure valori care se aplică automat la toate apartamentele.
+
+**Implementation**:
+
+1. **New Field in Expense Config**:
+   ```javascript
+   fixedAmountMode: 'apartment' | 'person'  // Default: 'apartment'
+   ```
+   - `'apartment'`: Suma fixă este per apartament (comportament vechi)
+   - `'person'`: Suma fixă este per persoană (comportament nou)
+
+2. **UI Changes in ExpenseConfigModal**:
+   - Added radio button selector când `distributionType === 'person'`
+   - Shows clear example: "Exemplu: 10 RON → Ap. cu 2 persoane = 20 RON"
+   - **Location**: `ExpenseConfigModal.js` (lines ~1450-1480)
+
+3. **Display Logic in ExpenseList**:
+   - When `fixedAmountMode === 'person'`: Shows "10.00 RON fix/pers" (NOT "20.00 RON (10.00 RON fix/pers)")
+   - When `fixedAmountMode === 'apartment'`: Shows "20.00 RON fix/apt"
+   - **Location**: `ExpenseList.js` (lines 700-710 for blocks, 848-858 for stairs)
+
+4. **Calculation Logic in useMaintenanceCalculation**:
+   - Checks `config.fixedAmountMode` when calculating amounts
+   - Automatically multiplies by `apartment.persons` when mode is 'person'
+   - **Location**: `useMaintenanceCalculation.js`
+
+#### **UI TEXT SIMPLIFICATION - EXPENSE CARDS**
+
+**Goal**: Reduce clutter and make expense distribution cards cleaner and easier to read.
+
+**Changes Made**:
+
+1. **Removed "Integral:" Prefix**:
+   - **Before**: "Integral: 17.78 RON/persoană"
+   - **After**: "17.78 RON/persoană"
+   - **Rationale**: Se subînțelege că e vorba despre participare integrală
+   - **Location**: `ExpenseList.js` (lines 840-852 for blocks, 988-1000 for stairs)
+
+2. **Removed "participă" Word**:
+   - **Before**: "11/13 persoane participă" și "3/4 apartamente participă"
+   - **After**: "11/13 persoane" și "3/4 apartamente"
+   - **Rationale**: Se subînțelege că e vorba despre participare
+   - **Location**: `ExpenseList.js` (lines 671, 668, 672, 816, 820)
+
+3. **Consolidated Apartment & Person Counts on One Line**:
+   - **Before** (2 lines):
+     ```
+     3/4 apartamente participă
+     11/13 persoane participă
+     ```
+   - **After** (1 line):
+     ```
+     3/4 apartamente • 11/13 persoane
+     ```
+   - **Implementation**:
+     ```javascript
+     <div className="text-xs text-blue-500 mt-1">
+       {participatingApts.length + partialApts.length}/{blockApts.length} apartamente
+       {config.distributionType === 'person' && totalBlockPersons > 0 && (
+         <span className="text-blue-600 font-medium">
+           {' • '}{participatingBlockPersons}/{totalBlockPersons} {totalBlockPersons === 1 ? 'persoană' : 'persoane'}
+         </span>
+       )}
+     </div>
+     ```
+   - **Location**: `ExpenseList.js` (lines 845-852 for blocks, 993-1000 for stairs)
+
+#### **LAYOUT ALIGNMENT - TABS & TABLE**
+
+**Problem**: Tab-urile pentru "Cheltuieli distribuite" și "Consumuri" erau pe toată lățimea ecranului, în timp ce tabelul de întreținere era mai îngust.
+
+**Solution**: Added `mx-2` margin class to tabs container to match table width.
+
+**Change**:
+```javascript
+{/* Tab-uri pentru Cheltuieli și Consumuri */}
+<div className="mb-6 mx-2">  // Added mx-2 here
+  <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200">
+```
+
+**Location**: `MaintenanceView.js` (line 974)
+
+**Result**: Tabs acum au aceeași lățime ca tabelul de întreținere, arată mai aliniat și profesional.
+
+#### **KEY LEARNINGS**
+
+1. **Global vs Per-Item Configuration**:
+   - Pentru valori repetitive (sume fixe standard), un mod global reduce dramatic timpul de introducere
+   - Users apreciază flexibilitatea de a alege între mod global și mod per-apartament
+   - Exemple clare în UI ajută utilizatorii să înțeleagă ce face fiecare mod
+
+2. **UI Text Simplification Principles**:
+   - Remove redundant words that are self-evident from context
+   - "participă" era redundant când afișăm "11/13 persoane" (evident că 11 participă din 13)
+   - "Integral:" era redundant pentru că arătam deja suma per persoană/apartament
+   - Less is more - un UI mai curat e mai ușor de scanat vizual
+
+3. **Information Density vs Clarity**:
+   - Consolidating related info (apartments + persons) on one line reduces vertical space
+   - Using bullet separator (•) creates clear visual distinction
+   - Conditional rendering (show persons only when distribution type is 'person') avoids clutter
+
+4. **Layout Consistency**:
+   - Tabs and tables should have consistent width for visual harmony
+   - Tailwind's margin classes (`mx-2`) provide easy alignment
+   - Small layout tweaks have big impact on perceived professionalism
+
+5. **Display Logic for Fixed Amounts**:
+   - When mode is 'person', show ONLY per-person amount (not total)
+   - Total amount is visible in maintenance table, no need to show it twice
+   - Format: "10.00 RON fix/pers" vs "20.00 RON fix/apt" makes mode immediately clear
+
+#### **FILES MODIFIED**
+
+1. **ExpenseConfigModal.js**: Added `fixedAmountMode` radio buttons for person distribution
+2. **ExpenseList.js**: Updated display logic for fixed amounts, removed redundant text, consolidated participation info
+3. **MaintenanceView.js**: Added `mx-2` to tabs container for width alignment
+4. **useMaintenanceCalculation.js**: Calculation logic for `fixedAmountMode === 'person'`
+
+#### **FUTURE CONSIDERATIONS**
+
+1. **Bulk Edit for Fixed Amounts**: Consider adding a "Set all to X RON" button when in apartment mode
+2. **Presets**: Save common fixed amount values (e.g., "Taxa lift: 10 RON/pers") for quick selection
+3. **Validation**: Warn if fixed amount per person × max persons exceeds reasonable threshold
+4. **Migration**: Old expenses without `fixedAmountMode` default to 'apartment' for backward compatibility
+5. **UI Consistency**: Apply same text simplification principles to other areas of the app
+
+#### **BENEFITS**
+
+✅ **Time Savings**: Administrators save significant time entering fixed amounts (1 input vs 50+ inputs)
+✅ **Reduced Errors**: Single source of truth reduces typos and inconsistencies
+✅ **Cleaner UI**: Removed clutter makes expense cards easier to scan
+✅ **Better Layout**: Aligned tabs and tables look more professional
+✅ **Flexibility**: Users can choose between global and per-apartment modes as needed
+
+---
+
 ### **UI/UX IMPROVEMENTS & DATA ARCHITECTURE CLEANUP - 9 OCTOMBRIE 2025**
 
 #### **CONSUMPTION INPUT IMPROVEMENTS**

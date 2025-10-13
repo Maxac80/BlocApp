@@ -296,9 +296,9 @@ const ExpenseEntryModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className={`p-6 ${
+        <div className={`p-6 flex-shrink-0 ${
           monthType === 'historic'
             ? 'bg-gradient-to-r from-gray-600 to-gray-700'
             : monthType === 'next'
@@ -322,7 +322,7 @@ const ExpenseEntryModal = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+        <div className="p-6 flex-1 overflow-y-auto min-h-0">
           <div className="space-y-4">
             {/* Dropdown Cheltuială */}
             <div>
@@ -1031,7 +1031,7 @@ const ExpenseEntryModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
+        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

@@ -971,7 +971,7 @@ const MaintenanceView = ({
               </div>
 
               {/* Tab-uri pentru Cheltuieli și Consumuri */}
-              <div className="mb-6">
+              <div className="mb-6 mx-2">
                 <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200">
                   <div className="flex">
                     <button

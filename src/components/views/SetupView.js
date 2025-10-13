@@ -12,6 +12,7 @@ const SetupView = ({
   blocks,
   stairs,
   apartments,
+  firestoreApartments,
   getAssociationApartments,
   currentMonth,
   setCurrentMonth,
@@ -108,43 +109,54 @@ const SetupView = ({
     associationBlocks.forEach(block => {
       const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
 
-      // Logica de expandare pentru blocuri
+      // Logica de expandare pentru blocuri - SIMPLIFICATĂ
       const shouldExpandBlock = () => {
-        if (associationBlocks.length === 0) return true;
-        if (associationBlocks.length === 1) return true; // Un singur bloc -> expandează automat
-        if (blockStairs.length === 0) return true;
-
-        const hasStairsWithoutApartments = blockStairs.some(stair => {
-          const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
-          return stairApartments.length === 0;
-        });
-
-        if (hasStairsWithoutApartments) return true;
-        return false;
+        // REGULA SIMPLĂ: Doar dacă e UN SINGUR bloc, expandează-l automat
+        return associationBlocks.length === 1;
       };
 
       if (shouldExpandBlock()) {
         newExpandedBlocks[block.id] = true;
       }
 
-      // Logica de expandare pentru scări
-      blockStairs.forEach(stair => {
-        const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
-
-        const shouldExpandStair = () => {
-          if (stairApartments.length === 0) return true;
-          if (blockStairs.length === 1 && stairApartments.length > 0) return true;
-          return false;
-        };
-
-        if (shouldExpandStair()) {
-          newExpandedStairs[stair.id] = true;
-        }
-      });
+      // Logica de expandare pentru scări - SIMPLIFICATĂ
+      // Nu mai expandăm automat scările, utilizatorul le deschide manual când vrea
+      // (Poți elimina complet acest forEach dacă nu vrei nicio logică automată pentru scări)
     });
 
-    setExpandedBlocks(newExpandedBlocks);
-    setExpandedStairs(newExpandedStairs);
+    // NU suprascrie starea de expandare dacă utilizatorul a făcut deja alegeri
+    // Păstrează starea curentă și aplică doar pentru entități noi
+    setExpandedBlocks(prev => {
+      // Dacă există deja o stare de expandare (utilizatorul a interacționat), păstrează-o
+      if (Object.keys(prev).length > 0) {
+        // Adaugă doar entități noi care nu sunt în prev
+        const merged = { ...prev };
+        Object.keys(newExpandedBlocks).forEach(blockId => {
+          if (!(blockId in prev)) {
+            merged[blockId] = newExpandedBlocks[blockId];
+          }
+        });
+        return merged;
+      }
+      // Prima încărcare - folosește starea calculată
+      return newExpandedBlocks;
+    });
+
+    setExpandedStairs(prev => {
+      // Dacă există deja o stare de expandare (utilizatorul a interacționat), păstrează-o
+      if (Object.keys(prev).length > 0) {
+        // Adaugă doar entități noi care nu sunt în prev
+        const merged = { ...prev };
+        Object.keys(newExpandedStairs).forEach(stairId => {
+          if (!(stairId in prev)) {
+            merged[stairId] = newExpandedStairs[stairId];
+          }
+        });
+        return merged;
+      }
+      // Prima încărcare - folosește starea calculată
+      return newExpandedStairs;
+    });
   }, [association?.id, blocks, stairs, apartments, setExpandedBlocks, setExpandedStairs]);
 
   // Verifică dacă toate props-urile necesare sunt disponibile
@@ -361,8 +373,15 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
   };
 
   const openEditApartmentModal = (apartment) => {
+    // Folosește getAssociationApartments() pentru a obține datele complete
+    // Aceasta citește din colecția Firestore unde sunt salvate toate câmpurile
+    const allApartments = getAssociationApartments();
+
+    // Caută apartamentul complet
+    const fullApartmentData = allApartments.find(apt => apt.id === apartment.id) || apartment;
+
     setApartmentModalMode('edit');
-    setApartmentModalData(apartment);
+    setApartmentModalData(fullApartmentData);
     setApartmentModalStair(null);
     setApartmentModalOpen(true);
   };

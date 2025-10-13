@@ -305,6 +305,185 @@ const useMaintenanceCalculation = ({
     return differenceByApartment;
   }, [getExpenseConfig]);
 
+  // 💰 DISTRIBUȚIE CHELTUIALĂ CU REPONDERARE
+  const calculateExpenseDistributionWithReweighting = useCallback((expense, apartments) => {
+    const distributionByApartment = {};
+    const distributionType = expense.distributionType || expense.distributionMethod;
+    let receptionMode = expense.receptionMode || 'total';
+
+    // Mapează expenseEntryMode/receptionMode
+    if (expense.expenseEntryMode) {
+      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
+      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
+      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+    } else if (receptionMode === 'per_blocuri') {
+      receptionMode = 'per_block';
+    } else if (receptionMode === 'per_scari') {
+      receptionMode = 'per_stair';
+    }
+
+    // Obține configurația pentru această cheltuială
+    const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+
+    // PASUL 1: Inițializează apartamentele excluse cu 0
+    apartments.forEach(apartment => {
+      const participation = config?.apartmentParticipation?.[apartment.id];
+      if (participation?.type === 'excluded') {
+        distributionByApartment[apartment.id] = 0;
+      }
+    });
+
+    // PASUL 2: Grupează apartamentele per scară/bloc pentru procesare separată
+    const apartmentGroups = {};
+
+    apartments.forEach(apartment => {
+      const participation = config?.apartmentParticipation?.[apartment.id];
+      if (participation?.type === 'excluded') {
+        return; // Skip excluded apartments
+      }
+
+      const apartmentStair = stairs?.find(s => s.id === apartment.stairId);
+      const apartmentBlockId = apartmentStair?.blockId;
+
+      let groupKey = 'total';
+      if (receptionMode === 'per_block' && apartmentBlockId) {
+        groupKey = `block_${apartmentBlockId}`;
+      } else if (receptionMode === 'per_stair' && apartment.stairId) {
+        groupKey = `stair_${apartment.stairId}`;
+      }
+
+      if (!apartmentGroups[groupKey]) {
+        apartmentGroups[groupKey] = [];
+      }
+      apartmentGroups[groupKey].push(apartment);
+    });
+
+    // PASUL 3: Procesează fiecare grup separat
+    Object.keys(apartmentGroups).forEach(groupKey => {
+      const groupApartments = apartmentGroups[groupKey];
+
+      // Determină suma totală pentru acest grup
+      let groupTotalAmount = expense.amount || 0;
+
+      if (groupKey.startsWith('block_')) {
+        const blockId = groupKey.replace('block_', '');
+        groupTotalAmount = parseFloat(expense.amountsByBlock?.[blockId] || 0);
+      } else if (groupKey.startsWith('stair_')) {
+        const stairId = groupKey.replace('stair_', '');
+        groupTotalAmount = parseFloat(expense.amountsByStair?.[stairId] || 0);
+      }
+
+      // Calculează sumele fixe pentru acest grup
+      let groupFixedAmount = 0;
+      groupApartments.forEach(apartment => {
+        const participation = config?.apartmentParticipation?.[apartment.id];
+        if (participation?.type === 'fixed') {
+          // Folosește setarea globală fixedAmountMode din config
+          const fixedMode = config?.fixedAmountMode || 'apartment';
+          let fixedAmount = parseFloat(participation.value || 0);
+
+          if (fixedMode === 'person') {
+            // Sumă fixă per persoană: înmulțește cu numărul de persoane
+            fixedAmount = fixedAmount * (apartment.persons || 0);
+          }
+
+          distributionByApartment[apartment.id] = fixedAmount;
+          groupFixedAmount += fixedAmount;
+        }
+      });
+
+      // Suma rămasă pentru reponderare între apartamentele cu procent/integral
+      const groupAmountToRedistribute = groupTotalAmount - groupFixedAmount;
+
+      // Filtrează apartamentele din acest grup care NU sunt fixe/excluse
+      const groupApartmentsForReweighting = groupApartments.filter(apartment => {
+        const participation = config?.apartmentParticipation?.[apartment.id];
+        return participation?.type !== 'fixed';
+      });
+
+      if (groupApartmentsForReweighting.length === 0) {
+        return; // Nu mai sunt apartamente de procesat în acest grup
+      }
+
+      // Calculează totalul de persoane pentru acest grup
+      const groupTotalPersons = groupApartmentsForReweighting.reduce((sum, apt) => sum + apt.persons, 0);
+
+      // Calculează suma de bază pentru fiecare apartament din grup
+      groupApartmentsForReweighting.forEach(apartment => {
+        let apartmentExpense = 0;
+
+        switch (distributionType) {
+          case 'apartment':
+          case 'perApartament':
+            apartmentExpense = groupAmountToRedistribute / groupApartmentsForReweighting.length;
+            break;
+
+          case 'person':
+          case 'perPerson':
+            apartmentExpense = groupTotalPersons > 0 ? (groupAmountToRedistribute / groupTotalPersons) * apartment.persons : 0;
+            break;
+
+          case 'fixed':
+            apartmentExpense = expense.fixedAmounts?.[apartment.id] || 0;
+            break;
+
+          default:
+            apartmentExpense = 0;
+        }
+
+        distributionByApartment[apartment.id] = apartmentExpense;
+      });
+
+      // REPONDERARE pentru acest grup - calculează greutățile și redistribuie
+      const groupApartmentsWithPercentage = [];
+      const groupApartmentsIntegral = [];
+
+      groupApartmentsForReweighting.forEach(apartment => {
+        const participation = config?.apartmentParticipation?.[apartment.id];
+        const baseAmount = distributionByApartment[apartment.id] || 0;
+
+        if (participation?.type === 'percentage') {
+          groupApartmentsWithPercentage.push({
+            id: apartment.id,
+            baseAmount,
+            percent: participation.value
+          });
+        } else {
+          // Integral (implicit) - participă la reponderare cu 100%
+          groupApartmentsIntegral.push({
+            id: apartment.id,
+            baseAmount,
+            percent: 100
+          });
+        }
+      });
+
+      const allGroupParticipating = [...groupApartmentsIntegral, ...groupApartmentsWithPercentage];
+
+      if (allGroupParticipating.length > 0) {
+        // Calculează greutățile
+        let totalWeights = 0;
+        const weights = {};
+
+        allGroupParticipating.forEach(apt => {
+          const percent = apt.percent;
+          const multiplier = percent < 1 ? percent : (percent / 100);
+          weights[apt.id] = apt.baseAmount * multiplier;
+          totalWeights += weights[apt.id];
+        });
+
+        // Redistribuie proporțional cu greutățile (păstrează suma totală a grupului)
+        if (totalWeights > 0) {
+          allGroupParticipating.forEach(apt => {
+            distributionByApartment[apt.id] = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
+          });
+        }
+      }
+    });
+
+    return distributionByApartment;
+  }, [getExpenseConfig, stairs]);
+
   // 🧮 CALCULUL PRINCIPAL AL ÎNTREȚINERII CU DETALII
   const calculateMaintenanceWithDetails = useCallback(() => {
     const associationApartments = getAssociationApartments();
@@ -315,10 +494,8 @@ const useMaintenanceCalculation = ({
       return [];
     }
 
-    const totalPersons = associationApartments.reduce((sum, apt) => sum + apt.persons, 0);
-    const totalApartments = associationApartments.length;
 
-    // PRE-CALCUL: Calculează diferențele pentru toate cheltuielile pe consum
+    // PRE-CALCUL 1: Calculează diferențele pentru toate cheltuielile pe consum
     const expenseDifferences = {};
     sheetExpenses.forEach(expense => {
       if (expense.isUnitBased && expense.billAmount) {
@@ -326,127 +503,28 @@ const useMaintenanceCalculation = ({
       }
     });
 
+    // PRE-CALCUL 2: Calculează distribuția cu reponderare pentru fiecare cheltuială
+    const expenseDistributions = {};
+    sheetExpenses.forEach(expense => {
+      expenseDistributions[expense.name] = calculateExpenseDistributionWithReweighting(
+        expense,
+        associationApartments
+      );
+    });
+
     const tableData = associationApartments
       .map((apartment) => {
         let currentMaintenance = 0;
         const expenseDetails = {};
 
-        // Calculează întreținerea doar dacă există cheltuieli
-        if (sheetExpenses.length > 0) {
-          sheetExpenses.forEach((expense) => {
-            let apartmentExpense = 0;
+        // Folosește distribuția pre-calculată cu reponderare
+        sheetExpenses.forEach((expense) => {
+          const distribution = expenseDistributions[expense.name] || {};
+          const apartmentExpense = distribution[apartment.id] || 0;
 
-            // Mapează distributionType din Firebase la logica de calcul
-            const distributionType = expense.distributionType || expense.distributionMethod;
-
-            // Mapează expenseEntryMode/receptionMode la nomenclatura folosită în calcule
-            let receptionMode = expense.receptionMode || 'total';
-            if (expense.expenseEntryMode) {
-              // Mapare din nomenclatura UI
-              if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-              else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-              else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-            } else if (receptionMode === 'per_blocuri') {
-              receptionMode = 'per_block';
-            } else if (receptionMode === 'per_scari') {
-              receptionMode = 'per_stair';
-            }
-
-            // Găsește blockId și stairId pentru apartamentul curent
-            const apartmentStair = stairs?.find(s => s.id === apartment.stairId);
-            const apartmentBlockId = apartmentStair?.blockId;
-
-            // 🏠 VERIFICARE PARTICIPARE APARTAMENT
-            let participation = null;
-            if (getExpenseConfig) {
-              const config = getExpenseConfig(expense.name);
-              participation = config?.apartmentParticipation?.[apartment.id];
-            }
-
-            // Dacă apartamentul este exclus, nu participă deloc
-            if (participation?.type === 'excluded') {
-              expenseDetails[expense.name] = 0;
-              return; // Continue to next expense
-            }
-
-            // Dacă participarea e sumă fixă, folosește doar acea sumă
-            if (participation?.type === 'fixed') {
-              const fixedAmount = parseFloat(participation.value || 0);
-              currentMaintenance += fixedAmount;
-              expenseDetails[expense.name] = fixedAmount;
-              return; // Continue to next expense
-            }
-
-            // Determină amount-ul relevant pentru acest apartament bazat pe receptionMode
-            let relevantAmount = expense.amount || 0;
-
-            if (receptionMode === 'per_block' && expense.amountsByBlock && apartmentBlockId) {
-              // Folosește suma specifică blocului acestui apartament
-              relevantAmount = parseFloat(expense.amountsByBlock[apartmentBlockId] || 0);
-            } else if (receptionMode === 'per_stair' && expense.amountsByStair && apartment.stairId) {
-              // Folosește suma specifică scării acestui apartament
-              relevantAmount = parseFloat(expense.amountsByStair[apartment.stairId] || 0);
-            }
-
-            // Calculează cât din relevantAmount revine acestui apartament
-            switch (distributionType) {
-              case 'apartment':
-              case 'perApartament':
-                if (receptionMode === 'per_block' && apartmentBlockId) {
-                  // Împarte suma blocului la apartamentele din acel bloc
-                  const blockApartments = associationApartments.filter(apt => {
-                    const aptStair = stairs?.find(s => s.id === apt.stairId);
-                    return aptStair?.blockId === apartmentBlockId;
-                  });
-                  apartmentExpense = relevantAmount / blockApartments.length;
-                } else if (receptionMode === 'per_stair' && apartment.stairId) {
-                  // Împarte suma scării la apartamentele din acea scară
-                  const stairApartments = associationApartments.filter(apt => apt.stairId === apartment.stairId);
-                  apartmentExpense = relevantAmount / stairApartments.length;
-                } else {
-                  // Mod total - împarte la toate apartamentele
-                  apartmentExpense = relevantAmount / totalApartments;
-                }
-                break;
-              case 'person':
-              case 'perPerson':
-                if (receptionMode === 'per_block' && apartmentBlockId) {
-                  // Împarte suma blocului la persoanele din acel bloc
-                  const blockApartments = associationApartments.filter(apt => {
-                    const aptStair = stairs?.find(s => s.id === apt.stairId);
-                    return aptStair?.blockId === apartmentBlockId;
-                  });
-                  const blockPersons = blockApartments.reduce((sum, apt) => sum + apt.persons, 0);
-                  apartmentExpense = (relevantAmount / blockPersons) * apartment.persons;
-                } else if (receptionMode === 'per_stair' && apartment.stairId) {
-                  // Împarte suma scării la persoanele din acea scară
-                  const stairApartments = associationApartments.filter(apt => apt.stairId === apartment.stairId);
-                  const stairPersons = stairApartments.reduce((sum, apt) => sum + apt.persons, 0);
-                  apartmentExpense = (relevantAmount / stairPersons) * apartment.persons;
-                } else {
-                  // Mod total - împarte la toate persoanele
-                  apartmentExpense = (relevantAmount / totalPersons) * apartment.persons;
-                }
-                break;
-              case 'fixed':
-                apartmentExpense = expense.fixedAmounts?.[apartment.id] || 0;
-                break;
-              default:
-                apartmentExpense = 0;
-            }
-
-            // 📊 APLICARE PARTICIPARE PROCENTUALĂ
-            if (participation?.type === 'percentage') {
-              const percent = participation.value;
-              // Dacă valoarea e între 0-1, e fracție; dacă e între 1-100, e procent
-              const multiplier = percent < 1 ? percent : (percent / 100);
-              apartmentExpense = apartmentExpense * multiplier;
-            }
-
-            currentMaintenance += apartmentExpense;
-            expenseDetails[expense.name] = apartmentExpense;  // Folosește expense.name pentru a se potrivi cu tabelul
-          });
-        }
+          currentMaintenance += apartmentExpense;
+          expenseDetails[expense.name] = apartmentExpense;
+        });
 
         // 💧 ADAUGĂ DIFERENȚELE CALCULATE (pierderi/scurgeri)
         Object.keys(expenseDifferences).forEach(expenseName => {
@@ -492,8 +570,7 @@ const useMaintenanceCalculation = ({
     currentSheet,
     getApartmentBalance,
     calculateExpenseDifferences,
-    stairs,
-    getExpenseConfig
+    calculateExpenseDistributionWithReweighting
   ]);
 
   // 🧮 DATE CALCULATE PENTRU TABEL - MEMOIZED

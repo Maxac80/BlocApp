@@ -128,8 +128,8 @@ const AdjustBalancesModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div className="p-6 bg-indigo-50 border-b flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="p-6 bg-indigo-50 border-b flex items-center justify-between flex-shrink-0">
           <h3 className="text-xl font-semibold">⚡ Ajustări Solduri - {currentMonth}</h3>
           <button
             onClick={() => setShowAdjustBalances(false)}
@@ -138,8 +138,8 @@ const AdjustBalancesModal = ({
             <XCircle className="w-6 h-6" />
           </button>
         </div>
-        
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+
+        <div className="p-6 flex-1 overflow-y-auto min-h-0">
           <p className="text-sm text-gray-600 mb-4">
             <strong>Atenție:</strong> Valorile ajustate vor ÎNLOCUI complet restanțele și penalitățile curente din tabelul de întreținere. 
             Folosiți pentru corecții sau situații speciale.
@@ -294,8 +294,8 @@ const AdjustBalancesModal = ({
             </table>
           </div>
         </div>
-        
-        <div className="p-6 bg-gray-50 border-t flex justify-between">
+
+        <div className="p-6 bg-gray-50 border-t flex justify-between flex-shrink-0">
           <button
             onClick={() => {
               setShowAdjustBalances(false);

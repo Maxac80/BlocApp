@@ -33,6 +33,8 @@ const ExpenseConfigModal = ({
     supplierName: '',
     contractNumber: '',
     contactPerson: '',
+    // 💰 Mod calcul sumă fixă (pentru distribuție pe persoană)
+    fixedAmountMode: 'apartment', // 'apartment' | 'person'
     // 📊 Configurare indecși
     indexConfiguration: {
       enabled: false,
@@ -79,6 +81,8 @@ const ExpenseConfigModal = ({
         supplierName: expenseConfig.supplierName || '',
         contractNumber: expenseConfig.contractNumber || '',
         contactPerson: expenseConfig.contactPerson || '',
+        // 💰 Mod calcul sumă fixă (pentru distribuție pe persoană)
+        fixedAmountMode: expenseConfig.fixedAmountMode || 'apartment',
         // 📊 Configurare indecși
         indexConfiguration: expenseConfig.indexConfiguration || {
           enabled: false,
@@ -387,7 +391,7 @@ const ExpenseConfigModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
         <div className="p-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -455,7 +459,7 @@ const ExpenseConfigModal = ({
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: '60vh' }}>
+        <div className="flex-1 p-6 overflow-y-auto">
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div>
@@ -479,6 +483,48 @@ const ExpenseConfigModal = ({
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
                 </p>
               </div>
+
+              {/* Mod calcul sumă fixă - apare doar pentru distribuție pe persoană */}
+              {localConfig.distributionType === 'person' && (
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Mod calcul sumă fixă (global pentru toată asociația)
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
+                      <input
+                        type="radio"
+                        name="fixedAmountMode"
+                        value="apartment"
+                        checked={localConfig.fixedAmountMode === 'apartment'}
+                        onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Per apartament</div>
+                        <div className="text-sm text-gray-600">Suma fixă se calculează per apartament (indiferent de numărul de persoane)</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
+                      <input
+                        type="radio"
+                        name="fixedAmountMode"
+                        value="person"
+                        checked={localConfig.fixedAmountMode === 'person'}
+                        onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Per persoană</div>
+                        <div className="text-sm text-gray-600">Suma fixă se calculează înmulțită cu numărul de persoane din apartament</div>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="mt-3 text-xs text-purple-700 bg-purple-50 p-2 rounded">
+                    💡 Această setare se aplică la toate apartamentele care au participare "Sumă fixă"
+                  </p>
+                </div>
+              )}
 
               {/* Unitate de măsură - apare doar pentru consumption */}
               {localConfig.distributionType === 'consumption' && (
@@ -690,8 +736,8 @@ const ExpenseConfigModal = ({
                       (localConfig.receptionMode === 'per_block' && block && localConfig.appliesTo.blocks.includes(block.id));
 
                     return (
+                      <div key={apartment.id} className="space-y-0">
                       <div
-                        key={apartment.id}
                         className={`grid grid-cols-[80px_1fr_160px_100px] gap-3 p-3 rounded-lg items-center ${
                           !isApartmentActive ? 'bg-gray-200 opacity-60' :
                           isModified ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50'
@@ -709,7 +755,10 @@ const ExpenseConfigModal = ({
                             const newValue = type === "percentage" ? 50 : type === "fixed" ? 0 : null;
                             setLocalParticipations({
                               ...localParticipations,
-                              [participationKey]: { type, value: newValue }
+                              [participationKey]: {
+                                type,
+                                value: newValue
+                              }
                             });
                           }}
                           disabled={!isApartmentActive}
@@ -752,6 +801,8 @@ const ExpenseConfigModal = ({
                             />
                           )}
                         </div>
+                      </div>
+
                       </div>
                     );
                   })}
@@ -1347,7 +1398,7 @@ const ExpenseConfigModal = ({
           )}
         </div>
 
-        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
+        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"

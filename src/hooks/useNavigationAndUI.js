@@ -78,39 +78,21 @@ export const useNavigationAndUI = () => {
 // Funcție optimizată pentru auto-expand
 const autoExpandEntities = useCallback((blocks, stairs, associationId) => {
   if (!associationId || !blocks.length) return;
-  
-  const associationBlocks = blocks.filter(block => block.associationId === associationId);
-  
-  // Auto-expand doar dacă nu sunt deja expanded
-  if (associationBlocks.length <= 3 && associationBlocks.length > 0) {
-    setExpandedBlocks(prev => {
-      const needsUpdate = associationBlocks.some(block => !prev[block.id]);
-      if (!needsUpdate) return prev;
-      
-      const updated = { ...prev };
-      associationBlocks.forEach(block => {
-        updated[block.id] = true;
-      });
-      return updated;
-    });
 
-    const associationStairs = stairs.filter(stair => 
-      associationBlocks.some(block => block.id === stair.blockId)
-    );
-    
-    if (associationStairs.length <= 5) {
-      setExpandedStairs(prev => {
-        const needsUpdate = associationStairs.some(stair => !prev[stair.id]);
-        if (!needsUpdate) return prev;
-        
-        const updated = { ...prev };
-        associationStairs.forEach(stair => {
-          updated[stair.id] = true;
-        });
-        return updated;
-      });
-    }
+  const associationBlocks = blocks.filter(block => block.associationId === associationId);
+
+  // Auto-expand DOAR dacă există un singur bloc
+  // Dacă sunt mai multe blocuri (2+), le lăsăm strânse
+  if (associationBlocks.length === 1) {
+    setExpandedBlocks(prev => {
+      // NU actualiza dacă există deja o stare (utilizatorul a interacționat)
+      if (Object.keys(prev).length > 0) return prev;
+
+      // Un singur bloc -> expandează-l
+      return { [associationBlocks[0].id]: true };
+    });
   }
+  // Pentru mai multe blocuri - nu face nimic, lasă-le strânse
 }, []); // DEPENDENȚE GOALE
 
   // Form reset functions

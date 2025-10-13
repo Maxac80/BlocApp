@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { XCircle, Layers } from 'lucide-react';
 
 const StairModal = ({
@@ -37,6 +38,7 @@ const StairModal = ({
     }
   }, [isOpen, mode, stair]);
 
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -68,11 +70,11 @@ const StairModal = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[600px] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header cu gradient verde */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 flex items-center justify-between text-white">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 flex items-center justify-between text-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 rounded-lg p-2">
               <Layers className="w-8 h-8 text-white" />
@@ -97,11 +99,9 @@ const StairModal = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-white">
-          <form onSubmit={handleSubmit} className="h-full flex flex-col">
-            <div className="p-6 pb-0 flex-1 overflow-auto">
-              <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">Informații scară</h4>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium text-gray-800 mb-4">Informații scară</h4>
 
                 {/* Numele scării */}
                 <div>
@@ -168,30 +168,29 @@ const StairModal = ({
                   <p className="text-xs text-gray-500 mt-1">Opțional - detalii suplimentare despre scară</p>
                 </div>
               </div>
-            </div>
+        </div>
 
-            {/* Butoane fixe la baza modalului */}
-            <div className="bg-white border-t border-gray-200 p-6">
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Anulează
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  {mode === 'edit' ? 'Salvează' : 'Adaugă'}
-                </button>
-              </div>
-            </div>
+        {/* Butoane fixe */}
+        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
+          <form onSubmit={handleSubmit} className="contents">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Anulează
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              {mode === 'edit' ? 'Salvează' : 'Adaugă'}
+            </button>
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
