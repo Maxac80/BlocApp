@@ -41,7 +41,8 @@ const ExpenseAddModal = ({
     appliesTo: {
       blocks: [],
       stairs: []
-    }
+    },
+    fixedAmountMode: 'apartment' // 'apartment' | 'person'
   });
 
   const [showCustomUnit, setShowCustomUnit] = useState(false);
@@ -64,7 +65,8 @@ const ExpenseAddModal = ({
         appliesTo: {
           blocks: [],
           stairs: []
-        }
+        },
+        fixedAmountMode: 'apartment'
       });
       setActiveTab('general');
     }
@@ -359,6 +361,27 @@ const ExpenseAddModal = ({
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
                 </p>
               </div>
+
+              {/* Mod participare sumă fixă - apare doar pentru distribuție pe persoană */}
+              {localConfig.distributionType === 'person' && (
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mod participare sumă fixă
+                  </label>
+                  <select
+                    value={localConfig.fixedAmountMode}
+                    onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="apartment">Per apartament</option>
+                    <option value="person">Per persoană</option>
+                  </select>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {localConfig.fixedAmountMode === 'apartment' && 'Sumă fixă per apartament (indiferent de numărul de persoane)'}
+                    {localConfig.fixedAmountMode === 'person' && 'Sumă fixă per persoană înmulțită cu numărul de persoane din apartament'}
+                  </p>
+                </div>
+              )}
 
               {/* Unitate de măsură - apare doar pentru consumption */}
               {localConfig.distributionType === 'consumption' && (

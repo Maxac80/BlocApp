@@ -1,4 +1,207 @@
--NoNewline
+---
+
+### **APARTMENT-BASED DISTRIBUTION UI IMPROVEMENTS - 14 OCTOMBRIE 2025**
+
+#### **PROBLEMA INIȚIALĂ**
+
+Pentru cheltuielile distribuite **Pe apartament (egal)**, când filtrezi pe o scară specifică, cardul de detalii se întindea pe toată lățimea (full-width) și afișa suma pentru întreaga asociație în loc de suma calculată pentru scara respectivă. De asemenea, numărul de persoane apărea peste tot, chiar dacă distribuția era pe apartament (nu pe persoană).
+
+#### **SOLUȚII IMPLEMENTATE**
+
+**1. Fix Card Layout & Amount Calculation for Stair Filter**
+
+**Location**: `ExpenseList.js` (lines 890-1053)
+
+**Problem**:
+- Card-ul de detalii pentru cheltuieli "Pe asociație" (`receptionMode === 'total'`) era full-width când filtrezi pe o scară specifică
+- Suma afișată era pentru întreaga asociație, nu pentru scara selectată
+
+**Solution**:
+```javascript
+// Added new section for stair-specific display when receptionMode === 'total'
+{receptionMode === 'total' && getFilterInfo().type === 'stair' && (
+  <div>
+    <h5>Detalii pentru {getFilterInfo().blockName} - {getFilterInfo().stairName}:</h5>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      {/* Calculate amount specifically for this stair */}
+      stairAmount = Σ calculateApartmentAmount(apt, totalAssociationAmount, allApts)
+                    for apt in stairApts where not excluded
+    </div>
+  </div>
+)}
+```
+
+**Key Logic** (`getRelevantAmount` function, lines 297-314):
+```javascript
+if (receptionMode === 'total' && filterInfo.type === 'stair') {
+  // Pentru cheltuieli "Pe asociație" când filtrezi pe scară
+  const stairApts = allApts.filter(apt => apt.stairId === filterInfo.stairId);
+  const totalAssociationAmount = expense.isUnitBased ? expense.billAmount : expense.amount;
+
+  let stairTotalAmount = 0;
+  stairApts.forEach(apt => {
+    const participation = config?.apartmentParticipation?.[apt.id];
+    if (participation?.type !== 'excluded') {
+      stairTotalAmount += calculateApartmentAmount(expense, apt, totalAssociationAmount, allApts);
+    }
+  });
+
+  return stairTotalAmount;
+}
+```
+
+**Result**:
+- ✅ Card-ul rămâne în grid layout (same size as in "Toate" tab)
+- ✅ Suma afișată este corectă pentru scara selectată
+- ✅ Header-ul se actualizează corect: "Detalii pentru Bloc B4 - Scara A:"
+
+**2. Conditional Person Count Display**
+
+**Location**: `ExpenseList.js` (lines 838, 843, 1004, 1009, 1160, 1165, 1312, 1317, 1454, 1459)
+
+**Problem**: Numărul de persoane "(2 pers)" apărea în toate badge-urile de apartamente excluse, indiferent dacă distribuția era pe apartament sau pe persoană.
+
+**Solution**:
+```javascript
+// In apartment badges
+Ap. {apt.number}{config.distributionType === 'person' ? ` (${apt.persons || 0} pers)` : ''}
+
+// In section titles
+{excludedApts.length} {excludedApts.length === 1 ? 'apartament exclus' : 'apartamente excluse'}
+{config.distributionType === 'person' ? ` (${totalPersons} pers)` : ''}:
+```
+
+**Result**:
+- **Pentru distribuție pe apartament**: "Ap. 11" (fără număr persoane)
+- **Pentru distribuție pe persoană**: "Ap. 11 (2 pers)" (cu număr persoane)
+- Același comportament pentru titlurile secțiunilor
+
+**3. Text Improvements - Replace "ap" Abbreviation**
+
+**Changes**:
+- `'ap exclus'` → `'apartament exclus'`
+- `'ap excluse'` → `'apartamente excluse'`
+- `'ap cu participare diferită'` → `'apartament cu participare diferită'` / `'apartamente cu participare diferită'`
+- `'fix/apt'` → `'fix/ap.'` (for compact badges)
+
+**Rationale**:
+- În text normal: forma completă "apartament/apartamente" este mai clară și profesională
+- În badge-uri mici: "ap." cu punct este prescurtarea corectă în limba română
+
+**Locations**:
+- Lines 675, 680, 838, 854, 1004, 1020, 1160, 1176, 1312, 1328, 1454, 1470 (section titles)
+- Lines 863, 865, 1029, 1031, 1187, 1190, 1337, 1339, 1481, 1484 (badge text "fix/ap.")
+
+#### **ALGORITM CALCUL PENTRU SCARĂ SPECIFICĂ**
+
+**Context**: Cheltuială distribuită "Pe asociație" (suma unică pentru toată asociația), dar utilizatorul filtrează pe o scară specifică.
+
+**Challenge**: Trebuie să calculăm suma care revine scării respective din totalul asociației, ținând cont de toate apartamentele din asociație pentru a aplica corect logica de reponderare.
+
+**Implementation**:
+```javascript
+// 1. Get all apartments in association (for correct reweighting)
+const allApts = getAssociationApartments();
+
+// 2. Filter only apartments in selected stair
+const stairApts = allApts.filter(apt => apt.stairId === filterInfo.stairId);
+
+// 3. Use total association amount
+const totalAssociationAmount = expense.isUnitBased ? expense.billAmount : expense.amount;
+
+// 4. Calculate amount for each apartment in stair
+let stairTotalAmount = 0;
+stairApts.forEach(apt => {
+  if (participation?.type !== 'excluded') {
+    // CRUCIAL: Pass allApts (not stairApts) for correct reweighting calculation
+    stairTotalAmount += calculateApartmentAmount(expense, apt, totalAssociationAmount, allApts);
+  }
+});
+```
+
+**Why Pass `allApts` to `calculateApartmentAmount`?**
+- Reponderarea trebuie să țină cont de TOATE apartamentele din asociație
+- Dacă am pasa doar `stairApts`, calculul ar fi incorect (apartamentul ar primi prea mult)
+- Formula de reponderare: `finalAmount = (weight / Σall_weights) × totalAmount`
+- `Σall_weights` trebuie să includă toate apartamentele participante din asociație
+
+#### **KEY LEARNINGS**
+
+1. **Layout Consistency Across Filters**
+   - Card-uri trebuie să mențină același layout în toate tab-urile
+   - Grid layout cu `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` oferă consistență
+   - Never use full-width layout când alte card-uri sunt în grid
+
+2. **Context-Aware Information Display**
+   - Numărul de persoane este relevant DOAR pentru distribuție pe persoană
+   - Conditional rendering reduce clutter-ul vizual
+   - `config.distributionType === 'person'` determină ce informații afișăm
+
+3. **Calculation Scope vs Display Scope**
+   - **Display Scope**: Arată doar date pentru scara selectată
+   - **Calculation Scope**: Folosește toate apartamentele pentru reponderare corectă
+   - CRUCIAL: `calculateApartmentAmount(apt, amount, allApts)` nu `stairApts`!
+
+4. **Text Consistency Rules**
+   - Text normal în UI: forma completă ("apartament", "apartamente")
+   - Badge-uri mici/compacte: prescurtare standard cu punct ("ap.", "pers")
+   - Never mix styles în același context
+
+5. **Filter State Management**
+   - `getFilterInfo()` centralizează logica de determinare a filtrului activ
+   - Returnează `{ type: 'all' | 'stair', stairId, blockId, stairName, blockName }`
+   - Toate componentele folosesc această funcție pentru consistență
+
+#### **TESTARE NECESARĂ (PENTRU MÂINE)**
+
+Astăzi am implementat și testat doar **distribuție pe apartament (egal)**. Trebuie testate:
+
+1. ✅ **Distribuție pe apartament (egal)** - DONE TODAY
+   - Tab "Toate" ✓
+   - Tab specific scară ✓
+   - Pe asociație / Pe bloc / Pe scară ✓
+
+2. ⏳ **Distribuție pe persoană** - TODO
+   - Verifică numărul de persoane apare corect
+   - Verifică calcul per persoană
+
+3. ⏳ **Distribuție pe consum** - TODO
+   - Verifică calcul bazat pe indecși
+   - Verifică display consumuri
+
+4. ⏳ **Sume individuale** - TODO
+   - Verifică sumele fixe per apartament
+   - Verifică display sume individuale
+
+5. ⏳ **Edge Cases** - TODO
+   - Apartamente excluse
+   - Apartamente cu participare parțială (%)
+   - Apartamente cu sumă fixă
+   - Combinații de toate 3
+
+#### **FILES MODIFIED**
+
+1. **`ExpenseList.js`**:
+   - Added stair-specific section for `receptionMode === 'total'` (lines 890-1053)
+   - Updated `getRelevantAmount()` to calculate stair amount from association total (lines 297-314)
+   - Added conditional person count display (multiple locations)
+   - Updated all text from "ap" to "apartament/apartamente"
+   - Changed "fix/apt" to "fix/ap." in badges
+
+#### **BENEFICII**
+
+✅ **Layout Consistency**: Card-urile au aceeași dimensiune în toate tab-urile
+✅ **Correct Calculations**: Suma afișată pentru scară este corectă, ținând cont de reponderare
+✅ **Cleaner UI**: Numărul de persoane apare doar când e relevant
+✅ **Better Typography**: Termeni completi în text normal, prescurtări standard în badge-uri
+✅ **Proper Headers**: "Detalii pentru Bloc X - Scara Y" în loc de generic "Detalii distribuție:"
+
+#### **FUTURE CONSIDERATIONS**
+
+1. **Complete Testing**: Test all distribution types (person, consumption, individual) tomorrow
+2. **Performance**: Consider memoizing `getRelevantAmount()` for large apartment lists
+3. **Code Deduplication**: Many similar sections for association/block/stair could be extracted to separate component
+4. **Responsive Breakpoints**: Current `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` works well, but test on various screen sizes
 
 ---
 

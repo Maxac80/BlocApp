@@ -625,6 +625,7 @@ useEffect(() => {
               handleAddCustomExpense={handleAddCustomExpense}
               getAssociationExpenseTypes={getAssociationExpenseTypes}
               updateExpenseConfig={updateFirestoreExpenseConfig}
+              saveApartmentParticipations={saveApartmentParticipations}
               getApartmentParticipation={getApartmentParticipation}
               setApartmentParticipation={setApartmentParticipation}
               getDisabledExpenseTypes={getDisabledExpenseTypes}

@@ -159,14 +159,11 @@ const MaintenanceTableDetailed = ({
           <td className="px-3 py-3 font-bold text-gray-800 text-lg">
             {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
           </td>
-          {expenses
-            .filter(exp => exp.associationId === association?.id)
-            .map(expense => (
-              <td key={expense.id} className="px-3 py-3 font-bold text-sm bg-blue-50">
-                {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
-              </td>
-            ))
-          }
+          {expenses.map(expense => (
+            <td key={expense.id} className="px-3 py-3 font-bold text-sm bg-blue-50">
+              {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
+            </td>
+          ))}
         </tr>
         </tfoot>
       </table>

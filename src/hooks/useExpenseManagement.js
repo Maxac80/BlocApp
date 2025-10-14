@@ -40,6 +40,17 @@ export const useExpenseManagement = ({
   });
   const [newCustomExpense, setNewCustomExpense] = useState({ name: "" });
 
+  // 🔄 SINCRONIZARE PARTICIPĂRI DIN FIREBASE LA SCHIMBAREA SHEET-ULUI
+  useEffect(() => {
+    if (currentSheet?.configSnapshot?.apartmentParticipations) {
+      setExpenseParticipation(currentSheet.configSnapshot.apartmentParticipations);
+      console.log('✅ Participări încărcate din sheet:', currentSheet.configSnapshot.apartmentParticipations);
+    } else {
+      setExpenseParticipation({});
+      console.log('⚠️ Nu există participări în sheet, resetez state-ul');
+    }
+  }, [currentSheet?.id, currentSheet?.configSnapshot?.apartmentParticipations]);
+
   // ⚠️ DEPRECATED: getExpenseConfig și updateExpenseConfig au fost mutate în useExpenseConfigurations
   // Nu mai folosim state local pentru configurări - totul e în Firebase prin useExpenseConfigurations
 

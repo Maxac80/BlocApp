@@ -105,23 +105,28 @@ const ExpenseConfigModal = ({
 
   // 🔄 Încarcă participările din Firebase la deschiderea modalului
   useEffect(() => {
-    if (isOpen && currentSheet && expenseName) {
-      const savedParticipations = currentSheet.configSnapshot?.apartmentParticipations || {};
-
-      // Filtrează doar participările pentru cheltuiala curentă
+    if (isOpen && expenseName && getApartmentParticipation && getAssociationApartments) {
+      const apartments = getAssociationApartments();
       const expenseParticipations = {};
-      Object.keys(savedParticipations).forEach(key => {
-        if (key.includes(`-${expenseName}`)) {
-          expenseParticipations[key] = savedParticipations[key];
+
+      // Încarcă participările pentru fiecare apartament
+      apartments.forEach(apartment => {
+        const participationKey = `${apartment.id}-${expenseName}`;
+        const participation = getApartmentParticipation(apartment.id, expenseName);
+
+        // Doar dacă există o participare non-default, o adăugăm
+        if (participation && participation.type !== 'integral') {
+          expenseParticipations[participationKey] = participation;
         }
       });
 
       setLocalParticipations(expenseParticipations);
+      console.log('✅ Participări încărcate pentru', expenseName, ':', expenseParticipations);
     } else if (!isOpen) {
       // Resetează participările când modalul se închide
       setLocalParticipations({});
     }
-  }, [isOpen, currentSheet, expenseName]);
+  }, [isOpen, expenseName, getApartmentParticipation, getAssociationApartments]);
 
   const handleAddNewSupplier = async (supplierData) => {
     try {
@@ -484,44 +489,23 @@ const ExpenseConfigModal = ({
                 </p>
               </div>
 
-              {/* Mod calcul sumă fixă - apare doar pentru distribuție pe persoană */}
+              {/* Mod participare sumă fixă - apare doar pentru distribuție pe persoană */}
               {localConfig.distributionType === 'person' && (
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Mod calcul sumă fixă (global pentru toată asociația)
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mod participare sumă fixă
                   </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
-                      <input
-                        type="radio"
-                        name="fixedAmountMode"
-                        value="apartment"
-                        checked={localConfig.fixedAmountMode === 'apartment'}
-                        onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
-                        className="w-4 h-4 text-purple-600"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">Per apartament</div>
-                        <div className="text-sm text-gray-600">Suma fixă se calculează per apartament (indiferent de numărul de persoane)</div>
-                      </div>
-                    </label>
-                    <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-purple-300 transition-colors">
-                      <input
-                        type="radio"
-                        name="fixedAmountMode"
-                        value="person"
-                        checked={localConfig.fixedAmountMode === 'person'}
-                        onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
-                        className="w-4 h-4 text-purple-600"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">Per persoană</div>
-                        <div className="text-sm text-gray-600">Suma fixă se calculează înmulțită cu numărul de persoane din apartament</div>
-                      </div>
-                    </label>
-                  </div>
-                  <p className="mt-3 text-xs text-purple-700 bg-purple-50 p-2 rounded">
-                    💡 Această setare se aplică la toate apartamentele care au participare "Sumă fixă"
+                  <select
+                    value={localConfig.fixedAmountMode}
+                    onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
+                    <option value="apartment">Per apartament</option>
+                    <option value="person">Per persoană</option>
+                  </select>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {localConfig.fixedAmountMode === 'apartment' && 'Sumă fixă per apartament (indiferent de numărul de persoane)'}
+                    {localConfig.fixedAmountMode === 'person' && 'Sumă fixă per persoană înmulțită cu numărul de persoane din apartament'}
                   </p>
                 </div>
               )}

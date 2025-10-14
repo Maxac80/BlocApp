@@ -76,6 +76,7 @@ const MaintenanceView = ({
   handleAddCustomExpense,
   getAssociationExpenseTypes,
   updateExpenseConfig,
+  saveApartmentParticipations,
   getApartmentParticipation,
   setApartmentParticipation,
   getDisabledExpenseTypes,
@@ -1210,6 +1211,7 @@ const MaintenanceView = ({
           expenseName={selectedExpenseForConfig}
           expenseConfig={selectedExpenseForConfig ? getExpenseConfig(selectedExpenseForConfig) : null}
           updateExpenseConfig={updateExpenseConfig}
+          saveApartmentParticipations={saveApartmentParticipations}
           getAssociationApartments={getAssociationApartments}
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
