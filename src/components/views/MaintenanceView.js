@@ -1014,9 +1014,13 @@ const MaintenanceView = ({
                       blocks={blocks}
                       stairs={stairs}
                       onEditExpense={handleEditExpense}
-                      onConsumptionClick={(expenseName) => {
+                      onConsumptionClick={(expenseName, stairId) => {
                         setExpenseToExpand(expenseName);
                         setSelectedContentTab('consumptions');
+                        // Setează și scara dacă este specificată
+                        if (stairId) {
+                          setSelectedStairTab(stairId);
+                        }
                       }}
                       expandExpenseName={expenseToExpandInList}
                     />

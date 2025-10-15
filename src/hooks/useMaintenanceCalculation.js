@@ -411,6 +411,7 @@ const useMaintenanceCalculation = ({
       // Calculează suma de bază pentru fiecare apartament din grup
       groupApartmentsForReweighting.forEach(apartment => {
         let apartmentExpense = 0;
+        const participation = config?.apartmentParticipation?.[apartment.id];
 
         switch (distributionType) {
           case 'apartment':
@@ -423,8 +424,25 @@ const useMaintenanceCalculation = ({
             apartmentExpense = groupTotalPersons > 0 ? (groupAmountToRedistribute / groupTotalPersons) * apartment.persons : 0;
             break;
 
-          case 'fixed':
-            apartmentExpense = expense.fixedAmounts?.[apartment.id] || 0;
+          case 'individual':
+            // Sume individuale per apartament (din expense.individualAmounts)
+            apartmentExpense = parseFloat(expense.individualAmounts?.[apartment.id] || 0);
+
+            // Aplică participarea pentru individual
+            if (participation?.type === 'percentage') {
+              const percent = participation.value;
+              const multiplier = percent < 1 ? percent : (percent / 100);
+              apartmentExpense = apartmentExpense * multiplier;
+            }
+            // Sumă fixă suprascrie valoarea individuală
+            if (participation?.type === 'fixed') {
+              apartmentExpense = parseFloat(participation.value || 0);
+            }
+            break;
+
+          case 'consumption':
+            // Pe consum - se calculează separat în alt loc
+            apartmentExpense = 0;
             break;
 
           default:
@@ -435,48 +453,51 @@ const useMaintenanceCalculation = ({
       });
 
       // REPONDERARE pentru acest grup - calculează greutățile și redistribuie
-      const groupApartmentsWithPercentage = [];
-      const groupApartmentsIntegral = [];
+      // IMPORTANT: Nu reponderăm pentru 'individual' sau 'consumption' - sumele sunt deja fixate!
+      if (distributionType !== 'individual' && distributionType !== 'consumption') {
+        const groupApartmentsWithPercentage = [];
+        const groupApartmentsIntegral = [];
 
-      groupApartmentsForReweighting.forEach(apartment => {
-        const participation = config?.apartmentParticipation?.[apartment.id];
-        const baseAmount = distributionByApartment[apartment.id] || 0;
+        groupApartmentsForReweighting.forEach(apartment => {
+          const participation = config?.apartmentParticipation?.[apartment.id];
+          const baseAmount = distributionByApartment[apartment.id] || 0;
 
-        if (participation?.type === 'percentage') {
-          groupApartmentsWithPercentage.push({
-            id: apartment.id,
-            baseAmount,
-            percent: participation.value
-          });
-        } else {
-          // Integral (implicit) - participă la reponderare cu 100%
-          groupApartmentsIntegral.push({
-            id: apartment.id,
-            baseAmount,
-            percent: 100
-          });
-        }
-      });
-
-      const allGroupParticipating = [...groupApartmentsIntegral, ...groupApartmentsWithPercentage];
-
-      if (allGroupParticipating.length > 0) {
-        // Calculează greutățile
-        let totalWeights = 0;
-        const weights = {};
-
-        allGroupParticipating.forEach(apt => {
-          const percent = apt.percent;
-          const multiplier = percent < 1 ? percent : (percent / 100);
-          weights[apt.id] = apt.baseAmount * multiplier;
-          totalWeights += weights[apt.id];
+          if (participation?.type === 'percentage') {
+            groupApartmentsWithPercentage.push({
+              id: apartment.id,
+              baseAmount,
+              percent: participation.value
+            });
+          } else {
+            // Integral (implicit) - participă la reponderare cu 100%
+            groupApartmentsIntegral.push({
+              id: apartment.id,
+              baseAmount,
+              percent: 100
+            });
+          }
         });
 
-        // Redistribuie proporțional cu greutățile (păstrează suma totală a grupului)
-        if (totalWeights > 0) {
+        const allGroupParticipating = [...groupApartmentsIntegral, ...groupApartmentsWithPercentage];
+
+        if (allGroupParticipating.length > 0) {
+          // Calculează greutățile
+          let totalWeights = 0;
+          const weights = {};
+
           allGroupParticipating.forEach(apt => {
-            distributionByApartment[apt.id] = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
+            const percent = apt.percent;
+            const multiplier = percent < 1 ? percent : (percent / 100);
+            weights[apt.id] = apt.baseAmount * multiplier;
+            totalWeights += weights[apt.id];
           });
+
+          // Redistribuie proporțional cu greutățile (păstrează suma totală a grupului)
+          if (totalWeights > 0) {
+            allGroupParticipating.forEach(apt => {
+              distributionByApartment[apt.id] = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
+            });
+          }
         }
       }
     });

@@ -67,8 +67,11 @@ const ExpenseConfigModal = ({
 
   useEffect(() => {
     if (expenseConfig && !justAddedSupplierRef.current) {
+      const distributionType = expenseConfig.distributionType || 'apartment';
+      const defaultFixedAmountMode = distributionType === 'person' ? 'person' : 'apartment';
+
       setLocalConfig({
-        distributionType: expenseConfig.distributionType || 'apartment',
+        distributionType: distributionType,
         consumptionUnit: expenseConfig.consumptionUnit || 'mc',
         customConsumptionUnit: expenseConfig.customConsumptionUnit || '',
         invoiceMode: expenseConfig.invoiceMode || 'single',
@@ -82,7 +85,8 @@ const ExpenseConfigModal = ({
         contractNumber: expenseConfig.contractNumber || '',
         contactPerson: expenseConfig.contactPerson || '',
         // 💰 Mod calcul sumă fixă (pentru distribuție pe persoană)
-        fixedAmountMode: expenseConfig.fixedAmountMode || 'apartment',
+        // Default: 'person' dacă distributionType e 'person', altfel 'apartment'
+        fixedAmountMode: expenseConfig.fixedAmountMode || defaultFixedAmountMode,
         // 📊 Configurare indecși
         indexConfiguration: expenseConfig.indexConfiguration || {
           enabled: false,
@@ -473,7 +477,15 @@ const ExpenseConfigModal = ({
                 </label>
                 <select
                   value={localConfig.distributionType}
-                  onChange={(e) => setLocalConfig({ ...localConfig, distributionType: e.target.value })}
+                  onChange={(e) => {
+                    const newDistributionType = e.target.value;
+                    setLocalConfig({
+                      ...localConfig,
+                      distributionType: newDistributionType,
+                      // Setează fixedAmountMode la "person" când distributionType devine "person"
+                      fixedAmountMode: newDistributionType === 'person' ? 'person' : localConfig.fixedAmountMode
+                    });
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="apartment">Pe apartament (egal)</option>
@@ -751,8 +763,13 @@ const ExpenseConfigModal = ({
                           }`}
                         >
                           <option value="integral">Integral</option>
-                          <option value="percentage">Procent</option>
-                          <option value="fixed">Sumă fixă</option>
+                          {/* Pentru "individual", afișăm doar Integral și Exclus */}
+                          {localConfig.distributionType !== 'individual' && (
+                            <>
+                              <option value="percentage">Procent</option>
+                              <option value="fixed">Sumă fixă</option>
+                            </>
+                          )}
                           <option value="excluded">Exclus</option>
                         </select>
                         <div className="flex justify-end">

@@ -1,5 +1,591 @@
 ---
 
+### **NAVIGATION & BADGE IMPROVEMENTS - 16 OCTOMBRIE 2025**
+
+#### **CONTEXT**
+
+During testing and usage of the expense management system, several navigation and badge interaction issues were identified that made it harder to quickly navigate between "Cheltuieli distribuite" and "Consumuri" tabs and to jump directly to specific staircases when corrections were needed.
+
+#### **PROBLEMS IDENTIFIED & SOLUTIONS**
+
+**1. Inverse Navigation - Expense Name Click**
+
+**Problem**: In "Cheltuieli distribuite" tab, clicking on badges navigated to "Consumuri", but there was no way to navigate back from expense name. Also, users wanted to click on the expense name itself to go to consumption input (more intuitive than clicking badges).
+
+**User Request**: "in headereul de la cheltuieli distribuite vreau sa elimini link-urile de pe badge-urile sume introduse si diferenta. si sa pui link catre consumul cheltuielii de pe numele cheltuielii."
+
+**Solution**:
+- Made expense name clickable in ExpenseList.js to navigate to ConsumptionInput
+- Removed click handlers from "Sume introduse" and "Diferență" badges in expense headers
+- This creates an inverse of the existing navigation (ConsumptionInput name → ExpenseList)
+
+**Implementation** - `ExpenseList.js`:
+- Lines 513-522: Added onClick handler to expense name (h4 element)
+  ```javascript
+  <h4
+    className="font-semibold text-base text-gray-900 px-2 py-1 -ml-2 rounded cursor-pointer transition-all hover:bg-indigo-50 hover:text-indigo-700"
+    onClick={(e) => {
+      e.stopPropagation();
+      onConsumptionClick(expense.name);
+    }}
+    title="Click pentru a vedea consumurile cheltuielii"
+  >
+    {expense.name}
+  </h4>
+  ```
+- Changed Badge 1 (Consumuri/Sume introduse) from `<button>` to `<div>` (removed onClick)
+- Changed Badge 3 (Diferență) from `<button>` to `<div>` (removed onClick)
+
+**Result**:
+- ✅ Bidirectional navigation: ExpenseList ↔ ConsumptionInput
+- ✅ More intuitive: click on expense name (not badges) to see consumption
+- ✅ Cleaner: badges are informational only (no unexpected navigation)
+
+---
+
+**2. Header Sum Display - Staircase Filtering**
+
+**Problem**: In "Consumuri" tab, when filtering by staircase (e.g., "Scara A"), the header sum showed the total for entire association (600 RON) instead of the sum for the filtered staircase (100 RON).
+
+**User Feedback**: "in tab-ul consumuri suma din header din dreapta, nu este afisata corect pe fiecare scara, apare suma totala"
+
+**Solution**: Modified ConsumptionInput.js header display logic to use `amountsByStair` or `amountsByBlock` when available, based on the expense reception mode.
+
+**Implementation** - `ConsumptionInput.js` (lines 292-332):
+```javascript
+// Determine reception mode
+let receptionMode = expense.receptionMode || 'total';
+if (expense.expenseEntryMode) {
+  if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
+  else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
+}
+
+// Get amount for current filter
+if (filterInfo.type === 'all') {
+  amountToDisplay = expense.amount || 0;
+} else {
+  if (receptionMode === 'per_stair' && expense.amountsByStair) {
+    amountToDisplay = parseFloat(expense.amountsByStair[filterInfo.stairId] || 0);
+  } else if (receptionMode === 'per_block' && expense.amountsByBlock) {
+    amountToDisplay = parseFloat(expense.amountsByBlock[filterInfo.blockId] || 0);
+  } else {
+    amountToDisplay = expense.amount || 0;
+  }
+}
+```
+
+**Result**:
+- ✅ Header shows correct amount for filtered staircase (100 RON for Scara A)
+- ✅ Uses distributed amounts (`amountsByStair`), not calculated sums
+
+---
+
+**3. Badge Difference Calculation - Staircase Context**
+
+**Problem**: In "Consumuri" tab, the "Diferență" badge calculated difference based on total association amount instead of the staircase amount. Same issue for "Total introdus" badge.
+
+**User Request**: "perfect. acum te rog sa corectezi si badge-ul cu diferenta care apare in consumuri. vezi cum este in cheltuieli distribuite ca este corect. in consumuri arata diferenta pornind de la totalul pe asociatie. trebuie sa porneasca de la suma pe scara"
+
+**Solution**: Modified Badge 2 (Total introdus) and Badge 3 (Diferență) calculation logic to use `relevantAmount` based on filtered staircase/block.
+
+**Implementation** - `ConsumptionInput.js` (lines 352-467):
+```javascript
+// Calculate relevant amount for filtered staircase
+let relevantAmount = 0;
+if (filterInfo.type === 'all') {
+  relevantAmount = isConsumption && expense.billAmount ? expense.billAmount : expense.amount;
+} else {
+  if (receptionMode === 'per_stair' && expense.amountsByStair) {
+    relevantAmount = parseFloat(expense.amountsByStair[filterInfo.stairId] || 0);
+  } else if (receptionMode === 'per_block' && expense.amountsByBlock) {
+    relevantAmount = parseFloat(expense.amountsByBlock[filterInfo.blockId] || 0);
+  } else {
+    relevantAmount = isConsumption && expense.billAmount ? expense.billAmount : expense.amount;
+  }
+}
+
+// Use relevantAmount for difference calculation
+const diferenta = totalIntrodus - relevantAmount;
+```
+
+**Result**:
+- ✅ "Total introdus" and "Diferență" badges show correct values for filtered staircase
+- ✅ Consistent behavior between "Cheltuieli distribuite" and "Consumuri" tabs
+
+---
+
+**4. Removed Redundant Summary Section**
+
+**Problem**: In "Consumuri" tab, below the table there was a summary section showing "Total introdus", "Total factură", and "Diferență". This information was now redundant since all details were in the header badges.
+
+**User Request**: "in tab-ul consumuri acum ca am pus toate informatiile in badge-uri te rog sa elimini sectiunea de jos de sub tabel cu Total introdus 220.00 RON Total factură 600.00 RON Diferență -380.00 RON"
+
+**Solution**: Removed entire "Totaluri" section from ConsumptionInput.js for both consumption and individual expense types.
+
+**Result**:
+- ✅ Cleaner UI - no duplicate information
+- ✅ All important info visible in compact badge format
+
+---
+
+**5. Success Indicator for "Total introdus" Badge**
+
+**Problem**: The "Diferență" badge had a "✓" when the difference was OK, but "Total introdus" badge didn't have a similar indicator.
+
+**User Request**: "cand suma introdusa este ok, te rog sa pui si un vazut la Total introdus"
+
+**Solution**: Added "✓" or "⚠" prefix to "Total introdus" badge based on `isDifferenceOk` status.
+
+**Implementation**:
+- `ConsumptionInput.js` (line 404):
+  ```javascript
+  {isDifferenceOk ? '✓ ' : '⚠ '}Total introdus: <span>...
+  ```
+- `ExpenseList.js` (lines 591, 661): Added same logic for both consumption and individual expenses
+
+**Result**:
+- ✅ Consistent visual feedback across all badges
+- ✅ Quick visual scan to see if sums are correct
+
+---
+
+**6. Direct Staircase Navigation from Breakdown Badges**
+
+**Problem**: In "Cheltuieli distribuite" tab, when viewing staircase breakdown sections (e.g., "Defalcare pe scări"), clicking on the "Diferență" badge would navigate to "Consumuri" tab but always open the "Toate" tab, not the specific staircase.
+
+**User Request**: "in Defalcare pe scări: in caseta cu scari pe badge-ul cu diferenta este pus un link Click pentru a corecta diferenta. ar trebui ca acel link sa te duca direct catre scara de pe care dai click. adica ex: Bloc B4 - Scara A ... cand dau click trebuie sa ma duca in consumuri la Bloc B4 - Scara A. acum ma duce in consumuri dar in tab-ul 'Toate'"
+
+**Solution**: Modified `onConsumptionClick` handler to accept optional `stairId` parameter, and updated all staircase breakdown badges to pass the stairId.
+
+**Implementation**:
+
+1. **MaintenanceView.js** (lines 1017-1024):
+   ```javascript
+   onConsumptionClick={(expenseName, stairId) => {
+     setExpenseToExpand(expenseName);
+     setSelectedContentTab('consumptions');
+     // Set staircase tab if specified
+     if (stairId) {
+       setSelectedStairTab(stairId);
+     }
+   }}
+   ```
+
+2. **ExpenseList.js** - Updated 6 locations where staircase breakdown badges call `onConsumptionClick`:
+   - Lines 1196, 1219: Card for specific staircase when amount is per association
+   - Lines 1658, 1681: Card for specific staircase when amount is per block
+   - Lines 1877, 1900: Cards in staircase breakdown (per_stair mode)
+
+   Changed from:
+   ```javascript
+   onConsumptionClick(expense.name);
+   ```
+
+   To:
+   ```javascript
+   onConsumptionClick(expense.name, filterInfo.stairId); // or stair.id
+   ```
+
+**Result**:
+- ✅ Clicking "Diferență" badge in "Scara A" breakdown → opens "Consumuri" tab on "Scara A"
+- ✅ Direct navigation to the exact staircase that needs correction
+- ✅ Significant time savings for administrators
+
+---
+
+#### **NAVIGATION FLOW**
+
+After all improvements, navigation is now bidirectional and context-aware:
+
+```
+Cheltuieli distribuite                    Consumuri
+┌─────────────────────┐                ┌──────────────────────┐
+│ Expense Name [CLICK]├───────────────►│ Opens this expense   │
+│                     │                │                      │
+│ ┌─────────────────┐ │                │ Expense Name [CLICK] │
+│ │ Scara A         │ │                │                      │
+│ │ ⚠ Diferență [CLICK]─┼───────────────►│ Opens Scara A tab    │
+│ └─────────────────┘ │                │                      │
+│                     │◄───────────────┤                      │
+│                     │  Name click    │                      │
+└─────────────────────┘                └──────────────────────┘
+```
+
+**Navigation Rules**:
+1. Expense name in ExpenseList → Consumuri (all staircases)
+2. Expense name in ConsumptionInput → Cheltuieli distribuite (expense expanded)
+3. Staircase breakdown badge → Consumuri (specific staircase)
+
+---
+
+#### **FILES MODIFIED**
+
+1. **MaintenanceView.js** (lines 1017-1024):
+   - Modified `onConsumptionClick` to accept optional `stairId` parameter
+   - Added logic to set `selectedStairTab` when stairId is provided
+
+2. **ExpenseList.js**:
+   - Lines 513-522: Made expense name clickable to navigate to ConsumptionInput
+   - Removed click handlers from Badge 1 (Sume introduse) and Badge 3 (Diferență) in headers
+   - Lines 591, 661: Added "✓" indicator to "Total introdus" badge
+   - Lines 1196, 1219, 1658, 1681, 1877, 1900: Updated staircase breakdown badges to pass stairId
+
+3. **ConsumptionInput.js**:
+   - Lines 292-332: Fixed header sum display to use staircase/block amounts
+   - Lines 352-467: Fixed badge calculations to use `relevantAmount` for filtered staircase
+   - Line 404: Added "✓" indicator to "Total introdus" badge
+   - Removed entire "Totaluri" section below table
+
+---
+
+#### **KEY LEARNINGS**
+
+1. **Bidirectional Navigation Patterns**
+   - Users expect to be able to navigate back and forth between related views
+   - Clicking on the entity name (expense) is more intuitive than clicking badges
+   - Navigation should be consistent: if A→B exists, B→A should also exist
+
+2. **Context-Aware Navigation**
+   - When navigating from a specific context (Scara A), land in that same context
+   - Passing context parameters (stairId) enables precise navigation
+   - Generic "Toate" tab is good for overview, but specific tabs are better for actions
+
+3. **Badge as Information vs Action**
+   - Status badges (with checkmarks) should be informational only
+   - Action badges (with warnings that need correction) can be clickable
+   - Clear visual distinction: informational badges use `<div>`, action badges use `<button>`
+
+4. **Data Source Hierarchy**
+   - Always use distributed amounts (`amountsByStair`) over calculated sums
+   - The source of truth is the amount that was entered/distributed, not calculated from apartments
+   - This ensures consistency between "Cheltuieli distribuite" and "Consumuri" tabs
+
+5. **UI Redundancy Reduction**
+   - If information is in badges, remove duplicate sections below
+   - Consolidating information reduces cognitive load
+   - Badges in header are always visible, summaries below tables are not
+
+6. **Visual Consistency**
+   - If one badge type has a success indicator (✓), similar badges should too
+   - Consistent use of "✓" and "⚠" symbols across all tabs
+   - Same badge structure and behavior in related views
+
+---
+
+#### **TESTING COVERAGE**
+
+**✅ Navigation Testing**:
+- Expense name click in ExpenseList → Opens ConsumptionInput ✓
+- Expense name click in ConsumptionInput → Opens ExpenseList with expense expanded ✓
+- Staircase breakdown badge click → Opens ConsumptionInput on specific staircase ✓
+
+**✅ Display Testing**:
+- Header sum shows correct amount for filtered staircase ✓
+- "Total introdus" badge calculates correctly for filtered staircase ✓
+- "Diferență" badge calculates correctly for filtered staircase ✓
+- Success indicator (✓) shows in both tabs when sums are correct ✓
+
+**✅ UI Testing**:
+- Redundant summary section removed from ConsumptionInput ✓
+- Expense name has hover effect indicating it's clickable ✓
+- Header badges are informational (not clickable) ✓
+
+---
+
+#### **BENEFITS**
+
+✅ **Faster Navigation**: Direct navigation to specific staircases saves time
+✅ **Intuitive UX**: Clicking on expense name (not badges) is more intuitive
+✅ **Cleaner UI**: Removed redundant summary section
+✅ **Consistent Behavior**: Same badge logic in both tabs
+✅ **Context Preservation**: Navigate to exact staircase that needs correction
+✅ **Visual Feedback**: Success indicators on all relevant badges
+
+---
+
+#### **FUTURE CONSIDERATIONS**
+
+1. **Keyboard Navigation**: Add keyboard shortcuts for quick tab switching (e.g., Alt+C for Consumuri)
+2. **Breadcrumb Trail**: Show navigation history for complex workflows
+3. **Bulk Corrections**: When multiple staircases have differences, add "Next difference" button
+4. **Navigation Analytics**: Track which navigation paths users use most
+5. **Deep Linking**: Consider URL-based navigation to allow bookmarking specific views
+
+---
+
+*This session demonstrated the importance of intuitive navigation patterns and context-aware interactions. Small improvements in navigation flow can significantly improve user efficiency, especially for repetitive tasks like correcting consumption differences.*
+
+---
+
+### **PERSON-BASED DISTRIBUTION TESTING & UI IMPROVEMENTS - 15 OCTOMBRIE 2025**
+
+#### **CONTEXT**
+
+After completing testing for apartment-based distribution (equal), we continued with testing person-based distribution. During testing, several UI inconsistencies and missing information were identified that made it harder to understand the distribution at a glance.
+
+#### **PROBLEMS IDENTIFIED & SOLUTIONS**
+
+**1. Wrong Default for "Mod participare sumă fixă"**
+
+**Problem**: When adding a new expense with "Pe persoană" distribution, the "Mod participare sumă fixă" field defaulted to "pe apartament" instead of "pe persoană", which was counterintuitive.
+
+**Solution**: Made the default dynamic based on distribution type.
+
+**Implementation**:
+
+- **ExpenseAddModal.js** (lines 342-371):
+  ```javascript
+  onChange={(e) => {
+    const newDistributionType = e.target.value;
+    setLocalConfig({
+      ...localConfig,
+      distributionType: newDistributionType,
+      // Auto-set fixedAmountMode to "person" when distributionType becomes "person"
+      fixedAmountMode: newDistributionType === 'person' ? 'person' : localConfig.fixedAmountMode
+    });
+  }}
+  ```
+
+- **ExpenseConfigModal.js** (lines 470-502, 68-108):
+  ```javascript
+  // On load, set intelligent default
+  const distributionType = expenseConfig.distributionType || 'apartment';
+  const defaultFixedAmountMode = distributionType === 'person' ? 'person' : 'apartment';
+  fixedAmountMode: expenseConfig.fixedAmountMode || defaultFixedAmountMode,
+  ```
+
+- **expenseTypes.js** (lines 29-35):
+  ```javascript
+  {
+    name: "Energie electrică",
+    defaultDistribution: "person",
+    fixedAmountMode: "person",  // Added this
+    invoiceEntryMode: "separate",
+    expenseEntryMode: "building"
+  }
+  ```
+
+**Result**: ✅ When distribution is "Pe persoană", the default for fixed amount mode is automatically "pe persoană"
+
+---
+
+**2. Missing Person Count in Header Sections**
+
+**Problem**: In the expense header, excluded apartments and apartments with different participation showed person counts only in expanded cards, not in the header summary. This was inconsistent.
+
+**User Feedback**: "Dacă ai adăugat și în header pentru cheltuielile care sunt pe persoană atunci va trebui în header să pui nr de persoane și pentru apartamentele excluse"
+
+**Solution**: Added person count to both excluded apartments and apartments with different participation in the header when distribution type is "person".
+
+**Implementation** - `ExpenseList.js`:
+
+- **Line 675** (excluded apartments in header):
+  ```javascript
+  {participationInfo.notParticipating.length} {participationInfo.notParticipating.length === 1 ? 'apartament exclus' : 'apartamente excluse'}
+  {config.distributionType === 'person' ? ` (${participationInfo.notParticipating.reduce((sum, apt) => sum + (apt.persons || 0), 0)} pers)` : ''}
+  ```
+
+- **Line 680** (partial participation apartments in header):
+  ```javascript
+  {participationInfo.partialParticipating.length} {participationInfo.partialParticipating.length === 1 ? 'apartament cu participare diferită' : 'apartamente cu participare diferită'}
+  {config.distributionType === 'person' ? ` (${participationInfo.partialParticipating.reduce((sum, apt) => sum + (apt.persons || 0), 0)} pers)` : ''}
+  ```
+
+**Result**:
+- **Before**: "1 apartament exclus • 2 apartamente cu participare diferită"
+- **After**: "1 apartament exclus (2 pers) • 2 apartamente cu participare diferită (7 pers)"
+
+---
+
+**3. Missing Person Count for Integral Participation Price**
+
+**Problem**: When viewing breakdown cards for person-based distribution, the price per person was shown (e.g., "17.78 RON/persoană") but it wasn't clear how many people this applied to.
+
+**User Request**: "as vrea ca in cardurile de defalcare sa afisez pe langa pretul pe persoana si nr de persoane pentru care se aplica acel pret... ca sa stim pentru cate persoane se aplica acel pret. acel pret este pentru cei care au bifa de integral, stii."
+
+**Solution**: Added person count in parentheses next to the per-person price, showing how many people have integral participation (pay the standard rate).
+
+**Implementation** - `ExpenseList.js` (5 locations):
+
+```javascript
+// Calculate integral participation person count
+const integralPersons = participatingApts.reduce((sum, apt) => sum + (apt.persons || 0), 0);
+
+// Display with person count
+{integralAmount.toFixed(2)} {config.distributionType === 'person' ? `RON/persoană (${integralPersons} pers)` : 'RON/apartament'}
+```
+
+**Locations**:
+1. Line 825: Card "Pe asociație" (when on "Toate" tab)
+2. Line 994: Card for specific stair when amount is per association
+3. Line 1153: Card for blocks breakdown
+4. Line 1308: Card for specific stair when amount is per block
+5. Line 1453: Card for stairs breakdown
+
+**Result**:
+- **Before**: "17.78 RON/persoană"
+- **After**: "17.78 RON/persoană (11 pers)"
+
+This immediately shows that 11 people pay the standard rate of 17.78 RON.
+
+---
+
+**4. Missing Person Count Per Apartment with Different Participation**
+
+**Problem**: In the expanded cards, apartments with different participation showed their amounts but not the number of people in each apartment. This made it hard to get a complete picture.
+
+**User Request**: "hai sa adaugam si nr de persoaane aici... Ar trebui sa punem pentru fiecare apartament cu participare diferita care este nr de persoane pe fiecare apartament, nu? ca sa avem o imagine completa"
+
+**Solution**: Added person count for each individual apartment with different participation when distribution is "person".
+
+**Implementation** - `ExpenseList.js` (5 locations):
+
+```javascript
+return (
+  <span key={apt.id} className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded text-xs">
+    <span className="font-semibold">Ap. {apt.number}</span>
+    {config.distributionType === 'person' ? ` (${apt.persons || 0} pers)` : ''}
+    ({displayText})
+  </span>
+);
+```
+
+**Locations**:
+1. Line 879: Card "Pe asociație"
+2. Line 1048: Card for specific stair when amount is per association
+3. Line 1212: Card for blocks breakdown
+4. Line 1362: Card for specific stair when amount is per block
+5. Line 1512: Card for stairs breakdown
+
+**Result**:
+```
+2 apartamente cu participare diferită (7 pers):
+Ap. 22 (2 pers) (10%: 1.78 RON/pers)
+Ap. 33 (5 pers) (10.00 RON fix/pers)
+```
+
+Now you can see both:
+- Total persons in apartments with different participation: (7 pers)
+- Persons in each individual apartment: Ap. 22 (2 pers), Ap. 33 (5 pers)
+
+---
+
+#### **COMPLETE INFORMATION HIERARCHY**
+
+After all improvements, person-based distribution cards now show a complete information hierarchy:
+
+```
+Bloc B4 - Scara A
+100.00 RON
+17.78 RON/persoană (11 pers)          ← How many people pay standard rate
+3/4 apartamente • 11/13 persoane       ← Total participation
+
+1 apartament exclus (2 pers):          ← Total excluded persons
+  Ap. 11 (2 pers)                      ← Persons per excluded apartment
+
+2 apartamente cu participare diferită (7 pers):  ← Total persons with different participation
+  Ap. 22 (2 pers) (10%: 1.78 RON/pers)          ← Persons + amount per apartment
+  Ap. 33 (5 pers) (10.00 RON fix/pers)          ← Persons + amount per apartment
+```
+
+This provides complete transparency at every level:
+- ✅ Total amounts and counts
+- ✅ Standard rate + how many people it applies to
+- ✅ Excluded apartments + total persons + persons per apartment
+- ✅ Different participation + total persons + persons per apartment + individual rates
+
+---
+
+#### **TESTING STATUS**
+
+**✅ Distribuție "Pe apartament (egal)"** - COMPLETED (14 Oct)
+- All sum entry modes tested (per association, per block, per stair)
+- All participation types tested (integral, percentage, fixed, excluded)
+
+**✅ Distribuție "Pe persoană"** - COMPLETED (15 Oct)
+- All sum entry modes tested (per association, per block, per stair)
+- All participation types tested (integral, percentage, fixed, excluded)
+- All display improvements implemented and verified
+
+**⏳ Distribuție "Pe consum (mc/apartament)"** - TODO (after lunch break)
+
+**⏳ Distribuție "Sume individuale (RON/apartament)"** - TODO (after lunch break)
+
+---
+
+#### **FILES MODIFIED**
+
+1. **ExpenseAddModal.js** (lines 342-371):
+   - Dynamic default for `fixedAmountMode` based on `distributionType`
+
+2. **ExpenseConfigModal.js** (lines 68-108, 470-502):
+   - Intelligent default when loading existing config
+   - Dynamic default when changing distribution type
+
+3. **expenseTypes.js** (lines 29-35):
+   - Added `fixedAmountMode: 'person'` to "Energie electrică"
+
+4. **ExpenseList.js** (multiple locations):
+   - Lines 675, 680: Person count in header for excluded and partial apartments
+   - Lines 825, 994, 1153, 1308, 1453: Person count for integral participation (next to per-person price)
+   - Lines 879, 1048, 1212, 1362, 1512: Person count per individual apartment with different participation
+
+---
+
+#### **KEY LEARNINGS**
+
+1. **Contextual Defaults Are Important**
+   - Field defaults should be intelligent based on related field values
+   - "Mod participare sumă fixă" should default to "pe persoană" when distribution is "Pe persoană"
+   - This reduces user cognitive load and prevents errors
+
+2. **Information Consistency Across UI Levels**
+   - If person count appears in expanded view, it should also appear in header
+   - Users expect consistency - if one section shows detail X, related sections should too
+   - Inconsistent information display creates confusion and slows down users
+
+3. **Complete Information Hierarchy**
+   - Show totals at top level (7 pers total with different participation)
+   - Show breakdowns at detail level (Ap. 22: 2 pers, Ap. 33: 5 pers)
+   - Show context with values (17.78 RON/persoană applies to 11 pers)
+   - Users need both summary and detail to make informed decisions
+
+4. **Progressive Disclosure with Context**
+   - Standard rate should show how many people it applies to
+   - Exception lists (excluded, different participation) should show totals AND details
+   - Every number should have context - "11 pers" is more meaningful when you see "17.78 RON/persoană (11 pers)"
+
+5. **User Feedback Drives UX Improvements**
+   - User immediately noticed missing person count for excluded apartments
+   - User requested integral person count to understand who pays standard rate
+   - User wanted per-apartment breakdown to see complete picture
+   - All requests were valid and improved overall clarity
+
+---
+
+#### **BENEFITS**
+
+✅ **Better Defaults**: Users don't need to manually change "Mod participare sumă fixă" for person-based distribution
+✅ **Complete Information**: All relevant person counts are now visible at every level
+✅ **Clear Attribution**: Easy to see who pays what rate and how many people are affected
+✅ **Reduced Confusion**: Consistent information display across header and expanded views
+✅ **Faster Understanding**: Administrators can quickly verify distribution correctness
+
+---
+
+#### **FUTURE CONSIDERATIONS**
+
+1. **Apply Same Patterns to Other Distribution Types**: Consider adding similar detail levels for consumption and individual amounts
+2. **Summary Dashboard**: A quick overview showing all expenses with key metrics (total persons, excluded persons, etc.)
+3. **Export/Print View**: Ensure these details are preserved when exporting to PDF/Excel
+4. **Mobile Responsiveness**: Test that all these details render well on smaller screens
+
+---
+
+*This session demonstrated the importance of complete information hierarchy and contextual intelligence in UI design. Small details like showing person counts at multiple levels significantly improve user understanding and confidence in the system.*
+
+---
+
 ### **APARTMENT-BASED DISTRIBUTION UI IMPROVEMENTS - 14 OCTOMBRIE 2025**
 
 #### **PROBLEMA INIȚIALĂ**

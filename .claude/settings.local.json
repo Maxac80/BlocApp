@@ -44,7 +44,11 @@
       "Bash(start https://console.firebase.google.com/project/blocapp-production/firestore/databases/default/data/~2Fsheets)",
       "Bash(npx grep:*)",
       "Bash(copy .env.example .env)",
-      "Bash(dir .env)"
+      "Bash(dir .env)",
+      "Bash(cat:*)",
+      "Bash(copy:*)",
+      "Bash(move:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

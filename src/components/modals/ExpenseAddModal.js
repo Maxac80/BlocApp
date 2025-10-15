@@ -20,6 +20,7 @@ const ExpenseAddModal = ({
   getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
+  saveApartmentParticipations,
   getAssociationExpenseTypes,
   currentSheet,
   blocks,
@@ -47,6 +48,9 @@ const ExpenseAddModal = ({
 
   const [showCustomUnit, setShowCustomUnit] = useState(false);
 
+  // 🏠 State local pentru participările apartamentelor (se salvează în Firebase)
+  const [localParticipations, setLocalParticipations] = useState({});
+
   const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
@@ -69,6 +73,8 @@ const ExpenseAddModal = ({
         fixedAmountMode: 'apartment'
       });
       setActiveTab('general');
+      // Resetează participările
+      setLocalParticipations({});
     }
   }, [isOpen]);
 
@@ -116,6 +122,33 @@ const ExpenseAddModal = ({
       return;
     }
 
+    // Validare participări - verifică dacă există sume/procente necompletate
+    const apartments = getAssociationApartments();
+    const incompleteParticipations = [];
+
+    apartments.forEach(apartment => {
+      const participationKey = `${apartment.id}-${expenseName.trim()}`;
+      const participation = localParticipations[participationKey] || { type: 'integral', value: null };
+
+      if (participation.type === 'percentage' || participation.type === 'fixed') {
+        if (!participation.value || participation.value <= 0) {
+          incompleteParticipations.push({
+            apartment: apartment.number,
+            type: participation.type === 'percentage' ? 'procent' : 'sumă fixă'
+          });
+        }
+      }
+    });
+
+    // Dacă există participări incomplete, afișează eroare
+    if (incompleteParticipations.length > 0) {
+      const messages = incompleteParticipations.map(p =>
+        `Apt ${p.apartment}: completați ${p.type}`
+      ).join('\n');
+      alert(`Participări incomplete:\n\n${messages}\n\nVă rog completați toate valorile înainte de a salva.`);
+      return;
+    }
+
     const normalizedInputName = normalizeText(expenseName);
 
     // Verifică dacă numele există în cheltuielile standard (inclusiv cele dezactivate)
@@ -142,6 +175,10 @@ const ExpenseAddModal = ({
     }
 
     try {
+      // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
+      onClose();
+
+      // Salvează în fundal (după închidere)
       // Add the expense with configuration including reception mode and applies to
       await onAddExpense({
         name: expenseName.trim(),
@@ -150,8 +187,15 @@ const ExpenseAddModal = ({
         appliesTo: localConfig.appliesTo
       }, localConfig);
 
+      // Save apartment participations to Firebase
+      if (saveApartmentParticipations) {
+        // Merge cu participările existente pentru alte cheltuieli
+        const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
+        const mergedParticipations = { ...allParticipations, ...localParticipations };
+        await saveApartmentParticipations(mergedParticipations);
+      }
+
       console.log('✅ Cheltuială adăugată cu succes:', expenseName.trim(), 'cu mod introducere:', localConfig.receptionMode, 'se aplică pe:', localConfig.appliesTo);
-      onClose();
     } catch (error) {
       console.error('Eroare la adăugarea cheltuielii:', error);
       alert('Eroare la adăugarea cheltuielii: ' + error.message);
@@ -258,8 +302,6 @@ const ExpenseAddModal = ({
 
   if (!isOpen) return null;
 
-  const apartments = getAssociationApartments();
-
   // Group stairs by block for display
   const blocksWithStairs = blocks.map(block => ({
     ...block,
@@ -346,7 +388,15 @@ const ExpenseAddModal = ({
                 </label>
                 <select
                   value={localConfig.distributionType}
-                  onChange={(e) => setLocalConfig({ ...localConfig, distributionType: e.target.value })}
+                  onChange={(e) => {
+                    const newDistributionType = e.target.value;
+                    setLocalConfig({
+                      ...localConfig,
+                      distributionType: newDistributionType,
+                      // Setează fixedAmountMode la "person" când distributionType devine "person"
+                      fixedAmountMode: newDistributionType === 'person' ? 'person' : localConfig.fixedAmountMode
+                    });
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="apartment">Pe apartament (egal)</option>
@@ -580,7 +630,8 @@ const ExpenseAddModal = ({
               {filteredApartments.length > 0 ? (
                 <div className="space-y-2">
                   {filteredApartments.map(apartment => {
-                    const participation = getApartmentParticipation ? getApartmentParticipation(apartment.id, expenseName) : { type: 'integral', value: null };
+                    const participationKey = `${apartment.id}-${expenseName.trim()}`;
+                    const participation = localParticipations[participationKey] || { type: 'integral', value: null };
                     const isModified = participation.type !== 'integral';
 
                     // Date pentru verificare dacă apartamentul este activ
@@ -593,15 +644,15 @@ const ExpenseAddModal = ({
                       (localConfig.receptionMode === 'per_block' && block && localConfig.appliesTo.blocks.includes(block.id));
 
                     return (
+                      <div key={apartment.id} className="space-y-0">
                       <div
-                        key={apartment.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                        className={`grid grid-cols-[80px_1fr_160px_100px] gap-3 p-3 rounded-lg items-center ${
                           !isApartmentActive ? 'bg-gray-200 opacity-60' :
                           isModified ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                         }`}
                       >
-                        <span className="w-20 font-medium">Apt {apartment.number}</span>
-                        <span className={`flex-1 ${!isApartmentActive ? 'text-gray-500' : 'text-gray-700'}`}>
+                        <span className="font-medium text-sm">Apt {apartment.number}</span>
+                        <span className={`text-sm truncate ${!isApartmentActive ? 'text-gray-500' : 'text-gray-700'}`}>
                           {apartment.owner || 'Fără proprietar'}
                           {!isApartmentActive && ' (Dezactivat)'}
                         </span>
@@ -609,43 +660,62 @@ const ExpenseAddModal = ({
                           value={participation.type}
                           onChange={(e) => {
                             const type = e.target.value;
-                            if (type === "integral" || type === "excluded") {
-                              if (setApartmentParticipation) {
-                                setApartmentParticipation(apartment.id, expenseName, type);
+                            const newValue = type === "percentage" ? 50 : type === "fixed" ? 0 : null;
+                            setLocalParticipations({
+                              ...localParticipations,
+                              [participationKey]: {
+                                type,
+                                value: newValue
                               }
-                            } else {
-                              if (setApartmentParticipation) {
-                                setApartmentParticipation(apartment.id, expenseName, type, participation.value || (type === "percentage" ? 50 : 0));
-                              }
-                            }
+                            });
                           }}
                           disabled={!isApartmentActive}
-                          className={`flex-1 p-2 border rounded-lg ${
+                          className={`p-2 border rounded-lg text-sm ${
                             !isApartmentActive ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'
                           }`}
                         >
                           <option value="integral">Integral</option>
-                          <option value="percentage">Procent</option>
-                          <option value="fixed">Sumă fixă</option>
+                          {/* Pentru "individual", afișăm doar Integral și Exclus */}
+                          {localConfig.distributionType !== 'individual' && (
+                            <>
+                              <option value="percentage">Procent</option>
+                              <option value="fixed">Sumă fixă</option>
+                            </>
+                          )}
                           <option value="excluded">Exclus</option>
                         </select>
-                        {(participation.type === "percentage" || participation.type === "fixed") && (
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={participation.value || ""}
-                            onChange={(e) => {
-                              if (setApartmentParticipation) {
-                                setApartmentParticipation(apartment.id, expenseName, participation.type, parseFloat(e.target.value) || 0);
-                              }
-                            }}
-                            disabled={!isApartmentActive}
-                            placeholder={participation.type === "percentage" ? "%" : "RON"}
-                            className={`w-24 p-2 border rounded-lg ${
-                              !isApartmentActive ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'
-                            }`}
-                          />
-                        )}
+                        <div className="flex justify-end">
+                          {(participation.type === "percentage" || participation.type === "fixed") && (
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={participation.value || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Permite doar numere și punct zecimal
+                                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                  setLocalParticipations({
+                                    ...localParticipations,
+                                    [participationKey]: {
+                                      ...participation,
+                                      value: value === '' ? 0 : parseFloat(value) || 0
+                                    }
+                                  });
+                                }
+                              }}
+                              disabled={!isApartmentActive}
+                              placeholder={participation.type === "percentage" ? "%" : "RON"}
+                              className={`w-20 p-2 border rounded-lg text-sm text-right ${
+                                !isApartmentActive ? 'bg-gray-100 cursor-not-allowed' :
+                                (!participation.value || participation.value <= 0)
+                                  ? 'border-red-500 bg-red-50'
+                                  : 'border-gray-300'
+                              }`}
+                            />
+                          )}
+                        </div>
+                      </div>
+
                       </div>
                     );
                   })}

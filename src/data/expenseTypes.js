@@ -29,6 +29,7 @@ export const defaultExpenseTypes = [
   {
     name: "Energie electrică",
     defaultDistribution: "person",
+    fixedAmountMode: "person",
     invoiceEntryMode: "separate",
     expenseEntryMode: "building"
   },

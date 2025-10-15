@@ -579,6 +579,7 @@ const ExpensesViewNew = ({
           getAssociationApartments={getAssociationApartments}
           getApartmentParticipation={getApartmentParticipation}
           setApartmentParticipation={setApartmentParticipation}
+          saveApartmentParticipations={saveApartmentParticipations}
           getAssociationExpenseTypes={getAssociationExpenseTypes}
           currentSheet={currentSheet}
           blocks={blocks || []}
