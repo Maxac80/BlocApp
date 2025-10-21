@@ -21,6 +21,17 @@ const ExpenseForm = ({
   syncSuppliersForExpenseType,
   getAssociationApartments
 }) => {
+  // Helper: Obține unitatea de măsură configurată
+  const getUnitLabel = (expenseName) => {
+    const config = getExpenseConfig(expenseName);
+    if (config?.consumptionUnit === 'custom' && config?.customConsumptionUnit) {
+      return config.customConsumptionUnit;
+    } else if (config?.consumptionUnit) {
+      return config.consumptionUnit;
+    }
+    return 'mc'; // default
+  };
+
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: '',
@@ -342,7 +353,7 @@ const ExpenseForm = ({
                 onChange={(e) => setNewExpense({...newExpense, unitPrice: e.target.value})}
                 type="text"
                 inputMode="decimal"
-                placeholder={`Preț pe ${newExpense.name.toLowerCase().includes("apă") || newExpense.name.toLowerCase().includes("canal") ? "mc" : "Gcal"} (RON)`}
+                placeholder={`Preț pe ${getUnitLabel(newExpense.name)} (RON)`}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
               />
               <input

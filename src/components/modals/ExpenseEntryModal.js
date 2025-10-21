@@ -60,6 +60,10 @@ const ExpenseEntryModal = ({
       console.log('✏️ editingExpense.amountsByBlock:', editingExpense.amountsByBlock);
       console.log('✏️ editingExpense.amountsByStair:', editingExpense.amountsByStair);
 
+      const expenseConfig = getExpenseConfig(editingExpense.name);
+      console.log('✏️ Config receptionMode:', expenseConfig?.receptionMode);
+      console.log('✏️ Full config:', expenseConfig);
+
       setSelectedExpense(editingExpense.name);
 
       // Populează sumele bazate pe distributionType și receptionMode
@@ -308,7 +312,7 @@ const ExpenseEntryModal = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">
-                {editingExpense ? '✏️ Editează Cheltuială' : '➕ Distribuie Cheltuială'}
+                {editingExpense ? '✏️ Editează distribuirea' : '➕ Distribuie Cheltuială'}
               </h2>
               <p className="text-white/80 mt-1">{currentMonth}</p>
             </div>
@@ -324,30 +328,32 @@ const ExpenseEntryModal = ({
         {/* Content */}
         <div className="p-6 flex-1 overflow-y-auto min-h-0">
           <div className="space-y-4">
-            {/* Dropdown Cheltuială */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cheltuială *
-              </label>
-              <select
-                value={selectedExpense}
-                onChange={(e) => {
-                  setSelectedExpense(e.target.value);
-                  setAmounts({});
-                  setTotalAmount('');
-                  setUnitPrice('');
-                  setBillAmount('');
-                }}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-              >
-                <option value="">Selectează cheltuiala</option>
-                {availableExpenseTypes.map(expenseType => (
-                  <option key={expenseType.name} value={expenseType.name}>
-                    {expenseType.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Dropdown Cheltuială - doar când adaugi cheltuială nouă */}
+            {!editingExpense && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cheltuială *
+                </label>
+                <select
+                  value={selectedExpense}
+                  onChange={(e) => {
+                    setSelectedExpense(e.target.value);
+                    setAmounts({});
+                    setTotalAmount('');
+                    setUnitPrice('');
+                    setBillAmount('');
+                  }}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                >
+                  <option value="">Selectează cheltuiala</option>
+                  {availableExpenseTypes.map(expenseType => (
+                    <option key={expenseType.name} value={expenseType.name}>
+                      {expenseType.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Info despre cheltuiala selectată */}
             {selectedExpense && config && (

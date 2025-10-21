@@ -1172,3 +1172,563 @@ Modal-ul include un exemplu care se recalculează în timp real:
 ---
 
 *Această sesiune a demonstrat importanța clărității UI-ului și a corectitudinii matematice. Reponderarea este o tehnică elegantă pentru a redistribui sume proporțional menținând totalul constant.*
+
+---
+
+### **IMPROVED TERMINOLOGY, TOTAL DIFFERENCE CALCULATION & CONFIGURED UNITS - 22 OCTOMBRIE 2025**
+
+#### **CONTEXT**
+
+After implementing the difference distribution system, several issues were identified:
+1. Menu terminology was unclear ("Editează cheltuiala" actually edits distribution amounts, not expense config)
+2. Modal showed redundant dropdown when editing existing expenses
+3. Difference calculation only included losses/leaks, not participation reductions
+4. Unit labels were hardcoded based on expense name instead of using configured units
+5. No separate column in maintenance table to show distributed differences
+
+#### **PROBLEMS IDENTIFIED & SOLUTIONS**
+
+**1. Improved Menu Terminology**
+
+**Problem**: Menu items used "Editează cheltuiala" (Edit expense) but actually opened a modal to edit distribution amounts (billAmount, amounts per stair). This was confusing because "editing expense" should mean changing expense configuration, not distribution amounts.
+
+**User Request**: "acum in tab-ul cheltuieli distribuite avem pe meniul de 3 puncte Editeaza cheltuiala, si sterge cheltuiala. daca dau pe Editeaza cheltuiala imi deschide modalul de Editeaza cheltuiala, eu zic ca nu este bien formulata ar trebuie sa fie Editeaza distribuirea pentru ca editarea cheltuielii inseamna defapt ca tu editaezi configurarile cheltuielii."
+
+**Solution**: Split menu into three clear options with accurate terminology:
+1. **"Editează distribuirea"** - Opens ExpenseEntryModal to edit distribution amounts (billAmount, amounts per stair)
+2. **"Configurează cheltuiala"** - Opens ExpenseConfigModal on General tab to edit expense settings
+3. **"Șterge distribuirea"** - Deletes the distribution for current month (not expense from config)
+
+**Implementation** - `ExpenseList.js` (lines 1055-1096):
+```javascript
+<div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
+  {onEditExpense && (
+    <button onClick={...} className="w-full px-4 py-2 ... whitespace-nowrap">
+      <Edit2 className="w-4 h-4" />
+      Editează distribuirea
+    </button>
+  )}
+  {onConfigureExpense && (
+    <button onClick={...} className="w-full px-4 py-2 ... whitespace-nowrap">
+      <Settings className="w-4 h-4" />
+      Configurează cheltuiala
+    </button>
+  )}
+  {handleDeleteMonthlyExpense && (
+    <button onClick={...} className="w-full px-4 py-2 text-red-600 ... whitespace-nowrap">
+      <Trash2 className="w-4 h-4" />
+      Șterge distribuirea
+    </button>
+  )}
+</div>
+```
+
+**MaintenanceView.js** (lines 1032-1037):
+```javascript
+onConfigureExpense={(expenseName) => {
+  setSelectedExpenseForConfig(expenseName);
+  setConfigModalInitialTab('general');
+  setShowExpenseConfig(true);
+}}
+```
+
+**Result**:
+- ✅ Clear distinction between editing amounts vs editing configuration
+- ✅ Three-option menu with descriptive labels
+- ✅ Accurate confirmation messages: "Sigur vrei să ștergi distribuirea pentru..."
+
+---
+
+**2. Hidden Expense Dropdown When Editing**
+
+**Problem**: When editing an existing distributed expense, the modal showed a dropdown "Cheltuială *" with the expense name. This was redundant since the expense name already appeared in the information card below.
+
+**User Feedback**: "eu ma gandeam sa nu mai scriem nimic, sa nu mai apara zona cu cheltuiala ca nu mai are sens iar mai jos oricum scrie numele cheltuielii"
+
+**Solution**: Hide the entire expense dropdown section when `editingExpense` exists. The expense name is already visible in the blue information card.
+
+**Implementation** - `ExpenseEntryModal.js` (lines 327-352):
+```javascript
+{/* Dropdown Cheltuială - doar când adaugi cheltuială nouă */}
+{!editingExpense && (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Cheltuială *
+    </label>
+    <select value={selectedExpense} onChange={...} className="...">
+      <option value="">Selectează cheltuiala</option>
+      {availableExpenseTypes.map(expenseType => (
+        <option key={expenseType.name} value={expenseType.name}>
+          {expenseType.name}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+```
+
+**Result**:
+- **Adding new expense**: Shows dropdown to select expense type
+- **Editing existing**: No dropdown, expense name visible only in information card (cleaner UI)
+
+---
+
+**3. Protection Against Changing receptionMode for Distributed Expenses**
+
+**Problem**: When changing "Mod primire factură" (receptionMode) from "Pe asociație" to "Per bloc" and saving, the modal would open for entering new amounts per block. If user clicked "Anulează" without entering amounts, the configuration was saved as "per_bloc" but amounts remained from old "total" mode, creating data inconsistency.
+
+**User Scenario**:
+1. Expense distributed with "Pe asociație" (suma totală 5000 RON) ✅
+2. User opens "Configurare" → changes to "Per bloc" → saves ✅
+3. Modal opens for entering amounts per block
+4. User clicks "Anulează" ❌
+5. **Result**: Config = "per_bloc" but data has only total amount (inconsistent!)
+
+**Solution**: Detect when `receptionMode` changes for an already-distributed expense and block the save operation with a clear message explaining the required steps.
+
+**Implementation** - `ExpenseConfigModal.js` (lines 220-236):
+```javascript
+// VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
+if (expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
+  // Verifică dacă există o cheltuială distribuită în luna curentă
+  const existingExpense = currentSheet?.expenses?.find(exp => exp.name === expenseName);
+
+  if (existingExpense) {
+    const oldMode = expenseConfig.receptionMode === 'total' ? 'Pe asociație' :
+                   expenseConfig.receptionMode === 'per_block' ? 'Per bloc' :
+                   expenseConfig.receptionMode === 'per_stair' ? 'Per scară' : expenseConfig.receptionMode;
+    const newMode = localConfig.receptionMode === 'total' ? 'Pe asociație' :
+                   localConfig.receptionMode === 'per_block' ? 'Per bloc' :
+                   localConfig.receptionMode === 'per_stair' ? 'Per scară' : localConfig.receptionMode;
+
+    alert(`⚠️ ATENȚIE!\n\nAi schimbat modul de primire factură de la "${oldMode}" la "${newMode}".\n\nAceastă cheltuială este deja distribuită în luna curentă cu configurația veche.\n\nPentru a schimba configurația, trebuie mai întâi să:\n1. Ștergi distribuirea existentă (din tab Cheltuieli distribuite → meniul cu 3 puncte → Șterge distribuirea)\n2. Salvezi noua configurație\n3. Re-distribui cheltuiala cu noile setări`);
+    return; // Block save
+  }
+}
+```
+
+**Result**:
+- ✅ Prevents data inconsistency
+- ✅ Clear message with step-by-step instructions
+- ✅ User must delete distribution first, then change config, then re-distribute
+
+---
+
+**4. Total Difference Calculation - Including Participation Reductions**
+
+**Problem**: The `calculateExpenseDifferences` function only calculated difference from losses/leaks (billAmount - declared consumption × unitPrice). It didn't account for reductions from participation settings (excluded apartments, percentages, fixed amounts).
+
+**Example**:
+- billAmount: 5000 RON
+- Consumption: 100 mc × 50 RON = 5000 RON
+- After participation (10% reduction, 1 excluded, 1 fixed): 4435 RON
+- **Old difference**: 5000 - 5000 = 0 RON ❌
+- **Correct difference**: 5000 - 4435 = 565 RON ✅
+
+**Solution**: Calculate total amount after applying all participation settings, then compute difference from billAmount.
+
+**Implementation** - `useMaintenanceCalculation.js` (lines 203-236):
+```javascript
+// 2. Calculează suma după participare pentru fiecare apartament
+let totalAfterParticipation = 0;
+
+apartments.forEach(apt => {
+  const aptConsumption = apartmentConsumptions[apt.id];
+  const aptAmount = aptConsumption * (expense.unitPrice || 0);
+  const participation = config?.apartmentParticipation?.[apt.id];
+
+  let finalAmount = aptAmount;
+
+  // Aplică participarea
+  if (participation) {
+    if (participation.type === 'excluded') {
+      finalAmount = 0;
+    } else if (participation.type === 'percentage') {
+      const percent = participation.value;
+      const multiplier = percent < 1 ? percent : (percent / 100);
+      finalAmount = aptAmount * multiplier;
+    } else if (participation.type === 'fixed') {
+      const fixedMode = config?.fixedAmountMode || 'apartment';
+      finalAmount = fixedMode === 'person' ? participation.value * apt.persons : participation.value;
+    }
+  }
+
+  totalAfterParticipation += finalAmount;
+});
+
+// 3. Calculează diferența TOTALĂ (include și reducerile din participări)
+const difference = expense.billAmount - totalAfterParticipation;
+```
+
+**Result**:
+- ✅ Difference includes BOTH losses/leaks AND participation reductions
+- ✅ Correct difference amounts displayed in "Diferență distribuită" column
+- ✅ Total collected = billAmount (as it should be)
+
+---
+
+**5. Default Difference Distribution Configuration**
+
+**Problem**: Custom consumption expenses without explicit difference configuration showed "Neconfigurată" and didn't distribute differences.
+
+**Solution**: Provide sensible defaults when `differenceDistribution` is missing.
+
+**Implementation** - `useMaintenanceCalculation.js` (lines 173-179):
+```javascript
+// Configurație default pentru diferență dacă nu există
+const differenceConfig = config?.differenceDistribution || {
+  method: 'apartment', // Egal pe apartament (cel mai simplu și corect)
+  adjustmentMode: 'none', // Fără ajustări
+  includeExcludedInDifference: false,
+  includeFixedAmountInDifference: false
+};
+```
+
+**ConsumptionInput.js** (lines 890-896):
+```javascript
+// Configurație default dacă nu există
+const diffConfig = config?.differenceDistribution || {
+  method: 'apartment',
+  adjustmentMode: 'none',
+  includeExcludedInDifference: false,
+  includeFixedAmountInDifference: false
+};
+```
+
+**Result**:
+- ✅ Custom expenses now show "Egal pe apartament" and "Fără ajustări" instead of "Neconfigurată"
+- ✅ Differences are distributed even without explicit configuration
+- ✅ Sensible defaults reduce configuration burden
+
+---
+
+**6. Separate Column for Distributed Differences in Maintenance Table**
+
+**Problem**: In the detailed maintenance table, the difference was added to the base amount in a single column. This made it impossible to see the breakdown between base amount (after participation) and distributed difference.
+
+**User Request**: "acum ca am calculat si diferenta distribuita si i-am aplicat modalitatea de distributie a diferentei va trebui sa o punem si pe ea in tabelul de intretinere cu denumirea diferenta si numele cheltuielii. deci trebuie coloana cu aceasta diferenta si in tabelul de intretinere pentru fiecare cheltuiala care are diferente"
+
+**Solution**:
+1. Store differences separately in `expenseDifferenceDetails` (not added to `expenseDetails`)
+2. Display two columns in maintenance table when differences exist
+
+**Implementation**:
+
+**useMaintenanceCalculation.js** (lines 564-606):
+```javascript
+const tableData = associationApartments.map((apartment) => {
+  let currentMaintenance = 0;
+  const expenseDetails = {};
+  const expenseDifferenceDetails = {}; // Separate pentru diferențe
+
+  // Folosește distribuția pre-calculată
+  sheetExpenses.forEach((expense) => {
+    const apartmentExpense = distribution[apartment.id] || 0;
+    currentMaintenance += apartmentExpense;
+    expenseDetails[expense.name] = apartmentExpense;
+  });
+
+  // Adaugă diferențele SEPARAT
+  Object.keys(expenseDifferences).forEach(expenseName => {
+    const apartmentDifference = expenseDifferences[expenseName][apartment.id] || 0;
+    if (apartmentDifference !== 0) {
+      currentMaintenance += apartmentDifference;
+      expenseDifferenceDetails[expenseName] = apartmentDifference; // Separat!
+    }
+  });
+
+  return {
+    ...apartment,
+    currentMaintenance,
+    expenseDetails,
+    expenseDifferenceDetails // Câmp nou
+  };
+});
+```
+
+**MaintenanceTableDetailed.js** (lines 41-65, 107-130, 194-211):
+```javascript
+{/* Header */}
+{expenses.map(expense => {
+  const hasDifferences = maintenanceData.some(data =>
+    data.expenseDifferenceDetails?.[expense.name]
+  );
+
+  return (
+    <React.Fragment key={expense.id}>
+      <th className="px-3 py-3 ... bg-blue-50">{expense.name}</th>
+      {hasDifferences && (
+        <th className="px-3 py-3 ... bg-orange-50">
+          {expense.name} - Diferență
+        </th>
+      )}
+    </React.Fragment>
+  );
+})}
+
+{/* Body */}
+{expenses.map(expense => {
+  const hasDifferences = maintenanceData.some(d =>
+    d.expenseDifferenceDetails?.[expense.name]
+  );
+
+  return (
+    <React.Fragment key={expense.id}>
+      <td className="... bg-blue-50">
+        {data.expenseDetails?.[expense.name]?.toFixed(2) || '0.00'}
+      </td>
+      {hasDifferences && (
+        <td className="... bg-orange-50">
+          {data.expenseDifferenceDetails?.[expense.name]?.toFixed(2) || '0.00'}
+        </td>
+      )}
+    </React.Fragment>
+  );
+})}
+```
+
+**Result**:
+- **"Apă caldă"** (blue background): 25.00, 10.00, 450.00, ... (after participation)
+- **"Apă caldă - Diferență"** (orange background): 35.31, 35.31, 35.31, ... (distributed difference)
+- ✅ Clear breakdown of amounts vs differences
+- ✅ Differences only shown for expenses that have them
+- ✅ Footer totals calculated separately for each column
+
+---
+
+**7. Configured Unit Labels Instead of Hardcoded**
+
+**Problem**: Unit labels were determined by checking if expense name contains "apă" or "canal" (hardcoded logic). This failed for custom expenses like "Apa pe scara" configured with "mc" but showing "Gcal".
+
+**Code Smell**:
+```javascript
+// BAD - Hardcoded based on name
+const unitLabel = expense.name.toLowerCase().includes("apă") ||
+                  expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
+```
+
+**Solution**: Use configured `consumptionUnit` or `customConsumptionUnit` from expense config.
+
+**Implementation**:
+
+**Helper function** (added to 4 files):
+```javascript
+const getUnitLabel = (expenseName) => {
+  const config = getExpenseConfig(expenseName);
+  if (config?.consumptionUnit === 'custom' && config?.customConsumptionUnit) {
+    return config.customConsumptionUnit;
+  } else if (config?.consumptionUnit) {
+    return config.consumptionUnit;
+  }
+  return 'mc'; // default
+};
+```
+
+**Usage** (replaced 14+ instances):
+```javascript
+// GOOD - Uses configuration
+const unitLabel = getUnitLabel(expense.name);
+
+// In templates
+{totalUnits.toFixed(2)} {getUnitLabel(expense.name)} introduși
+{expense.unitPrice.toFixed(2)} RON/{getUnitLabel(expense.name)}
+```
+
+**Files Modified**:
+1. `ConsumptionInput.js` (lines 598-606) - Header display
+2. `ExpenseList.js` (lines 21-30, 12 instances replaced)
+3. `ExpenseForm.js` (lines 24-33, placeholder text)
+4. `MaintenanceView.js` (lines 312-321, PDF export)
+
+**Result**:
+- ✅ "Apa pe scara" configured with "mc" now shows "53.00 mc" (not "Gcal")
+- ✅ Custom units fully supported
+- ✅ No more assumptions based on expense name
+- ✅ Single source of truth: expense configuration
+
+---
+
+**8. Consistent Icon Order - Chevron Before Menu**
+
+**Problem**: In "Cheltuieli distribuite" tab, icons were ordered: chevron → 3-dot menu. In "Consumuri" tab, they were reversed: 3-dot menu → chevron. This inconsistency was confusing.
+
+**Solution**: Standardized order across both tabs: chevron first, then 3-dot menu.
+
+**Implementation** - `ConsumptionInput.js` (lines 759-817):
+```javascript
+{/* Iconițe în dreapta */}
+<div className="flex-shrink-0 flex items-center gap-2 pt-1">
+  {/* Chevron pentru expand/collapse */}
+  {isExpanded ? (
+    <ChevronUp className="w-4 h-4 text-gray-500" />
+  ) : (
+    <ChevronDown className="w-4 h-4 text-gray-500" />
+  )}
+
+  {/* Menu 3 puncte - doar în tab-ul "Toate" */}
+  {expense && selectedStairTab === 'all' && (
+    <div className="relative">
+      <button onClick={...}>
+        <MoreVertical className="w-4 h-4 text-gray-600" />
+      </button>
+      {/* Dropdown menu */}
+    </div>
+  )}
+</div>
+```
+
+**Result**:
+- ✅ Consistent icon order in both tabs
+- ✅ 3-dot menu only shown in "Toate" tab for Consumuri (config is association-level)
+
+---
+
+#### **KEY LEARNINGS**
+
+1. **Terminology Precision in UI**
+   - "Editează cheltuiala" vs "Editează distribuirea" - words matter
+   - "Șterge cheltuiala" vs "Șterge distribuirea" - clarify scope of action
+   - Menu labels should accurately describe what they do
+   - User confusion often stems from imprecise terminology
+
+2. **Data Consistency Protection**
+   - Prevent configuration changes that invalidate existing data
+   - Clear error messages with actionable steps
+   - Block operations that would create inconsistent state
+   - Better to force delete → reconfigure → redistribute than allow corruption
+
+3. **Complete Difference Calculation**
+   - Difference = billAmount - (sum after ALL adjustments)
+   - Must include participation reductions, not just losses/leaks
+   - Two types of differences: pierderi/scurgeri + reduceri din participări
+   - Total collected must equal billAmount
+
+4. **Default Configurations**
+   - Provide sensible defaults when config is missing
+   - "Egal pe apartament" + "Fără ajustări" is safest default
+   - Reduces configuration burden for simple cases
+   - Users can customize if needed
+
+5. **Separate Display of Related Data**
+   - Base amount vs difference should be in separate columns
+   - Makes it easy to audit calculations
+   - Color coding helps: blue = base, orange = difference
+   - Conditional columns (only show when data exists)
+
+6. **Configuration Over Convention**
+   - Don't hardcode assumptions (name contains "apă" → mc)
+   - Use explicit configuration fields
+   - Custom expenses need same flexibility as predefined ones
+   - Single source of truth: expense config
+
+7. **UI Consistency**
+   - Icon order should be consistent across similar components
+   - Visual patterns create user expectations
+   - Small inconsistencies create cognitive friction
+
+8. **Context-Aware Features**
+   - 3-dot menu for "Editează consumul" only in "Toate" tab
+   - Configuration is association-level, not stair-level
+   - Hide features that don't make sense in current context
+
+---
+
+#### **FILES MODIFIED**
+
+1. **ExpenseList.js**:
+   - Added helper `getUnitLabel()` (lines 21-30)
+   - Updated menu: "Editează distribuirea", "Configurează cheltuiala", "Șterge distribuirea" (lines 1055-1096)
+   - Replaced 12 hardcoded unit label instances with `getUnitLabel(expense.name)`
+
+2. **ExpenseEntryModal.js**:
+   - Hidden expense dropdown when editing (`!editingExpense` condition, lines 327-352)
+   - Updated modal title: "Editează distribuirea" (line 311)
+
+3. **ExpenseConfigModal.js**:
+   - Added protection against changing `receptionMode` for distributed expenses (lines 220-236)
+   - Clear alert message with step-by-step instructions
+
+4. **useMaintenanceCalculation.js**:
+   - Calculate `totalAfterParticipation` including all participation settings (lines 203-229)
+   - Difference = billAmount - totalAfterParticipation (line 232)
+   - Added default difference configuration (lines 173-179)
+   - Store differences in separate `expenseDifferenceDetails` field (lines 568, 585, 604)
+   - Added debug logging for calculated differences (lines 554-559)
+
+5. **MaintenanceTableDetailed.js**:
+   - Added conditional difference columns in header (lines 41-65)
+   - Added conditional difference cells in body (lines 107-130)
+   - Added conditional difference totals in footer (lines 194-211)
+   - Color coding: blue for base amounts, orange for differences
+
+6. **ConsumptionInput.js**:
+   - Updated unit label to use configured unit (lines 598-606)
+   - Added default difference config for header display (lines 890-896)
+   - Reordered icons: chevron before 3-dot menu (lines 759-817)
+
+7. **ExpenseForm.js**:
+   - Added helper `getUnitLabel()` (lines 24-33)
+   - Updated placeholder to use configured unit (line 356)
+
+8. **MaintenanceView.js**:
+   - Added helper `getUnitLabel()` (lines 312-321)
+   - Added `onConfigureExpense` handler for opening config modal (lines 1032-1037)
+   - Replaced 2 hardcoded unit label instances with `getUnitLabel(expense.name)`
+
+---
+
+#### **TESTING COVERAGE**
+
+**✅ Terminology Testing**:
+- Menu shows "Editează distribuirea", "Configurează cheltuiala", "Șterge distribuirea" ✓
+- Confirmation messages use "distribuirea" ✓
+- Modal title shows "Editează distribuirea" when editing ✓
+
+**✅ Data Protection Testing**:
+- Changing receptionMode for distributed expense blocks save ✓
+- Alert message shows correct old mode → new mode ✓
+- Instructions are clear and actionable ✓
+
+**✅ Difference Calculation Testing**:
+- Apă caldă: 5000 - 4435 = 565 RON (includes participation reductions) ✓
+- Apă rece: 150 - 100 = 50 RON (includes losses/leaks) ✓
+- Canal: Total difference calculated correctly ✓
+- Apa pe scara: Default config applied, difference distributed ✓
+
+**✅ Table Display Testing**:
+- Two columns show for expenses with differences ✓
+- Blue column shows base amounts ✓
+- Orange column shows distributed differences ✓
+- Footer totals are correct for both columns ✓
+
+**✅ Unit Label Testing**:
+- "Apa pe scara" (custom, configured as mc) shows "mc" ✓
+- Apă caldă (standard) shows configured unit ✓
+- Custom units in config respected ✓
+
+---
+
+#### **BENEFITS**
+
+✅ **Clearer User Interface**: Accurate terminology reduces confusion
+✅ **Data Integrity**: Protection prevents inconsistent configurations
+✅ **Complete Calculations**: Differences include all reduction types
+✅ **Transparent Display**: Separate columns show exact breakdown
+✅ **Flexible Configuration**: Supports custom units and default configs
+✅ **Better UX**: Consistent icon order, context-aware features
+✅ **Audit Trail**: Easy to verify calculations in maintenance table
+
+---
+
+#### **FUTURE CONSIDERATIONS**
+
+1. **Migration Tool**: Batch update old expenses to new default difference config
+2. **Audit Report**: Show breakdown of differences (losses vs participation reductions)
+3. **Validation**: Warn if unit label changes for already-distributed expenses
+4. **PDF Export**: Ensure difference columns export correctly to PDF
+5. **Performance**: Consider memoizing `getUnitLabel()` if called frequently
+6. **Testing**: Add automated tests for difference calculation edge cases
+
+---
+
+*This session demonstrated the importance of precise terminology, data consistency protection, and complete calculation logic. Small improvements in clarity and accuracy have significant impact on user trust and system reliability.*

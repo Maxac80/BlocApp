@@ -123,6 +123,9 @@ const MaintenanceView = ({
   // State pentru auto-expandare cheltuială în tab Cheltuieli distribuite
   const [expenseToExpandInList, setExpenseToExpandInList] = useState(null);
 
+  // State pentru tab-ul inițial al modalului de configurare
+  const [configModalInitialTab, setConfigModalInitialTab] = useState('general');
+
   // Reset expenseToExpand când schimbăm tab-ul sau luna
   useEffect(() => {
     if (selectedContentTab === 'expenses') {
@@ -305,7 +308,18 @@ const MaintenanceView = ({
 
   // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul curent
   const associationExpenses = currentSheet?.expenses || [];
-  
+
+  // Helper: Obține unitatea de măsură configurată
+  const getUnitLabel = (expenseName) => {
+    const config = getExpenseConfig(expenseName);
+    if (config?.consumptionUnit === 'custom' && config?.customConsumptionUnit) {
+      return config.customConsumptionUnit;
+    } else if (config?.consumptionUnit) {
+      return config.consumptionUnit;
+    }
+    return 'mc'; // default
+  };
+
   // ✅ FUNCȚIE EXPORT PDF PENTRU AVIZIER (COPIATĂ EXACT)
   const exportPDFAvizier = () => {
         try {
@@ -628,7 +642,7 @@ const MaintenanceView = ({
             } else if (config.distributionType === "consumption") {
               modImpartire = "Pe consum";
               valoareFactura = `${expense.billAmount} RON`;
-              const unit = expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
+              const unit = getUnitLabel(expense.name);
               costPerUnit = `${expense.unitPrice} RON/${unit}`;
               const totalConsum = Object.values(expense.consumption || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
               observatii = `${totalConsum.toFixed(2)} ${unit}`;
@@ -731,7 +745,7 @@ const MaintenanceView = ({
             doc.setFontSize(10);
             
             consumExpenses.forEach((expense) => {
-              const unit = expense.name.toLowerCase().includes("apă") || expense.name.toLowerCase().includes("canal") ? "mc" : "Gcal";
+              const unit = getUnitLabel(expense.name);
               doc.text(fixRomanianText(`${expense.name}: ${expense.unitPrice} lei/${unit}`), 105, currentY, { align: "center" });
               currentY += 6;
             });
@@ -977,9 +991,9 @@ const MaintenanceView = ({
                   <div className="flex">
                     <button
                       onClick={() => setSelectedContentTab('expenses')}
-                      className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
+                      className={`px-6 py-4 font-medium whitespace-nowrap transition-all border-b-2 rounded-tl-xl ${
                         selectedContentTab === 'expenses'
-                          ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700'
+                          ? 'bg-blue-100 text-blue-800 border-b-2 border-blue-600 shadow-sm'
                           : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -987,9 +1001,9 @@ const MaintenanceView = ({
                     </button>
                     <button
                       onClick={() => setSelectedContentTab('consumptions')}
-                      className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                      className={`px-6 py-4 font-medium whitespace-nowrap transition-all border-b-2 ${
                         selectedContentTab === 'consumptions'
-                          ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
+                          ? 'bg-teal-100 text-teal-800 border-b-2 border-teal-600 shadow-sm'
                           : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
@@ -999,7 +1013,11 @@ const MaintenanceView = ({
                 </div>
 
                 {/* Conținut tab-uri */}
-                <div className="bg-white rounded-b-xl shadow-sm border border-t-0 border-gray-200 p-6">
+                <div className={`bg-white rounded-b-xl shadow-sm border border-t-0 p-6 ${
+                  selectedContentTab === 'expenses'
+                    ? 'border-gray-200 border-l-4 border-l-blue-600'
+                    : 'border-gray-200 border-l-4 border-l-teal-600'
+                }`}>
                   {selectedContentTab === 'expenses' ? (
                     <ExpenseList
                       associationExpenses={associationExpenses}
@@ -1021,6 +1039,11 @@ const MaintenanceView = ({
                         if (stairId) {
                           setSelectedStairTab(stairId);
                         }
+                      }}
+                      onConfigureExpense={(expenseName) => {
+                        setSelectedExpenseForConfig(expenseName);
+                        setConfigModalInitialTab('general');
+                        setShowExpenseConfig(true);
                       }}
                       expandExpenseName={expenseToExpandInList}
                     />
@@ -1049,6 +1072,11 @@ const MaintenanceView = ({
                       onExpenseNameClick={(expenseName) => {
                         setExpenseToExpandInList(expenseName);
                         setSelectedContentTab('expenses');
+                      }}
+                      onEditConsumptionClick={(expenseName) => {
+                        setSelectedExpenseForConfig(expenseName);
+                        setConfigModalInitialTab('indexes'); // 'indexes' este tab-ul pentru Consum
+                        setShowExpenseConfig(true);
                       }}
                     />
                   )}
@@ -1211,7 +1239,10 @@ const MaintenanceView = ({
 
         <ExpenseConfigModal
           isOpen={showExpenseConfig}
-          onClose={() => setShowExpenseConfig(false)}
+          onClose={() => {
+            setShowExpenseConfig(false);
+            setConfigModalInitialTab('general'); // Reset tab-ul la închidere
+          }}
           expenseName={selectedExpenseForConfig}
           expenseConfig={selectedExpenseForConfig ? getExpenseConfig(selectedExpenseForConfig) : null}
           updateExpenseConfig={updateExpenseConfig}
@@ -1222,6 +1253,7 @@ const MaintenanceView = ({
           currentSheet={currentSheet}
           blocks={blocks}
           stairs={stairs}
+          initialTab={configModalInitialTab}
         />
 
         <PaymentModal

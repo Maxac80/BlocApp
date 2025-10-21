@@ -38,15 +38,31 @@ const MaintenanceTableDetailed = ({
             <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
               Total Datorat
             </th>
-            {expenses.map(expense => (
-              <th
-                key={expense.id}
-                className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-blue-50"
-                title={expense.name}
-              >
-                {expense.name}
-              </th>
-            ))}
+            {expenses.map(expense => {
+              // Verifică dacă există diferențe pentru această cheltuială
+              const hasDifferences = maintenanceData.some(data =>
+                data.expenseDifferenceDetails?.[expense.name]
+              );
+
+              return (
+                <React.Fragment key={expense.id}>
+                  <th
+                    className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-blue-50"
+                    title={expense.name}
+                  >
+                    {expense.name}
+                  </th>
+                  {hasDifferences && (
+                    <th
+                      className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-orange-50"
+                      title={`${expense.name} - Diferență`}
+                    >
+                      {expense.name} - Diferență
+                    </th>
+                  )}
+                </React.Fragment>
+              );
+            })}
             {isMonthReadOnly && (
               <>
                 <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
@@ -88,14 +104,30 @@ const MaintenanceTableDetailed = ({
             <td className="px-3 py-3 font-bold text-gray-800 text-lg">
               {data.totalDatorat.toFixed(2)}
             </td>
-            {expenses.map(expense => (
-              <td key={expense.id} className="px-3 py-3 font-bold text-sm bg-blue-50">
-                {data.expenseDetails?.[expense.name] !== undefined ?
-                  data.expenseDetails[expense.name].toFixed(2) :
-                  '0.00'
-                }
-              </td>
-            ))}
+            {expenses.map(expense => {
+              const hasDifferences = maintenanceData.some(d =>
+                d.expenseDifferenceDetails?.[expense.name]
+              );
+
+              return (
+                <React.Fragment key={expense.id}>
+                  <td className="px-3 py-3 font-bold text-sm bg-blue-50">
+                    {data.expenseDetails?.[expense.name] !== undefined ?
+                      data.expenseDetails[expense.name].toFixed(2) :
+                      '0.00'
+                    }
+                  </td>
+                  {hasDifferences && (
+                    <td className="px-3 py-3 font-bold text-sm bg-orange-50">
+                      {data.expenseDifferenceDetails?.[expense.name] !== undefined ?
+                        data.expenseDifferenceDetails[expense.name].toFixed(2) :
+                        '0.00'
+                      }
+                    </td>
+                  )}
+                </React.Fragment>
+              );
+            })}
             {isMonthReadOnly && (
               <>
                 <td className="px-3 py-3">
@@ -159,11 +191,24 @@ const MaintenanceTableDetailed = ({
           <td className="px-3 py-3 font-bold text-gray-800 text-lg">
             {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
           </td>
-          {expenses.map(expense => (
-            <td key={expense.id} className="px-3 py-3 font-bold text-sm bg-blue-50">
-              {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
-            </td>
-          ))}
+          {expenses.map(expense => {
+            const hasDifferences = maintenanceData.some(d =>
+              d.expenseDifferenceDetails?.[expense.name]
+            );
+
+            return (
+              <React.Fragment key={expense.id}>
+                <td className="px-3 py-3 font-bold text-sm bg-blue-50">
+                  {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
+                </td>
+                {hasDifferences && (
+                  <td className="px-3 py-3 font-bold text-sm bg-orange-50">
+                    {maintenanceData.reduce((sum, d) => sum + (d.expenseDifferenceDetails?.[expense.name] || 0), 0).toFixed(2)}
+                  </td>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tr>
         </tfoot>
       </table>

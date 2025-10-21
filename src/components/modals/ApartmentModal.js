@@ -70,20 +70,14 @@ const ApartmentModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validări diferite pentru add vs edit
-    if (mode === 'add') {
-      if (!formData.owner.trim() || !formData.persons || !formData.number) {
-        alert('Completați câmpurile obligatorii (număr apartament, proprietar și numărul de persoane)');
-        return;
-      }
-    } else {
-      if (!formData.owner.trim() || !formData.persons) {
-        alert('Completați câmpurile obligatorii (proprietar și numărul de persoane)');
-        return;
-      }
+    // Validări pentru câmpurile obligatorii
+    if (!formData.owner.trim() || !formData.persons || !formData.number) {
+      alert('Completați câmpurile obligatorii (număr apartament, proprietar și numărul de persoane)');
+      return;
     }
 
     const apartmentData = {
+      number: parseInt(formData.number),
       owner: formData.owner.trim(),
       persons: parseInt(formData.persons),
       apartmentType: formData.apartmentType?.trim() || null,
@@ -92,11 +86,6 @@ const ApartmentModal = ({
       email: formData.email?.trim() || null,
       phone: formData.phone?.trim() || null
     };
-
-    // Doar pentru add mode, include numărul apartamentului
-    if (mode === 'add') {
-      apartmentData.number = parseInt(formData.number);
-    }
 
     try {
       await onSave(apartmentData);
@@ -140,27 +129,25 @@ const ApartmentModal = ({
           <div className="space-y-3">
             <h4 className="text-base font-medium text-gray-800 mb-3">Informații generale</h4>
 
-                {/* Rândul 1: Numărul apartamentului (doar pentru add) și Proprietarul */}
+                {/* Rândul 1: Numărul apartamentului și Proprietarul */}
                 <div className="grid grid-cols-2 gap-3">
-                  {mode === 'add' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Numărul apartamentului *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.number}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9]/g, '');
-                          setFormData({...formData, number: value});
-                        }}
-                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="ex: 15"
-                        required
-                      />
-                    </div>
-                  )}
-                  <div className={mode === 'edit' ? 'col-span-2' : ''}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Numărul apartamentului *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.number}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData({...formData, number: value});
+                      }}
+                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="ex: 15"
+                      required
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Proprietar *
                     </label>

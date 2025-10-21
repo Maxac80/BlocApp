@@ -15,9 +15,10 @@ const ExpenseConfigModal = ({
   currentSheet,
   saveApartmentParticipations,
   blocks = [],
-  stairs = []
+  stairs = [],
+  initialTab = 'general'
 }) => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedStairTab, setSelectedStairTab] = useState('all');
   const [localConfig, setLocalConfig] = useState({
     distributionType: 'apartment',
@@ -63,7 +64,12 @@ const ExpenseConfigModal = ({
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const justAddedSupplierRef = React.useRef(false);
 
-
+  // Reset tab când se deschide modalul sau se schimbă initialTab
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   useEffect(() => {
     if (expenseConfig && !justAddedSupplierRef.current) {
@@ -209,6 +215,24 @@ const ExpenseConfigModal = ({
         ).join('\n');
         alert(`Participări incomplete:\n\n${messages}\n\nVă rog completați toate valorile înainte de a salva.`);
         return;
+      }
+
+      // VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
+      if (expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
+        // Verifică dacă există o cheltuială distribuită în luna curentă
+        const existingExpense = currentSheet?.expenses?.find(exp => exp.name === expenseName);
+
+        if (existingExpense) {
+          const oldMode = expenseConfig.receptionMode === 'total' ? 'Pe asociație' :
+                         expenseConfig.receptionMode === 'per_block' ? 'Per bloc' :
+                         expenseConfig.receptionMode === 'per_stair' ? 'Per scară' : expenseConfig.receptionMode;
+          const newMode = localConfig.receptionMode === 'total' ? 'Pe asociație' :
+                         localConfig.receptionMode === 'per_block' ? 'Per bloc' :
+                         localConfig.receptionMode === 'per_stair' ? 'Per scară' : localConfig.receptionMode;
+
+          alert(`⚠️ ATENȚIE!\n\nAi schimbat modul de primire factură de la "${oldMode}" la "${newMode}".\n\nAceastă cheltuială este deja distribuită în luna curentă cu configurația veche.\n\nPentru a schimba configurația, trebuie mai întâi să:\n1. Ștergi distribuirea existentă (din tab Cheltuieli distribuite → meniul cu 3 puncte → Șterge distribuirea)\n2. Salvezi noua configurație\n3. Re-distribui cheltuiala cu noile setări`);
+          return;
+        }
       }
 
       // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
