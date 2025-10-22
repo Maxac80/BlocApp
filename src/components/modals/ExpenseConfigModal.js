@@ -42,13 +42,13 @@ const ExpenseConfigModal = ({
       inputMode: 'mixed', // 'manual' | 'indexes' | 'mixed' - Default: Mixt (flexibil)
       indexTypes: []
     },
-    // 💰 Distribuție diferență
+    // 💰 Distribuție diferență - SIMPLIFICAT
     differenceDistribution: {
-      method: 'apartment', // 'consumption' | 'apartment' | 'person'
-      adjustmentMode: 'none', // 'none' | 'participation' | 'apartmentType'
-      apartmentTypeRatios: {}, // Procente pe tip: { 'Garsonieră': 50, '2 camere': 100, etc. }
-      includeFixedAmountInDifference: true, // Bifat implicit
-      includeExcludedInDifference: false // Nebifat implicit - ultimul
+      method: 'apartment',
+      adjustmentMode: 'none',
+      apartmentTypeRatios: {},
+      includeFixedAmountInDifference: true,
+      includeExcludedInDifference: false
     }
   });
 
@@ -99,10 +99,11 @@ const ExpenseConfigModal = ({
           inputMode: 'mixed', // Default: Mixt (flexibil)
           indexTypes: []
         },
-        // 💰 Distribuție diferență
+        // 💰 Distribuție diferență - citire directă
         differenceDistribution: expenseConfig.differenceDistribution || {
           method: 'apartment',
-          respectParticipation: true,
+          adjustmentMode: 'none',
+          apartmentTypeRatios: {},
           includeFixedAmountInDifference: true,
           includeExcludedInDifference: false
         }
@@ -131,7 +132,6 @@ const ExpenseConfigModal = ({
       });
 
       setLocalParticipations(expenseParticipations);
-      console.log('✅ Participări încărcate pentru', expenseName, ':', expenseParticipations);
     } else if (!isOpen) {
       // Resetează participările când modalul se închide
       setLocalParticipations({});
@@ -238,8 +238,7 @@ const ExpenseConfigModal = ({
       // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
       onClose();
 
-      // Salvează în fundal (după închidere)
-      // Save configuration
+      // Salvează direct - fără conversii
       await updateExpenseConfig(expenseName, localConfig);
 
       // Save apartment participations to Firebase

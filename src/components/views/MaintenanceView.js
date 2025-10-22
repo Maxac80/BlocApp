@@ -48,6 +48,7 @@ const MaintenanceView = ({
 
   // Maintenance calculation
   maintenanceData,
+  calculateExpenseDifferences,
   togglePayment,
   activeMaintenanceTab,
   setActiveMaintenanceTab,
@@ -1064,6 +1065,7 @@ const MaintenanceView = ({
                       monthType={monthType}
                       blocks={blocks}
                       stairs={stairs}
+                      calculateExpenseDifferences={calculateExpenseDifferences}
                       selectedStairTab={selectedStairTab}
                       setSelectedStairTab={setSelectedStairTab}
                       getDisabledExpenseTypes={getDisabledExpenseTypes}

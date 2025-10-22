@@ -46,6 +46,37 @@ const useExpenseConfigurations = (currentSheet) => {
       }
     });
 
+    // Obține configurația pentru distribuția diferenței din sheet
+    // Prioritate: 1) din expenseConfigurations (NOU) 2) din differenceDistributions (VECHI)
+    let differenceDistribution = firestoreConfig?.differenceDistribution ||
+                                  currentSheet?.configSnapshot?.differenceDistributions?.[expenseType];
+
+    // MIGRAȚIE: Curăță câmpurile vechi și convertește în noua structură
+    let needsMigration = false;
+    if (differenceDistribution) {
+      const cleanConfig = {
+        method: differenceDistribution.method || 'apartment',
+        adjustmentMode: differenceDistribution.adjustmentMode || 'none',
+        apartmentTypeRatios: differenceDistribution.apartmentTypeRatios || {},
+        includeFixedAmountInDifference: differenceDistribution.includeFixedAmountInDifference !== false,
+        includeExcludedInDifference: differenceDistribution.includeExcludedInDifference || false
+      };
+
+      // MIGRAȚIE: Conversii pentru câmpuri vechi
+      // 1. respectParticipation (boolean vechi) → adjustmentMode (string nou)
+      if ('respectParticipation' in differenceDistribution) {
+        cleanConfig.adjustmentMode = differenceDistribution.respectParticipation ? 'participation' : 'none';
+        needsMigration = true;
+      }
+
+      // 2. distributionType (câmp greșit în differenceDistribution) → ignoră
+      if ('distributionType' in differenceDistribution) {
+        needsMigration = true;
+      }
+
+      differenceDistribution = cleanConfig;
+    }
+
     if (firestoreConfig) {
       // Verifică dacă lipsește distributionType și completează cu default-ul
       if (!firestoreConfig.distributionType) {
@@ -62,6 +93,7 @@ const useExpenseConfigurations = (currentSheet) => {
           return {
             ...firestoreConfig,
             apartmentParticipation,
+            differenceDistribution,
             supplierName: currentSupplier.name
           };
         }
@@ -69,7 +101,8 @@ const useExpenseConfigurations = (currentSheet) => {
 
       return {
         ...firestoreConfig,
-        apartmentParticipation
+        apartmentParticipation,
+        differenceDistribution
       };
     }
 
@@ -102,11 +135,24 @@ const useExpenseConfigurations = (currentSheet) => {
       const existingConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
 
       // Actualizează configurația pentru tipul de cheltuială specific
+      // IMPORTANT: Pentru differenceDistribution, NU facem merge - înlocuim complet
+      const oldConfig = existingConfigs[expenseType] || {};
+      const { differenceDistribution: oldDiff, ...oldConfigRest } = oldConfig;
+      const { differenceDistribution: newDiff, ...newConfigRest } = config;
+
       const updatedConfigs = {
         ...existingConfigs,
         [expenseType]: {
-          ...existingConfigs[expenseType],
-          ...config,
+          ...oldConfigRest,
+          ...newConfigRest,
+          // Înlocuiește complet differenceDistribution (nu face merge!)
+          differenceDistribution: newDiff || oldDiff || {
+            method: 'apartment',
+            adjustmentMode: 'none',
+            apartmentTypeRatios: {},
+            includeFixedAmountInDifference: true,
+            includeExcludedInDifference: false
+          },
           updatedAt: new Date().toISOString()
         }
       };
@@ -119,8 +165,6 @@ const useExpenseConfigurations = (currentSheet) => {
 
       // Actualizează state-ul local pentru feedback instant
       setConfigurations(updatedConfigs);
-
-      console.log('✅ SHEET-BASED: Configurație actualizată pentru:', expenseType, 'în sheet:', currentSheet.id, `(${currentSheet.monthYear})`);
     } catch (error) {
       console.error('Error updating expense configuration in sheet:', error);
       throw error;
@@ -173,8 +217,6 @@ const useExpenseConfigurations = (currentSheet) => {
 
       // Actualizează state-ul local
       setConfigurations(updatedConfigurations);
-
-      console.log(`✅ Configurația pentru "${expenseType}" ștearsă cu succes`);
     } catch (error) {
       console.error(`❌ Eroare la ștergerea configurației pentru "${expenseType}":`, error);
       throw error;
@@ -196,13 +238,67 @@ const useExpenseConfigurations = (currentSheet) => {
         'configSnapshot.apartmentParticipations': participations,
         'configSnapshot.updatedAt': serverTimestamp()
       });
-
-      console.log('✅ SHEET-BASED: Participări apartamente salvate în sheet:', currentSheet.id, `(${currentSheet.monthYear})`);
     } catch (error) {
       console.error('❌ Eroare la salvarea participărilor apartamente în sheet:', error);
       throw error;
     }
   }, [currentSheet]);
+
+  // 🔄 AUTO-MIGRAȚIE: Curăță automat configurațiile vechi când se încarcă sheet-ul
+  useEffect(() => {
+    if (!currentSheet?.id || !configurations) {
+      return;
+    }
+
+    const migrateConfigurations = async () => {
+      let hasChanges = false;
+      const updatedConfigs = { ...configurations };
+
+      Object.keys(configurations).forEach(expenseType => {
+        const config = configurations[expenseType];
+        const diff = config?.differenceDistribution;
+
+        if (diff && ('respectParticipation' in diff || 'distributionType' in diff)) {
+          // Curăță differenceDistribution
+          const cleanDiff = {
+            method: diff.method || 'apartment',
+            adjustmentMode: diff.adjustmentMode || 'none',
+            apartmentTypeRatios: diff.apartmentTypeRatios || {},
+            includeFixedAmountInDifference: diff.includeFixedAmountInDifference !== false,
+            includeExcludedInDifference: diff.includeExcludedInDifference || false
+          };
+
+          // Conversii pentru câmpuri vechi
+          if ('respectParticipation' in diff) {
+            cleanDiff.adjustmentMode = diff.respectParticipation ? 'participation' : 'none';
+          }
+
+          updatedConfigs[expenseType] = {
+            ...config,
+            differenceDistribution: cleanDiff
+          };
+
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        try {
+          const sheetRef = doc(db, 'sheets', currentSheet.id);
+          await updateDoc(sheetRef, {
+            'configSnapshot.expenseConfigurations': updatedConfigs,
+            'configSnapshot.updatedAt': serverTimestamp()
+          });
+
+          setConfigurations(updatedConfigs);
+        } catch (error) {
+          console.error('❌ Eroare la auto-migrație:', error);
+        }
+      }
+    };
+
+    migrateConfigurations();
+  }, [currentSheet?.id, configurations]); // Rulează când se schimbă sheet-ul sau configurațiile
 
   return {
     configurations,

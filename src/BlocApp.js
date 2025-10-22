@@ -259,6 +259,7 @@ export default function BlocApp() {
     calculateMaintenanceWithDetails,
     calculateTotalExpenses,
     calculateTotalMaintenance,
+    calculateExpenseDifferences,
     maintenanceStats,
     monthlyBalances
   } = useMaintenanceCalculation({
@@ -601,6 +602,7 @@ useEffect(() => {
               updateExpenseIndexes={updateExpenseIndexes}
               updatePendingIndexes={updatePendingIndexes}
               maintenanceData={maintenanceData}
+              calculateExpenseDifferences={calculateExpenseDifferences}
               togglePayment={() => {}}
               activeMaintenanceTab={activeMaintenanceTab}
               setActiveMaintenanceTab={setActiveMaintenanceTab}
