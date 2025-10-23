@@ -13,10 +13,13 @@ const ExpenseList = ({
   selectedStairTab,
   blocks,
   stairs,
+  calculateExpenseDifferences,
   onEditExpense,
   onConsumptionClick,
   expandExpenseName,
-  onConfigureExpense
+  onConfigureExpense,
+  expandedExpenses, // ✨ Primim starea din parent
+  setExpandedExpenses // ✨ Primim setter-ul din parent
 }) => {
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -28,9 +31,6 @@ const ExpenseList = ({
     }
     return 'mc'; // default
   };
-
-  // State pentru expandarea cheltuielilor (accordion)
-  const [expandedExpenses, setExpandedExpenses] = useState({});
 
   // State pentru dropdown meniu acțiuni
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -45,10 +45,11 @@ const ExpenseList = ({
       // Găsește expense-ul după nume
       const expenseToExpand = associationExpenses.find(exp => exp.name === expandExpenseName);
       if (expenseToExpand) {
-        // Expandează DOAR această cheltuială (resetează restul)
-        setExpandedExpenses({
+        // Expandează această cheltuială (păstrează starea celorlalte)
+        setExpandedExpenses(prev => ({
+          ...prev,
           [expenseToExpand.id]: true
-        });
+        }));
 
         // Scroll automat la cheltuială după un mic delay pentru a permite rendering-ul
         setTimeout(() => {
@@ -56,13 +57,14 @@ const ExpenseList = ({
           if (expenseElement) {
             expenseElement.scrollIntoView({
               behavior: 'smooth',
-              block: 'center'
+              block: 'start',
+              inline: 'nearest'
             });
           }
         }, 100);
       }
     }
-  }, [expandExpenseName, associationExpenses]);
+  }, [expandExpenseName, associationExpenses, setExpandedExpenses]);
 
   // Toggle expand pentru o cheltuială
   const toggleExpense = (expenseId) => {
@@ -408,6 +410,7 @@ const ExpenseList = ({
     const filterInfo = getFilterInfo();
     let totalIntrodus = 0;
     let totalAsteptat = 0;
+    let totalDistribuit = 0;
     let allKnowExpectedAmount = true;
 
     filteredExpenses.forEach(expense => {
@@ -439,19 +442,49 @@ const ExpenseList = ({
         : allApts;
 
       const apartmentParticipations = config.apartmentParticipation || {};
-      const nonExcludedApartments = apartments.filter(apt => {
-        const participation = apartmentParticipations[apt.id];
-        return participation?.type !== 'excluded';
-      });
 
       let sumaIntrodusa = 0;
       if (config.distributionType === 'consumption' && expense.consumption) {
-        nonExcludedApartments.forEach(apt => {
-          sumaIntrodusa += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+        // Calculează suma cu participări aplicate
+        apartments.forEach(apt => {
+          const participation = apartmentParticipations[apt.id];
+          let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+          // Aplică participarea
+          if (participation?.type === 'excluded') {
+            aptAmount = 0;
+          } else if (participation?.type === 'percentage') {
+            const percent = participation.value;
+            const multiplier = percent < 1 ? percent : (percent / 100);
+            aptAmount = aptAmount * multiplier;
+          } else if (participation?.type === 'fixed') {
+            const fixedMode = config?.fixedAmountMode || 'apartment';
+            const fixedAmount = parseFloat(participation.value || 0);
+            aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+          }
+
+          sumaIntrodusa += aptAmount;
         });
       } else if (config.distributionType === 'individual' && expense.individualAmounts) {
-        nonExcludedApartments.forEach(apt => {
-          sumaIntrodusa += parseFloat(expense.individualAmounts[apt.id] || 0);
+        // Calculează suma cu participări aplicate
+        apartments.forEach(apt => {
+          const participation = apartmentParticipations[apt.id];
+          let aptAmount = parseFloat(expense.individualAmounts[apt.id] || 0);
+
+          // Aplică participarea
+          if (participation?.type === 'excluded') {
+            aptAmount = 0;
+          } else if (participation?.type === 'percentage') {
+            const percent = participation.value;
+            const multiplier = percent < 1 ? percent : (percent / 100);
+            aptAmount = aptAmount * multiplier;
+          } else if (participation?.type === 'fixed') {
+            const fixedMode = config?.fixedAmountMode || 'apartment';
+            const fixedAmount = parseFloat(participation.value || 0);
+            aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+          }
+
+          sumaIntrodusa += aptAmount;
         });
       } else {
         // Pentru apartment/person, suma introdusă este egală cu suma așteptată (calculată)
@@ -459,6 +492,16 @@ const ExpenseList = ({
       }
 
       totalIntrodus += sumaIntrodusa;
+
+      // Calculează diferența distribuită pentru cheltuielile cu isUnitBased
+      if (expense?.isUnitBased && calculateExpenseDifferences) {
+        const allApartments = getAssociationApartments();
+        const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+        const totalDifference = apartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+        totalDistribuit += sumaIntrodusa + totalDifference;
+      } else {
+        totalDistribuit += sumaIntrodusa;
+      }
 
       // Calculează suma așteptată
       if (knowsExpectedAmount) {
@@ -468,7 +511,7 @@ const ExpenseList = ({
       }
     });
 
-    return { totalIntrodus, totalAsteptat, allKnowExpectedAmount };
+    return { totalIntrodus, totalAsteptat, totalDistribuit, allKnowExpectedAmount };
   };
 
   const totals = calculateTotals();
@@ -593,12 +636,15 @@ const ExpenseList = ({
           </div>
           <div className="text-sm text-gray-500">Total</div>
 
-          {/* Diferența - doar dacă știm suma așteptată */}
+          {/* Badge-uri pentru status distribuție */}
           {totals.allKnowExpectedAmount ? (() => {
             const diferenta = totals.totalIntrodus - totals.totalAsteptat;
+            const diferentaDistribuit = totals.totalDistribuit - totals.totalAsteptat;
             const TOLERANCE = 0.20;
             const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
+            const isBalanced = Math.abs(diferentaDistribuit) < 0.01;
 
+            // Afișează diferența dacă nu e OK
             if (!isDifferenceOk) {
               return (
                 <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
@@ -606,6 +652,16 @@ const ExpenseList = ({
                 </div>
               );
             }
+
+            // Badge verde pentru total distribuit - când e balansat și există diferență distribuită
+            if (isBalanced && Math.abs(totals.totalDistribuit - totals.totalIntrodus) >= 0.01) {
+              return (
+                <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                  ✓ Total distribuit: {totals.totalDistribuit.toFixed(2)} RON
+                </div>
+              );
+            }
+
             // Placeholder invizibil pentru aliniere
             return <div className="mt-1 h-6"></div>;
           })() : (
@@ -855,6 +911,17 @@ const ExpenseList = ({
                                     amountToDisplay += parseFloat(dataObject[apt.id] || 0);
                                   });
                                 }
+
+                                // Adaugă diferența la suma afișată (dacă există)
+                                if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                  const allApts = getAssociationApartments();
+                                  const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+                                  const totalDifferentaScara = nonExcludedApartments.reduce((sum, apt) =>
+                                    sum + (expenseDifferences[apt.id] || 0), 0
+                                  );
+                                  amountToDisplay += totalDifferentaScara;
+                                }
+
                                 return `${amountToDisplay.toFixed(2)} RON`;
                               }
                               return `${relevantAmount.toFixed(2)} RON`;
@@ -881,6 +948,16 @@ const ExpenseList = ({
                               nonExcludedApartments.forEach(apt => {
                                 amountToDisplay += parseFloat(dataObject[apt.id] || 0);
                               });
+                            }
+
+                            // Adaugă diferența la suma afișată (dacă există)
+                            if (expense?.isUnitBased && calculateExpenseDifferences) {
+                              const allApts = getAssociationApartments();
+                              const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+                              const totalDifferentaScara = nonExcludedApartments.reduce((sum, apt) =>
+                                sum + (expenseDifferences[apt.id] || 0), 0
+                              );
+                              amountToDisplay += totalDifferentaScara;
                             }
 
                             return `${amountToDisplay.toFixed(2)} RON`;
@@ -915,18 +992,30 @@ const ExpenseList = ({
                       {config.distributionType === 'consumption' && (() => {
                         const filteredApartments = getFilteredApartments();
                         const apartmentParticipations = config.apartmentParticipation || {};
-                        const nonExcludedApartments = filteredApartments.filter(apt => {
-                          const participation = apartmentParticipations[apt.id];
-                          return participation?.type !== 'excluded';
-                        });
 
                         const dataObject = expense.consumption || {};
-                        let totalConsumption = 0;
-                        nonExcludedApartments.forEach(apt => {
-                          totalConsumption += parseFloat(dataObject[apt.id] || 0);
-                        });
 
-                        const totalIntrodus = totalConsumption * (expense.unitPrice || 0);
+                        // Calculează total introdus cu participări aplicate (la fel ca în ConsumptionInput)
+                        let totalIntrodus = 0;
+                        filteredApartments.forEach(apt => {
+                          const participation = apartmentParticipations[apt.id];
+                          let aptAmount = parseFloat(dataObject[apt.id] || 0) * (expense.unitPrice || 0);
+
+                          // Aplică participarea
+                          if (participation?.type === 'excluded') {
+                            aptAmount = 0;
+                          } else if (participation?.type === 'percentage') {
+                            const percent = participation.value;
+                            const multiplier = percent < 1 ? percent : (percent / 100);
+                            aptAmount = aptAmount * multiplier;
+                          } else if (participation?.type === 'fixed') {
+                            const fixedMode = config?.fixedAmountMode || 'apartment';
+                            const fixedAmount = parseFloat(participation.value || 0);
+                            aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                          }
+
+                          totalIntrodus += aptAmount;
+                        });
 
                         // Determină dacă știi suma așteptată pentru scara filtrată
                         const filterInfo = getFilterInfo();
@@ -966,11 +1055,112 @@ const ExpenseList = ({
                                 </div>
                               )
                             ) : (
-                              // NU știi suma așteptată - afișează mesaj informativ în roșu
-                              <div className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
-                                ⚠ {diferentaMessage}
-                              </div>
+                              // NU știi suma așteptată - afișează diferența distribuită
+                              expense?.isUnitBased && calculateExpenseDifferences && (() => {
+                                const allApartments = getAssociationApartments();
+                                const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+
+                                // Diferența pentru apartamentele filtrate (scara curentă)
+                                const totalDifferentaScara = filteredApartments.reduce((sum, apt) =>
+                                  sum + (expenseDifferences[apt.id] || 0), 0
+                                );
+
+                                // Diferența totală (pe bloc sau pe asociație)
+                                let apartmentsForGlobalDiff = allApartments;
+                                if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                  // Doar apartamentele din blocul curent
+                                  const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                  const blockStairIds = blockStairs.map(s => s.id);
+                                  apartmentsForGlobalDiff = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
+                                }
+
+                                const totalDifferentaGlobal = apartmentsForGlobalDiff.reduce((sum, apt) =>
+                                  sum + (expenseDifferences[apt.id] || 0), 0
+                                );
+
+                                const diferentaContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                                return Math.abs(totalDifferentaScara) >= 0.01 ? (
+                                  <div className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
+                                    ⚠ Diferență: {totalDifferentaScara > 0 ? '-' : '+'}{Math.abs(totalDifferentaScara).toFixed(2)} RON
+                                    (din {totalDifferentaGlobal > 0 ? '-' : '+'}{Math.abs(totalDifferentaGlobal).toFixed(2)} RON {diferentaContext})
+                                  </div>
+                                ) : null;
+                              })()
                             )}
+
+                            {/* Badge verde pentru total distribuit - doar dacă e cheltuială distribuită cu diferență */}
+                            {expense?.isUnitBased && calculateExpenseDifferences && (() => {
+                              const allApartments = getAssociationApartments();
+                              const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+                              const totalDifference = filteredApartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+
+                              // Calculează totalul distribuit (total introdus + diferență)
+                              const totalDistribuit = totalIntrodus + totalDifference;
+
+                              // Calculează totalul distribuit global (la nivel bloc/asociație)
+                              const filterInfo = getFilterInfo();
+                              let apartmentsForGlobalTotal = allApartments;
+                              if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                const blockStairIds = blockStairs.map(s => s.id);
+                                apartmentsForGlobalTotal = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
+                              }
+
+                              const totalDifferenceGlobal = apartmentsForGlobalTotal.reduce((sum, apt) =>
+                                sum + (expenseDifferences[apt.id] || 0), 0
+                              );
+
+                              // Calculează total introdus global
+                              const apartmentParticipationsGlobal = config?.apartmentParticipation || {};
+                              let totalIntrodusGlobal = 0;
+                              apartmentsForGlobalTotal.forEach(apt => {
+                                const participation = apartmentParticipationsGlobal[apt.id];
+                                let aptAmount = parseFloat(dataObject[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                if (participation?.type === 'excluded') {
+                                  aptAmount = 0;
+                                } else if (participation?.type === 'percentage') {
+                                  const percent = participation.value;
+                                  const multiplier = percent < 1 ? percent : (percent / 100);
+                                  aptAmount = aptAmount * multiplier;
+                                } else if (participation?.type === 'fixed') {
+                                  const fixedMode = config?.fixedAmountMode || 'apartment';
+                                  const fixedAmount = parseFloat(participation.value || 0);
+                                  aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                                }
+
+                                totalIntrodusGlobal += aptAmount;
+                              });
+
+                              const totalDistribuitGlobal = totalIntrodusGlobal + totalDifferenceGlobal;
+                              const distribuitContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                              // Pentru cazul când ȘTII suma așteptată
+                              if (knowsExpectedAmount) {
+                                // Verifică dacă totalul distribuit e aproape egal cu suma așteptată
+                                const isBalanced = Math.abs(totalDistribuit - relevantAmount) < 0.01;
+
+                                if (isBalanced && Math.abs(totalDifference) >= 0.01) {
+                                  return (
+                                    <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                      ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+                                    </div>
+                                  );
+                                }
+                              } else {
+                                // Pentru cazul când NU ȘTII suma așteptată - arată întotdeauna totalul distribuit
+                                if (Math.abs(totalDifference) >= 0.01) {
+                                  return (
+                                    <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                      ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON (din {totalDistribuitGlobal.toFixed(2)} RON {distribuitContext})
+                                    </div>
+                                  );
+                                }
+                              }
+
+                              return null;
+                            })()}
                           </div>
                         );
                       })()}
@@ -979,15 +1169,29 @@ const ExpenseList = ({
                       {config.distributionType === 'individual' && (() => {
                         const filteredApartments = getFilteredApartments();
                         const apartmentParticipations = config.apartmentParticipation || {};
-                        const nonExcludedApartments = filteredApartments.filter(apt => {
-                          const participation = apartmentParticipations[apt.id];
-                          return participation?.type !== 'excluded';
-                        });
 
                         const dataObject = expense.individualAmounts || {};
+
+                        // Calculează total introdus cu participări aplicate (la fel ca în ConsumptionInput)
                         let totalIntrodus = 0;
-                        nonExcludedApartments.forEach(apt => {
-                          totalIntrodus += parseFloat(dataObject[apt.id] || 0);
+                        filteredApartments.forEach(apt => {
+                          const participation = apartmentParticipations[apt.id];
+                          let aptAmount = parseFloat(dataObject[apt.id] || 0);
+
+                          // Aplică participarea
+                          if (participation?.type === 'excluded') {
+                            aptAmount = 0;
+                          } else if (participation?.type === 'percentage') {
+                            const percent = participation.value;
+                            const multiplier = percent < 1 ? percent : (percent / 100);
+                            aptAmount = aptAmount * multiplier;
+                          } else if (participation?.type === 'fixed') {
+                            const fixedMode = config?.fixedAmountMode || 'apartment';
+                            const fixedAmount = parseFloat(participation.value || 0);
+                            aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                          }
+
+                          totalIntrodus += aptAmount;
                         });
 
                         // Determină dacă știi suma așteptată pentru scara filtrată
@@ -1028,11 +1232,112 @@ const ExpenseList = ({
                                 </div>
                               )
                             ) : (
-                              // NU știi suma așteptată - afișează mesaj informativ în roșu
-                              <div className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
-                                ⚠ {diferentaMessage}
-                              </div>
+                              // NU știi suma așteptată - afișează diferența distribuită
+                              expense?.isUnitBased && calculateExpenseDifferences && (() => {
+                                const allApartments = getAssociationApartments();
+                                const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+
+                                // Diferența pentru apartamentele filtrate (scara curentă)
+                                const totalDifferentaScara = filteredApartments.reduce((sum, apt) =>
+                                  sum + (expenseDifferences[apt.id] || 0), 0
+                                );
+
+                                // Diferența totală (pe bloc sau pe asociație)
+                                let apartmentsForGlobalDiff = allApartments;
+                                if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                  // Doar apartamentele din blocul curent
+                                  const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                  const blockStairIds = blockStairs.map(s => s.id);
+                                  apartmentsForGlobalDiff = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
+                                }
+
+                                const totalDifferentaGlobal = apartmentsForGlobalDiff.reduce((sum, apt) =>
+                                  sum + (expenseDifferences[apt.id] || 0), 0
+                                );
+
+                                const diferentaContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                                return Math.abs(totalDifferentaScara) >= 0.01 ? (
+                                  <div className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
+                                    ⚠ Diferență: {totalDifferentaScara > 0 ? '-' : '+'}{Math.abs(totalDifferentaScara).toFixed(2)} RON
+                                    (din {totalDifferentaGlobal > 0 ? '-' : '+'}{Math.abs(totalDifferentaGlobal).toFixed(2)} RON {diferentaContext})
+                                  </div>
+                                ) : null;
+                              })()
                             )}
+
+                            {/* Badge verde pentru total distribuit - doar dacă e cheltuială distribuită cu diferență */}
+                            {expense?.isUnitBased && calculateExpenseDifferences && (() => {
+                              const allApartments = getAssociationApartments();
+                              const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+                              const totalDifference = filteredApartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+
+                              // Calculează totalul distribuit (total introdus + diferență)
+                              const totalDistribuit = totalIntrodus + totalDifference;
+
+                              // Calculează totalul distribuit global (la nivel bloc/asociație)
+                              const filterInfo = getFilterInfo();
+                              let apartmentsForGlobalTotal = allApartments;
+                              if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                const blockStairIds = blockStairs.map(s => s.id);
+                                apartmentsForGlobalTotal = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
+                              }
+
+                              const totalDifferenceGlobal = apartmentsForGlobalTotal.reduce((sum, apt) =>
+                                sum + (expenseDifferences[apt.id] || 0), 0
+                              );
+
+                              // Calculează total introdus global
+                              const apartmentParticipationsGlobal = config?.apartmentParticipation || {};
+                              let totalIntrodusGlobal = 0;
+                              apartmentsForGlobalTotal.forEach(apt => {
+                                const participation = apartmentParticipationsGlobal[apt.id];
+                                let aptAmount = parseFloat(dataObject[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                if (participation?.type === 'excluded') {
+                                  aptAmount = 0;
+                                } else if (participation?.type === 'percentage') {
+                                  const percent = participation.value;
+                                  const multiplier = percent < 1 ? percent : (percent / 100);
+                                  aptAmount = aptAmount * multiplier;
+                                } else if (participation?.type === 'fixed') {
+                                  const fixedMode = config?.fixedAmountMode || 'apartment';
+                                  const fixedAmount = parseFloat(participation.value || 0);
+                                  aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                                }
+
+                                totalIntrodusGlobal += aptAmount;
+                              });
+
+                              const totalDistribuitGlobal = totalIntrodusGlobal + totalDifferenceGlobal;
+                              const distribuitContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                              // Pentru cazul când ȘTII suma așteptată
+                              if (knowsExpectedAmount) {
+                                // Verifică dacă totalul distribuit e aproape egal cu suma așteptată
+                                const isBalanced = Math.abs(totalDistribuit - relevantAmount) < 0.01;
+
+                                if (isBalanced && Math.abs(totalDifference) >= 0.01) {
+                                  return (
+                                    <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                      ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+                                    </div>
+                                  );
+                                }
+                              } else {
+                                // Pentru cazul când NU ȘTII suma așteptată - arată întotdeauna totalul distribuit
+                                if (Math.abs(totalDifference) >= 0.01) {
+                                  return (
+                                    <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                      ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON (din {totalDistribuitGlobal.toFixed(2)} RON {distribuitContext})
+                                    </div>
+                                  );
+                                }
+                              }
+
+                              return null;
+                            })()}
                           </div>
                         );
                       })()}
@@ -1192,21 +1497,47 @@ const ExpenseList = ({
                               });
                             }
 
-                            // Calculează totalul introdus pentru consumption și individual (Pe asociație)
+                            // Calculează totalul introdus pentru consumption și individual (Pe asociație) cu participări aplicate
                             let totalIntrodusForAssoc = 0;
                             if (config.distributionType === 'consumption' && expense.consumption) {
                               allApts.forEach(apt => {
                                 const participation = config.apartmentParticipation?.[apt.id];
-                                if (participation?.type !== 'excluded') {
-                                  totalIntrodusForAssoc += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                // Aplică participarea
+                                if (participation?.type === 'excluded') {
+                                  aptAmount = 0;
+                                } else if (participation?.type === 'percentage') {
+                                  const percent = participation.value;
+                                  const multiplier = percent < 1 ? percent : (percent / 100);
+                                  aptAmount = aptAmount * multiplier;
+                                } else if (participation?.type === 'fixed') {
+                                  const fixedMode = config?.fixedAmountMode || 'apartment';
+                                  const fixedAmount = parseFloat(participation.value || 0);
+                                  aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                 }
+
+                                totalIntrodusForAssoc += aptAmount;
                               });
                             } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                               allApts.forEach(apt => {
                                 const participation = config.apartmentParticipation?.[apt.id];
-                                if (participation?.type !== 'excluded') {
-                                  totalIntrodusForAssoc += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                let aptAmount = parseFloat(expense.individualAmounts[apt.id] || 0);
+
+                                // Aplică participarea
+                                if (participation?.type === 'excluded') {
+                                  aptAmount = 0;
+                                } else if (participation?.type === 'percentage') {
+                                  const percent = participation.value;
+                                  const multiplier = percent < 1 ? percent : (percent / 100);
+                                  aptAmount = aptAmount * multiplier;
+                                } else if (participation?.type === 'fixed') {
+                                  const fixedMode = config?.fixedAmountMode || 'apartment';
+                                  const fixedAmount = parseFloat(participation.value || 0);
+                                  aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                 }
+
+                                totalIntrodusForAssoc += aptAmount;
                               });
                             }
 
@@ -1221,6 +1552,16 @@ const ExpenseList = ({
                                   const TOLERANCE = 0.20;
                                   const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
 
+                                  // Calculează total distribuit dacă e cheltuială cu isUnitBased
+                                  let totalDistribuit = totalIntrodusForAssoc;
+                                  if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                    const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+                                    const totalDifference = allApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+                                    totalDistribuit = totalIntrodusForAssoc + totalDifference;
+                                  }
+
+                                  const isBalanced = Math.abs(totalDistribuit - relevantAmount) < 0.01;
+
                                   return (
                                     <>
                                       <div className="text-xs text-blue-600 font-semibold mt-1">
@@ -1229,6 +1570,12 @@ const ExpenseList = ({
                                       {!isDifferenceOk && (
                                         <div className="text-xs text-red-600 font-semibold mt-0.5">
                                           ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+                                        </div>
+                                      )}
+                                      {/* Badge verde pentru total distribuit */}
+                                      {expense?.isUnitBased && calculateExpenseDifferences && isBalanced && Math.abs(totalDistribuit - totalIntrodusForAssoc) >= 0.01 && (
+                                        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 mt-0.5 inline-block">
+                                          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
                                         </div>
                                       )}
                                     </>
@@ -1526,22 +1873,91 @@ const ExpenseList = ({
                               });
                             }
 
+                            // Calculează totalul distribuit (cu diferență) pentru header
+                            let headerAmount = amountToDisplay;
+                            if (expense?.isUnitBased && calculateExpenseDifferences && (config.distributionType === 'consumption' || config.distributionType === 'individual')) {
+                              const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+                              const totalDifferentaScara = stairApts.reduce((sum, apt) =>
+                                sum + (expenseDifferences[apt.id] || 0), 0
+                              );
+                              headerAmount = amountToDisplay + totalDifferentaScara;
+                            }
+
                             return (
                               <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
                                 <div className="font-medium text-purple-900">{filterInfo.blockName} - {filterInfo.stairName}</div>
-                                {/* Pentru consumption/individual, afișăm suma introdusă; pentru apartment/person, suma calculată */}
+                                {/* Pentru consumption/individual, afișăm totalul distribuit; pentru apartment/person, suma calculată */}
                                 <div className="text-xl font-bold text-purple-700">
                                   {(config.distributionType === 'consumption' || config.distributionType === 'individual')
-                                    ? amountToDisplay.toFixed(2)
+                                    ? headerAmount.toFixed(2)
                                     : stairAmount.toFixed(2)} RON
                                 </div>
 
                                 {/* Total introdus - pentru CONSUM și INDIVIDUAL */}
-                                {(config.distributionType === 'consumption' || config.distributionType === 'individual') && (
-                                  <div className="text-xs text-blue-600 font-semibold mt-1">
-                                    Total introdus: {amountToDisplay.toFixed(2)} RON
-                                  </div>
-                                )}
+                                {(config.distributionType === 'consumption' || config.distributionType === 'individual') && (() => {
+                                  // Calculează diferența dacă există
+                                  let totalDifferentaScara = 0;
+                                  let totalDifferentaGlobal = 0;
+                                  let totalIntrodusGlobal = 0;
+                                  let totalDistribuitScara = amountToDisplay;
+                                  let totalDistribuitGlobal = amountToDisplay;
+
+                                  if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                    const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+
+                                    // Diferență pentru scara curentă
+                                    totalDifferentaScara = stairApts.reduce((sum, apt) =>
+                                      sum + (expenseDifferences[apt.id] || 0), 0
+                                    );
+
+                                    // Diferență globală (pe asociație)
+                                    totalDifferentaGlobal = allApts.reduce((sum, apt) =>
+                                      sum + (expenseDifferences[apt.id] || 0), 0
+                                    );
+
+                                    // Calculează total introdus global pentru asociație
+                                    if (config.distributionType === 'consumption' && expense.consumption) {
+                                      allApts.forEach(apt => {
+                                        const participation = config.apartmentParticipation?.[apt.id];
+                                        if (participation?.type !== 'excluded') {
+                                          totalIntrodusGlobal += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                        }
+                                      });
+                                    } else if (config.distributionType === 'individual' && expense.individualAmounts) {
+                                      allApts.forEach(apt => {
+                                        const participation = config.apartmentParticipation?.[apt.id];
+                                        if (participation?.type !== 'excluded') {
+                                          totalIntrodusGlobal += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                        }
+                                      });
+                                    }
+
+                                    totalDistribuitScara = amountToDisplay + totalDifferentaScara;
+                                    totalDistribuitGlobal = totalIntrodusGlobal + totalDifferentaGlobal;
+                                  }
+
+                                  return (
+                                    <>
+                                      <div className="text-xs text-blue-600 font-semibold mt-1">
+                                        Total introdus: {amountToDisplay.toFixed(2)} RON
+                                      </div>
+
+                                      {/* Diferență - text roșu fără badge */}
+                                      {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferentaScara) >= 0.01 && (
+                                        <div className="text-xs text-red-600 font-semibold mt-0.5">
+                                          ⚠ Diferență: {totalDifferentaScara > 0 ? '-' : '+'}{Math.abs(totalDifferentaScara).toFixed(2)} RON (din {totalDifferentaGlobal > 0 ? '-' : '+'}{Math.abs(totalDifferentaGlobal).toFixed(2)} RON pe asociație)
+                                        </div>
+                                      )}
+
+                                      {/* Total distribuit - badge verde */}
+                                      {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferentaScara) >= 0.01 && (
+                                        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 mt-0.5 inline-block">
+                                          ✓ Total distribuit: {totalDistribuitScara.toFixed(2)} RON (din {totalDistribuitGlobal.toFixed(2)} RON pe asociație)
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
 
                                 {/* Sub sumă - DOAR pentru CONSUM */}
                                 {config.distributionType === 'consumption' && expense.unitPrice && (
@@ -1561,7 +1977,7 @@ const ExpenseList = ({
                                     {integralAmountForStair.toFixed(2)} {config.distributionType === 'person' ? `RON/persoană (${integralPersonsForStair} pers)` : 'RON/apartament'}
                                   </div>
                                 )}
-                                <div className="text-xs text-blue-600 mt-1">
+                                <div className="text-xs text-purple-500 mt-1">
                                   {participatingApts.length + partialApts.length}/{stairApts.length} apartamente
                                   {config.distributionType === 'person' && totalStairPersons > 0 && (
                                     <span className="text-purple-700 font-medium">
@@ -1789,21 +2205,47 @@ const ExpenseList = ({
                                 });
                               }
 
-                              // Calculează totalul introdus pentru consumption și individual
+                              // Calculează totalul introdus pentru consumption și individual cu participări aplicate
                               let totalIntrodusForBlock = 0;
                               if (config.distributionType === 'consumption' && expense.consumption) {
                                 blockApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
-                                  if (participation?.type !== 'excluded') {
-                                    totalIntrodusForBlock += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                  let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                  // Aplică participarea
+                                  if (participation?.type === 'excluded') {
+                                    aptAmount = 0;
+                                  } else if (participation?.type === 'percentage') {
+                                    const percent = participation.value;
+                                    const multiplier = percent < 1 ? percent : (percent / 100);
+                                    aptAmount = aptAmount * multiplier;
+                                  } else if (participation?.type === 'fixed') {
+                                    const fixedMode = config?.fixedAmountMode || 'apartment';
+                                    const fixedAmount = parseFloat(participation.value || 0);
+                                    aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                   }
+
+                                  totalIntrodusForBlock += aptAmount;
                                 });
                               } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                                 blockApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
-                                  if (participation?.type !== 'excluded') {
-                                    totalIntrodusForBlock += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                  let aptAmount = parseFloat(expense.individualAmounts[apt.id] || 0);
+
+                                  // Aplică participarea
+                                  if (participation?.type === 'excluded') {
+                                    aptAmount = 0;
+                                  } else if (participation?.type === 'percentage') {
+                                    const percent = participation.value;
+                                    const multiplier = percent < 1 ? percent : (percent / 100);
+                                    aptAmount = aptAmount * multiplier;
+                                  } else if (participation?.type === 'fixed') {
+                                    const fixedMode = config?.fixedAmountMode || 'apartment';
+                                    const fixedAmount = parseFloat(participation.value || 0);
+                                    aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                   }
+
+                                  totalIntrodusForBlock += aptAmount;
                                 });
                               }
 
@@ -1818,6 +2260,17 @@ const ExpenseList = ({
                                     const TOLERANCE = 0.20;
                                     const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
 
+                                    // Calculează total distribuit dacă e cheltuială cu isUnitBased
+                                    let totalDistribuit = totalIntrodusForBlock;
+                                    if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                      const allApts = getAssociationApartments();
+                                      const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+                                      const totalDifference = blockApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+                                      totalDistribuit = totalIntrodusForBlock + totalDifference;
+                                    }
+
+                                    const isBalanced = Math.abs(totalDistribuit - blockAmount) < 0.01;
+
                                     return (
                                       <>
                                         <div className="text-xs text-blue-600 font-semibold mt-1">
@@ -1826,6 +2279,12 @@ const ExpenseList = ({
                                         {!isDifferenceOk && (
                                           <div className="text-xs text-red-600 font-semibold mt-0.5">
                                             ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+                                          </div>
+                                        )}
+                                        {/* Badge verde pentru total distribuit */}
+                                        {expense?.isUnitBased && calculateExpenseDifferences && isBalanced && Math.abs(totalDistribuit - totalIntrodusForBlock) >= 0.01 && (
+                                          <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 mt-0.5 inline-block">
+                                            ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
                                           </div>
                                         )}
                                       </>
@@ -2140,21 +2599,47 @@ const ExpenseList = ({
 
                                 {/* Total introdus și diferență - pentru CONSUM și INDIVIDUAL */}
                                 {(config.distributionType === 'consumption' || config.distributionType === 'individual') && (() => {
-                                  // Calculăm totalul introdus pentru această scară
+                                  // Calculează totalul introdus pentru consumption și individual cu participări aplicate
                                   let totalIntrodusForStair = 0;
                                   if (config.distributionType === 'consumption' && expense.consumption) {
                                     stairApts.forEach(apt => {
                                       const participation = config.apartmentParticipation?.[apt.id];
-                                      if (participation?.type !== 'excluded') {
-                                        totalIntrodusForStair += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                      let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                      // Aplică participarea
+                                      if (participation?.type === 'excluded') {
+                                        aptAmount = 0;
+                                      } else if (participation?.type === 'percentage') {
+                                        const percent = participation.value;
+                                        const multiplier = percent < 1 ? percent : (percent / 100);
+                                        aptAmount = aptAmount * multiplier;
+                                      } else if (participation?.type === 'fixed') {
+                                        const fixedMode = config?.fixedAmountMode || 'apartment';
+                                        const fixedAmount = parseFloat(participation.value || 0);
+                                        aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                       }
+
+                                      totalIntrodusForStair += aptAmount;
                                     });
                                   } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                                     stairApts.forEach(apt => {
                                       const participation = config.apartmentParticipation?.[apt.id];
-                                      if (participation?.type !== 'excluded') {
-                                        totalIntrodusForStair += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                      let aptAmount = parseFloat(expense.individualAmounts[apt.id] || 0);
+
+                                      // Aplică participarea
+                                      if (participation?.type === 'excluded') {
+                                        aptAmount = 0;
+                                      } else if (participation?.type === 'percentage') {
+                                        const percent = participation.value;
+                                        const multiplier = percent < 1 ? percent : (percent / 100);
+                                        aptAmount = aptAmount * multiplier;
+                                      } else if (participation?.type === 'fixed') {
+                                        const fixedMode = config?.fixedAmountMode || 'apartment';
+                                        const fixedAmount = parseFloat(participation.value || 0);
+                                        aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                       }
+
+                                      totalIntrodusForStair += aptAmount;
                                     });
                                   }
 
@@ -2191,14 +2676,62 @@ const ExpenseList = ({
                                   const TOLERANCE = 0.20;
                                   const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
 
+                                  // Calculează total distribuit dacă e cheltuială cu isUnitBased
+                                  let totalDistribuit = totalIntrodusForStair;
+                                  let totalDifferenceStair = 0;
+                                  let totalDifferenceBlock = 0;
+                                  let totalDistribuitBlock = 0;
+
+                                  if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                    const allApts = getAssociationApartments();
+                                    const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+
+                                    // Diferența pentru scara curentă
+                                    totalDifferenceStair = stairApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+                                    totalDistribuit = totalIntrodusForStair + totalDifferenceStair;
+
+                                    // Diferența pentru întreg blocul
+                                    totalDifferenceBlock = blockApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+
+                                    // Total introdus pe bloc (pentru context)
+                                    let totalIntrodusBlock = 0;
+                                    if (config.distributionType === 'consumption' && expense.consumption) {
+                                      blockApts.forEach(apt => {
+                                        const participation = config.apartmentParticipation?.[apt.id];
+                                        if (participation?.type !== 'excluded') {
+                                          totalIntrodusBlock += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                        }
+                                      });
+                                    } else if (config.distributionType === 'individual' && expense.individualAmounts) {
+                                      blockApts.forEach(apt => {
+                                        const participation = config.apartmentParticipation?.[apt.id];
+                                        if (participation?.type !== 'excluded') {
+                                          totalIntrodusBlock += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                        }
+                                      });
+                                    }
+                                    totalDistribuitBlock = totalIntrodusBlock + totalDifferenceBlock;
+                                  }
+
+                                  const isBalanced = Math.abs(totalDistribuit - expectedAmountForStair) < 0.01;
+
                                   return (
                                     <>
                                       <div className="text-xs text-blue-600 font-semibold mt-1">
                                         Total introdus: {totalIntrodusForStair.toFixed(2)} RON
                                       </div>
-                                      {!isDifferenceOk && (
+
+                                      {/* Diferență - text roșu */}
+                                      {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferenceStair) >= 0.01 && (
                                         <div className="text-xs text-red-600 font-semibold mt-0.5">
-                                          ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+                                          ⚠ Diferență: {totalDifferenceStair > 0 ? '-' : '+'}{Math.abs(totalDifferenceStair).toFixed(2)} RON (din {totalDifferenceBlock > 0 ? '-' : '+'}{Math.abs(totalDifferenceBlock).toFixed(2)} RON pe bloc)
+                                        </div>
+                                      )}
+
+                                      {/* Badge verde pentru total distribuit */}
+                                      {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferenceStair) >= 0.01 && (
+                                        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 mt-0.5 inline-block">
+                                          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON (din {totalDistribuitBlock.toFixed(2)} RON pe bloc)
                                         </div>
                                       )}
                                     </>
@@ -2445,21 +2978,47 @@ const ExpenseList = ({
                                 });
                               }
 
-                              // Calculează totalul introdus pentru consumption și individual
+                              // Calculează totalul introdus pentru consumption și individual cu participări aplicate
                               let totalIntrodusForStair = 0;
                               if (config.distributionType === 'consumption' && expense.consumption) {
                                 stairApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
-                                  if (participation?.type !== 'excluded') {
-                                    totalIntrodusForStair += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                  let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                  // Aplică participarea
+                                  if (participation?.type === 'excluded') {
+                                    aptAmount = 0;
+                                  } else if (participation?.type === 'percentage') {
+                                    const percent = participation.value;
+                                    const multiplier = percent < 1 ? percent : (percent / 100);
+                                    aptAmount = aptAmount * multiplier;
+                                  } else if (participation?.type === 'fixed') {
+                                    const fixedMode = config?.fixedAmountMode || 'apartment';
+                                    const fixedAmount = parseFloat(participation.value || 0);
+                                    aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                   }
+
+                                  totalIntrodusForStair += aptAmount;
                                 });
                               } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                                 stairApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
-                                  if (participation?.type !== 'excluded') {
-                                    totalIntrodusForStair += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                  let aptAmount = parseFloat(expense.individualAmounts[apt.id] || 0);
+
+                                  // Aplică participarea
+                                  if (participation?.type === 'excluded') {
+                                    aptAmount = 0;
+                                  } else if (participation?.type === 'percentage') {
+                                    const percent = participation.value;
+                                    const multiplier = percent < 1 ? percent : (percent / 100);
+                                    aptAmount = aptAmount * multiplier;
+                                  } else if (participation?.type === 'fixed') {
+                                    const fixedMode = config?.fixedAmountMode || 'apartment';
+                                    const fixedAmount = parseFloat(participation.value || 0);
+                                    aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
                                   }
+
+                                  totalIntrodusForStair += aptAmount;
                                 });
                               }
 
@@ -2474,14 +3033,67 @@ const ExpenseList = ({
                                     const TOLERANCE = 0.20;
                                     const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
 
+                                    // Calculează total distribuit dacă e cheltuială cu isUnitBased
+                                    let totalDistribuit = totalIntrodusForStair;
+                                    let totalDifferenceStair = 0;
+                                    let totalDifferenceBlock = 0;
+                                    let totalDistribuitBlock = 0;
+
+                                    if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                      const allApts = getAssociationApartments();
+                                      const expenseDifferences = calculateExpenseDifferences(expense, allApts);
+
+                                      // Diferența pentru scara curentă
+                                      totalDifferenceStair = stairApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+                                      totalDistribuit = totalIntrodusForStair + totalDifferenceStair;
+
+                                      // Găsește toate apartamentele din bloc pentru calcul diferență bloc
+                                      const blockStairs = stairs?.filter(s => s.blockId === block.id) || [];
+                                      const blockStairIds = blockStairs.map(s => s.id);
+                                      const blockApts = allApts.filter(apt => blockStairIds.includes(apt.stairId));
+
+                                      // Diferența pentru întreg blocul
+                                      totalDifferenceBlock = blockApts.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+
+                                      // Total introdus pe bloc (pentru context)
+                                      let totalIntrodusBlock = 0;
+                                      if (config.distributionType === 'consumption' && expense.consumption) {
+                                        blockApts.forEach(apt => {
+                                          const participation = config.apartmentParticipation?.[apt.id];
+                                          if (participation?.type !== 'excluded') {
+                                            totalIntrodusBlock += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+                                          }
+                                        });
+                                      } else if (config.distributionType === 'individual' && expense.individualAmounts) {
+                                        blockApts.forEach(apt => {
+                                          const participation = config.apartmentParticipation?.[apt.id];
+                                          if (participation?.type !== 'excluded') {
+                                            totalIntrodusBlock += parseFloat(expense.individualAmounts[apt.id] || 0);
+                                          }
+                                        });
+                                      }
+                                      totalDistribuitBlock = totalIntrodusBlock + totalDifferenceBlock;
+                                    }
+
+                                    const isBalanced = Math.abs(totalDistribuit - stairAmount) < 0.01;
+
                                     return (
                                       <>
                                         <div className="text-xs text-blue-600 font-semibold mt-1">
                                           Total introdus: {totalIntrodusForStair.toFixed(2)} RON
                                         </div>
-                                        {!isDifferenceOk && (
+
+                                        {/* Diferență - text roșu */}
+                                        {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferenceStair) >= 0.01 && (
                                           <div className="text-xs text-red-600 font-semibold mt-0.5">
-                                            ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+                                            ⚠ Diferență: {totalDifferenceStair > 0 ? '-' : '+'}{Math.abs(totalDifferenceStair).toFixed(2)} RON (din {totalDifferenceBlock > 0 ? '-' : '+'}{Math.abs(totalDifferenceBlock).toFixed(2)} RON pe bloc)
+                                          </div>
+                                        )}
+
+                                        {/* Badge verde pentru total distribuit */}
+                                        {expense?.isUnitBased && calculateExpenseDifferences && Math.abs(totalDifferenceStair) >= 0.01 && (
+                                          <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 mt-0.5 inline-block">
+                                            ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON (din {totalDistribuitBlock.toFixed(2)} RON pe bloc)
                                           </div>
                                         )}
                                       </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Calculator, MoreVertical, Edit2 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 
@@ -25,11 +25,10 @@ const ConsumptionInput = ({
   getApartmentParticipation,
   expandExpenseName,
   onExpenseNameClick,
-  onEditConsumptionClick
+  onEditConsumptionClick,
+  expandedExpenses, // ✨ Primim starea din parent
+  setExpandedExpenses // ✨ Primim setter-ul din parent
 }) => {
-
-  // State pentru expandarea cheltuielilor (accordion)
-  const [expandedExpenses, setExpandedExpenses] = useState({});
 
   // State pentru dropdown menu (3 puncte)
   const [openMenus, setOpenMenus] = useState({});
@@ -37,18 +36,32 @@ const ConsumptionInput = ({
   // State local pentru optimistic UI updates (evită lag-ul Firebase)
   const [localValues, setLocalValues] = useState({});
 
+  // Refs pentru scroll automat la cheltuieli
+  const expenseRefs = useRef({});
+
   // Auto-expandare când se primește un expense name
   useEffect(() => {
     if (expandExpenseName) {
-      // Expandează DOAR această cheltuială (resetează restul)
-      setExpandedExpenses({
+      // Expandează această cheltuială (păstrează starea celorlalte)
+      setExpandedExpenses(prev => ({
+        ...prev,
         [expandExpenseName]: true
-      });
-    } else {
-      // Când nu avem expense name, strânge toate
-      setExpandedExpenses({});
+      }));
+
+      // Scroll automat la cheltuială după un mic delay pentru a permite rendering-ul
+      setTimeout(() => {
+        const expenseElement = expenseRefs.current[expandExpenseName];
+        if (expenseElement) {
+          expenseElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
     }
-  }, [expandExpenseName]);
+    // NU mai resetăm când expandExpenseName devine null - păstrăm starea
+  }, [expandExpenseName, setExpandedExpenses]);
 
   // Cleanup local values când sheet-ul se schimbă
   useEffect(() => {
@@ -377,7 +390,11 @@ const ConsumptionInput = ({
             }
 
             return (
-              <div key={expenseType.name} className="border border-gray-300 rounded-lg overflow-hidden hover:border-indigo-400 transition-colors">
+              <div
+                key={expenseType.name}
+                ref={el => expenseRefs.current[expenseType.name] = el}
+                className="border border-gray-300 rounded-lg overflow-hidden hover:border-indigo-400 transition-colors"
+              >
                 {/* Header - întotdeauna vizibil */}
                 <div
                   className={`p-3 ${
@@ -569,15 +586,39 @@ const ConsumptionInput = ({
                                       });
                                     }
                                   } else {
-                                    // NU știi suma așteptată - afișează suma introdusă
-                                    const apartmentParticipations = config.apartmentParticipation || {};
-                                    apartments.forEach(apt => {
-                                      const participation = apartmentParticipations[apt.id];
-                                      if (participation?.type !== 'excluded') {
+                                    // NU știi suma așteptată - afișează Total distribuit (total introdus + diferență)
+                                    if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                      const allApartments = getAssociationApartments();
+                                      const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+                                      const totalDifference = apartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
+
+                                      // Calculează total introdus pentru apartamentele filtrate
+                                      const apartmentParticipations = config?.apartmentParticipation || {};
+                                      let totalIntrodus = 0;
+                                      apartments.forEach(apt => {
+                                        const participation = apartmentParticipations[apt.id];
+                                        let aptAmount = 0;
+
                                         const consumption = parseFloat(dataObject[apt.id]) || 0;
-                                        amountToDisplay += consumption * expense.unitPrice;
-                                      }
-                                    });
+                                        aptAmount = consumption * (expense?.unitPrice || 0);
+
+                                        if (participation?.type === 'excluded') {
+                                          aptAmount = 0;
+                                        } else if (participation?.type === 'percentage') {
+                                          const percent = participation.value;
+                                          const multiplier = percent < 1 ? percent : (percent / 100);
+                                          aptAmount = aptAmount * multiplier;
+                                        } else if (participation?.type === 'fixed') {
+                                          const fixedMode = config?.fixedAmountMode || 'apartment';
+                                          const fixedAmount = parseFloat(participation.value || 0);
+                                          aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                                        }
+
+                                        totalIntrodus += aptAmount;
+                                      });
+
+                                      amountToDisplay = totalIntrodus + totalDifference;
+                                    }
                                   }
 
                                   return `${amountToDisplay.toFixed(2)} RON`;
@@ -642,28 +683,54 @@ const ConsumptionInput = ({
                                   } else if (receptionMode === 'per_block' && expense.amountsByBlock && filterInfo.blockId) {
                                     amountToDisplay = parseFloat(expense.amountsByBlock[filterInfo.blockId] || 0);
                                   }
+                                } else {
+                                  // NU știi suma așteptată - afișează Total distribuit (total introdus + diferență)
+                                  if (expense?.isUnitBased && calculateExpenseDifferences) {
+                                    const allApartments = getAssociationApartments();
+                                    const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+                                    const totalDifference = apartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
 
-                                  // Fallback: dacă suma așteptată este 0, calculează din sume individuale
-                                  if (amountToDisplay === 0) {
-                                    const apartmentParticipations = config.apartmentParticipation || {};
+                                    // Calculează total introdus pentru apartamentele filtrate
+                                    const apartmentParticipations = config?.apartmentParticipation || {};
+                                    let totalIntrodus = 0;
                                     apartments.forEach(apt => {
                                       const participation = apartmentParticipations[apt.id];
-                                      if (participation?.type !== 'excluded') {
-                                        const individualAmount = parseFloat(dataObject[apt.id]) || 0;
-                                        amountToDisplay += individualAmount;
+                                      let aptAmount = 0;
+
+                                      if (isConsumption) {
+                                        let aptConsumption = 0;
+                                        const indexes = expense?.indexes?.[apt.id];
+                                        if (indexes) {
+                                          Object.values(indexes).forEach(indexData => {
+                                            if (indexData.newIndex && indexData.oldIndex) {
+                                              aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                                            }
+                                          });
+                                        } else {
+                                          aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
+                                        }
+                                        aptAmount = aptConsumption * (expense?.unitPrice || 0);
+                                      } else {
+                                        aptAmount = parseFloat(expense?.individualAmounts?.[apt.id] || 0);
                                       }
+
+                                      if (participation?.type === 'excluded') {
+                                        aptAmount = 0;
+                                      } else if (participation?.type === 'percentage') {
+                                        const percent = participation.value;
+                                        const multiplier = percent < 1 ? percent : (percent / 100);
+                                        aptAmount = aptAmount * multiplier;
+                                      } else if (participation?.type === 'fixed') {
+                                        const fixedMode = config?.fixedAmountMode || 'apartment';
+                                        const fixedAmount = parseFloat(participation.value || 0);
+                                        aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                                      }
+
+                                      totalIntrodus += aptAmount;
                                     });
+
+                                    amountToDisplay = totalIntrodus + totalDifference;
                                   }
-                                } else {
-                                  // NU știi suma așteptată - afișează suma introdusă
-                                  const apartmentParticipations = config.apartmentParticipation || {};
-                                  apartments.forEach(apt => {
-                                    const participation = apartmentParticipations[apt.id];
-                                    if (participation?.type !== 'excluded') {
-                                      const individualAmount = parseFloat(dataObject[apt.id]) || 0;
-                                      amountToDisplay += individualAmount;
-                                    }
-                                  });
                                 }
 
                                 return `${amountToDisplay.toFixed(2)} RON`;
@@ -768,14 +835,42 @@ const ConsumptionInput = ({
                                   </div>
                                 )
                               ) : (
-                                // NU știi suma așteptată - afișează mesaj informativ în roșu
-                                <div className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
-                                  ⚠ {diferentaMessage}
-                                </div>
+                                // NU știi suma așteptată - afișează diferența distribuită
+                                expense?.isUnitBased && calculateExpenseDifferences && (() => {
+                                  const allApartments = getAssociationApartments();
+                                  const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+
+                                  // Diferența pentru apartamentele filtrate (scara curentă)
+                                  const totalDifferentaScara = apartments.reduce((sum, apt) =>
+                                    sum + (expenseDifferences[apt.id] || 0), 0
+                                  );
+
+                                  // Diferența totală (pe bloc sau pe asociație)
+                                  let apartmentsForGlobalDiff = allApartments;
+                                  if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                    // Doar apartamentele din blocul curent
+                                    const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                    const blockStairIds = blockStairs.map(s => s.id);
+                                    apartmentsForGlobalDiff = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
+                                  }
+
+                                  const totalDifferentaGlobal = apartmentsForGlobalDiff.reduce((sum, apt) =>
+                                    sum + (expenseDifferences[apt.id] || 0), 0
+                                  );
+
+                                  const diferentaContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                                  return Math.abs(totalDifferentaScara) >= 0.01 ? (
+                                    <div className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
+                                      ⚠ Diferență: {totalDifferentaScara > 0 ? '-' : '+'}{Math.abs(totalDifferentaScara).toFixed(2)} RON
+                                      (din {totalDifferentaGlobal > 0 ? '-' : '+'}{Math.abs(totalDifferentaGlobal).toFixed(2)} RON {diferentaContext})
+                                    </div>
+                                  ) : null;
+                                })()
                               )}
 
                               {/* Badge verde pentru total distribuit - doar dacă e cheltuială distribuită cu diferență */}
-                              {knowsExpectedAmount && expense?.isUnitBased && (() => {
+                              {expense?.isUnitBased && calculateExpenseDifferences && (() => {
                                 // Verifică dacă avem sumă așteptată pentru nivelul curent
                                 let hasExpectedAmount = false;
                                 if (filterInfo.type === 'all' && expense?.billAmount) {
@@ -786,25 +881,90 @@ const ConsumptionInput = ({
                                   hasExpectedAmount = true;
                                 }
 
-                                if (!hasExpectedAmount) return null;
-
                                 const allApartments = getAssociationApartments();
-                                const expenseDifferences = calculateExpenseDifferences ? calculateExpenseDifferences(expense, allApartments) : {};
+                                const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
                                 const totalDifference = apartments.reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
 
                                 // Calculează totalul distribuit (total introdus + diferență)
                                 const totalDistribuit = totalIntrodus + totalDifference;
 
-                                // Verifică dacă totalul distribuit e aproape egal cu suma așteptată
-                                const isBalanced = Math.abs(totalDistribuit - relevantAmount) < 0.01;
-
-                                if (isBalanced && Math.abs(totalDifference) >= 0.01) {
-                                  return (
-                                    <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
-                                      ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
-                                    </div>
-                                  );
+                                // Calculează totalul distribuit global (la nivel bloc/asociație)
+                                let apartmentsForGlobalTotal = allApartments;
+                                if (receptionMode === 'per_block' && filterInfo.blockId) {
+                                  const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                  const blockStairIds = blockStairs.map(s => s.id);
+                                  apartmentsForGlobalTotal = allApartments.filter(apt => blockStairIds.includes(apt.stairId));
                                 }
+
+                                const totalDifferenceGlobal = apartmentsForGlobalTotal.reduce((sum, apt) =>
+                                  sum + (expenseDifferences[apt.id] || 0), 0
+                                );
+
+                                // Calculează total introdus global
+                                const apartmentParticipationsGlobal = config?.apartmentParticipation || {};
+                                let totalIntrodusGlobal = 0;
+                                apartmentsForGlobalTotal.forEach(apt => {
+                                  const participation = apartmentParticipationsGlobal[apt.id];
+                                  let aptAmount = 0;
+
+                                  if (isConsumption) {
+                                    let aptConsumption = 0;
+                                    const indexes = expense?.indexes?.[apt.id];
+                                    if (indexes) {
+                                      Object.values(indexes).forEach(indexData => {
+                                        if (indexData.newIndex && indexData.oldIndex) {
+                                          aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                                        }
+                                      });
+                                    } else {
+                                      aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
+                                    }
+                                    aptAmount = aptConsumption * (expense?.unitPrice || 0);
+                                  } else {
+                                    aptAmount = parseFloat(expense?.individualAmounts?.[apt.id] || 0);
+                                  }
+
+                                  if (participation?.type === 'excluded') {
+                                    aptAmount = 0;
+                                  } else if (participation?.type === 'percentage') {
+                                    const percent = participation.value;
+                                    const multiplier = percent < 1 ? percent : (percent / 100);
+                                    aptAmount = aptAmount * multiplier;
+                                  } else if (participation?.type === 'fixed') {
+                                    const fixedMode = config?.fixedAmountMode || 'apartment';
+                                    const fixedAmount = parseFloat(participation.value || 0);
+                                    aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+                                  }
+
+                                  totalIntrodusGlobal += aptAmount;
+                                });
+
+                                const totalDistribuitGlobal = totalIntrodusGlobal + totalDifferenceGlobal;
+                                const distribuitContext = receptionMode === 'per_block' ? 'pe bloc' : 'pe asociație';
+
+                                // Pentru cazul când ȘTII suma așteptată
+                                if (knowsExpectedAmount && hasExpectedAmount) {
+                                  // Verifică dacă totalul distribuit e aproape egal cu suma așteptată
+                                  const isBalanced = Math.abs(totalDistribuit - relevantAmount) < 0.01;
+
+                                  if (isBalanced && Math.abs(totalDifference) >= 0.01) {
+                                    return (
+                                      <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                        ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+                                      </div>
+                                    );
+                                  }
+                                } else {
+                                  // Pentru cazul când NU ȘTII suma așteptată - arată întotdeauna totalul distribuit
+                                  if (Math.abs(totalDifference) >= 0.01) {
+                                    return (
+                                      <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+                                        ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON (din {totalDistribuitGlobal.toFixed(2)} RON {distribuitContext})
+                                      </div>
+                                    );
+                                  }
+                                }
+
                                 return null;
                               })()}
                             </div>
@@ -938,7 +1098,7 @@ const ConsumptionInput = ({
                                   După participare (RON)
                                 </th>
 
-                                {/* Coloană diferență distribuită - doar pentru consumption */}
+                                {/* Coloană diferență distribuită - doar pentru consumption cu isUnitBased */}
                                 {isConsumption && expense?.isUnitBased && expense?.billAmount && (
                                   <th className="px-2 py-2 text-right font-semibold text-gray-700 border-b-2 border-l bg-orange-50">
                                     Diferență distribuită (RON)
@@ -1420,7 +1580,7 @@ const ConsumptionInput = ({
                                       })()}
                                     </td>
 
-                                    {/* Diferență distribuită - doar pentru consumption cu billAmount */}
+                                    {/* Diferență distribuită - doar pentru consumption cu isUnitBased */}
                                     {isConsumption && expense?.isUnitBased && expense?.billAmount && (
                                       <td className="px-2 py-2 text-right font-medium border-l bg-orange-50 text-orange-700">
                                         {(() => {
@@ -1449,7 +1609,7 @@ const ConsumptionInput = ({
                             {/* RÂND TOTAL */}
                             <tfoot>
                               <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
-                                <td colSpan="4" className="px-2 py-2 text-right border-r">TOTAL:</td>
+                                <td colSpan={4 + (isConsumption && config.indexConfiguration?.inputMode !== 'manual' && config.indexConfiguration?.indexTypes?.length > 0 ? config.indexConfiguration.indexTypes.length * 2 : 0)} className="px-2 py-2 text-right border-r">TOTAL:</td>
 
                                 {/* Consum total */}
                                 {isConsumption && (
@@ -1512,17 +1672,30 @@ const ConsumptionInput = ({
                                         else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
                                       }
 
-                                      // Determină suma așteptată pentru scara/blocul/asociația curentă
+                                      // Determină suma așteptată și apartamentele pentru calcul
                                       let expectedAmount = 0;
+                                      let apartmentsForDiff = apartments; // Default: apartamente filtrate
+
                                       if (filterInfo.type === 'all') {
                                         expectedAmount = parseFloat(expense?.billAmount || 0);
+                                        apartmentsForDiff = apartments;
                                       } else if (filterInfo.type === 'stair' && receptionMode === 'per_stair') {
                                         expectedAmount = parseFloat(expense?.amountsByStair?.[filterInfo.stairId] || 0);
+                                        apartmentsForDiff = apartments;
                                       } else if (filterInfo.type === 'stair' && receptionMode === 'per_block' && filterInfo.blockId) {
+                                        // ✅ Când filtrezi pe scară dar suma e pe bloc, calculează diferența la nivel de BLOC
                                         expectedAmount = parseFloat(expense?.amountsByBlock?.[filterInfo.blockId] || 0);
+                                        const allApts = getAssociationApartments();
+                                        const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                        const blockStairIds = blockStairs.map(s => s.id);
+                                        apartmentsForDiff = allApts.filter(apt => blockStairIds.includes(apt.stairId));
+                                      } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                                        // ✅ Când filtrezi pe scară dar suma e pe asociație, calculează diferența la nivel de ASOCIAȚIE
+                                        expectedAmount = parseFloat(expense?.billAmount || 0);
+                                        apartmentsForDiff = getAssociationApartments();
                                       }
 
-                                      const totalBeforeParticipation = apartments.reduce((sum, apt) => {
+                                      const totalBeforeParticipation = apartmentsForDiff.reduce((sum, apt) => {
                                         let aptAmount = 0;
                                         if (isConsumption) {
                                           let aptConsumption = 0;
@@ -1547,14 +1720,29 @@ const ConsumptionInput = ({
                                       const diff = totalBeforeParticipation - expectedAmount;
 
                                       if (Math.abs(diff) >= 0.01) {
+                                        // Determină contextul diferenței
+                                        let diferentaLabel = 'Diferență';
+                                        if (filterInfo.type === 'stair' && receptionMode === 'per_block') {
+                                          diferentaLabel = 'Diferență pe bloc';
+                                        } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                                          diferentaLabel = 'Diferență pe asociație';
+                                        }
+
                                         return (
                                           <div className="text-xs text-orange-600 mt-1">
-                                            Diferență: {diff > 0 ? '+' : ''}{diff.toFixed(2)}
+                                            {diferentaLabel}: {diff > 0 ? '+' : ''}{diff.toFixed(2)}
                                           </div>
                                         );
                                       }
                                       return null;
                                     })()}
+                                  </td>
+                                )}
+
+                                {/* Celulă goală pentru coloana "Sumă (RON)" la cheltuieli individuale */}
+                                {!isConsumption && (
+                                  <td className="px-2 py-2 text-center border-l border-r text-gray-400">
+                                    -
                                   </td>
                                 )}
 
@@ -1614,20 +1802,33 @@ const ConsumptionInput = ({
                                       else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
                                     }
 
-                                    // Determină suma așteptată pentru scara/blocul/asociația curentă
+                                    // Determină suma așteptată și apartamentele pentru calcul
                                     let expectedAmount = 0;
+                                    let apartmentsForDiff = apartments; // Default: apartamente filtrate
+
                                     if (filterInfo.type === 'all') {
                                       expectedAmount = parseFloat(expense?.billAmount || 0);
+                                      apartmentsForDiff = apartments;
                                     } else if (filterInfo.type === 'stair' && receptionMode === 'per_stair') {
                                       expectedAmount = parseFloat(expense?.amountsByStair?.[filterInfo.stairId] || 0);
+                                      apartmentsForDiff = apartments;
                                     } else if (filterInfo.type === 'stair' && receptionMode === 'per_block' && filterInfo.blockId) {
+                                      // ✅ Când filtrezi pe scară dar suma e pe bloc, calculează diferența la nivel de BLOC
                                       expectedAmount = parseFloat(expense?.amountsByBlock?.[filterInfo.blockId] || 0);
+                                      const allApts = getAssociationApartments();
+                                      const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                      const blockStairIds = blockStairs.map(s => s.id);
+                                      apartmentsForDiff = allApts.filter(apt => blockStairIds.includes(apt.stairId));
+                                    } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                                      // ✅ Când filtrezi pe scară dar suma e pe asociație, calculează diferența la nivel de ASOCIAȚIE
+                                      expectedAmount = parseFloat(expense?.billAmount || 0);
+                                      apartmentsForDiff = getAssociationApartments();
                                     }
 
                                     const config = getExpenseConfig(expenseType.name);
                                     const apartmentParticipations = config?.apartmentParticipation || {};
 
-                                    const totalAfterParticipation = apartments.reduce((sum, apt) => {
+                                    const totalAfterParticipation = apartmentsForDiff.reduce((sum, apt) => {
                                       const participation = apartmentParticipations[apt.id];
 
                                       let aptAmount = 0;
@@ -1668,9 +1869,17 @@ const ConsumptionInput = ({
                                     const diff = totalAfterParticipation - expectedAmount;
 
                                     if (Math.abs(diff) >= 0.01) {
+                                      // Determină contextul diferenței
+                                      let diferentaLabel = 'Diferență';
+                                      if (filterInfo.type === 'stair' && receptionMode === 'per_block') {
+                                        diferentaLabel = 'Diferență pe bloc';
+                                      } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                                        diferentaLabel = 'Diferență pe asociație';
+                                      }
+
                                       return (
                                         <div className="text-xs text-orange-600 mt-1">
-                                          Diferență: {diff > 0 ? '+' : ''}{diff.toFixed(2)}
+                                          {diferentaLabel}: {diff > 0 ? '+' : ''}{diff.toFixed(2)}
                                         </div>
                                       );
                                     }
@@ -1713,21 +1922,34 @@ const ConsumptionInput = ({
                                         else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
                                       }
 
-                                      // Determină suma așteptată pentru scara/blocul/asociația curentă
+                                      // Determină suma așteptată și apartamentele pentru calculul total
                                       let expectedAmount = 0;
+                                      let apartmentsForCalculation = apartments; // Default: apartamente filtrate
+
                                       if (filterInfo.type === 'all') {
                                         expectedAmount = parseFloat(expense?.billAmount || 0);
+                                        apartmentsForCalculation = apartments; // Toate apartamentele
                                       } else if (filterInfo.type === 'stair' && receptionMode === 'per_stair') {
                                         expectedAmount = parseFloat(expense?.amountsByStair?.[filterInfo.stairId] || 0);
+                                        apartmentsForCalculation = apartments; // Apartamente din scară
                                       } else if (filterInfo.type === 'stair' && receptionMode === 'per_block' && filterInfo.blockId) {
+                                        // ✅ FIX: Când filtrezi pe scară dar suma e pe bloc, ia TOATE apartamentele din bloc
                                         expectedAmount = parseFloat(expense?.amountsByBlock?.[filterInfo.blockId] || 0);
+                                        const allApts = getAssociationApartments();
+                                        const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+                                        const blockStairIds = blockStairs.map(s => s.id);
+                                        apartmentsForCalculation = allApts.filter(apt => blockStairIds.includes(apt.stairId));
+                                      } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                                        // ✅ FIX: Când filtrezi pe scară dar suma e pe asociație, ia TOATE apartamentele
+                                        expectedAmount = parseFloat(expense?.billAmount || 0);
+                                        apartmentsForCalculation = getAssociationApartments();
                                       }
 
                                       const config = getExpenseConfig(expenseType.name);
                                       const apartmentParticipations = config?.apartmentParticipation || {};
 
-                                      // Calculează total după participare
-                                      const totalAfterParticipation = apartments.reduce((sum, apt) => {
+                                      // Calculează total după participare pentru apartamentele corecte
+                                      const totalAfterParticipation = apartmentsForCalculation.reduce((sum, apt) => {
                                         const participation = apartmentParticipations[apt.id];
                                         let aptAmount = 0;
 
@@ -1763,10 +1985,10 @@ const ConsumptionInput = ({
                                         return sum + aptAmount;
                                       }, 0);
 
-                                      // Adaugă diferențele
+                                      // Adaugă diferențele pentru apartamentele corecte
                                       const allApartments = getAssociationApartments();
                                       const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
-                                      const totalDifference = apartments.reduce((sum, apt) => {
+                                      const totalDifference = apartmentsForCalculation.reduce((sum, apt) => {
                                         return sum + (expenseDifferences[apt.id] || 0);
                                       }, 0);
 
@@ -1774,11 +1996,23 @@ const ConsumptionInput = ({
                                       // Diferență rămasă = calculat - așteptat
                                       const remainingDiff = finalTotal - expectedAmount;
 
+                                      // Calculează diferența pentru apartamentele vizibile (din view-ul curent - scara filtrată)
+                                      const totalDifferenceForVisibleApts = apartments.reduce((sum, apt) => {
+                                        return sum + (expenseDifferences[apt.id] || 0);
+                                      }, 0);
+
+                                      // Determină contextul pentru afișare
+                                      const distribuitContext = receptionMode === 'per_block' ? 'pe bloc' :
+                                                               receptionMode === 'total' ? 'pe asociație' : '';
+
                                       // Arată echilibrarea finală
                                       if (Math.abs(remainingDiff) < 0.01) {
                                         return (
                                           <div className="text-xs text-green-600 font-medium mt-1">
-                                            Total distribuit: {finalTotal.toFixed(2)}
+                                            <div>Diferență distribuită: {totalDifferenceForVisibleApts.toFixed(2)} RON</div>
+                                            {distribuitContext && (
+                                              <div className="text-[10px] text-gray-500">(din {totalDifference.toFixed(2)} RON {distribuitContext})</div>
+                                            )}
                                           </div>
                                         );
                                       } else {

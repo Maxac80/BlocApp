@@ -127,6 +127,9 @@ const MaintenanceView = ({
   // State pentru tab-ul inițial al modalului de configurare
   const [configModalInitialTab, setConfigModalInitialTab] = useState('general');
 
+  // State pentru a păstra cheltuielile expandate (persistă între tab-uri)
+  const [expandedExpenses, setExpandedExpenses] = useState({});
+
   // Reset expenseToExpand când schimbăm tab-ul sau luna
   useEffect(() => {
     if (selectedContentTab === 'expenses') {
@@ -135,6 +138,11 @@ const MaintenanceView = ({
       setExpenseToExpandInList(null);
     }
   }, [selectedContentTab, currentMonth]);
+
+  // Reset expandedExpenses doar când se schimbă luna (nu când se schimbă tab-ul)
+  useEffect(() => {
+    setExpandedExpenses({});
+  }, [currentMonth]);
 
   // Hook pentru gestionarea încasărilor
   const { addIncasare } = useIncasari(association || null, currentMonth);
@@ -1032,6 +1040,7 @@ const MaintenanceView = ({
                       selectedStairTab={selectedStairTab}
                       blocks={blocks}
                       stairs={stairs}
+                      calculateExpenseDifferences={calculateExpenseDifferences}
                       onEditExpense={handleEditExpense}
                       onConsumptionClick={(expenseName, stairId) => {
                         setExpenseToExpand(expenseName);
@@ -1047,6 +1056,8 @@ const MaintenanceView = ({
                         setShowExpenseConfig(true);
                       }}
                       expandExpenseName={expenseToExpandInList}
+                      expandedExpenses={expandedExpenses}
+                      setExpandedExpenses={setExpandedExpenses}
                     />
                   ) : (
                     <ConsumptionInput
@@ -1080,6 +1091,8 @@ const MaintenanceView = ({
                         setConfigModalInitialTab('indexes'); // 'indexes' este tab-ul pentru Consum
                         setShowExpenseConfig(true);
                       }}
+                      expandedExpenses={expandedExpenses}
+                      setExpandedExpenses={setExpandedExpenses}
                     />
                   )}
                 </div>
