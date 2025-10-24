@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
-import { ExpenseForm, ExpenseList, ConsumptionInput } from '../expenses';
+import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal } from '../modals';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import { useIncasari } from '../../hooks/useIncasari';
@@ -115,31 +115,13 @@ const MaintenanceView = ({
   // State pentru tab-urile de scări
   const [selectedStairTab, setSelectedStairTab] = useState('all');
 
-  // State pentru tab-urile Cheltuieli/Consumuri
-  const [selectedContentTab, setSelectedContentTab] = useState('expenses'); // 'expenses' sau 'consumptions'
-
-  // State pentru auto-expandare cheltuială în tab Consumuri
-  const [expenseToExpand, setExpenseToExpand] = useState(null);
-
-  // State pentru auto-expandare cheltuială în tab Cheltuieli distribuite
-  const [expenseToExpandInList, setExpenseToExpandInList] = useState(null);
-
   // State pentru tab-ul inițial al modalului de configurare
   const [configModalInitialTab, setConfigModalInitialTab] = useState('general');
 
   // State pentru a păstra cheltuielile expandate (persistă între tab-uri)
   const [expandedExpenses, setExpandedExpenses] = useState({});
 
-  // Reset expenseToExpand când schimbăm tab-ul sau luna
-  useEffect(() => {
-    if (selectedContentTab === 'expenses') {
-      setExpenseToExpand(null);
-    } else if (selectedContentTab === 'consumptions') {
-      setExpenseToExpandInList(null);
-    }
-  }, [selectedContentTab, currentMonth]);
-
-  // Reset expandedExpenses doar când se schimbă luna (nu când se schimbă tab-ul)
+  // Reset expandedExpenses când se schimbă luna
   useEffect(() => {
     setExpandedExpenses({});
   }, [currentMonth]);
@@ -960,7 +942,7 @@ const MaintenanceView = ({
           tabContent={
             <div className="pb-2">
               {/* Tab-uri pentru scări */}
-              <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200 mb-6">
+              <div className="sticky top-0 z-10 bg-white rounded-t-xl shadow-sm border-b border-gray-200 mb-6">
                 <div className="flex overflow-x-auto">
                   {/* Tab "Toate" */}
                   <button
@@ -994,107 +976,39 @@ const MaintenanceView = ({
                 </div>
               </div>
 
-              {/* Tab-uri pentru Cheltuieli și Consumuri */}
+              {/* Lista de cheltuieli unificată */}
               <div className="mb-6 mx-2">
-                <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200">
-                  <div className="flex">
-                    <button
-                      onClick={() => setSelectedContentTab('expenses')}
-                      className={`px-6 py-4 font-medium whitespace-nowrap transition-all border-b-2 rounded-tl-xl ${
-                        selectedContentTab === 'expenses'
-                          ? 'bg-blue-100 text-blue-800 border-b-2 border-blue-600 shadow-sm'
-                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      📋 Cheltuieli distribuite
-                    </button>
-                    <button
-                      onClick={() => setSelectedContentTab('consumptions')}
-                      className={`px-6 py-4 font-medium whitespace-nowrap transition-all border-b-2 ${
-                        selectedContentTab === 'consumptions'
-                          ? 'bg-teal-100 text-teal-800 border-b-2 border-teal-600 shadow-sm'
-                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      📊 Consumuri
-                    </button>
-                  </div>
-                </div>
-
-                {/* Conținut tab-uri */}
-                <div className={`bg-white rounded-b-xl shadow-sm border border-t-0 p-6 ${
-                  selectedContentTab === 'expenses'
-                    ? 'border-gray-200 border-l-4 border-l-blue-600'
-                    : 'border-gray-200 border-l-4 border-l-teal-600'
-                }`}>
-                  {selectedContentTab === 'expenses' ? (
-                    <ExpenseList
-                      associationExpenses={associationExpenses}
-                      currentMonth={currentMonth}
-                      currentSheet={currentSheet}
-                      getExpenseConfig={getExpenseConfig}
-                      getAssociationApartments={getAssociationApartments}
-                      handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
-                      isMonthReadOnly={isMonthReadOnly}
-                      monthType={monthType}
-                      selectedStairTab={selectedStairTab}
-                      blocks={blocks}
-                      stairs={stairs}
-                      calculateExpenseDifferences={calculateExpenseDifferences}
-                      onEditExpense={handleEditExpense}
-                      onConsumptionClick={(expenseName, stairId) => {
-                        setExpenseToExpand(expenseName);
-                        setSelectedContentTab('consumptions');
-                        // Setează și scara dacă este specificată
-                        if (stairId) {
-                          setSelectedStairTab(stairId);
-                        }
-                      }}
-                      onConfigureExpense={(expenseName) => {
-                        setSelectedExpenseForConfig(expenseName);
-                        setConfigModalInitialTab('general');
-                        setShowExpenseConfig(true);
-                      }}
-                      expandExpenseName={expenseToExpandInList}
-                      expandedExpenses={expandedExpenses}
-                      setExpandedExpenses={setExpandedExpenses}
-                    />
-                  ) : (
-                    <ConsumptionInput
-                      associationExpenses={associationExpenses}
-                      getExpenseConfig={getExpenseConfig}
-                      getAssociationApartments={getAssociationApartments}
-                      updateExpenseConsumption={updateExpenseConsumption}
-                      updateExpenseIndividualAmount={updateExpenseIndividualAmount}
-                      updatePendingConsumption={updatePendingConsumption}
-                      updatePendingIndividualAmount={updatePendingIndividualAmount}
-                      updateExpenseIndexes={updateExpenseIndexes}
-                      updatePendingIndexes={updatePendingIndexes}
-                      currentSheet={currentSheet}
-                      isMonthReadOnly={isMonthReadOnly}
-                      currentMonth={currentMonth}
-                      monthType={monthType}
-                      blocks={blocks}
-                      stairs={stairs}
-                      calculateExpenseDifferences={calculateExpenseDifferences}
-                      selectedStairTab={selectedStairTab}
-                      setSelectedStairTab={setSelectedStairTab}
-                      getDisabledExpenseTypes={getDisabledExpenseTypes}
-                      getApartmentParticipation={getApartmentParticipation}
-                      expandExpenseName={expenseToExpand}
-                      onExpenseNameClick={(expenseName) => {
-                        setExpenseToExpandInList(expenseName);
-                        setSelectedContentTab('expenses');
-                      }}
-                      onEditConsumptionClick={(expenseName) => {
-                        setSelectedExpenseForConfig(expenseName);
-                        setConfigModalInitialTab('indexes'); // 'indexes' este tab-ul pentru Consum
-                        setShowExpenseConfig(true);
-                      }}
-                      expandedExpenses={expandedExpenses}
-                      setExpandedExpenses={setExpandedExpenses}
-                    />
-                  )}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <ExpenseList
+                    associationExpenses={associationExpenses}
+                    currentMonth={currentMonth}
+                    currentSheet={currentSheet}
+                    getExpenseConfig={getExpenseConfig}
+                    getAssociationApartments={getAssociationApartments}
+                    handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
+                    isMonthReadOnly={isMonthReadOnly}
+                    monthType={monthType}
+                    selectedStairTab={selectedStairTab}
+                    blocks={blocks}
+                    stairs={stairs}
+                    calculateExpenseDifferences={calculateExpenseDifferences}
+                    onEditExpense={handleEditExpense}
+                    onConfigureExpense={(expenseName) => {
+                      setSelectedExpenseForConfig(expenseName);
+                      setConfigModalInitialTab('general');
+                      setShowExpenseConfig(true);
+                    }}
+                    expandedExpenses={expandedExpenses}
+                    setExpandedExpenses={setExpandedExpenses}
+                    updateExpenseConsumption={updateExpenseConsumption}
+                    updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+                    updatePendingConsumption={updatePendingConsumption}
+                    updatePendingIndividualAmount={updatePendingIndividualAmount}
+                    updateExpenseIndexes={updateExpenseIndexes}
+                    updatePendingIndexes={updatePendingIndexes}
+                    getDisabledExpenseTypes={getDisabledExpenseTypes}
+                    getApartmentParticipation={getApartmentParticipation}
+                  />
                 </div>
               </div>
 

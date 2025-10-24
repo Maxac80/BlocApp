@@ -1,5 +1,106 @@
 ---
 
+### 🐛 **BUG FIXES: PARTICIPATION CALCULATIONS & UI RESTRUCTURING - 25 OCTOMBRIE 2025**
+
+#### **MODIFICĂRI FĂCUTE ASTĂZI**
+
+**1. FIX CRITIC: SUME ÎN HEADER/CARD NU APLICAU PARTICIPĂRILE**
+- **Problema**: În ExpenseList.js, sumele afișate în header și card-uri nu aplicau participările (percentage, fixed, excluded)
+- **Exemplu bug**: Filtrare "Bloc B4 - Scara A" + cheltuială "Apă caldă" cu participări diverse:
+  - Header arăta 1040.15 RON în loc de 925.15 RON
+  - Card detalii arăta 835.00 RON în loc de 925.15 RON
+- **Cauză**: Funcția `getRelevantAmount()` calcula suma FĂRĂ să țină cont de participări
+- **Soluție**: Adăugat logică de aplicare participări în 3 locuri din `getRelevantAmount()`:
+  1. Filtru "Toate" cu consumption/individual (linii ~298-348)
+  2. receptionMode 'per_block' când filtrezi pe scară (linii ~375-416)
+  3. receptionMode 'total' când filtrezi pe scară (linii ~430-474)
+  4. Header display când `knowsExpectedAmount === false` (linii ~1048-1100)
+
+**2. FIX: FOOTER TABEL CONSUM - DIFERENȚĂ PE ASOCIAȚIE GREȘITĂ**
+- **Problema**: Footer-ul tabelului de consum arăta "din 100.00 RON pe asociație" în loc de "-465.00 RON"
+- **Cauză**: `totalIntrodusInScope` se calcula FĂRĂ participări în ConsumptionComponents.js (linii 1176-1189)
+- **Soluție**: Adăugat logică de aplicare participări la calculul `totalIntrodusInScope` (linii 1175-1212):
+  - Pentru fiecare apartament: calculează consum × preț
+  - Aplică participarea: excluded → 0, percentage → multiply, fixed → replace
+  - Diferența = totalIntrodusInScope (după participări) - expectedAmount
+
+**3. RESTRUCTURARE UI: ELIMINARE TAB-URI CHELTUIELI/CONSUMURI**
+- **Schimbare**: Eliminat tab-urile separate "📋 Cheltuieli distribuite" și "📊 Consumuri"
+- **Nou**: Listă unificată ExpenseList cu tabeluri inline (ConsumptionTable/IndividualAmountsTable)
+- **Avantaj**: UX mai simplu, tot într-un singur loc, mai puține click-uri
+- **Fișiere**:
+  - `MaintenanceView.js`: Eliminat state-uri `selectedContentTab`, `expenseToExpand`, `expenseToExpandInList`
+  - `MaintenanceView.js`: Înlocuit secțiunea cu tab-uri cu o singură listă ExpenseList
+  - `ExpenseList.js`: Primește props pentru tabeluri (updateExpenseConsumption, updateExpenseIndexes, etc.)
+
+**4. COMPONENTIZARE: TABELURI EXTRASE ÎN FIȘIER SEPARAT**
+- **Nou fișier**: `src/components/expenses/shared/ConsumptionComponents.js` (70KB!)
+- **Conține**:
+  - `ConsumptionTable` - tabel pentru introducere consumuri cu suport indexuri
+  - `IndividualAmountsTable` - tabel pentru sume individuale
+  - Helper functions: `getFilterInfo`, `getFilteredApartments`, `getExpenseStatus`, `calculateTotals`
+  - Badge components pentru status și diferențe
+- **ExpenseList.js**: Importă și folosește componentele din shared
+
+**5. STICKY TABS PENTRU SCĂRI**
+- Adăugat `sticky top-0 z-10` la tab-urile pentru scări (Toate, Bloc B4 - Scara A, etc.)
+- Tab-urile rămân vizibile când scroll-ezi în jos
+
+**LECȚII ÎNVĂȚATE:**
+
+1. **NICIODATĂ `git checkout` pe fișiere necomise!**
+   - Am făcut greșeala de a rula `git checkout src/components/views/MaintenanceView.js`
+   - A ȘTERS toate modificările necomise din sesiune (ore de muncă!)
+   - Alternativa corectă: `git stash` pentru a salva temporar modificările
+
+2. **Aplicarea participărilor trebuie făcută CONSISTENT peste tot**
+   - Nu e suficient să faci calculul corect în backend
+   - TOATE display-urile trebuie să aplice aceeași logică:
+     - excluded → amount = 0
+     - percentage → amount × (percent / 100)
+     - fixed → amount = fixedValue (per apartment sau per person)
+
+3. **Căutarea bugurilor în calcule complexe**
+   - Când sumele nu bat: caută unde se face calculul pentru DISPLAY
+   - Verifică dacă se aplică participările în toate locurile
+   - Compară cu calculele din backend/hooks
+
+4. **Componentizare când fișierul devine prea mare**
+   - ExpenseList.js ajunsese la ~3600 linii
+   - Am extras tabelurile în `shared/ConsumptionComponents.js`
+   - Mai ușor de întreținut și de testat
+
+**FIȘIERE MODIFICATE:**
+- `src/components/expenses/ExpenseList.js` - fix-uri participări în getRelevantAmount() și header display
+- `src/components/expenses/shared/ConsumptionComponents.js` - fix footer + tabeluri extrase
+- `src/components/views/MaintenanceView.js` - eliminare tab-uri, listă unificată, sticky tabs
+
+**STRUCTURA CALCULULUI CORECT PENTRU PARTICIPĂRI:**
+```javascript
+// Pentru fiecare apartament
+let aptAmount = consumption × unitPrice; // sau individualAmount
+
+const participation = config.apartmentParticipation[apt.id];
+if (participation?.type === 'excluded') {
+  aptAmount = 0;
+} else if (participation?.type === 'percentage') {
+  const percent = participation.value < 1 ? participation.value : (participation.value / 100);
+  aptAmount = aptAmount × percent;
+} else if (participation?.type === 'fixed') {
+  const fixedMode = config.fixedAmountMode || 'apartment';
+  const fixedAmount = parseFloat(participation.value || 0);
+  aptAmount = fixedMode === 'person' ? fixedAmount × (apt.persons || 0) : fixedAmount;
+}
+
+// Pentru isUnitBased, adaugă diferența
+if (expense.isUnitBased) {
+  const difference = calculateExpenseDifferences(expense, allApts)[apt.id];
+  totalDistributed = totalAfterParticipation + difference;
+}
+```
+
+---
+
 ### 🎨 **UI IMPROVEMENTS: DIFFERENCE VISUALIZATION - 22 OCTOMBRIE 2025 (Partea 2)**
 
 #### **MODIFICĂRI FĂCUTE ASTĂZI**
