@@ -361,6 +361,31 @@ const useMaintenanceCalculation = ({
             }
             break;
 
+          case 'cotaParte':
+          case 'cotaParteIndiviza':
+            // Proporțional cu cota parte indiviză
+            // Calculează ÎNTOTDEAUNA din surface, bazat pe totalul participanților
+            const totalSurf = participatingApartments.reduce((s, ap) => s + (parseFloat(ap.surface) || 0), 0);
+
+            const totalCotiParti = participatingApartments.reduce(
+              (sum, a) => {
+                if (a.surface && totalSurf > 0) {
+                  const cota = parseFloat(((parseFloat(a.surface) / totalSurf) * 100).toFixed(4));
+                  return sum + cota;
+                }
+                return sum;
+              },
+              0
+            );
+
+            if (totalCotiParti > 0 && apt.surface && totalSurf > 0) {
+              const aptCota = parseFloat(((parseFloat(apt.surface) / totalSurf) * 100).toFixed(4));
+              apartmentShare = (groupDifference / totalCotiParti) * aptCota;
+            } else {
+              apartmentShare = 0;
+            }
+            break;
+
           default:
             apartmentShare = 0;
         }
@@ -599,6 +624,44 @@ const useMaintenanceCalculation = ({
             }
             break;
 
+          case 'cotaParte':
+          case 'cotaParteIndiviza':
+            // 🎯 CALCUL PE COTĂ PARTE INDIVIZĂ
+            // IMPORTANT: Cotele părți se calculează ÎNTOTDEAUNA on-the-fly din surface,
+            // bazat pe nivelul grupului (asociație/bloc/scară), NU se folosește cotaParte salvată!
+
+            // Calculează suprafața totală din TOATE apartamentele grupului
+            const allGroupTotalSurface = groupApartments.reduce(
+              (sum, apt) => sum + (parseFloat(apt.surface) || 0),
+              0
+            );
+
+            // Calculează cotaParte pentru acest apartament bazat pe suprafața grupului
+            let apartmentCotaParte = 0;
+            if (apartment.surface && allGroupTotalSurface > 0) {
+              apartmentCotaParte = parseFloat(((parseFloat(apartment.surface) / allGroupTotalSurface) * 100).toFixed(4));
+            }
+
+            // Calculează total cote părți DOAR din apartamentele pentru reweighting
+            const totalCotaParteForReweighting = groupApartmentsForReweighting.reduce(
+              (sum, apt) => {
+                if (apt.surface && allGroupTotalSurface > 0) {
+                  const cota = parseFloat(((parseFloat(apt.surface) / allGroupTotalSurface) * 100).toFixed(4));
+                  return sum + cota;
+                }
+                return sum;
+              },
+              0
+            );
+
+            // Distribuie proporțional cu cota parte
+            if (totalCotaParteForReweighting > 0) {
+              apartmentExpense = (groupAmountToRedistribute / totalCotaParteForReweighting) * apartmentCotaParte;
+            } else {
+              apartmentExpense = 0;
+            }
+            break;
+
           default:
             apartmentExpense = 0;
         }
@@ -607,8 +670,18 @@ const useMaintenanceCalculation = ({
       });
 
       // REPONDERARE pentru acest grup - calculează greutățile și redistribuie
-      // IMPORTANT: Nu reponderăm pentru 'individual' sau 'consumption' - sumele sunt deja fixate!
-      if (distributionType !== 'individual' && distributionType !== 'consumption') {
+      // IMPORTANT: Nu reponderăm pentru 'individual' și 'consumption' - sumele sunt deja fixate!
+      // Pentru 'cotaParte', 'apartment', 'person' - aplicăm reponderare DOAR dacă există participări diferite
+
+      // Verifică dacă există apartamente cu participare diferită de 'integral'
+      const hasSpecialParticipation = groupApartmentsForReweighting.some(apartment => {
+        const participation = config?.apartmentParticipation?.[apartment.id];
+        return participation?.type === 'percentage';
+      });
+
+      if (distributionType !== 'individual' &&
+          distributionType !== 'consumption' &&
+          hasSpecialParticipation) {
         const groupApartmentsWithPercentage = [];
         const groupApartmentsIntegral = [];
 
@@ -616,17 +689,30 @@ const useMaintenanceCalculation = ({
           const participation = config?.apartmentParticipation?.[apartment.id];
           const baseAmount = distributionByApartment[apartment.id] || 0;
 
+          // Pentru cotaParte, folosește cota parte ca greutate, nu suma calculată
+          let baseWeight = baseAmount;
+          if (distributionType === 'cotaParte' || distributionType === 'cotaParteIndiviza') {
+            // Calculează ÎNTOTDEAUNA cotaParte din surface bazat pe TOATE apartamentele grupului
+            const allGroupTotalSurf = groupApartments.reduce((s, a) => s + (parseFloat(a.surface) || 0), 0);
+            let aptCotaParte = 0;
+            if (apartment.surface && allGroupTotalSurf > 0) {
+              aptCotaParte = parseFloat(((parseFloat(apartment.surface) / allGroupTotalSurf) * 100).toFixed(4));
+            }
+            baseWeight = aptCotaParte; // Folosește cotaParte ca greutate
+            console.log(`🔧 [Prep Reponderare] Apt ${apartment.number}: cotaParte=${aptCotaParte}%, baseAmount=${baseAmount.toFixed(2)}, participation=${participation?.type || 'integral'}`);
+          }
+
           if (participation?.type === 'percentage') {
             groupApartmentsWithPercentage.push({
               id: apartment.id,
-              baseAmount,
+              baseAmount: baseWeight,
               percent: participation.value
             });
           } else {
             // Integral (implicit) - participă la reponderare cu 100%
             groupApartmentsIntegral.push({
               id: apartment.id,
-              baseAmount,
+              baseAmount: baseWeight,
               percent: 100
             });
           }
@@ -649,7 +735,14 @@ const useMaintenanceCalculation = ({
           // Redistribuie proporțional cu greutățile (păstrează suma totală a grupului)
           if (totalWeights > 0) {
             allGroupParticipating.forEach(apt => {
-              distributionByApartment[apt.id] = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
+              const finalAmount = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
+              distributionByApartment[apt.id] = finalAmount;
+
+              // Log pentru debugging
+              if (distributionType === 'cotaParte' || distributionType === 'cotaParteIndiviza') {
+                const aptData = groupApartmentsForReweighting.find(a => a.id === apt.id);
+                console.log(`📊 [Reponderare CotaParte] Apt ${aptData?.number}: weight=${weights[apt.id].toFixed(4)}, totalWeights=${totalWeights.toFixed(4)}, final=${finalAmount.toFixed(2)} RON`);
+              }
             });
           }
         }

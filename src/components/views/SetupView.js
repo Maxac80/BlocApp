@@ -1860,6 +1860,7 @@ return (
         stair={apartmentModalStair}
         blocks={blocks}
         stairs={stairs}
+        apartments={apartments}
         onSave={handleSaveApartment}
       />
     </div>

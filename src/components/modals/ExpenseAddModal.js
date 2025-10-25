@@ -403,12 +403,14 @@ const ExpenseAddModal = ({
                   <option value="individual">Pe apartament (individual)</option>
                   <option value="person">Pe persoană</option>
                   <option value="consumption">Pe consum</option>
+                  <option value="cotaParte">Pe cotă parte indiviză</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.distributionType === 'apartment' && 'Cheltuiala se împarte egal între toate apartamentele'}
                   {localConfig.distributionType === 'individual' && 'Fiecare apartament are suma proprie'}
                   {localConfig.distributionType === 'person' && 'Cheltuiala se împarte pe numărul de persoane'}
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
+                  {localConfig.distributionType === 'cotaParte' && 'Cheltuiala se distribuie proporțional cu cota parte indiviză (% din suprafața utilă totală)'}
                 </p>
               </div>
 

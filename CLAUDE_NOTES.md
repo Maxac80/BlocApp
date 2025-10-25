@@ -1,5 +1,123 @@
 ---
 
+### ✨ **IMPLEMENTARE: DISTRIBUȚIE PE COTĂ PARTE INDIVIZĂ - 26 OCTOMBRIE 2025**
+
+#### **CERINȚĂ NOUĂ**
+Implementare distribuție cheltuieli pe **cotă parte indiviză** (proporțional cu suprafața utilă a apartamentelor).
+
+#### **MODIFICĂRI FĂCUTE**
+
+**1. CALCUL ȘI SALVARE COTĂ PARTE**
+- **Fișier**: `src/components/modals/ApartmentModal.js`
+  - Adăugat prop `apartments` pentru calcul total suprafață
+  - Calcul live cotă parte când se modifică suprafața
+  - Formula: `cotaParte = (surface / totalSurface) × 100`
+  - Afișare vizuală: "20.0000% (60 mp / 300.00 mp)"
+  - Salvare automată în `apartmentData.cotaParte`
+  - **IMPORTANT**: Cotele salvate sunt la nivel de SCARĂ (nu se folosesc în calcule!)
+
+**2. HELPER UTILITIES**
+- **Fișier NOU**: `src/utils/cotaParteCalculator.js`
+  - `calculateCotaParte(surface, totalSurface)` - calcul cotă parte
+  - `formatCotaParte(cotaParte, surface, totalSurface)` - formatare afișare
+  - `calculateTotalSurface(apartments)` - suma suprafețelor
+  - `validateSurfaces(apartments)` - validare suprafețe completate
+  - `recalculateAllCotiParti(apartments)` - recalcul toate cotele
+  - `hasCotaParte(apartment)` - verificare cotă parte validă
+
+**3. CONFIGURARE CHELTUIALĂ**
+- **Fișier**: `src/components/modals/ExpenseConfigModal.js`
+  - Adăugat opțiune "Pe cotă parte indiviză" în dropdown distribuție (linia ~138)
+  - Validare: verifică că TOATE apartamentele au suprafață completată
+  - Alert detaliat dacă lipsesc suprafețe (cu lista apartamentelor și pași rezolvare)
+  - **Fișier**: `src/components/modals/ExpenseAddModal.js`
+  - Adăugat opțiune "Pe cotă parte indiviză" în dropdown (linia 406)
+
+**4. DISTRIBUȚIE CHELTUIALĂ**
+- **Fișier**: `src/components/modals/ExpenseEntryModal.js`
+  - Secțiune nouă pentru input sume (linii 975-1186)
+  - Suport pentru toate modurile: total, per_block, per_stair
+  - Integrare cu sistemul de facturi (separate/unice)
+  - Validare în `handleSubmit` (linii 216-240)
+  - Afișare în info box: "Pe cotă parte indiviză" (linia 410)
+
+**5. LOGICA DE CALCUL PRINCIPALĂ**
+- **Fișier**: `src/hooks/useMaintenanceCalculation.js`
+
+  **a) Calcul Distribuție (linii 635-671)**:
+  - **CRUCIAL**: Cotele părți se calculează ÎNTOTDEAUNA on-the-fly din `surface`
+  - **NU se folosește** câmpul `cotaParte` salvat (e calculat la nivel de scară!)
+  - Calcul bazat pe nivelul grupului:
+    - Pe asociație → surface_apt / total_surface_ASOCIAȚIE × 100
+    - Per bloc → surface_apt / total_surface_BLOC × 100
+    - Per scară → surface_apt / total_surface_SCARĂ × 100
+  - Formula: `apartmentExpense = (groupAmountToRedistribute / totalCotaParteForReweighting) × apartmentCotaParte`
+
+  **b) Calcul Diferențe (linii 364-387)**:
+  - Calculează cotele părți on-the-fly din surface
+  - Distribuie diferențe proporțional cu cotele părți
+  - Formula: `apartmentShare = (groupDifference / totalCotiParti) × aptCota`
+
+  **c) Reponderare (linii 683-760)**:
+  - Se aplică DOAR dacă există participări procentuale (`hasSpecialParticipation`)
+  - Dacă toate apartamentele sunt integrale → NU intră în reponderare
+  - Pentru cotaParte: folosește cota parte ca greutate (bazată pe surface la nivel de grup)
+  - Formula greutate: `baseWeight = (surface / totalSurfaceGrup) × 100`
+
+**6. AFIȘARE ÎN UI**
+- **Fișier**: `src/components/expenses/ExpenseList.js`
+  - Adăugat "Pe cotă parte indiviză" în header distribuție (linia 924)
+- **Tabel detaliat**: Coloanele apar automat prin mecanismul `expenseDetails`
+
+#### **PROBLEME ÎNTÂLNITE ȘI REZOLVĂRI**
+
+**Problema 1: Sume greșite (17.43 în loc de 20.00)**
+- **Cauză**: Intrare în reponderare chiar dacă toate apartamentele erau integrale
+- **Rezolvare**: Adăugat verificare `hasSpecialParticipation` înainte de reponderare (linii 687-691)
+
+**Problema 2: Sume diferite pentru apartamente cu aceeași suprafață**
+- **Cauză**: Câmpul `cotaParte` salvat era calculat la nivel de SCARĂ
+  - Exemplu: 80mp din 320mp (scară) = 25%, dar trebuia 80mp din 1280mp (asociație) = 6.25%
+- **Rezolvare CRITICĂ**: Ignora complet `apartment.cotaParte` salvat și calculează ÎNTOTDEAUNA on-the-fly din `surface` bazat pe nivelul grupului
+
+**Problema 3: Cotele părți diferite per scară/bloc/asociație**
+- **Cauză**: Confuzie despre ce nivel folosim pentru calcul
+- **Rezolvare**: `groupApartments` conține deja apartamentele corecte bazat pe `receptionMode`
+  - 'total' → toate apartamentele asociației
+  - 'per_block' → doar apartamentele din blocul X
+  - 'per_stair' → doar apartamentele din scara Y
+- Calcul: `allGroupTotalSurface = groupApartments.reduce(sum surface)`
+
+#### **LECȚII ÎNVĂȚATE**
+
+1. **Cotele părți sunt CONTEXTUALE**:
+   - Aceeași apartament are cote părți diferite pe asociație (6.25%) vs scară (25%)
+   - NU pot fi salvate ca un singur număr în DB - trebuie calculate on-the-fly!
+
+2. **Reponderarea trebuie aplicată selectiv**:
+   - DOAR când există participări diferite (percentage, fixed, excluded)
+   - Dacă toate sunt integrale, suma calculată inițial este finală
+
+3. **Greutățile în reponderare**:
+   - Pentru `apartment`/`person` → greutate = suma calculată
+   - Pentru `cotaParte` → greutate = cota parte (%) bazată pe surface
+
+4. **Validare completitudine date**:
+   - Pentru cotă parte, TOATE apartamentele trebuie să aibă `surface` completată
+   - Alert-uri detaliate cu lista apartamentelor problematice și pași de rezolvare
+
+#### **FIȘIERE MODIFICATE**
+- `src/components/modals/ApartmentModal.js` - calcul și afișare cotă parte
+- `src/components/views/SetupView.js` - pass prop `apartments`
+- `src/components/modals/ExpenseConfigModal.js` - validare și opțiune nouă
+- `src/components/modals/ExpenseAddModal.js` - opțiune în dropdown
+- `src/components/modals/ExpenseEntryModal.js` - input sume și validare
+- `src/components/expenses/ExpenseList.js` - afișare în header
+- `src/hooks/useMaintenanceCalculation.js` - logică calcul distribuție, diferențe, reponderare
+- `src/utils/cotaParteCalculator.js` - **NOU** - helper utilities
+
+---
+
 ### 🐛 **BUG FIXES: PARTICIPATION CALCULATIONS & UI RESTRUCTURING - 25 OCTOMBRIE 2025**
 
 #### **MODIFICĂRI FĂCUTE ASTĂZI**

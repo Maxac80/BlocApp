@@ -10,6 +10,7 @@ const ApartmentModal = ({
   stair, // pentru add
   blocks, // pentru a găsi blocul
   stairs, // toate scările pentru a găsi scara apartamentului în editare
+  apartments, // ADĂUGAT: pentru calcul cotă parte
   onSave
 }) => {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ const ApartmentModal = ({
     email: '',
     phone: ''
   });
+  const [totalSurface, setTotalSurface] = useState(0); // ADĂUGAT: pentru calcul cotă parte
 
   // Resetează sau populează datele când se deschide modalul
   useEffect(() => {
@@ -52,6 +54,41 @@ const ApartmentModal = ({
     }
   }, [isOpen, mode, apartment]);
 
+  // ADĂUGAT: Calculează suprafața totală pentru grupul relevant (scară)
+  useEffect(() => {
+    if (!isOpen || !apartments) {
+      setTotalSurface(0);
+      return;
+    }
+
+    // Determină scara curentă
+    let currentStairId = null;
+    if (mode === 'edit' && apartment) {
+      currentStairId = apartment.stairId;
+    } else if (mode === 'add' && stair) {
+      currentStairId = stair.id;
+    }
+
+    if (!currentStairId) {
+      setTotalSurface(0);
+      return;
+    }
+
+    // Calculează suprafața totală a apartamentelor din aceeași scară
+    const relevantApartments = apartments.filter(apt => apt.stairId === currentStairId);
+    let total = relevantApartments.reduce((sum, apt) => sum + (parseFloat(apt.surface) || 0), 0);
+
+    // Dacă suntem în modul edit, exclude suprafața veche a apartamentului curent și adaugă cea nouă
+    if (mode === 'edit' && apartment) {
+      total = total - (parseFloat(apartment.surface) || 0) + (parseFloat(formData.surface) || 0);
+    } else if (mode === 'add') {
+      // Dacă suntem în modul add, adaugă suprafața nouă
+      total = total + (parseFloat(formData.surface) || 0);
+    }
+
+    setTotalSurface(total);
+  }, [isOpen, mode, apartment, stair, apartments, formData.surface]);
+
 
   if (!isOpen) return null;
 
@@ -76,12 +113,19 @@ const ApartmentModal = ({
       return;
     }
 
+    // ADĂUGAT: Calculează cota parte dacă există suprafață
+    let cotaParte = null;
+    if (formData.surface && totalSurface > 0) {
+      cotaParte = parseFloat(((parseFloat(formData.surface) / totalSurface) * 100).toFixed(4));
+    }
+
     const apartmentData = {
       number: parseInt(formData.number),
       owner: formData.owner.trim(),
       persons: parseInt(formData.persons),
       apartmentType: formData.apartmentType?.trim() || null,
       surface: formData.surface ? parseFloat(formData.surface) : null,
+      cotaParte: cotaParte, // ADĂUGAT: Salvează cota parte calculată
       heatingSource: formData.heatingSource?.trim() || null,
       email: formData.email?.trim() || null,
       phone: formData.phone?.trim() || null
@@ -204,7 +248,7 @@ const ApartmentModal = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Suprafața (mp)
+                      Suprafața utilă (mp)
                     </label>
                     <input
                       type="text"
@@ -237,6 +281,29 @@ const ApartmentModal = ({
                     </select>
                   </div>
                 </div>
+
+                {/* ADĂUGAT: Cotă parte indiviză - calculată automat */}
+                {formData.surface && (
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                      📊 Cotă parte indiviză (calculată automat)
+                    </label>
+                    <div className="text-lg font-semibold text-blue-700">
+                      {totalSurface > 0 ? (
+                        <>
+                          {((parseFloat(formData.surface) / totalSurface) * 100).toFixed(4)}%
+                          <span className="text-sm font-normal text-blue-600 ml-2">
+                            ({formData.surface} mp / {totalSurface.toFixed(2)} mp)
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-blue-600">
+                          Completați suprafețele celorlalte apartamente pentru calcul complet
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <h4 className="text-base font-medium text-gray-800 mb-3 mt-4">Informații de contact</h4>
 

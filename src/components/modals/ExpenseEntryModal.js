@@ -213,6 +213,31 @@ const ExpenseEntryModal = ({
         }
         newExpense.amountsByStair = amounts;
       }
+    } else if (config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza') {
+      // cotaParte - verificăm dacă e total sau per_block/per_stair
+      if (config.receptionMode === 'total') {
+        if (!totalAmount) {
+          alert('Completează suma totală');
+          return;
+        }
+        newExpense.amount = totalAmount;
+      } else if (config.receptionMode === 'per_block') {
+        // Verifică că toate blocurile au sume
+        const missingBlocks = (config.appliesTo?.blocks || []).filter(blockId => !amounts[blockId]);
+        if (missingBlocks.length > 0) {
+          alert('Completează sumele pentru toate blocurile');
+          return;
+        }
+        newExpense.amountsByBlock = amounts;
+      } else if (config.receptionMode === 'per_stair') {
+        // Verifică că toate scările au sume
+        const missingStairs = (config.appliesTo?.stairs || []).filter(stairId => !amounts[stairId]);
+        if (missingStairs.length > 0) {
+          alert('Completează sumele pentru toate scările');
+          return;
+        }
+        newExpense.amountsByStair = amounts;
+      }
     } else {
       // apartment, person - verificăm dacă e total sau per_block/per_stair
       if (config.receptionMode === 'total') {
@@ -381,7 +406,8 @@ const ExpenseEntryModal = ({
                         config.distributionType === 'apartment' ? 'Pe apartament (egal)' :
                         config.distributionType === 'person' ? 'Pe persoană' :
                         config.distributionType === 'consumption' ? `Pe consum (${getConsumptionUnit(config)})` :
-                        config.distributionType === 'individual' ? 'Pe apartament (individual)' : config.distributionType
+                        config.distributionType === 'individual' ? 'Pe apartament (individual)' :
+                        config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza' ? 'Pe cotă parte indiviză' : config.distributionType
                       }
                     </div>
                     {config.supplierName ? (
@@ -841,6 +867,219 @@ const ExpenseEntryModal = ({
                     )}
 
                     {/* MODE: PER_STAIR - DOAR pentru scările bifate (APARTMENT/PERSON) */}
+                    {config.receptionMode === 'per_stair' && (
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-gray-700 mb-2">
+                          📊 Sume per scară *
+                        </div>
+                        {blocksWithStairs.map(block => {
+                          const blockStairs = block.stairs.filter(stair =>
+                            config.appliesTo?.stairs?.includes(stair.id)
+                          );
+                          if (blockStairs.length === 0) return null;
+
+                          return (
+                            <div key={block.id} className="space-y-2">
+                              <div className="text-xs font-medium text-gray-600">{block.name}</div>
+                              {blockStairs.map(stair => {
+                                const hasInvoice = separateInvoices[stair.id];
+                                return (
+                                  <div key={stair.id} className="ml-4">
+                                    <label className="block text-sm text-gray-700 mb-1">
+                                      🏢 {stair.name}
+                                    </label>
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={amounts[stair.id] || ''}
+                                        onChange={(e) => setAmounts({ ...amounts, [stair.id]: e.target.value })}
+                                        placeholder="Suma (RON)"
+                                        className="flex-1 p-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                      />
+                                      {invoiceMode === 'separate' && config.supplierId && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenInvoiceModal(stair.id, stair.name)}
+                                          className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                                            hasInvoice
+                                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                          }`}
+                                          title={hasInvoice ? `Factură #${hasInvoice.invoiceNumber}` : 'Adaugă factură'}
+                                        >
+                                          {hasInvoice ? '📎 Editează' : 'Adaugă factură'}
+                                        </button>
+                                      )}
+                                    </div>
+                                    {hasInvoice && invoiceMode === 'separate' && (
+                                      <div className="text-xs text-green-700 mt-1 ml-1">
+                                        ✓ Factură #{hasInvoice.invoiceNumber}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+
+                        {/* Mesaj informativ pentru facturi separate */}
+                        {invoiceMode === 'separate' && config.supplierId && (
+                          <div className="mt-3 p-3 border border-blue-200 rounded-lg bg-blue-50">
+                            <div className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Facturi separate per scară
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Buton pentru Factură unică - când invoiceMode === 'single' */}
+                    {(config.receptionMode === 'per_block' || config.receptionMode === 'per_stair') && config.supplierId && invoiceMode === 'single' && (
+                      <div className="border-t pt-4 mt-4">
+                        <div className="flex items-center justify-between p-3 border border-blue-200 rounded-lg bg-blue-50">
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Factură unică cu sume per {config.receptionMode === 'per_block' ? 'bloc' : 'scară'}
+                              </div>
+                              {singleInvoice && (
+                                <div className="text-xs text-green-700 mt-1">
+                                  ✓ Factură #{singleInvoice.invoiceNumber}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenInvoiceModal('single', 'Factură unică')}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                                singleInvoice
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {singleInvoice ? '📎 Editează' : 'Adaugă factură'}
+                            </button>
+                          </div>
+                      </div>
+                    )}
+
+                    {/* Mesaj când nu există furnizor pentru per_block/per_stair */}
+                    {(config.receptionMode === 'per_block' || config.receptionMode === 'per_stair') && !config.supplierId && (
+                      <div className="border-t pt-4 mt-4">
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <span className="text-amber-600 text-lg">⚠️</span>
+                            <div className="text-sm">
+                              <div className="text-amber-800 font-medium mb-1">
+                                Furnizor neconfigurat pentru "{selectedExpense}"
+                              </div>
+                              <div className="text-amber-700">
+                                Pentru a putea adăuga facturi, această cheltuială trebuie să aibă un furnizor asociat.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedExpenseForConfig(selectedExpense);
+                                  setShowExpenseConfig(true);
+                                  onClose();
+                                }}
+                                className="mt-2 text-sm text-amber-800 font-medium underline hover:text-amber-900"
+                              >
+                                📋 Configurează acum
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* COTA PARTE - verifică și receptionMode */}
+                {(config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza') && (
+                  <>
+                    {/* MODE: TOTAL */}
+                    {config.receptionMode === 'total' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Suma totală (RON) *
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={totalAmount}
+                          onChange={(e) => setTotalAmount(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* MODE: PER_BLOCK - DOAR pentru blocurile bifate */}
+                    {config.receptionMode === 'per_block' && (
+                      <>
+                        <div className="space-y-3">
+                          <div className="text-sm font-medium text-gray-700 mb-2">
+                            📊 Sume per bloc *
+                          </div>
+                          {config.appliesTo?.blocks?.map(blockId => {
+                            const block = blocks.find(b => b.id === blockId);
+                            if (!block) return null;
+                            const hasInvoice = separateInvoices[blockId];
+                            return (
+                              <div key={blockId}>
+                                <label className="block text-sm text-gray-700 mb-1">
+                                  🏢 {block.name}
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={amounts[blockId] || ''}
+                                    onChange={(e) => setAmounts({ ...amounts, [blockId]: e.target.value })}
+                                    placeholder="Suma (RON)"
+                                    className="flex-1 p-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  />
+                                  {invoiceMode === 'separate' && config.supplierId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenInvoiceModal(blockId, block.name)}
+                                      className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                                        hasInvoice
+                                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                      }`}
+                                      title={hasInvoice ? `Factură #${hasInvoice.invoiceNumber}` : 'Adaugă factură'}
+                                    >
+                                      {hasInvoice ? '📎 Editează' : 'Adaugă factură'}
+                                    </button>
+                                  )}
+                                </div>
+                                {hasInvoice && invoiceMode === 'separate' && (
+                                  <div className="text-xs text-green-700 mt-1 ml-1">
+                                    ✓ Factură #{hasInvoice.invoiceNumber}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Mesaj informativ pentru facturi separate */}
+                          {invoiceMode === 'separate' && config.supplierId && (
+                            <div className="mt-3 p-3 border border-blue-200 rounded-lg bg-blue-50">
+                              <div className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Facturi separate per bloc
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* MODE: PER_STAIR - DOAR pentru scările bifate (COTA PARTE) */}
                     {config.receptionMode === 'per_stair' && (
                       <div className="space-y-3">
                         <div className="text-sm font-medium text-gray-700 mb-2">

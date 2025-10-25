@@ -921,6 +921,7 @@ const ExpenseList = ({
                             {config.distributionType === "person" && "Pe persoană"}
                             {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
+                            {(config.distributionType === "cotaParte" || config.distributionType === "cotaParteIndiviza") && "Pe cotă parte indiviză"}
                           </span>
                         </div>
 

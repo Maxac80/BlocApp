@@ -190,6 +190,38 @@ const ExpenseConfigModal = ({
         return;
       }
 
+      // ADĂUGAT: Validare suprafețe pentru cotă parte indiviză
+      if (localConfig.distributionType === 'cotaParte') {
+        const apartments = getAssociationApartments();
+
+        // Verifică apartamente fără suprafață
+        const apartmentsWithoutSurface = apartments.filter(apt => !apt.surface || apt.surface <= 0);
+
+        if (apartmentsWithoutSurface.length > 0) {
+          const apartmentNumbers = apartmentsWithoutSurface
+            .map(apt => `Apt ${apt.number}`)
+            .join(', ');
+
+          alert(
+            `⚠️ ATENȚIE: Distribuția pe cotă parte indiviză necesită suprafața utilă completată la TOATE apartamentele!\n\n` +
+            `Apartamente fără suprafață (${apartmentsWithoutSurface.length}): ${apartmentNumbers}\n\n` +
+            `📝 Pași pentru rezolvare:\n` +
+            `1. Accesați secțiunea "Apartamente" din meniul lateral\n` +
+            `2. Editați fiecare apartament și completați câmpul "Suprafața utilă (mp)"\n` +
+            `3. Reveniți aici pentru a configura distribuția pe cotă parte indiviză\n\n` +
+            `💡 Suprafața utilă este necesară pentru calculul corect al cotei părți (% din total).`
+          );
+          return;
+        }
+
+        // Verifică că există cel puțin o suprafață validă
+        const totalSurface = apartments.reduce((sum, apt) => sum + (apt.surface || 0), 0);
+        if (totalSurface === 0) {
+          alert('⚠️ Suprafața totală este 0. Adăugați suprafața utilă la apartamente.');
+          return;
+        }
+      }
+
       // Validare participări - verifică dacă există sume/procente necompletate
       const apartments = getAssociationApartments();
       const incompleteParticipations = [];
@@ -515,12 +547,14 @@ const ExpenseConfigModal = ({
                   <option value="individual">Pe apartament (individual)</option>
                   <option value="person">Pe persoană</option>
                   <option value="consumption">Pe consum</option>
+                  <option value="cotaParte">Pe cotă parte indiviză</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.distributionType === 'apartment' && 'Cheltuiala se împarte egal între toate apartamentele'}
                   {localConfig.distributionType === 'individual' && 'Fiecare apartament are suma proprie'}
                   {localConfig.distributionType === 'person' && 'Cheltuiala se împarte pe numărul de persoane'}
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
+                  {localConfig.distributionType === 'cotaParte' && 'Cheltuiala se distribuie proporțional cu cota parte indiviză (% din suprafața utilă totală)'}
                 </p>
               </div>
 
