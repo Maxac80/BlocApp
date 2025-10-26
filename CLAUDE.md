@@ -101,3 +101,122 @@ The application's core functionality is divided across specialized hooks:
 - `useSuppliers` - Vendor and supplier management
 - `useMonthManagement` - Monthly operations and status tracking
 - `useIncasari` - Payment collection management
+
+## Layout and Scroll Management Patterns
+
+### Horizontal Scroll Isolation for Wide Tables
+
+When dealing with tables that have many columns (e.g., MaintenanceTableDetailed with apartment data + multiple expense columns), follow these patterns to isolate horizontal scroll to the table container without deforming the entire page:
+
+**Critical Requirements:**
+1. **Root Container**: Must have `overflow-hidden` to prevent page-wide horizontal scroll
+   - Example: `BlocApp.js` main content container has `overflow-hidden`
+
+2. **Page Layout**: Use Flexbox with fixed viewport height
+   - Container: `h-screen flex flex-col overflow-hidden`
+   - Scrolling area: `flex-1 overflow-y-auto overflow-x-hidden`
+
+3. **Table Container**: Wrap table in scroll container
+   - Wrapper: `overflow-x-auto overflow-y-auto` with `maxHeight` constraint
+   - Table: Calculate explicit `width` based on column count and widths
+
+4. **Overflow Context Hierarchy**:
+   ```
+   Page Container (overflow-hidden)
+   └── Main Content (flex-1 overflow-y-auto overflow-x-hidden)
+       └── Table Card (overflow-hidden on card)
+           └── Scroll Wrapper (overflow-x-auto overflow-y-auto)
+               └── Table (explicit width)
+   ```
+
+**Example from MaintenanceView.js:**
+```javascript
+// Page container (line 806)
+<div className="h-screen flex flex-col overflow-hidden">
+  {/* Scrolling content area (line 815) */}
+  <div className="flex-1 overflow-y-auto overflow-x-hidden pt-2 px-6 pb-6">
+    {/* Table card (line 1018) */}
+    <div className="rounded-xl shadow-lg border-2 overflow-hidden">
+      {/* Scroll container (line 1115-1119) */}
+      <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '70vh' }}>
+        {/* Table with calculated width */}
+        <MaintenanceTableDetailed ... />
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### Sticky Positioning for Navigation Elements
+
+When using sticky positioning for tabs or headers within scrollable containers:
+
+**Critical Requirements:**
+1. **Remove Overflow Constraints**: Parent containers must NOT have `overflow-hidden` or `overflow-x-hidden` as these create new scroll contexts that break sticky positioning
+
+2. **Explicit Position**: Use both className and inline style for reliability
+   - `className="sticky top-0 z-10"`
+   - `style={{ position: 'sticky' }}`
+
+3. **Visual Separation**: Add shadows for better UX when sticky
+   - `shadow-md` or `shadow-lg` for stuck elements
+   - `bg-white` to ensure content scrolls behind cleanly
+
+4. **Z-Index Layering**: Ensure proper stacking
+   - Stair tabs: `z-10`
+   - View mode tabs (Simplificat/Detaliat): `z-20` (higher to appear above)
+
+**Example from MaintenanceView.js:**
+```javascript
+// Stair tabs (line 945)
+<div
+  className="sticky top-0 z-10 bg-white rounded-t-xl shadow-md border-b border-gray-200 mb-6"
+  style={{ position: 'sticky' }}
+>
+  {/* Tab buttons */}
+</div>
+
+// View mode tabs (line 1089)
+<div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
+  {/* Simplificat/Detaliat buttons */}
+</div>
+```
+
+**Common Pitfalls:**
+- ❌ Adding `overflow-hidden` to wrapper containers breaks sticky positioning
+- ❌ Using `max-w-full` on parent containers can interfere with sticky behavior
+- ❌ Forgetting to set `background-color` causes content to show through when scrolling
+- ❌ Not setting adequate `z-index` causes sticky elements to be covered by other content
+
+### Table Column Width Management
+
+For tables with dynamic columns and text wrapping:
+
+1. **Column Headers with Long Text**: Remove `whitespace-nowrap` and set `maxWidth`
+   ```javascript
+   <th
+     className="px-3 py-3 text-left text-sm font-medium text-gray-700"
+     style={{ minWidth: '100px', maxWidth: '150px' }}
+   >
+     {expense.name} {/* Text will wrap on multiple lines */}
+   </th>
+   ```
+
+2. **Table Width Calculation**: Calculate minimum width based on all columns
+   ```javascript
+   const minTableWidth =
+     100 + // Apartment
+     150 + // Owner
+     90 +  // Persons
+     // ... other fixed columns
+     (expenses.length * 120) + // Dynamic expense columns
+     (isMonthReadOnly ? 240 : 0); // Conditional columns
+   ```
+
+3. **Table Layout**: Use explicit width with auto layout
+   ```javascript
+   <table
+     className="border-collapse"
+     style={{ width: `${minTableWidth}px`, tableLayout: 'auto' }}
+   >
+   ```

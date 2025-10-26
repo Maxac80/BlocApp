@@ -521,7 +521,7 @@ useEffect(() => {
       <Overlay />
       
       {/* Conținut principal */}
-      <div className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out ${
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
         {/* Buton mobile menu */}

@@ -10,32 +10,35 @@ const MaintenanceTableDetailed = ({
   onOpenPaymentModal,
   isHistoricMonth = false
 }) => {
+  // Calculează lățimea minimă necesară pentru toate coloanele
+  const minTableWidth = 100 + 150 + 90 + 120 + 100 + 120 + 100 + 120 + (expenses.length * 120) + (isMonthReadOnly ? 240 : 0);
+
   return (
-    <table className="w-full">
-        <thead className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
+    <table className="border-collapse" style={{ width: `${minTableWidth}px`, tableLayout: 'auto' }}>
+        <thead className={`sticky top-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
           <tr>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '100px' }}>
               Apartament
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '150px' }}>
               Proprietar
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '90px' }}>
               Persoane
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '120px' }}>
               Întreținere Curentă
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '100px' }}>
               Restanță
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '120px' }}>
               Total Întreținere
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '100px' }}>
               Penalități
             </th>
-            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+            <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '120px' }}>
               Total Datorat
             </th>
             {expenses.map(expense => {
@@ -49,6 +52,7 @@ const MaintenanceTableDetailed = ({
                   <th
                     className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-blue-50"
                     title={expense.name}
+                    style={{ minWidth: '100px', maxWidth: '150px' }}
                   >
                     {expense.name}
                   </th>
@@ -56,6 +60,7 @@ const MaintenanceTableDetailed = ({
                     <th
                       className="px-3 py-3 text-left text-sm font-medium text-gray-700 bg-orange-50"
                       title={`${expense.name} - Diferență`}
+                      style={{ minWidth: '100px', maxWidth: '150px' }}
                     >
                       {expense.name} - Diferență
                     </th>
@@ -65,11 +70,11 @@ const MaintenanceTableDetailed = ({
             })}
             {isMonthReadOnly && (
               <>
-                <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '120px' }}>
                   Status
                 </th>
                 {!isHistoricMonth && (
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '120px' }}>
                     Acțiuni
                   </th>
                 )}
@@ -80,28 +85,28 @@ const MaintenanceTableDetailed = ({
         <tbody className="divide-y">
         {maintenanceData.map(data => (
           <tr key={data.apartmentId} className="hover:bg-gray-50">
-            <td className="px-3 py-3 font-semibold">
+            <td className="px-3 py-3 font-semibold whitespace-nowrap">
               Ap. {data.apartment}
             </td>
-            <td className="px-3 py-3 text-blue-600 font-medium text-sm">
+            <td className="px-3 py-3 text-blue-600 font-medium text-sm whitespace-nowrap">
               {data.owner}
             </td>
-            <td className="px-3 py-3 text-center">
+            <td className="px-3 py-3 text-center whitespace-nowrap">
               {data.persons}
             </td>
-            <td className="px-3 py-3 font-bold text-indigo-600">
+            <td className="px-3 py-3 font-bold text-indigo-600 whitespace-nowrap">
               {data.currentMaintenance.toFixed(2)}
             </td>
-            <td className="px-3 py-3 font-bold text-red-600">
+            <td className="px-3 py-3 font-bold text-red-600 whitespace-nowrap">
               {data.restante.toFixed(2)}
             </td>
-            <td className="px-3 py-3 font-bold text-purple-600">
+            <td className="px-3 py-3 font-bold text-purple-600 whitespace-nowrap">
               {data.totalMaintenance.toFixed(2)}
             </td>
-            <td className="px-3 py-3 font-bold text-orange-600">
+            <td className="px-3 py-3 font-bold text-orange-600 whitespace-nowrap">
               {data.penalitati.toFixed(2)}
             </td>
-            <td className="px-3 py-3 font-bold text-gray-800 text-lg">
+            <td className="px-3 py-3 font-bold text-gray-800 text-lg whitespace-nowrap">
               {data.totalDatorat.toFixed(2)}
             </td>
             {expenses.map(expense => {
@@ -111,14 +116,14 @@ const MaintenanceTableDetailed = ({
 
               return (
                 <React.Fragment key={expense.id}>
-                  <td className="px-3 py-3 font-bold text-sm bg-blue-50">
+                  <td className="px-3 py-3 font-bold text-sm bg-blue-50 whitespace-nowrap">
                     {data.expenseDetails?.[expense.name] !== undefined ?
                       data.expenseDetails[expense.name].toFixed(2) :
                       '0.00'
                     }
                   </td>
                   {hasDifferences && (
-                    <td className="px-3 py-3 font-bold text-sm bg-orange-50">
+                    <td className="px-3 py-3 font-bold text-sm bg-orange-50 whitespace-nowrap">
                       {data.expenseDifferenceDetails?.[expense.name] !== undefined ?
                         data.expenseDifferenceDetails[expense.name].toFixed(2) :
                         '0.00'
@@ -130,7 +135,7 @@ const MaintenanceTableDetailed = ({
             })}
             {isMonthReadOnly && (
               <>
-                <td className="px-3 py-3">
+                <td className="px-3 py-3 whitespace-nowrap">
                   <PaymentStatusDetail
                     paymentStatus={data.paymentStatus}
                     isPaid={data.isPaid}
@@ -140,8 +145,8 @@ const MaintenanceTableDetailed = ({
                   />
                 </td>
                 {!isHistoricMonth && (
-                  <td className="px-3 py-3">
-                    <button 
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <button
                       onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
                         apartmentId: data.apartmentId,
                         apartmentNumber: data.apartment,
@@ -168,27 +173,27 @@ const MaintenanceTableDetailed = ({
           </tr>
         ))}
       </tbody>
-        <tfoot className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
+        <tfoot className={`sticky bottom-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
-          <td colSpan="2" className="px-3 py-3 font-semibold">
+          <td colSpan="2" className="px-3 py-3 font-semibold whitespace-nowrap">
             TOTAL:
           </td>
-          <td className="px-3 py-3 font-bold text-gray-800 text-center">
+          <td className="px-3 py-3 font-bold text-gray-800 text-center whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
           </td>
-          <td className="px-3 py-3 font-bold text-indigo-600">
+          <td className="px-3 py-3 font-bold text-indigo-600 whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.currentMaintenance, 0).toFixed(2)}
           </td>
-          <td className="px-3 py-3 font-bold text-red-600">
+          <td className="px-3 py-3 font-bold text-red-600 whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.restante, 0).toFixed(2)}
           </td>
-          <td className="px-3 py-3 font-bold text-purple-600">
+          <td className="px-3 py-3 font-bold text-purple-600 whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.totalMaintenance, 0).toFixed(2)}
           </td>
-          <td className="px-3 py-3 font-bold text-orange-600">
+          <td className="px-3 py-3 font-bold text-orange-600 whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.penalitati, 0).toFixed(2)}
           </td>
-          <td className="px-3 py-3 font-bold text-gray-800 text-lg">
+          <td className="px-3 py-3 font-bold text-gray-800 text-lg whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
           </td>
           {expenses.map(expense => {
@@ -198,11 +203,11 @@ const MaintenanceTableDetailed = ({
 
             return (
               <React.Fragment key={expense.id}>
-                <td className="px-3 py-3 font-bold text-sm bg-blue-50">
+                <td className="px-3 py-3 font-bold text-sm bg-blue-50 whitespace-nowrap">
                   {maintenanceData.reduce((sum, d) => sum + (d.expenseDetails?.[expense.name] || 0), 0).toFixed(2)}
                 </td>
                 {hasDifferences && (
-                  <td className="px-3 py-3 font-bold text-sm bg-orange-50">
+                  <td className="px-3 py-3 font-bold text-sm bg-orange-50 whitespace-nowrap">
                     {maintenanceData.reduce((sum, d) => sum + (d.expenseDifferenceDetails?.[expense.name] || 0), 0).toFixed(2)}
                   </td>
                 )}

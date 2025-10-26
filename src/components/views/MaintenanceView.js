@@ -803,7 +803,7 @@ const MaintenanceView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-        <div className={`min-h-screen pt-2 px-6 pb-6 ${
+        <div className={`h-screen flex flex-col overflow-hidden ${
           monthType === 'current'
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
             : monthType === 'next'
@@ -812,7 +812,7 @@ const MaintenanceView = ({
             ? "bg-gradient-to-br from-gray-50 to-gray-100"
             : "bg-gradient-to-br from-indigo-50 to-blue-100"
         }`}>
-      <div className="w-full">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-2 px-6 pb-6">
         <DashboardHeader
           association={association}
           blocks={blocks}
@@ -942,7 +942,7 @@ const MaintenanceView = ({
           tabContent={
             <div className="pb-2">
               {/* Tab-uri pentru scări */}
-              <div className="sticky top-0 z-10 bg-white rounded-t-xl shadow-sm border-b border-gray-200 mb-6">
+              <div className="sticky top-0 z-10 bg-white rounded-t-xl shadow-md border-b border-gray-200 mb-6" style={{ position: 'sticky' }}>
                 <div className="flex overflow-x-auto">
                   {/* Tab "Toate" */}
                   <button
@@ -1015,7 +1015,7 @@ const MaintenanceView = ({
               {/* Tabelul de întreținere - card separat */}
               <div className="mx-2 mb-2">
                 {filteredMaintenanceData.length > 0 ? (
-                  <div className={`rounded-xl shadow-lg overflow-hidden border-2 ${
+                  <div className={`rounded-xl shadow-lg border-2 overflow-hidden ${
                     monthType === 'historic'
                       ? 'bg-gray-50 border-gray-300'
                       : isMonthReadOnly
@@ -1086,7 +1086,7 @@ const MaintenanceView = ({
                     </div>
 
                     {/* Tab-uri pentru vizualizarea tabelului */}
-                    <div className="bg-white shadow-sm border-b border-gray-200">
+                    <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
                       <div className="flex">
                         <button
                           onClick={() => setActiveMaintenanceTab("simple")}
@@ -1111,7 +1111,13 @@ const MaintenanceView = ({
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Container cu scroll izolat pentru tabel */}
+                    <div
+                      className="overflow-x-auto overflow-y-auto"
+                      style={{
+                        maxHeight: '70vh'
+                      }}
+                    >
                       {activeMaintenanceTab === "simple" ? (
                         <MaintenanceTableSimple
                           maintenanceData={filteredMaintenanceData}
