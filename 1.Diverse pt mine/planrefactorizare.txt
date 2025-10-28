@@ -1,0 +1,1956 @@
+# DOCUMENTAȚIE COMPLETĂ - Sistem Distribuție Cheltuieli BlocApp
+
+## CUPRINS
+
+1. [Matrice Completă - Toate Combinațiile](#matrice-completa)
+2. [Context Exemplu - Asociația Noastră](#context-exemplu)
+3. [Pe Apartament (Egal)](#pe-apartament)
+4. [Pe Persoană](#pe-persoana)
+5. [Pe Cotă Parte (Indiviză)](#pe-cota-parte)
+6. [Pe Consum (isUnitBased)](#pe-consum)
+7. [Sume Individuale](#sume-individuale)
+8. [Rezumat Final - Reguli Badge](#rezumat-final)
+
+---
+
+## MATRICE COMPLETĂ - Toate Combinațiile {#matrice-completa}
+
+| Distribuție | Sume Pe | Tab Activ | Știe Sumă? | Badge Afișat | Diferență Afișată |
+|-------------|---------|-----------|------------|--------------|-------------------|
+| apartment | asociație | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| apartment | asociație | Scară A | ❌ NU | ✅ Verde | ❌ Nu |
+| apartment | bloc | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| apartment | bloc | Scară A (1 scară/bloc) | ✅ DA | ✅ Verde | ❌ Nu |
+| apartment | bloc | Scară A (2+ scări/bloc) | ❌ NU | ✅ Verde | ❌ Nu |
+| apartment | scară | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| apartment | scară | Scară A | ✅ DA | ✅ Verde | ❌ Nu |
+| person | asociație | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| person | asociație | Scară A | ❌ NU | ✅ Verde | ❌ Nu |
+| person | bloc | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| person | bloc | Scară A (1 scară/bloc) | ✅ DA | ✅ Verde | ❌ Nu |
+| person | bloc | Scară A (2+ scări/bloc) | ❌ NU | ✅ Verde | ❌ Nu |
+| person | scară | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| person | scară | Scară A | ✅ DA | ✅ Verde | ❌ Nu |
+| cotaParte | asociație | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| cotaParte | asociație | Scară A | ❌ NU | ✅ Verde | ❌ Nu |
+| cotaParte | bloc | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| cotaParte | bloc | Scară A (1 scară/bloc) | ✅ DA | ✅ Verde | ❌ Nu |
+| cotaParte | bloc | Scară A (2+ scări/bloc) | ❌ NU | ✅ Verde | ❌ Nu |
+| cotaParte | scară | Toate | ✅ DA | ✅ Verde | ❌ Nu |
+| cotaParte | scară | Scară A | ✅ DA | ✅ Verde | ❌ Nu |
+| **consumption** | asociație | Toate | ✅ DA | ✅ Verde | ⚠️ DA (simplă + distribuită) |
+| **consumption** | asociație | Scară A | ❌ NU | ✅ Verde | ⚠️ DA (doar distribuită) |
+| **consumption** | bloc | Toate | ✅ DA | ✅ Verde | ⚠️ DA (simplă + distribuită) |
+| **consumption** | bloc | Scară A (1 scară/bloc) | ✅ DA | ✅ Verde | ⚠️ DA (simplă + distribuită) |
+| **consumption** | bloc | Scară A (2+ scări/bloc) | ❌ NU | ✅ Verde | ⚠️ DA (doar distribuită) |
+| **consumption** | scară | Toate | ✅ DA | ✅ Verde | ⚠️ DA (simplă + distribuită) |
+| **consumption** | scară | Scară A | ✅ DA | ✅ Verde | ⚠️ DA (simplă + distribuită) |
+| **individual** | asociație | Toate | ✅ DA | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | asociație | Scară A | ❌ NU | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | bloc | Toate | ✅ DA | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | bloc | Scară A (1 scară/bloc) | ✅ DA | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | bloc | Scară A (2+ scări/bloc) | ❌ NU | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | scară | Toate | ✅ DA | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+| **individual** | scară | Scară A | ✅ DA | 🟢/🔴 Condiționat | ⚠️ DA (doar simplă) |
+
+---
+
+## CONTEXT EXEMPLU - Asociația Noastră {#context-exemplu}
+
+### Structură:
+- **3 Blocuri**: B4, B5, B6
+- **4 Scări**:
+  - B4: Scara A (4 apartamente)
+  - B5: Scara B (4 apartamente), Scara C (4 apartamente)
+  - B6: Scara A (4 apartamente)
+- **Total: 16 apartamente**
+
+### Apartamente cu participări speciale:
+- Ap. 11 (B4-A): 50% participare
+- Ap. 22 (B4-A): 10 RON sumă fixă
+- Ap. 55 (B5-B): EXCLUS
+
+---
+
+## 1. PE APARTAMENT (EGAL) {#pe-apartament}
+
+### 1.1. Sume pe ASOCIAȚIE + Tab TOATE
+
+#### Date Introducere:
+```
+Suma pe asociație: 500 RON
+```
+
+#### Tabel Calcul:
+
+| Apt | Bloc-Scară | Participare | Calcul Bază | După Participare | După Reponderare |
+|-----|------------|-------------|-------------|------------------|------------------|
+| 11 | B4-A | 50% | 500/15 = 33.33 | 33.33 × 50% = 16.67 | 18.15 |
+| 22 | B4-A | Fix 10 RON | 500/15 = 33.33 | 10.00 | 10.00 |
+| 33 | B4-A | Integral | 500/15 = 33.33 | 33.33 | 36.30 |
+| 44 | B4-A | Integral | 500/15 = 33.33 | 33.33 | 36.30 |
+| 55 | B5-B | **EXCLUS** | - | 0.00 | 0.00 |
+| 66-150 | Diverse | Integral | 500/15 = 33.33 | 33.33 × 11 | 36.30 × 11 |
+
+#### Calcule detaliate:
+
+```
+Pasul 1 - Distribuție de bază:
+500 RON / 15 apartamente participante = 33.33 RON/apt
+
+Pasul 2 - Aplică participările:
+- Ap 11: 33.33 × 50% = 16.67 RON
+- Ap 22: 10.00 RON (fix)
+- Ap 55: 0.00 RON (exclus)
+- Restul 13 apt: 33.33 × 13 = 433.29 RON
+
+Total după participare: 16.67 + 10.00 + 433.29 = 459.96 RON
+
+Pasul 3 - Calculează diferența pentru reponderare:
+500.00 - 459.96 = 40.04 RON
+
+Pasul 4 - REPONDERARE (redistribuie diferența):
+Greutăți pentru redistribuire:
+- Ap 11 (50%): greutate = 16.67
+- 13 apt integrale: greutate = 33.33 × 13 = 433.29
+Total greutăți: 450.00
+
+Redistribuire proporțională:
+- Ap 11: (16.67 / 450) × 500 = 18.52 ≈ 18.15 RON
+- 13 apt integrale: (433.29 / 450) × 500 / 13 = 36.30 RON
+
+Verificare totală: 18.15 + 10.00 + (36.30 × 13) = 500.00 ✅
+```
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 500.00 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe asociație
+Participare: 15/16 apartamente • 1 exclus • 2 participare diferită
+
+✅ Total distribuit: 500.00 RON
+```
+
+#### Afișare Card:
+```
+Pe asociație
+500.00 RON
+36.30 RON/apartament
+15/16 apartamente
+
+1 apartament exclus:
+  Ap. 55
+
+2 apartamente cu participare diferită:
+  Ap. 11 (50%: 18.15 RON)
+  Ap. 22 (10.00 RON fix/ap.)
+```
+
+**Știe suma așteptată?** ✅ **DA** (suma pe asociație, tab Toate)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 500.00 RON"**
+
+---
+
+### 1.2. Sume pe ASOCIAȚIE + Tab SCARĂ A
+
+#### Date:
+```
+Suma pe asociație: 500 RON
+Tab activ: Scară A (B4)
+Apartamente Scară A: 4 (Ap 11, 22, 33, 44)
+```
+
+#### Tabel Calcul:
+
+| Apt | Participare | Sumă Finală (din calcul reponderare global) |
+|-----|-------------|---------------------------------------------|
+| 11 | 50% | 18.15 RON |
+| 22 | Fix 10 RON | 10.00 RON |
+| 33 | Integral | 36.30 RON |
+| 44 | Integral | 36.30 RON |
+| **TOTAL Scară A** | | **100.75 RON** |
+
+#### Calcul:
+```
+Suma pentru Scară A = suma apartamentelor din Scară A
+= 18.15 + 10.00 + 36.30 + 36.30 = 100.75 RON
+
+NOTĂ IMPORTANTĂ: NU este 500 / 4 scări = 125 RON!
+Suma este mai mică pentru că avem participări diferite pe Scară A.
+```
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 100.75 RON (pentru Scară A)
+Distribuție: Pe apartament (egal)
+Sume: Pe asociație
+Participare: 3/4 apartamente • 0 exclus • 2 participare diferită
+
+✅ Total distribuit: 100.75 RON
+```
+
+**Știe suma așteptată?** ❌ **NU** (suma e pe asociație, dar vizualizăm doar Scară A)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 100.75 RON"** (suma calculată)
+
+---
+
+### 1.3. Sume pe BLOC + Tab TOATE
+
+#### Date Introducere:
+```
+Bloc B4: 150 RON
+Bloc B5: 250 RON
+Bloc B6: 100 RON
+Total: 500 RON
+```
+
+#### Tabel Calcul per Bloc:
+
+**Bloc B4 (4 apartamente: 11, 22, 33, 44):**
+
+| Apt | Participare | După Reponderare |
+|-----|-------------|------------------|
+| 11 | 50% | 54.45 RON |
+| 22 | Fix 10 RON | 10.00 RON |
+| 33 | Integral | 42.77 RON |
+| 44 | Integral | 42.77 RON |
+| **TOTAL B4** | | **150.00 RON** ✅ |
+
+**Bloc B5 (8 apartamente: 55-88, 99-150):**
+
+| Apt | Participare | După Reponderare |
+|-----|-------------|------------------|
+| 55 | EXCLUS | 0.00 RON |
+| 66-88, 99-150 | Integral (7 apt) | 35.71 RON × 7 |
+| **TOTAL B5** | | **250.00 RON** ✅ |
+
+**Bloc B6 (4 apartamente: 199, 200, 500, 550):**
+
+| Apt | Participare | După Reponderare |
+|-----|-------------|------------------|
+| Toate | Integral | 25.00 RON × 4 |
+| **TOTAL B6** | | **100.00 RON** ✅ |
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 500.00 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe bloc
+Participare: 15/16 apartamente • 1 exclus • 2 participare diferită
+
+✅ Total distribuit: 500.00 RON
+```
+
+#### Afișare Card - 3 carduri per bloc:
+
+**Card Bloc B4:**
+```
+Bloc B4
+150.00 RON
+42.77 RON/apartament (integral)
+3/4 apartamente
+
+2 apartamente cu participare diferită:
+  Ap. 11 (50%: 54.45 RON)
+  Ap. 22 (10.00 RON fix)
+```
+
+**Card Bloc B5:**
+```
+Bloc B5
+250.00 RON
+35.71 RON/apartament
+7/8 apartamente
+
+1 apartament exclus:
+  Ap. 55
+```
+
+**Card Bloc B6:**
+```
+Bloc B6
+100.00 RON
+25.00 RON/apartament
+4/4 apartamente
+```
+
+**Știe suma așteptată?** ✅ **DA** (sume pe bloc, tab Toate)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 500.00 RON"**
+
+---
+
+### 1.4. Sume pe BLOC + Tab SCARĂ A (B4 - o singură scară)
+
+#### Date:
+```
+Bloc B4: 150 RON
+Tab activ: Scară A (B4) - blocul are O SINGURĂ scară
+```
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 150.00 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe bloc
+Participare: 3/4 apartamente • 0 exclus • 2 participare diferită
+
+✅ Total distribuit: 150.00 RON
+```
+
+**Știe suma așteptată?** ✅ **DA** (blocul B4 are o singură scară)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 150.00 RON"**
+
+---
+
+### 1.5. Sume pe BLOC + Tab SCARĂ B (B5 - două scări)
+
+#### Date:
+```
+Bloc B5: 250 RON
+Tab activ: Scară B (B5) - blocul are 2 scări (B, C)
+Apartamente Scară B: 4 (55, 66, 77, 88)
+```
+
+#### Tabel Calcul:
+
+Reponderarea se face la nivel de BLOC, apoi se ia doar suma pentru Scară B:
+
+| Apt | Scară | Participare | Sumă Finală |
+|-----|-------|-------------|-------------|
+| 55 | B | EXCLUS | 0.00 |
+| 66 | B | Integral | 35.71 |
+| 77 | B | Integral | 35.71 |
+| 88 | B | Integral | 35.71 |
+| **TOTAL Scară B** | | | **107.13 RON** |
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 107.13 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe bloc
+Participare: 3/4 apartamente • 1 exclus
+
+✅ Total distribuit: 107.13 RON
+```
+
+**Știe suma așteptată?** ❌ **NU** (suma e pe bloc B5, dar blocul are 2 scări)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 107.13 RON"** (suma calculată)
+
+---
+
+### 1.6. Sume pe SCARĂ + Tab TOATE
+
+#### Date Introducere:
+```
+Scara A (B4): 120 RON
+Scara B (B5): 140 RON
+Scara C (B5): 110 RON
+Scara A (B6): 130 RON
+Total: 500 RON
+```
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 500.00 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe scară
+Participare: 15/16 apartamente • 1 exclus • 2 participare diferită
+
+✅ Total distribuit: 500.00 RON
+```
+
+#### Afișare Card - 4 carduri per scară:
+
+Similar cu sume pe bloc, dar per scară. Fiecare scară are propriul card cu suma, participări și reponderare.
+
+**Știe suma așteptată?** ✅ **DA** (sume pe scară, tab Toate)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 500.00 RON"**
+
+---
+
+### 1.7. Sume pe SCARĂ + Tab SCARĂ A (B4)
+
+#### Date:
+```
+Scara A (B4): 120 RON
+Tab activ: Scară A (B4)
+```
+
+#### Afișare Header:
+```
+Cheltuială pe apartament - 120.00 RON
+Distribuție: Pe apartament (egal)
+Sume: Pe scară
+Participare: 3/4 apartamente • 0 exclus • 2 participare diferită
+
+✅ Total distribuit: 120.00 RON
+```
+
+**Știe suma așteptată?** ✅ **DA** (suma pe scară, vizualizăm scara respectivă)
+**Diferență afișată?** ❌ **NU**
+**Badge?** ✅ **Verde "Total distribuit: 120.00 RON"**
+
+---
+
+## 2. PE PERSOANĂ {#pe-persoana}
+
+**COMPORTAMENT IDENTIC cu Pe Apartament**, doar că unitatea de măsură este **persoana** în loc de **apartament**.
+
+### Exemplu: Sume pe ASOCIAȚIE + Tab TOATE
+
+#### Date:
+```
+Suma pe asociație: 800 RON
+Total persoane: 80 (16 apartamente × 5 persoane medie)
+- 15 apartamente participante = 75 persoane
+```
+
+#### Calcul:
+```
+Bază: 800 / 75 persoane = 10.67 RON/persoană
+
+Ap 11 (2 persoane, 50%):
+  Bază: 2 × 10.67 = 21.34 RON
+  După participare: 21.34 × 50% = 10.67 RON
+  După reponderare: ~11.63 RON
+
+Ap 33 (2 persoane, integral):
+  Bază: 2 × 10.67 = 21.34 RON
+  După reponderare: ~23.24 RON
+
+Ap 44 (4 persoane, integral):
+  Bază: 4 × 10.67 = 42.68 RON
+  După reponderare: ~46.48 RON
+```
+
+#### Afișare:
+```
+✅ Total distribuit: 800.00 RON
+10.67 RON/persoană (medie după reponderare)
+```
+
+**Logica este IDENTICĂ** pentru toate combinațiile (asociație/bloc/scară × Toate/Scară).
+
+### Toate combinațiile pentru Pe Persoană:
+
+Același tabel de combinații ca la Pe Apartament:
+- Sume pe asociație + Tab Toate
+- Sume pe asociație + Tab Scară
+- Sume pe bloc + Tab Toate
+- Sume pe bloc + Tab Scară (1 scară/bloc)
+- Sume pe bloc + Tab Scară (2+ scări/bloc)
+- Sume pe scară + Tab Toate
+- Sume pe scară + Tab Scară
+
+**Pentru toate:** Badge verde "Total distribuit", fără diferență afișată.
+
+---
+
+## 3. PE COTĂ PARTE (INDIVIZĂ) {#pe-cota-parte}
+
+**COMPORTAMENT IDENTIC cu Pe Apartament**, doar că unitatea de măsură este **mp (suprafață)**.
+
+### Exemplu: Sume pe ASOCIAȚIE + Tab TOATE
+
+#### Date:
+```
+Suma pe asociație: 1000 RON
+Total suprafață: 1000 mp
+Total suprafață participantă: 950 mp (Ap 55 exclus: 50 mp)
+```
+
+#### Calcul:
+```
+Cotă parte se calculează ÎNTOTDEAUNA on-the-fly din suprafață:
+Cota parte Ap X = (suprafață Ap X / suprafață totală participantă) × 100
+
+Ap 11 (60 mp, 50% participare):
+  Cota parte: (60 / 950) × 100 = 6.32%
+  Bază: 1000 × 6.32% = 63.16 RON
+  După participare: 63.16 × 50% = 31.58 RON
+  După reponderare: ~34.42 RON
+
+Ap 33 (50 mp, integral):
+  Cota parte: (50 / 950) × 100 = 5.26%
+  Bază: 1000 × 5.26% = 52.63 RON
+  După reponderare: ~57.33 RON
+
+Ap 44 (80 mp, integral):
+  Cota parte: (80 / 950) × 100 = 8.42%
+  Bază: 1000 × 8.42% = 84.21 RON
+  După reponderare: ~91.67 RON
+```
+
+#### Afișare:
+```
+✅ Total distribuit: 1000.00 RON
+1.05 RON/mp (medie după reponderare)
+950 mp participanți
+```
+
+**Logica este IDENTICĂ** pentru toate combinațiile.
+
+### Observație importantă:
+
+Cotele părți NU sunt salvate în baza de date, ci se calculează ÎNTOTDEAUNA din suprafața apartamentelor la momentul distribuției, bazat pe:
+- Nivelul grupului (asociație/bloc/scară)
+- Apartamentele participante (exclus cei excluși)
+
+---
+
+## 4. PE CONSUM (isUnitBased) {#pe-consum}
+
+**DIFERIT** - aici apar **diferențe** (pierderi/scurgeri) care se distribuie automat!
+
+### 4.1. Sume pe ASOCIAȚIE + Tab TOATE
+
+#### Date Introducere:
+```
+Suma pe asociație (din factură): 5000 RON
+Preț unitar: 50 RON/mc
+
+Consumuri introduse:
+- Ap 11: 10 mc (50% participare)
+- Ap 22: 1 mc (fix 10 RON)
+- Ap 33: 5 mc
+- Ap 44: 15 mc
+- Ap 55: 10 mc (EXCLUS)
+- ...
+Total consumuri: 110 mc
+```
+
+#### Tabel Calcul:
+
+| Apt | Consum (mc) | Total Brut | După Participare | Diferență Distribuită | FINAL |
+|-----|-------------|------------|------------------|----------------------|-------|
+| 11 | 10 | 500.00 | 250.00 (50%) | 3.64 | 253.64 |
+| 22 | 1 | 50.00 | 10.00 (fix) | 0.36 | 10.36 |
+| 33 | 5 | 250.00 | 250.00 | 1.82 | 251.82 |
+| 44 | 15 | 750.00 | 750.00 | 5.45 | 755.45 |
+| 55 | 10 | 500.00 | 0.00 (exclus) | 0.00 | 0.00 |
+| 66 | 1 | 50.00 | 50.00 | 0.36 | 50.36 |
+| 77 | 1 | 50.00 | 50.00 | 0.36 | 50.36 |
+| 88 | 1 | 50.00 | 50.00 | 0.36 | 50.36 |
+| 99 | 1 | 50.00 | 50.00 | 0.36 | 50.36 |
+| 100 | 5.2 | 260.00 | 260.00 | 1.89 | 261.89 |
+| 150 | 9.8 | 490.00 | 490.00 | 3.56 | 493.56 |
+| 300 | 10 | 500.00 | 500.00 | 3.64 | 503.64 |
+| 199 | 10 | 500.00 | 500.00 | 3.64 | 503.64 |
+| 200 | 10 | 500.00 | 500.00 | 3.64 | 503.64 |
+| 500 | 10 | 500.00 | 500.00 | 3.64 | 503.64 |
+| 550 | 10 | 500.00 | 500.00 | 3.64 | 503.64 |
+| **TOTAL** | **110** | **5500.00** | **4960.00** | **40.00** | **5000.00** ✅ |
+
+#### Calcule detaliate:
+
+```
+Pasul 1 - Total brut (fără participări):
+110 mc × 50 RON/mc = 5500 RON
+
+Pasul 2 - Aplică participările:
+- Ap 11: 500 × 50% = 250 RON
+- Ap 22: 10 RON (fix)
+- Ap 55: 0 RON (exclus)
+- Restul apartamente: suma normală (consum × preț)
+Total după participări: 4960 RON
+
+Pasul 3 - Calculează diferența simplă:
+Suma așteptată (din factură): 5000 RON
+Total după participări: 4960 RON
+Diferență: 4960 - 5000 = -40 RON (lipsesc - pierderi/scurgeri la rețea)
+
+Pasul 4 - Distribuie diferența:
+Diferența de 40 RON se distribuie conform setărilor din configurare:
+- Metoda: "Proporțional cu consumul"
+- Ajustare: "Respectă configurările de participare"
+
+Exemplu calcul pentru Ap 11:
+  Diferență bază (proporțional cu consumul): (10 mc / 110 mc) × 40 = 3.64 RON
+  După participare 50%: 3.64 × 50% = 1.82 RON
+  După reponderare: 3.64 RON (ajustat pentru a totaliza exact 40 RON)
+
+Exemplu calcul pentru Ap 44 (integral):
+  Diferență: (15 mc / 110 mc) × 40 = 5.45 RON
+
+Ap 55 (exclus): 0.00 RON diferență (nu participă)
+
+Pasul 5 - Total distribuit:
+Total după participări + Diferență distribuită = 4960 + 40 = 5000 RON ✅
+```
+
+#### Afișare Header:
+```
+Apă caldă - 5000.00 RON
+110.00 mc • 50.00 RON/mc
+✓ Consumuri introduse: 16/16 apartamente
+Total introdus: 4960.00 RON
+⚠ Diferență: -40.00 RON (lipsesc)
+✅ Total distribuit: 5000.00 RON
+```
+
+#### Afișare Card:
+```
+Pe asociație
+5000.00 RON
+Total introdus: 4960.00 RON
+⚠ Diferență: -40.00 RON
+✅ Total distribuit: 5000.00 RON
+110.00 mc introduși
+50.00 RON/mc
+16/16 apartamente
+
+3 apartamente cu participare diferită:
+  Ap. 11 (50%: 250.00 RON)
+  Ap. 22 (10.00 RON fix/ap.)
+  Ap. 55 (EXCLUS: 0.00 RON)
+```
+
+#### Tabel Consumuri:
+
+Tabel cu coloane:
+- Bloc - Scară
+- Apt
+- Proprietar
+- Persoane
+- Participare
+- Consum (mc)
+- Total (RON) = Consum × Preț
+- După participare (RON)
+- **Diferență distribuită (RON)** ← coloană specială!
+
+**Știe suma așteptată?** ✅ **DA** (suma pe asociație, tab Toate)
+**Diferență simplă afișată?** ⚠️ **DA** (-40 RON lipsesc)
+**Diferență distribuită afișată?** ✅ **DA** (în tabel, coloană separată + 40 RON total)
+**Badge?** ✅ **Verde "Total distribuit: 5000.00 RON"** (ÎNTOTDEAUNA)
+
+---
+
+### 4.2. Sume pe ASOCIAȚIE + Tab SCARĂ A
+
+#### Date:
+```
+Suma pe asociație: 5000 RON
+Tab activ: Scară A (B4)
+Consumuri Scară A:
+- Ap 11: 10 mc
+- Ap 22: 1 mc
+- Ap 33: 5 mc
+- Ap 44: 15 mc
+Total Scară A: 31 mc
+```
+
+#### Calcul:
+```
+Total după participări pentru Scară A:
+= 250.00 (Ap 11) + 10.00 (Ap 22) + 250.00 (Ap 33) + 750.00 (Ap 44)
+= 1260.00 RON
+
+Diferență distribuită pentru Scară A:
+= 3.64 + 0.36 + 1.82 + 5.45
+= 10.91 RON (din totalul de -40 RON pe asociație)
+
+Total distribuit Scară A: 1260.00 + 10.91 = 1270.91 RON
+```
+
+#### Afișare Header:
+```
+Apă caldă - 1270.91 RON (pentru Scară A)
+31.00 mc • 50.00 RON/mc
+Total introdus: 1260.00 RON
+⚠ Diferență distribuită: 10.91 RON (din -40 RON pe asociație)
+✅ Total distribuit: 1270.91 RON
+```
+
+**Știe suma așteptată?** ❌ **NU** (suma e pe asociație, vizualizăm doar Scară A)
+**Diferență simplă afișată?** ❌ **NU** (nu știm suma așteptată pentru scară)
+**Diferență distribuită afișată?** ✅ **DA** (din diferența globală: 10.91 RON din -40 RON)
+**Badge?** ✅ **Verde "Total distribuit: 1270.91 RON"** (ÎNTOTDEAUNA)
+
+---
+
+### 4.3. Sume pe SCARĂ + Tab SCARĂ A
+
+#### Date:
+```
+Suma pe Scară A (B4): 1300 RON (din factură pentru scara asta)
+Consumuri Scară A: 31 mc
+Preț: 50 RON/mc
+```
+
+#### Calcul:
+```
+Total brut: 31 mc × 50 = 1550 RON
+După participări: 1260 RON
+Suma așteptată (factură scară): 1300 RON
+
+Diferență simplă: 1260 - 1300 = -40 RON (lipsesc pentru scara asta)
+
+Diferență distribuită: +40 RON (distribuită pe apartamentele din scară)
+
+Total distribuit: 1260 + 40 = 1300 RON ✅
+```
+
+#### Afișare Header:
+```
+Apă caldă - 1300.00 RON
+31.00 mc • 50.00 RON/mc
+Total introdus: 1260.00 RON
+⚠ Diferență: -40.00 RON (lipsesc)
+✅ Total distribuit: 1300.00 RON
+```
+
+**Știe suma așteptată?** ✅ **DA** (suma pe scară, vizualizăm scara respectivă)
+**Diferență simplă afișată?** ⚠️ **DA** (-40 RON pentru scara asta)
+**Diferență distribuită afișată?** ✅ **DA**
+**Badge?** ✅ **Verde "Total distribuit: 1300.00 RON"** (ÎNTOTDEAUNA)
+
+---
+
+### 4.4. Sume pe BLOC + Tab TOATE
+
+Similar cu sume pe scară, dar cu carduri per bloc.
+
+**Știe suma așteptată?** ✅ **DA**
+**Diferență afișată?** ⚠️ **DA** (simplă + distribuită)
+**Badge?** ✅ **Verde "Total distribuit"**
+
+---
+
+### 4.5. Sume pe BLOC + Tab SCARĂ (1 scară/bloc)
+
+**Știe suma așteptată?** ✅ **DA** (blocul are o singură scară)
+**Diferență afișată?** ⚠️ **DA** (simplă + distribuită)
+**Badge?** ✅ **Verde "Total distribuit"**
+
+---
+
+### 4.6. Sume pe BLOC + Tab SCARĂ (2+ scări/bloc)
+
+**Știe suma așteptată?** ❌ **NU** (blocul are mai multe scări)
+**Diferență simplă afișată?** ❌ **NU**
+**Diferență distribuită afișată?** ✅ **DA**
+**Badge?** ✅ **Verde "Total distribuit"**
+
+---
+
+## 5. SUME INDIVIDUALE {#sume-individuale}
+
+**FOARTE DIFERIT** - diferența NU se distribuie automat! Utilizatorul trebuie să corecteze manual.
+
+### 5.1. Sume pe ASOCIAȚIE + Tab TOATE
+
+#### Date Introducere:
+```
+Suma pe asociație (din factură): 5000 RON
+
+Sume individuale introduse manual:
+- Ap 11: 0 RON (EXCLUS)
+- Ap 22: 10 RON
+- Ap 33: 10 RON
+- Ap 44: 20 RON
+- Ap 55: 50 RON
+- Ap 66: 50 RON
+- Ap 77: 50 RON
+- Ap 88: 50 RON
+- Ap 99: 50 RON
+- Ap 100: 50 RON
+- Ap 150: 50 RON
+- Ap 300: 80 RON
+- Ap 199: 80 RON
+- Ap 200: 150 RON
+- Ap 500: 250 RON
+- Ap 550: 4000 RON
+Total introdus: 4950 RON
+```
+
+#### Tabel Calcul:
+
+| Apt | Participare | Sumă Introdusă | FINAL |
+|-----|-------------|----------------|-------|
+| 11 | EXCLUS | 0 | 0.00 |
+| 22 | Integral | 10 | 10.00 |
+| 33 | Integral | 10 | 10.00 |
+| 44 | Integral | 20 | 20.00 |
+| 55 | Integral | 50 | 50.00 |
+| 66 | Integral | 50 | 50.00 |
+| 77 | Integral | 50 | 50.00 |
+| 88 | Integral | 50 | 50.00 |
+| 99 | Integral | 50 | 50.00 |
+| 100 | Integral | 50 | 50.00 |
+| 150 | Integral | 50 | 50.00 |
+| 300 | Integral | 80 | 80.00 |
+| 199 | Integral | 80 | 80.00 |
+| 200 | Integral | 150 | 150.00 |
+| 500 | Integral | 250 | 250.00 |
+| 550 | Integral | 4000 | 4000.00 |
+| **TOTAL** | | **4950** | **4950.00** |
+
+#### Calcule:
+```
+Suma așteptată (din factură): 5000 RON
+Total introdus manual: 4950 RON
+Diferență: 4950 - 5000 = -50 RON (lipsesc)
+
+⚠️ IMPORTANT: Diferența NU se distribuie automat!
+Utilizatorul trebuie să modifice sumele introduse pentru a ajunge la 5000 RON.
+
+Exemplu de corectare:
+- Poate adăuga 50 RON la Ap 550: 4000 → 4050 RON
+- Sau distribuie 50 RON pe mai multe apartamente
+```
+
+#### Afișare Header:
+
+**Când diferență ≠ 0:**
+```
+Căldură - 4950.00 RON
+✓ Sume introduse: 15/15 apartamente
+Total introdus: 4950.00 RON
+🔴 Diferență pe asociație: -50.00 RON (lipsesc)
+```
+
+**Când diferență = 0:**
+```
+Căldură - 5000.00 RON
+✓ Sume introduse: 15/15 apartamente
+✅ Total distribuit: 5000.00 RON
+```
+
+#### Afișare Card:
+```
+Pe asociație
+4950.00 RON
+Total introdus: 4950.00 RON
+15/16 apartamente
+
+1 apartament exclus:
+  Ap. 11
+```
+
+#### Tabel Sume Individuale:
+
+Tabel cu coloane:
+- Bloc - Scară
+- Apt
+- Proprietar
+- Persoane
+- Participare (doar Integral/Exclus)
+- **Sumă (RON)** ← editabil de utilizator
+
+#### Footer Tabel:
+```
+TOTAL: 4950.00
+Diferență: -50.00 RON
+```
+
+**Știe suma așteptată?** ✅ **DA** (suma pe asociație, tab Toate)
+**Diferență afișată?** ⚠️ **DA** (-50 RON lipsesc)
+**Diferență distribuită?** ❌ **NU** (trebuie corectată manual de utilizator)
+**Badge?** 🔴 **Roșu "Diferență: -50 RON"** (când diferență ≠ 0)
+**Badge?** ✅ **Verde "Total distribuit: 5000 RON"** (când diferență = 0)
+
+---
+
+### 5.2. Sume pe ASOCIAȚIE + Tab SCARĂ A
+
+#### Date:
+```
+Suma pe asociație: 5000 RON
+Tab activ: Scară A (B4)
+Sume introduse Scară A:
+- Ap 11: 0 (exclus)
+- Ap 22: 10
+- Ap 33: 10
+- Ap 44: 20
+Total introdus Scară A: 40 RON
+```
+
+#### Calcul:
+```
+Suma pentru Scară A (calculată): 40 RON
+Suma așteptată pentru Scară A: NU ȘTIM (suma e pe asociație)
+
+Diferența afișată: Diferența dintre suma introdusă pentru scară și...?
+Opțiunea 1: Nu afișăm diferență (nu știm suma așteptată)
+Opțiunea 2: Afișăm că s-au introdus 40 RON pentru scară
+```
+
+#### Afișare Header:
+```
+Căldură - 40.00 RON
+✓ Sume introduse: 3/4 apartamente
+Total introdus: 40.00 RON
+```
+
+**Știe suma așteptată?** ❌ **NU** (suma e pe asociație, vizualizăm doar Scară A)
+**Diferență afișată?** Depinde de implementare
+**Badge?** ✅ **Verde "Total distribuit: 40.00 RON"** (suma introdusă pentru scară)
+
+---
+
+### 5.3. Sume pe SCARĂ + Tab SCARĂ A
+
+#### Date:
+```
+Suma pe Scară A (B4): 600 RON (din factură)
+Sume introduse Scară A:
+- Ap 11: 0 (exclus)
+- Ap 22: 10
+- Ap 33: 10
+- Ap 44: 20
+Total introdus: 40 RON
+```
+
+#### Calcul:
+```
+Suma așteptată (factură scară): 600 RON
+Total introdus: 40 RON
+Diferență: 40 - 600 = -560 RON (lipsesc FOARTE MULT!)
+
+⚠️ Utilizatorul a uitat să introducă sumele pentru majoritatea apartamentelor!
+```
+
+#### Afișare Header:
+```
+Căldură - 40.00 RON
+✓ Sume introduse: 3/4 apartamente
+Total introdus: 40.00 RON
+🔴 Diferență: -560.00 RON (lipsesc)
+```
+
+**Știe suma așteptată?** ✅ **DA** (suma pe scară, vizualizăm scara respectivă)
+**Diferență afișată?** ⚠️ **DA** (-560 RON - DIFERENȚĂ MARE!)
+**Badge?** 🔴 **Roșu "Diferență: -560 RON"**
+
+---
+
+### 5.4. Sume pe BLOC + Tab TOATE
+
+Similar cu sume pe scară, dar cu carduri per bloc.
+
+**Știe suma așteptată?** ✅ **DA**
+**Diferență afișată?** ⚠️ **DA** (doar simplă, NU distribuită)
+**Badge?** 🟢/🔴 **Condiționat** (verde dacă 0, roșu dacă ≠ 0)
+
+---
+
+### 5.5. Sume pe BLOC + Tab SCARĂ (1 scară/bloc)
+
+**Știe suma așteptată?** ✅ **DA**
+**Diferență afișată?** ⚠️ **DA**
+**Badge?** 🟢/🔴 **Condiționat**
+
+---
+
+### 5.6. Sume pe BLOC + Tab SCARĂ (2+ scări/bloc)
+
+**Știe suma așteptată?** ❌ **NU**
+**Diferență afișată?** Posibil (doar informativ)
+**Badge?** ✅ **Verde** "Total distribuit" (suma introdusă)
+
+---
+
+## REZUMAT FINAL - Reguli Badge {#rezumat-final}
+
+### Tabel Rezumativ:
+
+| Tip Distribuție | Condiție | Badge Afișat | Diferență Afișată |
+|-----------------|----------|--------------|-------------------|
+| **apartment** | Orice situație | ✅ **Verde** "Total distribuit: X RON" | ❌ **NU** |
+| **person** | Orice situație | ✅ **Verde** "Total distribuit: X RON" | ❌ **NU** |
+| **cotaParte** | Orice situație | ✅ **Verde** "Total distribuit: X RON" | ❌ **NU** |
+| **consumption** | Orice situație | ✅ **Verde** "Total distribuit: X RON" | ⚠️ **DA** (simplă + distribuită) |
+| **individual** | Diferență = 0 | ✅ **Verde** "Total distribuit: X RON" | ❌ **NU** |
+| **individual** | Diferență ≠ 0 | 🔴 **Roșu** "Diferență: ±X RON" | ⚠️ **DA** (doar simplă) |
+
+### Explicații detaliate:
+
+#### 1. apartment / person / cotaParte:
+- **NU există diferență** pentru că suma este calculată automat
+- Participările diferite cauzează **reponderare automată**
+- Suma totală distribuită = Suma introdusă (ÎNTOTDEAUNA)
+- Badge: **ÎNTOTDEAUNA verde** "Total distribuit"
+
+#### 2. consumption (isUnitBased):
+- **EXISTĂ diferență** = pierderi/scurgeri la rețea
+- **Diferența se distribuie automat** conform setărilor din configurare
+- Suma totală distribuită = Suma după participări + Diferență distribuită
+- Badge: **ÎNTOTDEAUNA verde** "Total distribuit" (după distribuirea diferenței)
+- Diferență simplă afișată: **DA** (când știm suma așteptată)
+- Diferență distribuită afișată: **ÎNTOTDEAUNA** (în tabel, coloană separată)
+
+#### 3. individual:
+- **EXISTĂ diferență** = eroare de introducere manuală
+- **Diferența NU se distribuie automat** - utilizatorul trebuie să corecteze
+- Suma totală distribuită = Suma introdusă manual
+- Badge: **CONDIȚIONAT**
+  - Verde "Total distribuit" dacă diferență = 0 (exact)
+  - Roșu "Diferență: X RON" dacă diferență ≠ 0
+- Diferență afișată: **DA** (când știm suma așteptată)
+- NU există toleranță (TOLERANCE eliminat)
+
+### Când știm suma așteptată:
+
+| Sume Pe | Tab Activ | Știe Sumă? |
+|---------|-----------|------------|
+| asociație | Toate | ✅ DA |
+| asociație | Scară | ❌ NU |
+| bloc | Toate | ✅ DA |
+| bloc | Scară (1 scară/bloc) | ✅ DA |
+| bloc | Scară (2+ scări/bloc) | ❌ NU |
+| scară | Toate | ✅ DA |
+| scară | Scară | ✅ DA |
+
+### Diferența simplă vs Diferența distribuită:
+
+**Diferența simplă:**
+- Afișată pentru: **consumption** și **individual**
+- Calculul: `totalIntrodus - sumaAsteptata`
+- Semnificație:
+  - consumption: pierderi/scurgeri înainte de distribuire
+  - individual: eroare de introducere manuală
+
+**Diferența distribuită:**
+- Afișată pentru: **consumption** (doar)
+- Calculul: Se distribuie automat conform metodei din configurare
+- Semnificație: Pierderi/scurgeri distribuite pe apartamente
+- Afișare: În tabel, coloană separată "Diferență distribuită (RON)"
+
+---
+
+## OBSERVAȚII FINALE
+
+### 1. Reponderare:
+Pentru **apartment/person/cotaParte**, reponderarea asigură că:
+- Suma totală distribuită = Suma introdusă (EXACT)
+- Participările diferite sunt respectate
+- Diferența cauzată de participări este redistribuită proporțional
+
+### 2. Configurare distribuție diferență (consumption):
+Setările din tab "Consum" din configurarea cheltuielii:
+- **Metoda de distribuție**: apartment / person / consumption / cotaParte
+- **Mod ajustare**:
+  - Fără ajustări suplimentare
+  - Respectă configurările de participare
+  - Ajustare pe tip apartament
+
+### 3. Participări disponibile:
+- **apartment/person/cotaParte**: Integral, Procent, Sumă fixă, Exclus
+- **consumption**: Integral, Procent, Sumă fixă, Exclus
+- **individual**: Integral, Exclus (doar)
+
+### 4. Badge-uri consistente:
+Pentru o experiență vizuală plăcută:
+- Verde = "Totul OK, distribuit complet"
+- Roșu = "Atenție, diferență nedistribuită" (doar individual)
+- Portocaliu = "Diferență în curs de rezolvare" (opțional pentru consumption)
+
+---
+
+**Data generării documentației:** 2025-01-27
+**Versiune:** 1.0
+**Autor:** Claude Code (Anthropic)
+
+
+
+Aici ce am mai prins din discutie 
+Această diferență reprezintă eroare de introducere (sumele introduse manual nu fac cât factura), corect?
+
+  3. Există "diferență distribuită" pentru individual?
+
+  Sau doar diferența simplă care trebuie corectată manual de utilizator?
+
+  4. Badge-ul:
+  - Roșu când există diferență (depășește TOLERANCE)?
+  - Verde când diferența este OK (sub TOLERANCE)?
+
+  ---
+  📝 REZUMAT - Ce trebuie să clarificăm
+
+  Pentru CONSUMPTION:
+  1. totalIntrodus include participări? (da/nu)
+  2. Diferența = pierderi/scurgeri? (da)
+  3. Diferența se distribuie automat? (da)
+  4. Cum funcționează "Respectă configurările de participare"?
+  5. Când afișezi diferența? (întotdeauna/peste TOLERANCE)
+  6. Când afișezi badge verde "Total distribuit"?
+
+  Pentru INDIVIDUAL:
+  1. totalIntrodus include participări? (da/nu)
+  2. Diferența = eroare introducere? (da)
+  3. Există diferență distribuită? (nu?)
+  4. Diferența trebuie corectată manual? (da?)
+  5. Când afișezi badge roșu/verde?
+
+  Răspunde-mi la aceste întrebări și apoi îți fac un plan complet de refactorizare! 🚀
+
+> La 
+Distribuție:Pe consum (mc/apartament)
+Aici avem si un tabel in care avem totalul care reprezinta totalul calculat (mc*pret/mc) si apoi avem dupa participare. Total introdus     
+este suma dupa participare.
+Aplicam acelasi afisaj la total si pe scari a sumelor in header si card. daca stim sau nu suma pe scara.
+Pumen mc si pret iar diferenta este diferenta distribuita in tabel Diferență distribuită care se distribuie in functie de setarile de      
+la consum ale cheltuielii. diferenta se distribuie in functie de cum a fost introdusa suma pe asociatie,pe bloc pe scara[Image 
+#1][Image #2]deci: 
+totalIntrodus include participări? (da/nu) DA
+Diferența = pierderi/scurgeri? (da) DA si totodata si din diferenta rezultat din participari
+3. Diferența se distribuie automat? (da) da in baza setarilor de la cheltuiala tab consumuri
+4. Cum funcționează "Respectă configurările de participare"? Exact cum spune iei in calcul daca participa cu procent
+5. Când afișezi diferența? Intotdeauna le afisezi Diferenta Diferenta pe care o afisezi este Diferență distribuită
+6. Când afișezi badge verde "Total distribuit"? Ar trebui intotdeauna pentru ca mereu ai distribuit-o 
+
+● PERFECT! Acum înțeleg COMPLET sistemul pentru CONSUMPTION! Mulțumesc enorm pentru screenshot-urile detaliate!
+
+  ✅ AM ÎNȚELES COMPLET - CONSUMPTION
+
+  Din screenshot-urile tale văd:
+
+  HEADER:
+
+  Apă caldă - 5000.00 RON
+  ├─ 110.00 mc • 50.00 RON/mc
+  ├─ Total introdus: 4960.00 RON
+  ├─ ⚠ Diferență: -40.00 RON (lipsesc)
+  └─ ✓ Total distribuit: 5000.00 RON
+
+  CARD "Detalii distribuție":
+
+  Pe asociație
+  5000.00 RON
+  Total introdus: 4960.00 RON
+  ⚠ Diferență: -40.00 RON
+  ✓ Total distribuit: 5000.00 RON
+  110.00 mc introduși
+  50.00 RON/mc
+  16/16 apartamente
+
+  3 apartamente cu participare diferită:
+  ├─ Ap. 11 (50%: 250.00 RON)
+  ├─ Ap. 22 (10.00 RON fix/ap.)
+  └─ Ap. 55 (50%: 250.00 RON)
+
+  TABEL CONSUMURI:
+
+  Coloane:
+  - Consum (mc) - introdus manual sau calculat din indecși
+  - Total (RON) - Consum × Preț (50 RON/mc)
+  - După participare (RON) - Total cu participarea aplicată
+  - Diferență distribuită (RON) - partea din diferență distribuită pe apartament
+
+  Exemple din tabel:
+  | Apt | Consum | Total  | După participare  | Diferență distribuită |
+  |-----|--------|--------|-------------------|-----------------------|
+  | 11  | 10 mc  | 500.00 | 250.00 (50%)      | 3.64                  |
+  | 22  | 1 mc   | 50.00  | 10.00 (fix)       | 0.36                  |
+  | 33  | 5 mc   | 250.00 | 250.00 (integral) | 1.82                  |
+  | 44  | 15 mc  | 750.00 | 750.00 (integral) | 5.45                  |
+
+  Footer tabel:
+  TOTAL: 110.00 mc | 5500.00 RON | 4960.00 RON (după participare) | 40.00 RON (diferență distribuită)
+                      Diferență: -5500.00          Diferență: -40.00
+
+  ---
+  🧮 VERIFICAREA CALCULELOR
+
+  Pasul 1 - Total brut (fără participări):
+
+  Total consumuri: 110.00 mc
+  Preț: 50.00 RON/mc
+  Total brut: 110.00 × 50.00 = 5500.00 RON
+
+  Pasul 2 - Aplică participările:
+
+  Ap. 11: 500.00 × 50% = 250.00 RON
+  Ap. 22: 10.00 RON fix
+  Ap. 33: 250.00 RON (integral)
+  Ap. 44: 750.00 RON (integral)
+  ... (restul apartamentelor)
+
+  Total după participare: 4960.00 RON
+
+  Pasul 3 - Calculează diferența față de suma așteptată:
+
+  Suma așteptată (din factură): 5000.00 RON
+  Total după participare: 4960.00 RON
+  Diferență: 4960.00 - 5000.00 = -40.00 RON (lipsesc)
+
+  Pasul 4 - Distribuie diferența (pierderi/scurgeri):
+
+  Diferență de distribuit: 40.00 RON
+
+  Folosind configurația "Respectă configurările de participare":
+  - Apartamentele cu participare 50% primesc 50% din diferența lor calculată
+  - Apartamentele cu sumă fixă primesc diferență ajustată
+  - Apartamentele integrale primesc diferența integrală
+
+  Exemplu Ap. 11 (50% participare):
+  - Diferență de bază: calculată conform metodei (ex: proporțional cu consumul)
+  - Diferență finală: diferență de bază × 50% = 3.64 RON
+
+  Total diferență distribuită: 40.00 RON
+
+  Pasul 5 - Total distribuit:
+
+  Total distribuit = Total după participare + Diferență distribuită
+  Total distribuit = 4960.00 + 40.00 = 5000.00 RON ✅
+
+  ---
+  ✅ RĂSPUNSURI LA ÎNTREBĂRI - CONSUMPTION
+
+  1. totalIntrodus include participări? → DA
+    - totalIntrodus = 4960.00 RON (după aplicarea participărilor)
+  2. Diferența = pierderi/scurgeri? → DA
+    - Diferența = -40.00 RON (lipsesc)
+    - Reprezintă pierderi la rețea + diferențe din participări
+  3. Diferența se distribuie automat? → DA
+    - În baza setărilor de la tab "Consum" din configurare
+    - Folosind metoda selectată (apartament/persoană/consum/cotă parte)
+  4. Cum funcționează "Respectă configurările de participare"?
+    - Apartamentele cu participare 50% primesc 50% din diferența lor calculată
+    - Apartamentele cu sumă fixă primesc diferență ajustată proporțional
+    - Apartamentele excluse NU primesc diferență
+  5. Când afișezi diferența? → ÎNTOTDEAUNA
+    - Diferența afișată este "Diferență distribuită" (40.00 RON)
+    - Se afișează chiar dacă este 0.00 RON
+  6. Când afișezi badge verde "Total distribuit"? → ÎNTOTDEAUNA
+    - Pentru că diferența este mereu distribuită complet
+    - Total distribuit = Total introdus + Diferență distribuită
+
+  ---
+  🎯 ACUM DESPRE INDIVIDUAL
+
+  Spune-mi despre INDIVIDUAL (sume individuale):
+
+  Întrebările mele:
+
+  1. totalIntrodus include participări?
+  - DA / NU?
+
+  2. Diferența pentru individual:
+
+  Este diferență simplă (eroare de introducere)?
+  Suma așteptată (din factură): 500.00 RON
+  Total sume introduse manual: 480.00 RON
+  Diferență: -20.00 RON (lipsesc)
+
+  NU există "diferență distribuită" pentru individual, corect?
+  - Utilizatorul trebuie să corecteze manual sumele introduse?
+
+  3. Afișare diferență:
+  - Se afișează ÎNTOTDEAUNA?
+  - Sau doar când depășește TOLERANCE (0.20 RON)?
+
+  4. Badge-uri:
+  - Roșu: când diferența > TOLERANCE?
+  - Verde: când diferența ≤ TOLERANCE?
+  - NU există "Total distribuit" pentru individual?
+
+  5. Cum arată interfața pentru individual?
+
+  Poți să îmi trimiți un screenshot cu o cheltuială individual (sume individuale) ca să văd exact cum afișezi:
+  - Header
+  - Card expandat
+  - Tabel cu sume individuale
+  - Diferența
+
+  ---
+  După ce îmi clarifici INDIVIDUAL, am totul și îți fac un plan complet de refactorizare! 🚀
+
+> [Image #1][Image #2]  1. totalIntrodus include participări?
+  - DA / NU? Aici nu avem toate participarile avem doar Integral si exclus suma introdusa aia este si trebuie sa se potriveasca cu ce      
+introduce utilizatorul pentru fiecare apartament   - Utilizatorul trebuie să corecteze manual sumele introduse? Da trebuie mereu sa        
+corecteze. Legat de toleranta nici nu stiu daca sa o mai pastram sau nu ....Nu exista total distribuit dar as vrea ca la toate sa 
+existe badge-ul cu total distribuit ca sa arate frumos cu verde pe pagina si sa se vada ca toate au fost distribuite gen ginalizate        
+
+● EXCELENT! Acum înțeleg COMPLET sistemul pentru INDIVIDUAL! Mulțumesc pentru screenshot-uri!
+
+  ✅ AM ÎNȚELES COMPLET - INDIVIDUAL
+
+  Din screenshot-urile tale văd:
+
+  HEADER:
+
+  Căldură - 4950.00 RON
+  ├─ ✓ Sume introduse: 15/15 apartamente
+  ├─ Distribuție: Sume individuale (RON/apartament)
+  ├─ Sume: Pe asociație
+  ├─ Participare: 15/16 apartamente • 1 apartament exclus
+  ├─ Total introdus: 4950.00 RON
+  └─ ⚠ Diferență pe asociație: -50.00 RON (lipsesc)
+
+  CARD "Detalii distribuție":
+
+  Pe asociație
+  4950.00 RON
+  Total introdus: 4950.00 RON
+  ✓ Total distribuit: 4950.00 RON
+  15/16 apartamente
+
+  1 apartament exclus:
+    Ap. 11
+
+  TABEL SUME INDIVIDUALE:
+
+  | Apt | Proprietar   | Persoane | Participare | Sumă (RON) |
+  |-----|--------------|----------|-------------|------------|
+  | 11  | Odovinca D.  | 2        | Exclus      | -          |
+  | 22  | Iordache Gh. | 5        | Integral    | 10         |
+  | 33  | Nitu D-tru.  | 2        | Integral    | 10         |
+  | 44  | Carstea M.   | 4        | Integral    | 20         |
+  | ... | ...          | ...      | ...         | ...        |
+  | 550 | Liviu        | 7        | Integral    | 4000       |
+
+  Footer:
+  TOTAL: 4950.00
+  Diferență: -50.00 RON
+
+  ---
+  🧮 VERIFICAREA CALCULELOR
+
+  Suma așteptată (din amount pe asociație): 5000.00 RON
+  Suma introdusă manual: 10 + 10 + 20 + ... + 4000 = 4950.00 RON
+  Diferență: 4950.00 - 5000.00 = -50.00 RON (lipsesc)
+
+  ---
+  ✅ RĂSPUNSURI LA ÎNTREBĂRI - INDIVIDUAL
+
+  1. totalIntrodus include participări?
+  - NU în sensul că nu există participări procentuale sau fixe
+  - Există doar Integral și Exclus
+  - totalIntrodus = suma directă a valorilor introduse manual (4950.00 RON)
+
+  2. Diferența pentru individual:
+  - DA, este diferență simplă (eroare de introducere)
+  - Diferență = -50.00 RON (lipsesc)
+  - Utilizatorul TREBUIE să corecteze manual sumele introduse
+
+  3. Diferență distribuită:
+  - NU există "diferență distribuită" pentru individual
+  - Diferența rămâne nedistribuită până când utilizatorul o corectează
+
+  4. TOLERANCE:
+  - Ai zis: "Legat de toleranta nici nu stiu daca sa o mai pastram sau nu"
+  - Propunerea mea: păstrează TOLERANCE dar doar pentru afișare badge verde
+    - Dacă |diferență| ≤ 0.20 RON → badge verde "✓ Total distribuit"
+    - Dacă |diferență| > 0.20 RON → badge roșu "⚠ Diferență: -50.00 RON"
+
+  5. Badge "Total distribuit":
+  - Ai zis: "as vrea ca la toate sa existe badge-ul cu total distribuit ca sa arate frumos cu verde pe pagina"
+  - PERFECT! Înțeleg - vrei consistență vizuală!
+
+  ---
+  🎯 PROPUNEREA MEA FINALĂ - Badge-uri
+
+  Pentru TOATE tipurile de cheltuieli:
+
+  Afișează ÎNTOTDEAUNA badge "Total distribuit" cu logica:
+
+  1. apartment / person / cotaParte:
+
+  ✓ Total distribuit: 500.00 RON (verde)
+  - ÎNTOTDEAUNA verde (nu există diferență)
+  - Total distribuit = Total introdus
+
+  2. consumption (isUnitBased):
+
+  ✓ Total distribuit: 5000.00 RON (verde)
+  - ÎNTOTDEAUNA verde (diferența e distribuită automat)
+  - Total distribuit = Total introdus + Diferență distribuită
+
+  3. individual:
+
+  Opțiunea A - Cu TOLERANCE (recomandarea mea):
+  if (Math.abs(diferenta) <= 0.20) {
+    // Badge verde
+    ✓ Total distribuit: 4950.00 RON
+  } else {
+    // Badge roșu
+    ⚠ Diferență: -50.00 RON (lipsesc)
+    // SAU badge portocaliu pentru consistență vizuală?
+    ⚠ Total distribuit: 4950.00 RON (din 5000.00 RON)
+  }
+
+  Opțiunea B - Fără TOLERANCE (badge contextual):
+  if (diferenta === 0) {
+    // Badge verde
+    ✓ Total distribuit: 5000.00 RON
+  } else {
+    // Badge portocaliu/galben (nu roșu pentru consistență vizuală)
+    ⚠ Total introdus: 4950.00 RON (din 5000.00 RON)
+    // Diferență afișată separat sub badge
+    Diferență: -50.00 RON (lipsesc)
+  }
+
+  Care variantă preferi pentru INDIVIDUAL?
+  - A: Cu TOLERANCE (0.20 RON) - badge verde când diferența e mică
+  - B: Badge verde doar când diferența = 0, altfel badge portocaliu + diferență
+
+  ---
+  📊 RECAPITULARE COMPLETĂ - TOATE TIPURILE
+
+● | Tip         | totalIntrodus    | Diferență             | Total distribuit                        | Badge afișat
+                   |
+  |-------------|------------------|-----------------------|-----------------------------------------|---------------------------------    
+  -----------------|
+  | apartment   | = suma calculată | ❌ Nu există           | = totalIntrodus                         | ✅ Verde "Total distribuit"        
+                     |
+  | person      | = suma calculată | ❌ Nu există           | = totalIntrodus                         | ✅ Verde "Total distribuit"        
+                     |
+  | cotaParte   | = suma calculată | ❌ Nu există           | = totalIntrodus                         | ✅ Verde "Total distribuit"        
+                     |
+  | consumption | După participări | ⚠️ Pierderi/scurgeri  | = totalIntrodus + diferență distribuită | ✅ Verde "Total distribuit"
+                    |
+  | individual  | Sume introduse   | ⚠️ Eroare introducere | = totalIntrodus                         | ⚠️ Verde (dacă OK) / Portocaliu     
+  (dacă diferență) |
+
+  ---
+  🚀 PLANUL DE REFACTORIZARE
+
+  Acum că am înțeles COMPLET sistemul, îți propun următorul plan:
+
+  NIVEL 1: Creează funcții helper centralizate
+
+  1.1. Funcție pentru determinarea comportamentului:
+  // În ConsumptionComponents.js
+  export const getExpenseDisplayBehavior = (distributionType) => {
+    const behaviors = {
+      apartment: {
+        hasManualInput: false,
+        showSimpleDifference: false,
+        showDistributedDifference: false,
+        alwaysBalanced: true,
+        badgeColor: 'green',
+        badgeText: 'Total distribuit'
+      },
+      person: {
+        hasManualInput: false,
+        showSimpleDifference: false,
+        showDistributedDifference: false,
+        alwaysBalanced: true,
+        badgeColor: 'green',
+        badgeText: 'Total distribuit'
+      },
+      cotaParte: {
+        hasManualInput: false,
+        showSimpleDifference: false,
+        showDistributedDifference: false,
+        alwaysBalanced: true,
+        badgeColor: 'green',
+        badgeText: 'Total distribuit'
+      },
+      consumption: {
+        hasManualInput: true,
+        showSimpleDifference: true,
+        showDistributedDifference: true,
+        alwaysBalanced: true, // După distribuție
+        badgeColor: 'green',
+        badgeText: 'Total distribuit'
+      },
+      individual: {
+        hasManualInput: true,
+        showSimpleDifference: true,
+        showDistributedDifference: false,
+        alwaysBalanced: false, // Depinde de corectitudinea introducerii
+        badgeColor: 'conditional', // Verde sau portocaliu
+        badgeText: 'conditional'
+      }
+    };
+
+    return behaviors[distributionType] || behaviors.apartment;
+  };
+
+  1.2. Funcție pentru calculul diferențelor:
+  export const calculateExpenseDifferenceInfo = ({
+    expense,
+    config,
+    apartments,
+    filterInfo,
+    calculateExpenseDifferences, // hook-ul existent
+    getRelevantAmount
+  }) => {
+    const behavior = getExpenseDisplayBehavior(config.distributionType);
+
+    // Calculează totalIntrodus
+    const totalIntrodus = calculateTotalIntrodus(expense, config, apartments);
+
+    // Calculează suma așteptată
+    const sumaAsteptata = getRelevantAmount(expense, filterInfo);
+    const knowsExpectedAmount = determineIfKnowsExpectedAmount(expense, filterInfo);
+
+    // Calculează diferența simplă
+    const simpleDifference = knowsExpectedAmount ? (totalIntrodus - sumaAsteptata) : 0;
+
+    // Calculează diferența distribuită (doar pentru consumption)
+    let distributedDifference = 0;
+    if (behavior.showDistributedDifference && expense.isUnitBased) {
+      const diffs = calculateExpenseDifferences(expense, apartments);
+      distributedDifference = apartments.reduce((sum, apt) =>
+        sum + (diffs[apt.id] || 0), 0
+      );
+    }
+
+    // Calculează totalDistribuit
+    const totalDistribuit = totalIntrodus + distributedDifference;
+
+    // Determină dacă e balansat
+    const TOLERANCE = 0.20;
+    const isBalanced = behavior.alwaysBalanced ||
+                      Math.abs(totalDistribuit - sumaAsteptata) <= TOLERANCE;
+
+    return {
+      behavior,
+      totalIntrodus,
+      sumaAsteptata,
+      knowsExpectedAmount,
+      simpleDifference,
+      distributedDifference,
+      totalDistribuit,
+      isBalanced,
+      tolerance: TOLERANCE
+    };
+  };
+
+  1.3. Component reutilizabil pentru badge:
+  export const ExpenseTotalBadge = ({ differenceInfo, context = 'header' }) => {
+    const { behavior, totalDistribuit, simpleDifference, isBalanced, tolerance } = differenceInfo;
+
+    // Pentru apartment/person/cotaParte - ÎNTOTDEAUNA verde
+    if (behavior.alwaysBalanced) {
+      return (
+        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+        </div>
+      );
+    }
+
+    // Pentru consumption - ÎNTOTDEAUNA verde (după distribuție)
+    if (behavior.showDistributedDifference) {
+      return (
+        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+        </div>
+      );
+    }
+
+    // Pentru individual - Condiționat
+    if (behavior.badgeColor === 'conditional') {
+      if (isBalanced) {
+        // Diferență OK (sub tolerance)
+        return (
+          <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+            ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+          </div>
+        );
+      } else {
+        // Diferență NOT OK
+        return (
+          <div className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
+            ⚠ Diferență: {simpleDifference > 0 ? '+' : ''}{simpleDifference.toFixed(2)} RON
+            {simpleDifference < 0 ? ' (lipsesc)' : ' (mai mult)'}
+          </div>
+        );
+      }
+    }
+
+    return null;
+  };
+
+  Vrei să continui cu acest plan? Confirmă-mi:
+  1. Varianta pentru badge individual (A cu TOLERANCE sau B fără)
+  2. Dacă îți place structura propusă
+  3. Să încep implementarea?
+
+  🎯
+
+> hai sa il facem fara toleranta 
+
+● Perfect! Fără TOLERANCE - mult mai clar și simplu!
+
+● Excelent! Acum am imaginea completă. Iată planul final de refactorizare:
+
+  ---
+  🎯 PLAN FINAL DE REFACTORIZARE - Sistem Distribuție Cheltuieli
+
+  Obiectiv:
+
+  Centralizarea logicii de afișare a diferențelor și badge-urilor pentru a elimina duplicarea din ~15 locații și a face sistemul ușor      
+  de întreținut.
+
+  ---
+  📋 SPECIFICAȚII FINALE - Badge-uri fără TOLERANCE
+
+  1. apartment / person / cotaParte:
+
+  ✅ ÎNTOTDEAUNA badge verde:
+  ✓ Total distribuit: 500.00 RON
+  - Nu există diferență (reponderare automată)
+  - totalDistribuit = totalIntrodus
+
+  2. consumption (isUnitBased):
+
+  ✅ ÎNTOTDEAUNA badge verde:
+  ✓ Total distribuit: 5000.00 RON
+
+  + Afișare diferență (dacă există):
+  ⚠ Diferență: -40.00 RON (lipsesc)
+  Total introdus: 4960.00 RON
+  - Diferența = pierderi/scurgeri
+  - Se distribuie automat conform setărilor
+  - totalDistribuit = totalIntrodus + diferențăDistribuită
+
+  3. individual:
+
+  Dacă diferență = 0:
+    ✅ Badge verde:
+    ✓ Total distribuit: 5000.00 RON
+
+  Dacă diferență ≠ 0:
+    ⚠️ Badge portocaliu/roșu:
+    ⚠ Diferență: -50.00 RON (lipsesc)
+    Total introdus: 4950.00 RON
+  - Diferența = eroare de introducere
+  - Trebuie corectată manual
+  - NU există diferență distribuită
+
+  ---
+  🏗️ STRUCTURA REFACTORIZĂRII
+
+  Fișier: src/components/expenses/shared/DifferenceCalculations.js (NOU)
+
+  /**
+   * Configurație comportament per tip de distribuție
+   */
+  export const EXPENSE_BEHAVIOR_CONFIG = {
+    apartment: {
+      hasManualInput: false,
+      canHaveDifference: false,
+      showDistributedDifference: false,
+      alwaysShowGreenBadge: true
+    },
+    person: {
+      hasManualInput: false,
+      canHaveDifference: false,
+      showDistributedDifference: false,
+      alwaysShowGreenBadge: true
+    },
+    cotaParte: {
+      hasManualInput: false,
+      canHaveDifference: false,
+      showDistributedDifference: false,
+      alwaysShowGreenBadge: true
+    },
+    consumption: {
+      hasManualInput: true,
+      canHaveDifference: true,
+      showDistributedDifference: true,
+      alwaysShowGreenBadge: true
+    },
+    individual: {
+      hasManualInput: true,
+      canHaveDifference: true,
+      showDistributedDifference: false,
+      alwaysShowGreenBadge: false
+    }
+  };
+
+  /**
+   * Determină dacă știm suma așteptată pe baza nivelului de afișare
+   */
+  export const knowsExpectedAmount = (expense, filterInfo, stairs) => {
+    // Mapează receptionMode
+    let receptionMode = expense.receptionMode || 'total';
+    if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
+    else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
+
+    // Tab "Toate" - știi suma doar dacă e pe asociație
+    if (filterInfo.type === 'all') {
+      return receptionMode === 'total';
+    }
+
+    // Tab "Scară" - depinde de nivelul introducerii
+    if (filterInfo.type === 'stair') {
+      // Sume pe scară - știi suma pentru scara curentă
+      if (receptionMode === 'per_stair') return true;
+
+      // Sume pe bloc - știi suma doar dacă blocul are o singură scară
+      if (receptionMode === 'per_block') {
+        const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
+        return blockStairs.length === 1;
+      }
+
+      // Sume pe asociație - NU știi suma pentru scara curentă
+      return false;
+    }
+
+    return false;
+  };
+
+  /**
+   * Calculează toate informațiile despre diferențe pentru o cheltuială
+   */
+  export const calculateExpenseDifferenceInfo = ({
+    expense,
+    config,
+    apartments,
+    filterInfo,
+    stairs,
+    calculateExpenseDifferences, // din useMaintenanceCalculation
+    getRelevantAmount
+  }) => {
+    const behavior = EXPENSE_BEHAVIOR_CONFIG[config.distributionType] || EXPENSE_BEHAVIOR_CONFIG.apartment;
+
+    // 1. Calculează totalIntrodus (cu participări aplicate)
+    let totalIntrodus = 0;
+
+    if (config.distributionType === 'consumption') {
+      // Pentru consumption: suma = consum × preț (cu participări)
+      apartments.forEach(apt => {
+        const participation = config.apartmentParticipation?.[apt.id];
+        let aptAmount = parseFloat(expense.consumption?.[apt.id] || 0) * (expense.unitPrice || 0);
+
+        if (participation?.type === 'excluded') {
+          aptAmount = 0;
+        } else if (participation?.type === 'percentage') {
+          const percent = participation.value;
+          const multiplier = percent < 1 ? percent : (percent / 100);
+          aptAmount = aptAmount * multiplier;
+        } else if (participation?.type === 'fixed') {
+          const fixedMode = config?.fixedAmountMode || 'apartment';
+          const fixedAmount = parseFloat(participation.value || 0);
+          aptAmount = fixedMode === 'person' ? fixedAmount * (apt.persons || 0) : fixedAmount;
+        }
+
+        totalIntrodus += aptAmount;
+      });
+    } else if (config.distributionType === 'individual') {
+      // Pentru individual: suma directă introdusă (doar Integral/Exclus)
+      apartments.forEach(apt => {
+        const participation = config.apartmentParticipation?.[apt.id];
+        if (participation?.type !== 'excluded') {
+          totalIntrodus += parseFloat(expense.individualAmounts?.[apt.id] || 0);
+        }
+      });
+    } else {
+      // Pentru apartment/person/cotaParte: suma = getRelevantAmount
+      totalIntrodus = getRelevantAmount(expense, filterInfo);
+    }
+
+    // 2. Determină suma așteptată
+    const knowsAmount = knowsExpectedAmount(expense, filterInfo, stairs);
+    const sumaAsteptata = knowsAmount ? getRelevantAmount(expense, filterInfo) : totalIntrodus;
+
+    // 3. Calculează diferența simplă
+    const simpleDifference = totalIntrodus - sumaAsteptata;
+
+    // 4. Calculează diferența distribuită (doar pentru consumption cu isUnitBased)
+    let distributedDifference = 0;
+    if (behavior.showDistributedDifference && expense.isUnitBased && calculateExpenseDifferences) {
+      const diffs = calculateExpenseDifferences(expense, apartments);
+      distributedDifference = apartments.reduce((sum, apt) => sum + (diffs[apt.id] || 0), 0);
+    }
+
+    // 5. Calculează totalDistribuit
+    const totalDistribuit = totalIntrodus + distributedDifference;
+
+    // 6. Determină dacă e balansat (fără TOLERANCE)
+    const isBalanced = behavior.alwaysShowGreenBadge || (Math.abs(simpleDifference) < 0.01);
+
+    return {
+      behavior,
+      totalIntrodus,
+      sumaAsteptata,
+      knowsExpectedAmount: knowsAmount,
+      simpleDifference,
+      distributedDifference,
+      totalDistribuit,
+      isBalanced
+    };
+  };
+
+  Fișier: src/components/expenses/shared/ExpenseBadges.js (NOU)
+
+  import React from 'react';
+
+  /**
+   * Badge principal pentru total distribuit / diferență
+   */
+  export const ExpenseTotalBadge = ({ differenceInfo, showInHeader = true }) => {
+    const {
+      behavior,
+      totalDistribuit,
+      simpleDifference,
+      isBalanced,
+      knowsExpectedAmount
+    } = differenceInfo;
+
+    // apartment/person/cotaParte - ÎNTOTDEAUNA verde
+    if (behavior.alwaysShowGreenBadge && !behavior.canHaveDifference) {
+      return (
+        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+        </div>
+      );
+    }
+
+    // consumption - ÎNTOTDEAUNA verde (după distribuirea diferenței)
+    if (behavior.showDistributedDifference) {
+      return (
+        <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+          ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+        </div>
+      );
+    }
+
+    // individual - Condiționat (fără TOLERANCE)
+    if (behavior.canHaveDifference && !behavior.showDistributedDifference) {
+      if (isBalanced) {
+        // Diferență = 0
+        return (
+          <div className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
+            ✓ Total distribuit: {totalDistribuit.toFixed(2)} RON
+          </div>
+        );
+      } else {
+        // Diferență ≠ 0
+        return (
+          <div className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
+            ⚠ Diferență: {simpleDifference > 0 ? '+' : ''}{simpleDifference.toFixed(2)} RON
+            {simpleDifference < 0 ? ' (lipsesc)' : ' (mai mult)'}
+          </div>
+        );
+      }
+    }
+
+    return null;
+  };
+
+  /**
+   * Afișare diferență simplă (pentru consumption)
+   */
+  export const SimpleDifferenceBadge = ({ differenceInfo }) => {
+    const { behavior, simpleDifference, knowsExpectedAmount } = differenceInfo;
+
+    // Afișează doar pentru consumption când știm suma așteptată
+    if (!behavior.showDistributedDifference || !knowsExpectedAmount) {
+      return null;
+    }
+
+    // Afișează doar dacă diferența există
+    if (Math.abs(simpleDifference) < 0.01) {
+      return null;
+    }
+
+    return (
+      <div className="text-xs font-semibold text-orange-600">
+        ⚠ Diferență: {simpleDifference > 0 ? '+' : ''}{simpleDifference.toFixed(2)} RON
+        {simpleDifference < 0 ? ' (lipsesc)' : ' (mai mult)'}
+      </div>
+    );
+  };
+
+  /**
+   * Afișare total introdus
+   */
+  export const TotalIntrodusBadge = ({ differenceInfo }) => {
+    const { behavior, totalIntrodus, knowsExpectedAmount } = differenceInfo;
+
+    // Afișează doar pentru tipuri cu input manual
+    if (!behavior.hasManualInput || !knowsExpectedAmount) {
+      return null;
+    }
+
+    return (
+      <div className="text-xs font-semibold text-blue-600">
+        Total introdus: {totalIntrodus.toFixed(2)} RON
+      </div>
+    );
+  };
+
+  Modificări în ExpenseList.js:
+
+  Înlocuiește toate cele ~15 apariții de logică duplicată cu:
+
+  import {
+    calculateExpenseDifferenceInfo
+  } from './shared/DifferenceCalculations';
+  import {
+    ExpenseTotalBadge,
+    SimpleDifferenceBadge,
+    TotalIntrodusBadge
+  } from './shared/ExpenseBadges';
+
+  // În render, pentru fiecare cheltuială:
+  const differenceInfo = calculateExpenseDifferenceInfo({
+    expense,
+    config,
+    apartments: filteredApartments,
+    filterInfo: getFilterInfo(),
+    stairs,
+    calculateExpenseDifferences,
+    getRelevantAmount
+  });
+
+  // Apoi afișează badge-urile:
+  <TotalIntrodusBadge differenceInfo={differenceInfo} />
+  <SimpleDifferenceBadge differenceInfo={differenceInfo} />
+  <ExpenseTotalBadge differenceInfo={differenceInfo} />
+
+  ---
+  📝 PLANUL DE IMPLEMENTARE
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ Plan Refactorizare: Sistem Diferențe Cheltuieli    │
+     │    │
+     │ Obiectiv    │
+     │    │
+     │ Centralizarea logicii de calcul și afișare a diferențelor pentru toate tipurile de cheltuieli, eliminând duplicarea din ~15        │
+     │ locații.    │
+     │    │
+     │ Modificări    │
+     │    │
+     │ 1. Fișiere noi:    │
+     │    │
+     │ - src/components/expenses/shared/DifferenceCalculations.js    │
+     │   - Config comportament per tip distribuție (EXPENSE_BEHAVIOR_CONFIG)    │
+     │   - Funcție knowsExpectedAmount() - determină dacă știm suma așteptată    │
+     │   - Funcție calculateExpenseDifferenceInfo() - calculează toate diferențele    │
+     │ - src/components/expenses/shared/ExpenseBadges.js    │
+     │   - Component <ExpenseTotalBadge /> - badge principal (verde/roșu)    │
+     │   - Component <SimpleDifferenceBadge /> - diferență simplă (consumption)    │
+     │   - Component <TotalIntrodusBadge /> - total introdus    │
+     │    │
+     │ 2. Modificări în ExpenseList.js:    │
+     │    │
+     │ - Import funcții și componente noi    │
+     │ - Înlocuire logică duplicată din ~15 locații cu apel la calculateExpenseDifferenceInfo()    │
+     │ - Folosire componente badge în loc de JSX duplicat    │
+     │    │
+     │ 3. Logică badge-uri (FĂRĂ TOLERANCE):    │
+     │    │
+     │ apartment/person/cotaParte:    │
+     │ - ✅ Verde ÎNTOTDEAUNA: "Total distribuit: X RON"                                                                                   
+│
+     │    │
+     │ consumption:    │
+     │ - ✅ Verde ÎNTOTDEAUNA: "Total distribuit: X RON"                                                                                   
+│
+     │   - Diferență simplă (dacă există): "Diferență: -40 RON (lipsesc)"    │
+     │    │
+     │ individual:    │
+     │ - ✅ Verde când diferență = 0: "Total distribuit: X RON"                                                                            
+│
+     │ - 🔴 Roșu când diferență ≠ 0: "Diferență: -50 RON (lipsesc)"    │
+     │    │
+     │ Beneficii    │
+     │    │
+     │ - Elimină duplicarea codului    │
+     │ - Un singur loc pentru modificări    │
+     │ - Logică clară și ușor de înțeles    │
+     │ - Consistență vizuală în toată aplicația    │

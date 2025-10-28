@@ -1,0 +1,1000 @@
+ Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:842 === TOTALS ===
+ExpenseList.js:843 Total introdus: 5520.00
+ExpenseList.js:844 Total așteptat: 5980.00
+ExpenseList.js:845 Total distribuit: 5520.00
+ExpenseList.js:846 DIFERENȚĂ: -460.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:712 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:713 Filter: Object
+ExpenseList.js:821 Cheltuială: Întreținere lift
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 200.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Energie electrică
+ExpenseList.js:822   Tip: person
+ExpenseList.js:823   Suma introdusă: 66.67
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 66.67
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 66.67
+ExpenseList.js:821 Cheltuială: Căldură
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 200.00
+ExpenseList.js:821 Cheltuială: Apă caldă
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 400.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 404.73
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 400.00
+ExpenseList.js:821 Cheltuială: Apă rece
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 75.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 107.14
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 75.00
+ExpenseList.js:821 Cheltuială: Canal
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 350.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 385.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 350.00
+ExpenseList.js:821 Cheltuială: Apa pe scara
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 150.00
+ExpenseList.js:824   Suma așteptată: 220.00
+ExpenseList.js:825   Suma distribuită: 220.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -70.00
+ExpenseList.js:821 Cheltuială: Caldura pe bloc
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 80.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 80.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 80.00
+ExpenseList.js:821 Cheltuială: Caldura pe scara
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 40.00
+ExpenseList.js:824   Suma așteptată: 150.00
+ExpenseList.js:825   Suma distribuită: 40.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: -110.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:821 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 27.59
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 27.59
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 27.59
+ExpenseList.js:821 Cheltuială: Cota parte sume pe bloc
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 115.00
+ExpenseList.js:824   Suma așteptată: 115.00
+ExpenseList.js:825   Suma distribuită: 115.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cota parte suma pe scara
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 260.00
+ExpenseList.js:824   Suma așteptată: 260.00
+ExpenseList.js:825   Suma distribuită: 260.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 108.89
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 108.89
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 108.89
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 100.00
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe scara
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 200.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:842 === TOTALS ===
+ExpenseList.js:843 Total introdus: 1448.14
+ExpenseList.js:844 Total așteptat: 150.00
+ExpenseList.js:845 Total distribuit: 1520.01
+ExpenseList.js:846 DIFERENȚĂ: 1298.14
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:712 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:713 Filter: Object
+ExpenseList.js:821 Cheltuială: Întreținere lift
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 200.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Energie electrică
+ExpenseList.js:822   Tip: person
+ExpenseList.js:823   Suma introdusă: 66.67
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 66.67
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 66.67
+ExpenseList.js:821 Cheltuială: Căldură
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 200.00
+ExpenseList.js:821 Cheltuială: Apă caldă
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 400.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 404.73
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 400.00
+ExpenseList.js:821 Cheltuială: Apă rece
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 75.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 107.14
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 75.00
+ExpenseList.js:821 Cheltuială: Canal
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 350.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 385.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 350.00
+ExpenseList.js:821 Cheltuială: Apa pe scara
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 150.00
+ExpenseList.js:824   Suma așteptată: 220.00
+ExpenseList.js:825   Suma distribuită: 220.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -70.00
+ExpenseList.js:821 Cheltuială: Caldura pe bloc
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 80.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 80.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 80.00
+ExpenseList.js:821 Cheltuială: Caldura pe scara
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 40.00
+ExpenseList.js:824   Suma așteptată: 150.00
+ExpenseList.js:825   Suma distribuită: 40.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: -110.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:821 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 27.59
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 27.59
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 27.59
+ExpenseList.js:821 Cheltuială: Cota parte sume pe bloc
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 115.00
+ExpenseList.js:824   Suma așteptată: 115.00
+ExpenseList.js:825   Suma distribuită: 115.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cota parte suma pe scara
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 260.00
+ExpenseList.js:824   Suma așteptată: 260.00
+ExpenseList.js:825   Suma distribuită: 260.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 108.89
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 108.89
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 108.89
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 100.00
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe scara
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 200.00
+ExpenseList.js:824   Suma așteptată: 200.00
+ExpenseList.js:825   Suma distribuită: 200.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:842 === TOTALS ===
+ExpenseList.js:843 Total introdus: 1448.14
+ExpenseList.js:844 Total așteptat: 150.00
+ExpenseList.js:845 Total distribuit: 1520.01
+ExpenseList.js:846 DIFERENȚĂ: 1298.14
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 66: 36.30 RON
+ExpenseList.js:657     Apt 77: 36.30 RON
+ExpenseList.js:657     Apt 88: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 108.89 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759654292635
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:712 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:713 Filter: Object
+ExpenseList.js:821 Cheltuială: Întreținere lift
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Energie electrică
+ExpenseList.js:822   Tip: person
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Căldură
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 40.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 40.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 40.00
+ExpenseList.js:821 Cheltuială: Apă caldă
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 1260.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 1271.27
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 1260.00
+ExpenseList.js:821 Cheltuială: Apă rece
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 150.00
+ExpenseList.js:825   Suma distribuită: 150.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -50.00
+ExpenseList.js:821 Cheltuială: Canal
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 690.00
+ExpenseList.js:824   Suma așteptată: 700.00
+ExpenseList.js:825   Suma distribuită: 700.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -10.00
+ExpenseList.js:821 Cheltuială: Apa pe scara
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 67.50
+ExpenseList.js:824   Suma așteptată: 120.00
+ExpenseList.js:825   Suma distribuită: 120.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -52.50
+ExpenseList.js:821 Cheltuială: Caldura pe bloc
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 60.00
+ExpenseList.js:824   Suma așteptată: 110.00
+ExpenseList.js:825   Suma distribuită: 60.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: -50.00
+ExpenseList.js:821 Cheltuială: Caldura pe scara
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 140.00
+ExpenseList.js:824   Suma așteptată: 140.00
+ExpenseList.js:825   Suma distribuită: 140.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:821 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 17.24
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 17.24
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 17.24
+ExpenseList.js:821 Cheltuială: Cota parte sume pe bloc
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 220.00
+ExpenseList.js:824   Suma așteptată: 220.00
+ExpenseList.js:825   Suma distribuită: 220.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cota parte suma pe scara
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 250.00
+ExpenseList.js:824   Suma așteptată: 250.00
+ExpenseList.js:825   Suma distribuită: 250.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.74
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 100.74
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 100.74
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe scara
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:842 === TOTALS ===
+ExpenseList.js:843 Total introdus: 1617.98
+ExpenseList.js:844 Total așteptat: 250.00
+ExpenseList.js:845 Total distribuit: 1629.25
+ExpenseList.js:846 DIFERENȚĂ: 1367.98
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:712 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:713 Filter: Object
+ExpenseList.js:821 Cheltuială: Întreținere lift
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Energie electrică
+ExpenseList.js:822   Tip: person
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Căldură
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 40.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 40.00
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 40.00
+ExpenseList.js:821 Cheltuială: Apă caldă
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 1260.00
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 1271.27
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 1260.00
+ExpenseList.js:821 Cheltuială: Apă rece
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 150.00
+ExpenseList.js:825   Suma distribuită: 150.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -50.00
+ExpenseList.js:821 Cheltuială: Canal
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 690.00
+ExpenseList.js:824   Suma așteptată: 700.00
+ExpenseList.js:825   Suma distribuită: 700.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -10.00
+ExpenseList.js:821 Cheltuială: Apa pe scara
+ExpenseList.js:822   Tip: consumption
+ExpenseList.js:823   Suma introdusă: 67.50
+ExpenseList.js:824   Suma așteptată: 120.00
+ExpenseList.js:825   Suma distribuită: 120.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: -52.50
+ExpenseList.js:821 Cheltuială: Caldura pe bloc
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 60.00
+ExpenseList.js:824   Suma așteptată: 110.00
+ExpenseList.js:825   Suma distribuită: 60.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: -50.00
+ExpenseList.js:821 Cheltuială: Caldura pe scara
+ExpenseList.js:822   Tip: individual
+ExpenseList.js:823   Suma introdusă: 140.00
+ExpenseList.js:824   Suma așteptată: 140.00
+ExpenseList.js:825   Suma distribuită: 140.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:821 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 17.24
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 17.24
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 17.24
+ExpenseList.js:821 Cheltuială: Cota parte sume pe bloc
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 220.00
+ExpenseList.js:824   Suma așteptată: 220.00
+ExpenseList.js:825   Suma distribuită: 220.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cota parte suma pe scara
+ExpenseList.js:822   Tip: cotaParte
+ExpenseList.js:823   Suma introdusă: 250.00
+ExpenseList.js:824   Suma așteptată: 250.00
+ExpenseList.js:825   Suma distribuită: 250.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.74
+ExpenseList.js:824   Suma așteptată: 0.00
+ExpenseList.js:825   Suma distribuită: 100.74
+ExpenseList.js:826   Knows expected: false
+ExpenseList.js:827   Is fully distributed: false
+ExpenseList.js:828   Should include: true
+ExpenseList.js:829   Diferență: 100.74
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:821 Cheltuială: Cheltuiala pe apartament sume pe scara
+ExpenseList.js:822   Tip: apartment
+ExpenseList.js:823   Suma introdusă: 100.00
+ExpenseList.js:824   Suma așteptată: 100.00
+ExpenseList.js:825   Suma distribuită: 100.00
+ExpenseList.js:826   Knows expected: true
+ExpenseList.js:827   Is fully distributed: true
+ExpenseList.js:828   Should include: false
+ExpenseList.js:829   Diferență: 0.00
+ExpenseList.js:842 === TOTALS ===
+ExpenseList.js:843 Total introdus: 1617.98
+ExpenseList.js:844 Total așteptat: 250.00
+ExpenseList.js:845 Total distribuit: 1629.25
+ExpenseList.js:846 DIFERENȚĂ: 1367.98
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Apă caldă
+ExpenseList.js:538   Tip distribuție: consumption
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Căldură
+ExpenseList.js:538   Tip distribuție: individual
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 5000
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe apartament sume pe asociatie
+ExpenseList.js:538   Tip distribuție: apartment
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 500
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:651   Calculez suma pentru apartment/person...
+ExpenseList.js:657     Apt 11: 18.15 RON
+ExpenseList.js:657     Apt 22: 10.00 RON
+ExpenseList.js:657     Apt 33: 36.30 RON
+ExpenseList.js:657     Apt 44: 36.30 RON
+ExpenseList.js:662   TOTAL pentru scară: 100.74 RON
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
+ExpenseList.js:537 [getRelevantAmount] Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
+ExpenseList.js:538   Tip distribuție: cotaParte
+ExpenseList.js:539   Reception mode: total
+ExpenseList.js:540   Filter: scară 1759591096418
+ExpenseList.js:541   Suma asociație: 100
+ExpenseList.js:542   Scări în asociație: 16 apartamente, 4 în scara curentă
