@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Calculator, MoreVertical, Edit2 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
+import { DifferencePlaceholder } from './shared/ExpenseBadges';
 
 const ConsumptionInput = ({
   associationExpenses,
@@ -336,21 +337,22 @@ const ConsumptionInput = ({
             {/* Diferența - doar dacă știm suma așteptată */}
             {totals.allKnowExpectedAmount ? (() => {
               const diferenta = totals.totalIntrodus - totals.totalAsteptat;
-              const TOLERANCE = 0.20;
-              const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
+              // Fără TOLERANCE - afișăm diferență doar când există (>= 0.01)
+              const hasDifference = Math.abs(diferenta) >= 0.01;
 
-              if (!isDifferenceOk) {
+              if (hasDifference) {
                 return (
-                  <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
+                  <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
                     ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+                    {diferenta < 0 ? ' (lipsesc)' : ' (mai mult)'}
                   </div>
                 );
               }
               // Placeholder invizibil pentru aliniere
-              return <div className="mt-1 h-6"></div>;
+              return <DifferencePlaceholder />;
             })() : (
               // Placeholder invizibil când nu știm suma așteptată
-              <div className="mt-1 h-6"></div>
+              <DifferencePlaceholder />
             )}
           </div>
         )}
@@ -811,26 +813,24 @@ const ConsumptionInput = ({
                           }
 
                           const diferenta = totalIntrodus - relevantAmount;
-                          const TOLERANCE = 0.20;
-                          const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
-
-                          // Badge verde DOAR dacă: știi suma așteptată, diferența e ok ȘI ai introdus ceva (nu 0)
-                          const shouldBeGreen = knowsExpectedAmount && isDifferenceOk && totalIntrodus > 0;
+                          // Fără TOLERANCE - badge verde doar când diferență = 0 (sau < 0.01)
+                          const hasDifference = Math.abs(diferenta) >= 0.01;
+                          const shouldBeGreen = knowsExpectedAmount && !hasDifference && totalIntrodus > 0;
 
                           return (
                             <div className="flex flex-col items-end gap-1 mt-1">
                               {/* Total introdus */}
                               <div className={`text-xs font-medium px-2 py-1 rounded ${
-                                shouldBeGreen ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                shouldBeGreen ? 'bg-green-100 text-green-700' : 'bg-blue-600 text-white'
                               }`}>
-                                {shouldBeGreen ? '✓ ' : '⚠ '}Total introdus: {totalIntrodus.toFixed(2)} RON
+                                {shouldBeGreen ? '✓ ' : ''}Total introdus: {totalIntrodus.toFixed(2)} RON
                               </div>
 
                               {/* Diferență */}
                               {knowsExpectedAmount ? (
-                                // Știi suma așteptată - afișează diferența normală
-                                !isDifferenceOk && (
-                                  <div className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
+                                // Știi suma așteptată - afișează diferența când există
+                                hasDifference && (
+                                  <div className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
                                     ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON {diferenta < 0 ? '(lipsesc)' : '(mai mult)'}
                                   </div>
                                 )

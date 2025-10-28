@@ -213,7 +213,7 @@ const ExpenseEntryModal = ({
         }
         newExpense.amountsByStair = amounts;
       }
-    } else if (config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza') {
+    } else if (config.distributionType === 'cotaParte') {
       // cotaParte - verificăm dacă e total sau per_block/per_stair
       if (config.receptionMode === 'total') {
         if (!totalAmount) {
@@ -407,7 +407,7 @@ const ExpenseEntryModal = ({
                         config.distributionType === 'person' ? 'Pe persoană' :
                         config.distributionType === 'consumption' ? `Pe consum (${getConsumptionUnit(config)})` :
                         config.distributionType === 'individual' ? 'Pe apartament (individual)' :
-                        config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza' ? 'Pe cotă parte indiviză' : config.distributionType
+                        config.distributionType === 'cotaParte' ? 'Pe cotă parte indiviză' : config.distributionType
                       }
                     </div>
                     {config.supplierName ? (
@@ -999,7 +999,7 @@ const ExpenseEntryModal = ({
                 )}
 
                 {/* COTA PARTE - verifică și receptionMode */}
-                {(config.distributionType === 'cotaParte' || config.distributionType === 'cotaParteIndiviza') && (
+                {(config.distributionType === 'cotaParte') && (
                   <>
                     {/* MODE: TOTAL */}
                     {config.receptionMode === 'total' && (

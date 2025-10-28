@@ -11,7 +11,7 @@ const MaintenanceTableSimple = ({
 }) => {
   return (
     <table className="w-full">
-      <thead className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
+      <thead className={`sticky top-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Apartament</th>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Proprietar</th>
@@ -82,7 +82,7 @@ const MaintenanceTableSimple = ({
           </tr>
         ))}
       </tbody>
-      <tfoot className={isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}>
+      <tfoot className={`sticky bottom-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <td colSpan="2" className="px-3 py-3 font-semibold">TOTAL:</td>
           <td className="px-3 py-3 font-bold text-gray-800 text-center">

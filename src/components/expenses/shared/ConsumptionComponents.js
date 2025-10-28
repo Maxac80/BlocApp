@@ -219,13 +219,14 @@ export const ExpenseDifferenceDisplay = ({
   }
 
   const diferenta = totalIntrodus - totalAsteptat;
-  const TOLERANCE = 0.20;
-  const isDifferenceOk = Math.abs(diferenta) <= TOLERANCE;
+  // Fără TOLERANCE - afișăm diferență doar când există (>= 0.01)
+  const hasDifference = Math.abs(diferenta) >= 0.01;
 
-  if (!isDifferenceOk) {
+  if (hasDifference) {
     return (
-      <div className={`mt-1 text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700 ${className}`}>
+      <div className={`mt-1 text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700 ${className}`}>
         ⚠ Diferență: {diferenta > 0 ? '+' : ''}{diferenta.toFixed(2)} RON
+        {diferenta < 0 ? ' (lipsesc)' : ' (mai mult)'}
       </div>
     );
   }

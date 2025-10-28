@@ -362,7 +362,6 @@ const useMaintenanceCalculation = ({
             break;
 
           case 'cotaParte':
-          case 'cotaParteIndiviza':
             // Proporțional cu cota parte indiviză
             // Calculează ÎNTOTDEAUNA din surface, bazat pe totalul participanților
             const totalSurf = participatingApartments.reduce((s, ap) => s + (parseFloat(ap.surface) || 0), 0);
@@ -625,7 +624,6 @@ const useMaintenanceCalculation = ({
             break;
 
           case 'cotaParte':
-          case 'cotaParteIndiviza':
             // 🎯 CALCUL PE COTĂ PARTE INDIVIZĂ
             // IMPORTANT: Cotele părți se calculează ÎNTOTDEAUNA on-the-fly din surface,
             // bazat pe nivelul grupului (asociație/bloc/scară), NU se folosește cotaParte salvată!
@@ -691,7 +689,7 @@ const useMaintenanceCalculation = ({
 
           // Pentru cotaParte, folosește cota parte ca greutate, nu suma calculată
           let baseWeight = baseAmount;
-          if (distributionType === 'cotaParte' || distributionType === 'cotaParteIndiviza') {
+          if (distributionType === 'cotaParte') {
             // Calculează ÎNTOTDEAUNA cotaParte din surface bazat pe TOATE apartamentele grupului
             const allGroupTotalSurf = groupApartments.reduce((s, a) => s + (parseFloat(a.surface) || 0), 0);
             let aptCotaParte = 0;
@@ -739,7 +737,7 @@ const useMaintenanceCalculation = ({
               distributionByApartment[apt.id] = finalAmount;
 
               // Log pentru debugging
-              if (distributionType === 'cotaParte' || distributionType === 'cotaParteIndiviza') {
+              if (distributionType === 'cotaParte') {
                 const aptData = groupApartmentsForReweighting.find(a => a.id === apt.id);
                 console.log(`📊 [Reponderare CotaParte] Apt ${aptData?.number}: weight=${weights[apt.id].toFixed(4)}, totalWeights=${totalWeights.toFixed(4)}, final=${finalAmount.toFixed(2)} RON`);
               }
