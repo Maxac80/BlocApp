@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building2, Home, Users } from 'lucide-react';
+import { Eye, Layers, Building2, Home, Users, Receipt } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGenerator';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
 import BlockModal from '../modals/BlockModal';
 import StairModal from '../modals/StairModal';
+import MaintenanceBreakdownModal from '../modals/MaintenanceBreakdownModal';
 import DashboardHeader from '../dashboard/DashboardHeader';
 
 const SetupView = ({
@@ -20,6 +21,11 @@ const SetupView = ({
   expenses,
   isMonthReadOnly,
   handleNavigation,
+  setPendingMaintenanceApartmentId,
+  maintenanceData,
+  currentSheet,
+  getApartmentParticipation,
+  getExpenseConfig,
   searchTerm,
   setSearchTerm,
   expandedBlocks,
@@ -74,6 +80,10 @@ const SetupView = ({
 
   // State pentru apartamentul evidențiat
   const [highlightedApartmentId, setHighlightedApartmentId] = useState(null);
+
+  // State pentru modalul de breakdown întreținere
+  const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
+  const [selectedApartmentForBreakdown, setSelectedApartmentForBreakdown] = useState(null);
 
   // Effect pentru închiderea dropdown-urilor când se face click în afara lor
   useEffect(() => {
@@ -391,6 +401,33 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
     setApartmentModalMode('add');
     setApartmentModalData(null);
     setApartmentModalStair(null);
+  };
+
+  // Handler pentru deschiderea modalului de breakdown întreținere
+  const handleOpenMaintenanceBreakdown = (apartment) => {
+    // Găsim datele de întreținere pentru acest apartament
+    if (maintenanceData && maintenanceData.length > 0) {
+      const apartmentMaintenanceData = maintenanceData.find(
+        data => data.apartmentId === apartment.id
+      );
+
+      if (apartmentMaintenanceData) {
+        // Deschidem modalul cu datele complete
+        setSelectedApartmentForBreakdown(apartmentMaintenanceData);
+        setShowMaintenanceBreakdown(true);
+      } else {
+        // Dacă nu există date de întreținere, afișăm un mesaj
+        alert('Nu există date de întreținere calculate pentru acest apartament în luna curentă.');
+      }
+    } else {
+      // Dacă nu există deloc date de întreținere calculate
+      alert('Nu există date de întreținere calculate pentru luna curentă. Vă rugăm să accesați pagina "Calcul Întreținere" pentru a genera calculele.');
+    }
+
+    setOpenApartmentMenus(prev => ({
+      ...prev,
+      [apartment.id]: false
+    }));
   };
 
   const handleSaveApartment = async (apartmentData) => {
@@ -1683,45 +1720,18 @@ return (
                                                   <div className="relative ml-4 apartment-menu-container">
                                                     <button
                                                       onClick={() => {
-                                                        // Determină dacă este ultimul apartament din scară
-                                                        const stairApts = stairApartments.sort((a, b) => {
-                                                          const numberDiff = a.number - b.number;
-                                                          if (numberDiff !== 0) return numberDiff;
-                                                          if (a.createdAt && b.createdAt) {
-                                                            return new Date(a.createdAt) - new Date(b.createdAt);
-                                                          }
-                                                          return a.id.localeCompare(b.id);
-                                                        });
-                                                        const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
-
-                                                        if (isLastApartment) {
-                                                          // Pentru ultimul apartament, arată meniul cu opțiuni (editează + șterge)
-                                                          if (openApartmentMenus[apartment.id]) {
-                                                            setOpenApartmentMenus({});
-                                                          } else {
-                                                            setOpenBlockMenus({});
-                                                            setOpenStairMenus({});
-                                                            setOpenApartmentMenus({});
-                                                            setOpenApartmentMenus({ [apartment.id]: true });
-                                                          }
+                                                        // Arată meniul pentru TOATE apartamentele
+                                                        if (openApartmentMenus[apartment.id]) {
+                                                          setOpenApartmentMenus({});
                                                         } else {
-                                                          // Pentru celelalte apartamente, deschide direct edit-ul
-                                                          openEditApartmentModal(apartment);
+                                                          setOpenBlockMenus({});
+                                                          setOpenStairMenus({});
+                                                          setOpenApartmentMenus({});
+                                                          setOpenApartmentMenus({ [apartment.id]: true });
                                                         }
                                                       }}
                                                       className="p-2 text-orange-600 hover:bg-orange-200 hover:text-orange-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
-                                                      title={(() => {
-                                                        const stairApts = stairApartments.sort((a, b) => {
-                                                          const numberDiff = a.number - b.number;
-                                                          if (numberDiff !== 0) return numberDiff;
-                                                          if (a.createdAt && b.createdAt) {
-                                                            return new Date(a.createdAt) - new Date(b.createdAt);
-                                                          }
-                                                          return a.id.localeCompare(b.id);
-                                                        });
-                                                        const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
-                                                        return isLastApartment ? "Acțiuni pentru apartament" : "Editează apartament";
-                                                      })()}
+                                                      title="Acțiuni pentru apartament"
                                                     >
                                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -1729,8 +1739,15 @@ return (
                                                     </button>
 
                                                     {openApartmentMenus[apartment.id] && (
-                                                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                                                      <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                                                         <div className="py-1">
+                                                          <button
+                                                            onClick={() => handleOpenMaintenanceBreakdown(apartment)}
+                                                            className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center gap-2"
+                                                          >
+                                                            <Receipt className="w-4 h-4" />
+                                                            Vezi Detalii Întreținere
+                                                          </button>
                                                           <button
                                                             onClick={() => {
                                                               openEditApartmentModal(apartment);
@@ -1755,18 +1772,27 @@ return (
                                                             });
                                                             const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
 
-                                                            return isLastApartment && (
+                                                            return (
                                                               <button
                                                                 onClick={() => {
-                                                                  if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
-                                                                    deleteApartment(apartment.id);
+                                                                  if (isLastApartment) {
+                                                                    if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
+                                                                      deleteApartment(apartment.id);
+                                                                    }
+                                                                  } else {
+                                                                    alert('Doar ultimul apartament din scară poate fi șters.\n\nPentru a șterge acest apartament, șterge mai întâi apartamentele ulterioare.');
                                                                   }
                                                                   setOpenApartmentMenus(prev => ({
                                                                     ...prev,
                                                                     [apartment.id]: false
                                                                   }));
                                                                 }}
-                                                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                                                className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                                                                  isLastApartment
+                                                                    ? 'text-red-700 hover:bg-red-50 cursor-pointer'
+                                                                    : 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                                }`}
+                                                                disabled={!isLastApartment}
                                                               >
                                                                 🗑️ Șterge Apartament
                                                               </button>
@@ -1862,6 +1888,28 @@ return (
         stairs={stairs}
         apartments={apartments}
         onSave={handleSaveApartment}
+      />
+
+      {/* Modal pentru detalii întreținere */}
+      <MaintenanceBreakdownModal
+        isOpen={showMaintenanceBreakdown}
+        onClose={() => setShowMaintenanceBreakdown(false)}
+        apartmentData={selectedApartmentForBreakdown}
+        expensesList={currentSheet?.expenses || []}
+        apartmentParticipations={
+          // Build participations for ALL apartments, not just the selected one
+          apartments.reduce((acc, apt) => {
+            acc[apt.id] = (currentSheet?.expenses || []).reduce((expAcc, expense) => {
+              expAcc[expense.name] = getApartmentParticipation?.(apt.id, expense.name) || {};
+              return expAcc;
+            }, {});
+            return acc;
+          }, {})
+        }
+        allApartments={apartments}
+        allMaintenanceData={maintenanceData}
+        getExpenseConfig={getExpenseConfig}
+        stairs={stairs}
       />
     </div>
   );

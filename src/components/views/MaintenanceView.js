@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
-import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal } from '../modals';
+import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
@@ -28,6 +28,10 @@ const MaintenanceView = ({
   getCurrentActiveMonth,
   getNextActiveMonth,
   getMonthType,
+
+  // Pending apartment for maintenance breakdown
+  pendingMaintenanceApartmentId,
+  setPendingMaintenanceApartmentId,
   
   // Expenses
   expenses,
@@ -97,6 +101,10 @@ const MaintenanceView = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
+  // State pentru modalul de breakdown întreținere
+  const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
+  const [selectedMaintenanceData, setSelectedMaintenanceData] = useState(null);
+
   // State pentru modalul de adăugare cheltuială
   const [showExpenseEntryModal, setShowExpenseEntryModal] = useState(false);
 
@@ -131,7 +139,10 @@ const MaintenanceView = ({
 
   // Hook pentru gestionarea facturilor cu suport complet pentru distribuție parțială
   const {
+    invoices,
     addInvoice,
+    updateInvoice,
+    updateInvoiceByNumber,
     updateInvoiceDistribution,
     getPartiallyDistributedInvoices,
     getInvoiceByNumber,
@@ -169,23 +180,25 @@ const MaintenanceView = ({
     });
   }, [association, blocks, stairs]);
 
+  // Get all apartments for the association
+  const apartments = useMemo(() => {
+    if (!getAssociationApartments || typeof getAssociationApartments !== 'function') {
+      return [];
+    }
+    return getAssociationApartments();
+  }, [getAssociationApartments]);
+
   // Filtrează datele de întreținere pe scara selectată (înainte de early return pentru Rules of Hooks)
   const filteredMaintenanceData = useMemo(() => {
     if (selectedStairTab === 'all') return updatedMaintenanceData;
 
-    // Verifică dacă getAssociationApartments este disponibil
-    if (!getAssociationApartments || typeof getAssociationApartments !== 'function') {
-      return updatedMaintenanceData;
-    }
-
-    const apartments = getAssociationApartments();
     const stairApartments = apartments.filter(apt => apt.stairId === selectedStairTab);
     const apartmentNumbers = stairApartments.map(apt => apt.number);
 
     return updatedMaintenanceData.filter(data =>
       apartmentNumbers.includes(data.apartment)
     );
-  }, [selectedStairTab, updatedMaintenanceData, getAssociationApartments]);
+  }, [selectedStairTab, updatedMaintenanceData, apartments]);
 
   // Cheltuieli distribuite (cele care au fost introduse și au sume)
   const distributedExpenses = useMemo(() => {
@@ -276,7 +289,7 @@ const MaintenanceView = ({
   // Handler pentru salvarea plății cu integrare Firestore
   const handleSavePayment = async (paymentData) => {
     console.log('💰 Salvare plată:', paymentData);
-    
+
     // Salvează încasarea în Firestore
     const incasareData = {
       ...paymentData,
@@ -284,9 +297,9 @@ const MaintenanceView = ({
       owner: selectedApartment.owner,
       associationName: association.name
     };
-    
+
     const result = await addIncasare(incasareData);
-    
+
     if (result.success) {
       console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
       // Tabelul se va actualiza automat prin usePaymentSync
@@ -296,6 +309,34 @@ const MaintenanceView = ({
       alert(`Eroare la salvarea încasării: ${result.error}`);
     }
   };
+
+  // Handler pentru deschiderea modalului de breakdown întreținere
+  const handleOpenMaintenanceBreakdown = (maintenanceData) => {
+    setSelectedMaintenanceData(maintenanceData);
+    setShowMaintenanceBreakdown(true);
+  };
+
+  // Detectează și deschide modalul pentru apartamentul selectat din SetupView
+  useEffect(() => {
+    if (pendingMaintenanceApartmentId && maintenanceData && maintenanceData.length > 0) {
+      // Folosim maintenanceData direct (care vine din props) și calculăm versiunea updatată
+      const currentUpdatedData = getUpdatedMaintenanceData(maintenanceData);
+
+      // Găsește datele de întreținere pentru apartamentul selectat
+      const apartmentMaintenanceData = currentUpdatedData.find(
+        data => data.apartmentId === pendingMaintenanceApartmentId
+      );
+
+      if (apartmentMaintenanceData) {
+        // Deschide modalul cu datele găsite
+        handleOpenMaintenanceBreakdown(apartmentMaintenanceData);
+        // Resetează pending ID-ul
+        if (setPendingMaintenanceApartmentId) {
+          setPendingMaintenanceApartmentId(null);
+        }
+      }
+    }
+  }, [pendingMaintenanceApartmentId, maintenanceData, getUpdatedMaintenanceData, setPendingMaintenanceApartmentId]);
 
   // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul curent
   const associationExpenses = currentSheet?.expenses || [];
@@ -879,7 +920,10 @@ const MaintenanceView = ({
                 {/* Buton Distribuie Cheltuială - ascuns când toate sunt distribuite */}
                 {getAvailableExpenseTypes().length > 0 && (
                   <button
-                    onClick={() => setShowExpenseEntryModal(true)}
+                    onClick={() => {
+                      setEditingExpense(null); // Reset editing state pentru distribuire nouă
+                      setShowExpenseEntryModal(true);
+                    }}
                     disabled={isMonthReadOnly}
                     className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
                       isMonthReadOnly
@@ -1008,6 +1052,8 @@ const MaintenanceView = ({
                     updatePendingIndexes={updatePendingIndexes}
                     getDisabledExpenseTypes={getDisabledExpenseTypes}
                     getApartmentParticipation={getApartmentParticipation}
+                    invoices={invoices}
+                    getInvoiceForExpense={(expenseId) => invoices?.find(inv => inv.expenseId === expenseId)}
                   />
                 </div>
               </div>
@@ -1124,6 +1170,7 @@ const MaintenanceView = ({
                           isMonthReadOnly={isMonthReadOnly}
                           togglePayment={togglePayment}
                           onOpenPaymentModal={handleOpenPaymentModal}
+                          onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                           isHistoricMonth={monthType === 'historic'}
                         />
                       ) : (
@@ -1133,6 +1180,7 @@ const MaintenanceView = ({
                           association={association}
                           isMonthReadOnly={isMonthReadOnly}
                           onOpenPaymentModal={handleOpenPaymentModal}
+                          onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                           isHistoricMonth={monthType === 'historic'}
                         />
                       )}
@@ -1212,13 +1260,15 @@ const MaintenanceView = ({
           editingExpense={editingExpense}
           handleAddExpense={async (newExpenseData) => {
             console.log('🎯 WRAPPER received from modal:', newExpenseData);
-            console.log('🎯 WRAPPER typeof PARAM1:', typeof newExpenseData);
-            console.log('🎯 WRAPPER typeof PARAM2:', typeof addInvoice);
-            console.log('🎯 WRAPPER addExpenseFromHook is:', typeof addExpenseFromHook);
-            console.log('🎯 RIGHT BEFORE CALL - newExpenseData:', newExpenseData);
-            console.log('🎯 RIGHT BEFORE CALL - addInvoice:', addInvoice);
 
-            const result = await addExpenseFromHook(newExpenseData, addInvoice);
+            // Pasează funcțiile pentru invoice distribution update
+            const invoiceFunctions = {
+              addInvoice,
+              updateInvoiceDistribution,
+              getInvoiceByNumber
+            };
+
+            const result = await addExpenseFromHook(newExpenseData, addInvoice, invoiceFunctions);
 
             console.log('🎯 WRAPPER returned:', result);
             if (result !== false) {
@@ -1230,7 +1280,15 @@ const MaintenanceView = ({
           handleUpdateExpense={async (expenseId, updatedExpenseData) => {
             console.log('✏️ UPDATE WRAPPER received:', { expenseId, updatedExpenseData });
 
-            const result = await handleUpdateExpense(expenseId, updatedExpenseData);
+            // Pasează funcțiile pentru invoice update
+            const invoiceFunctions = {
+              updateInvoice,
+              updateInvoiceByNumber,
+              updateInvoiceDistribution,
+              getInvoiceByNumber
+            };
+
+            const result = await handleUpdateExpense(expenseId, updatedExpenseData, invoiceFunctions);
 
             console.log('✏️ UPDATE WRAPPER returned:', result);
             if (result !== false) {
@@ -1244,8 +1302,34 @@ const MaintenanceView = ({
           getPartiallyDistributedInvoices={getPartiallyDistributedInvoices}
           getInvoiceByNumber={getInvoiceByNumber}
           syncSuppliersForExpenseType={syncSuppliersForExpenseType}
+          addInvoice={addInvoice}
+          updateInvoice={updateInvoice}
+          updateInvoiceDistribution={updateInvoiceDistribution}
+          currentSheet={currentSheet}
+          association={association}
           setShowExpenseConfig={setShowExpenseConfig}
           setSelectedExpenseForConfig={setSelectedExpenseForConfig}
+        />
+
+        <MaintenanceBreakdownModal
+          isOpen={showMaintenanceBreakdown}
+          onClose={() => setShowMaintenanceBreakdown(false)}
+          apartmentData={selectedMaintenanceData}
+          expensesList={distributedExpenses}
+          apartmentParticipations={
+            // Build participations for ALL apartments, not just the selected one
+            apartments.reduce((acc, apt) => {
+              acc[apt.id] = distributedExpenses.reduce((expAcc, expense) => {
+                expAcc[expense.name] = getApartmentParticipation?.(apt.id, expense.name) || {};
+                return expAcc;
+              }, {});
+              return acc;
+            }, {})
+          }
+          allApartments={apartments}
+          allMaintenanceData={updatedMaintenanceData}
+          getExpenseConfig={getExpenseConfig}
+          stairs={stairs}
         />
 
         {/* Modal pentru cheltuieli disponibile */}

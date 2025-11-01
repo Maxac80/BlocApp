@@ -102,23 +102,69 @@ const useInvoices = (associationId, currentSheet) => {
       //   isFullyDistributed
       // });
       
-      // Creează noua intrare în istoric
-      const newDistributionEntry = {
-        month: distributionData.month,
-        amount: currentDistribution,
-        expenseId: distributionData.expenseId || null,
-        expenseType: distributionData.expenseType || null,
-        distributedAt: new Date().toISOString(),
-        notes: distributionData.notes || ''
-      };
-      
+      // Verifică dacă există deja o intrare pentru acest expenseId în distributionHistory
+      const existingHistory = invoice.distributionHistory || [];
+      const existingEntryIndex = existingHistory.findIndex(
+        entry => entry.expenseId === distributionData.expenseId
+      );
+
+      let updatedHistory;
+      let actualNewDistributedAmount;
+
+      if (existingEntryIndex >= 0 && distributionData.expenseId) {
+        // ACTUALIZARE - există deja o intrare pentru acest expenseId
+        console.log('📊 Actualizare intrare existentă în distributionHistory pentru expenseId:', distributionData.expenseId);
+
+        const oldAmount = existingHistory[existingEntryIndex].amount || 0;
+
+        // Recalculează distributedAmount: scade suma veche, adaugă suma nouă
+        actualNewDistributedAmount = (invoice.distributedAmount || 0) - oldAmount + currentDistribution;
+
+        // Actualizează intrarea existentă
+        const updatedEntry = {
+          ...existingHistory[existingEntryIndex],
+          sheetId: distributionData.sheetId || existingHistory[existingEntryIndex].sheetId,
+          month: distributionData.month || existingHistory[existingEntryIndex].month,
+          amount: currentDistribution,
+          expenseType: distributionData.expenseType || existingHistory[existingEntryIndex].expenseType,
+          distributedAt: new Date().toISOString(),
+          notes: distributionData.notes || existingHistory[existingEntryIndex].notes
+        };
+
+        updatedHistory = [
+          ...existingHistory.slice(0, existingEntryIndex),
+          updatedEntry,
+          ...existingHistory.slice(existingEntryIndex + 1)
+        ];
+      } else {
+        // ADĂUGARE - nu există o intrare pentru acest expenseId, adaugă una nouă
+        console.log('📊 Adăugare intrare nouă în distributionHistory');
+
+        actualNewDistributedAmount = newDistributedAmount;
+
+        const newDistributionEntry = {
+          sheetId: distributionData.sheetId || null,
+          month: distributionData.month,
+          amount: currentDistribution,
+          expenseId: distributionData.expenseId || null,
+          expenseType: distributionData.expenseType || null,
+          distributedAt: new Date().toISOString(),
+          notes: distributionData.notes || ''
+        };
+
+        updatedHistory = [...existingHistory, newDistributionEntry];
+      }
+
+      const actualNewRemainingAmount = (invoice.totalInvoiceAmount || invoice.totalAmount) - actualNewDistributedAmount;
+      const actualIsFullyDistributed = actualNewRemainingAmount <= 0;
+
       // Actualizează factura
       const docRef = doc(db, 'invoices', invoiceId);
       await updateDoc(docRef, {
-        distributedAmount: newDistributedAmount,
-        remainingAmount: newRemainingAmount,
-        isFullyDistributed: isFullyDistributed,
-        distributionHistory: [...(invoice.distributionHistory || []), newDistributionEntry],
+        distributedAmount: actualNewDistributedAmount,
+        remainingAmount: actualNewRemainingAmount,
+        isFullyDistributed: actualIsFullyDistributed,
+        distributionHistory: updatedHistory,
         updatedAt: new Date().toISOString()
       });
       
@@ -193,7 +239,8 @@ const useInvoices = (associationId, currentSheet) => {
         const currentDistribution = parseFloat(invoiceData.totalAmount) || 0;
         
         await updateInvoiceDistribution(existingInvoice.id, {
-          month: invoiceData.month,
+          sheetId: invoiceData.sheetId || null,  // SHEET-BASED: folosim sheetId
+          month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
           amount: currentDistribution,
           expenseId: invoiceData.expenseId || null,
           expenseType: invoiceData.expenseType || null,
@@ -274,7 +321,8 @@ const useInvoices = (associationId, currentSheet) => {
 
       // Creează istoricul distribuției
       const distributionEntry = {
-        month: invoiceData.month,
+        sheetId: invoiceData.sheetId || null,  // SHEET-BASED: folosim sheetId
+        month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
         amount: currentDistribution,
         expenseId: invoiceData.expenseId || null,
         expenseType: invoiceData.expenseType || null,
@@ -283,7 +331,7 @@ const useInvoices = (associationId, currentSheet) => {
       };
 
       // Creează documentul facturii
-      
+
       const dataToSave = {
         associationId,
         supplierId: supplierData.supplierId,
@@ -293,14 +341,16 @@ const useInvoices = (associationId, currentSheet) => {
         invoiceNumber: invoiceData.invoiceNumber,
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
-        month: invoiceData.month,
-        
+        sheetId: invoiceData.sheetId || null,  // SHEET-BASED: folosim sheetId
+        month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
+
         // Sume pentru compatibilitate
         amount: parseFloat(invoiceData.amount) || 0,
         vatAmount: parseFloat(invoiceData.vatAmount) || 0,
         totalAmount: parseFloat(invoiceData.totalAmount) || 0,
-        
+
         // NOILE câmpuri pentru distribuție parțială
+        invoiceAmount: parseFloat(invoiceData.invoiceAmount) || totalInvoiceAmount || 0,
         totalInvoiceAmount: totalInvoiceAmount,
         distributedAmount: distributedAmount,
         remainingAmount: remainingAmount,
@@ -351,7 +401,7 @@ const useInvoices = (associationId, currentSheet) => {
   const updateInvoice = useCallback(async (invoiceId, updates) => {
     try {
       console.log('📝 Actualizez factura:', invoiceId);
-      
+
       const docRef = doc(db, 'invoices', invoiceId);
       await updateDoc(docRef, {
         ...updates,
@@ -359,12 +409,39 @@ const useInvoices = (associationId, currentSheet) => {
       });
 
       console.log('✅ Factură actualizată:', invoiceId);
-      
+
     } catch (error) {
       console.error('❌ Eroare la actualizarea facturii:', error);
       throw error;
     }
   }, []);
+
+  // 📝 ACTUALIZAREA UNEI FACTURI DUPĂ NUMĂR
+  const updateInvoiceByNumber = useCallback(async (invoiceNumber, updates) => {
+    try {
+      console.log('📝 Actualizez factura după număr:', invoiceNumber);
+
+      // Normalizează numărul facturii pentru căutare
+      const normalizedNumber = invoiceNumber.trim().toLowerCase();
+
+      // Găsește factura în lista locală
+      const invoice = invoices.find(inv =>
+        inv.invoiceNumber && inv.invoiceNumber.trim().toLowerCase() === normalizedNumber
+      );
+
+      if (!invoice) {
+        console.warn('⚠️ Factură negăsită cu numărul:', invoiceNumber);
+        return;
+      }
+
+      // Update folosind ID-ul găsit
+      await updateInvoice(invoice.id, updates);
+
+    } catch (error) {
+      console.error('❌ Eroare la actualizarea facturii după număr:', error);
+      throw error;
+    }
+  }, [invoices, updateInvoice]);
 
   // 🗑️ ȘTERGEREA UNEI FACTURI
   const deleteInvoice = useCallback(async (invoiceId) => {
@@ -724,10 +801,11 @@ const useInvoices = (associationId, currentSheet) => {
     // 📊 Date și stare
     invoices,
     loading,
-    
+
     // 🔧 Funcții CRUD
     addInvoice,
     updateInvoice,
+    updateInvoiceByNumber,
     deleteInvoice,
     updateInvoiceDistribution,
     updateMissingSuppliersForExistingInvoices,

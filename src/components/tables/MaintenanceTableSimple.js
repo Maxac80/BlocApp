@@ -1,12 +1,13 @@
 import React from 'react';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Eye } from 'lucide-react';
 import PaymentStatusDetail from '../common/PaymentStatusDetail';
 
-const MaintenanceTableSimple = ({ 
-  maintenanceData, 
-  isMonthReadOnly, 
+const MaintenanceTableSimple = ({
+  maintenanceData,
+  isMonthReadOnly,
   togglePayment,
   onOpenPaymentModal,
+  onOpenMaintenanceBreakdown,
   isHistoricMonth = false
 }) => {
   return (
@@ -35,7 +36,20 @@ const MaintenanceTableSimple = ({
         {maintenanceData.map(data => (
           <tr key={data.apartmentId} className="hover:bg-gray-50">
             <td className="px-3 py-3 font-semibold">Ap. {data.apartment}</td>
-            <td className="px-3 py-3 text-blue-600 font-medium text-sm">{data.owner}</td>
+            <td className="px-3 py-3 text-blue-600 font-medium text-sm">
+              <div className="flex items-center gap-2">
+                {onOpenMaintenanceBreakdown && (
+                  <button
+                    onClick={() => onOpenMaintenanceBreakdown(data)}
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded p-1 transition-colors flex-shrink-0"
+                    title="Vezi detalii întreținere"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                )}
+                <span>{data.owner}</span>
+              </div>
+            </td>
             <td className="px-3 py-3 text-center">{data.persons}</td>
             <td className="px-3 py-3 font-bold text-indigo-600">{data.currentMaintenance.toFixed(2)}</td>
             <td className="px-3 py-3 font-bold text-red-600">{data.restante.toFixed(2)}</td>

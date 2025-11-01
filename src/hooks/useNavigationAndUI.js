@@ -11,7 +11,10 @@ export const useNavigationAndUI = () => {
   
   // Maintenance view state
   const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
-  
+
+  // State pentru deschiderea automată a modalului de întreținere
+  const [pendingMaintenanceApartmentId, setPendingMaintenanceApartmentId] = useState(null);
+
   // Modal states
   const [showInitialBalances, setShowInitialBalances] = useState(false);
   const [showAdjustBalances, setShowAdjustBalances] = useState(false);
@@ -217,7 +220,9 @@ const autoExpandEntities = useCallback((blocks, stairs, associationId) => {
     setSidebarExpanded,
     activeMaintenanceTab,
     setActiveMaintenanceTab,
-    
+    pendingMaintenanceApartmentId,
+    setPendingMaintenanceApartmentId,
+
     // Modal state
     showInitialBalances,
     setShowInitialBalances,

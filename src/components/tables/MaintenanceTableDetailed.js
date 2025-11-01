@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Eye } from 'lucide-react';
 import PaymentStatusDetail from '../common/PaymentStatusDetail';
 
 const MaintenanceTableDetailed = ({
@@ -8,6 +8,7 @@ const MaintenanceTableDetailed = ({
   association,
   isMonthReadOnly,
   onOpenPaymentModal,
+  onOpenMaintenanceBreakdown,
   isHistoricMonth = false
 }) => {
   // Calculează lățimea minimă necesară pentru toate coloanele
@@ -89,7 +90,18 @@ const MaintenanceTableDetailed = ({
               Ap. {data.apartment}
             </td>
             <td className="px-3 py-3 text-blue-600 font-medium text-sm whitespace-nowrap">
-              {data.owner}
+              <div className="flex items-center gap-2">
+                {onOpenMaintenanceBreakdown && (
+                  <button
+                    onClick={() => onOpenMaintenanceBreakdown(data)}
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded p-1 transition-colors flex-shrink-0"
+                    title="Vezi detalii întreținere"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                )}
+                <span>{data.owner}</span>
+              </div>
             </td>
             <td className="px-3 py-3 text-center whitespace-nowrap">
               {data.persons}

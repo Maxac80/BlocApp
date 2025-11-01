@@ -9,6 +9,7 @@ const InvoiceDetailsModal = ({
   entityName,
   monthType,
   supplierName,
+  supplierId,
   existingInvoice = null,
   // Funcții pentru facturi parțiale
   getPartiallyDistributedInvoices,
@@ -16,6 +17,7 @@ const InvoiceDetailsModal = ({
 }) => {
   const [selectedExistingInvoice, setSelectedExistingInvoice] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState(existingInvoice?.invoiceNumber || '');
+  const [invoiceAmount, setInvoiceAmount] = useState(existingInvoice?.invoiceAmount || '');
   const [invoiceDate, setInvoiceDate] = useState(existingInvoice?.invoiceDate || '');
   const [dueDate, setDueDate] = useState(existingInvoice?.dueDate || '');
   const [notes, setNotes] = useState(existingInvoice?.notes || '');
@@ -41,14 +43,16 @@ const InvoiceDetailsModal = ({
     setSelectedExistingInvoice(invoiceId);
 
     if (invoiceId && getPartiallyDistributedInvoices) {
-      const allInvoices = expenseType
-        ? getPartiallyDistributedInvoices(expenseType)
-        : getPartiallyDistributedInvoices();
+      const allInvoices = getPartiallyDistributedInvoices();
+      const filteredInvoices = supplierId
+        ? allInvoices.filter(inv => inv.supplierId === supplierId)
+        : allInvoices;
 
-      const invoice = allInvoices?.find(inv => inv.id === invoiceId);
+      const invoice = filteredInvoices?.find(inv => inv.id === invoiceId);
 
       if (invoice) {
         setInvoiceNumber(invoice.invoiceNumber);
+        setInvoiceAmount(invoice.invoiceAmount || invoice.totalInvoiceAmount || '');
         setInvoiceDate(invoice.invoiceDate || '');
         setDueDate(invoice.dueDate || '');
         setNotes(invoice.notes || '');
@@ -57,6 +61,7 @@ const InvoiceDetailsModal = ({
     } else if (!invoiceId) {
       // Reset când se selectează "Factură nouă"
       setInvoiceNumber('');
+      setInvoiceAmount('');
       setInvoiceDate('');
       setDueDate('');
       setNotes('');
@@ -70,9 +75,20 @@ const InvoiceDetailsModal = ({
       return;
     }
 
+    console.log('🔍 InvoiceDetailsModal - handleSubmit - Sending data:', {
+      entityId,
+      invoiceNumber,
+      invoiceAmount,
+      invoiceDate,
+      dueDate,
+      notes,
+      hasPdfFile: !!pdfFile
+    });
+
     onSave({
       entityId,
       invoiceNumber,
+      invoiceAmount,
       invoiceDate,
       dueDate,
       notes,
@@ -89,6 +105,7 @@ const InvoiceDetailsModal = ({
   const resetForm = () => {
     setSelectedExistingInvoice('');
     setInvoiceNumber('');
+    setInvoiceAmount('');
     setInvoiceDate('');
     setDueDate('');
     setNotes('');
@@ -127,11 +144,13 @@ const InvoiceDetailsModal = ({
           {/* Dropdown pentru facturi existente parțiale */}
           {getPartiallyDistributedInvoices && (() => {
             const allPartialInvoices = getPartiallyDistributedInvoices();
-            const partialInvoicesForType = expenseType ? getPartiallyDistributedInvoices(expenseType) : [];
+            const partialInvoicesForSupplier = supplierId
+              ? allPartialInvoices.filter(inv => inv.supplierId === supplierId)
+              : [];
 
-            const shouldShowAllPartials = !expenseType && allPartialInvoices?.length > 0;
-            const shouldShowSpecificPartials = expenseType && partialInvoicesForType?.length > 0;
-            const shouldShowDropdown = shouldShowAllPartials || shouldShowSpecificPartials || expenseType;
+            const shouldShowAllPartials = !supplierId && allPartialInvoices?.length > 0;
+            const shouldShowSupplierPartials = supplierId && partialInvoicesForSupplier?.length > 0;
+            const shouldShowDropdown = shouldShowAllPartials || shouldShowSupplierPartials || supplierId;
 
             return shouldShowDropdown;
           })() && (
@@ -146,9 +165,10 @@ const InvoiceDetailsModal = ({
               >
                 <option value="">-- Factură nouă --</option>
                 {(() => {
-                  const invoicesToShow = expenseType
-                    ? getPartiallyDistributedInvoices(expenseType)
-                    : getPartiallyDistributedInvoices();
+                  const allInvoices = getPartiallyDistributedInvoices();
+                  const invoicesToShow = supplierId
+                    ? allInvoices.filter(inv => inv.supplierId === supplierId)
+                    : allInvoices;
 
                   return invoicesToShow?.map(invoice => {
                     const remainingAmount = invoice.remainingAmount?.toFixed(2) || invoice.totalAmount?.toFixed(2);
@@ -195,6 +215,26 @@ const InvoiceDetailsModal = ({
               placeholder="ex: FAC-2024-001234"
               disabled={!!selectedExistingInvoice}
               className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
+                selectedExistingInvoice ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Suma din factură (RON)
+              <span className="text-xs text-gray-500 ml-2">
+                (valoarea totală scrisă pe factură)
+              </span>
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={invoiceAmount}
+              onChange={(e) => setInvoiceAmount(e.target.value)}
+              placeholder="ex: 523.45"
+              disabled={!!selectedExistingInvoice}
+              className={`w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg font-semibold ${
                 selectedExistingInvoice ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />

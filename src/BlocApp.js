@@ -78,6 +78,8 @@ export default function BlocApp() {
     setSidebarExpanded,
     activeMaintenanceTab,
     setActiveMaintenanceTab,
+    pendingMaintenanceApartmentId,
+    setPendingMaintenanceApartmentId,
     showInitialBalances,
     setShowInitialBalances,
     showAdjustBalances,
@@ -606,6 +608,8 @@ useEffect(() => {
               togglePayment={() => {}}
               activeMaintenanceTab={activeMaintenanceTab}
               setActiveMaintenanceTab={setActiveMaintenanceTab}
+              pendingMaintenanceApartmentId={pendingMaintenanceApartmentId}
+              setPendingMaintenanceApartmentId={setPendingMaintenanceApartmentId}
               forceRecalculate={() => {}}
               showAdjustBalances={showAdjustBalances}
               setShowAdjustBalances={setShowAdjustBalances}
@@ -656,6 +660,11 @@ useEffect(() => {
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
               handleNavigation={handleNavigation}
+              setPendingMaintenanceApartmentId={setPendingMaintenanceApartmentId}
+              maintenanceData={maintenanceData}
+              currentSheet={currentSheet}
+              getApartmentParticipation={getApartmentParticipation}
+              getExpenseConfig={getFirestoreExpenseConfig}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               expandedBlocks={expandedBlocks}

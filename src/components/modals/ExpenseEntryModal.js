@@ -18,6 +18,12 @@ const ExpenseEntryModal = ({
   getPartiallyDistributedInvoices,
   getInvoiceByNumber,
   syncSuppliersForExpenseType,
+  // Funcții pentru salvare facturi
+  addInvoice,
+  updateInvoice,
+  updateInvoiceDistribution,
+  currentSheet,
+  association,
   setShowExpenseConfig,
   setSelectedExpenseForConfig
 }) => {
@@ -86,8 +92,23 @@ const ExpenseEntryModal = ({
         setTotalAmount(editingExpense.amount?.toString() || '');
       }
 
-      // TODO: Populează și invoice data dacă există
-      // Deocamdată nu avem invoice data în editing
+      // Populează invoice data din editingExpense (salvate în sheet)
+      if (editingExpense.invoiceData) {
+        console.log('📋 Loading singleInvoice from editingExpense:', editingExpense.invoiceData);
+        setSingleInvoice({
+          invoiceNumber: editingExpense.invoiceData.invoiceNumber || '',
+          invoiceAmount: editingExpense.invoiceData.invoiceAmount?.toString() || editingExpense.invoiceData.totalInvoiceAmount?.toString() || '',
+          invoiceDate: editingExpense.invoiceData.invoiceDate || '',
+          dueDate: editingExpense.invoiceData.dueDate || '',
+          notes: editingExpense.invoiceData.notes || '',
+          pdfFile: null // Nu putem încărca PDF-ul din Firestore
+        });
+      }
+
+      if (editingExpense.separateInvoicesData) {
+        console.log('📋 Loading separateInvoices from editingExpense:', editingExpense.separateInvoicesData);
+        setSeparateInvoices(editingExpense.separateInvoicesData);
+      }
     }
   }, [editingExpense]);
 
@@ -109,28 +130,106 @@ const ExpenseEntryModal = ({
     setShowInvoiceDetailsModal(true);
   };
 
-  const handleSaveInvoice = (invoiceDetails) => {
+  const handleSaveInvoice = async (invoiceDetails) => {
+    console.log('🔍 ExpenseEntryModal - handleSaveInvoice - Received:', invoiceDetails);
+
+    const invoiceData = {
+      invoiceNumber: invoiceDetails.invoiceNumber,
+      invoiceAmount: invoiceDetails.invoiceAmount,
+      invoiceDate: invoiceDetails.invoiceDate,
+      dueDate: invoiceDetails.dueDate,
+      notes: invoiceDetails.notes,
+      pdfFile: invoiceDetails.pdfFile
+    };
+
+    // Salvează în state local pentru a afișa în UI
     if (invoiceDetails.entityId === 'single') {
-      // Factură unică
-      setSingleInvoice({
-        invoiceNumber: invoiceDetails.invoiceNumber,
-        invoiceDate: invoiceDetails.invoiceDate,
-        dueDate: invoiceDetails.dueDate,
-        notes: invoiceDetails.notes,
-        pdfFile: invoiceDetails.pdfFile
-      });
+      console.log('🔍 ExpenseEntryModal - Setting singleInvoice:', invoiceData);
+      setSingleInvoice(invoiceData);
     } else {
-      // Factură separată
+      console.log('🔍 ExpenseEntryModal - Setting separateInvoice for entity:', invoiceDetails.entityId, invoiceData);
       setSeparateInvoices(prev => ({
         ...prev,
-        [invoiceDetails.entityId]: {
+        [invoiceDetails.entityId]: invoiceData
+      }));
+    }
+
+    // Salvează sau actualizează factura în Firebase
+    if (!invoiceDetails.isExistingInvoice) {
+      // Verifică dacă suntem în modul de editare și dacă factura deja există
+      if (editingExpense && editingExpense.invoiceData?.invoiceNumber && getInvoiceByNumber && updateInvoice) {
+        // MOD EDITARE - actualizează factura existentă
+        try {
+          console.log('✏️ ExpenseEntryModal - Actualizare factură existentă:', invoiceDetails.invoiceNumber);
+
+          const existingInvoice = await getInvoiceByNumber(invoiceDetails.invoiceNumber);
+
+          if (existingInvoice) {
+            // Actualizează factura existentă
+            const updateData = {
+              invoiceAmount: parseFloat(invoiceDetails.invoiceAmount) || 0,
+              totalInvoiceAmount: parseFloat(invoiceDetails.invoiceAmount) || 0,
+              invoiceDate: invoiceDetails.invoiceDate,
+              dueDate: invoiceDetails.dueDate,
+              notes: invoiceDetails.notes,
+              updatedAt: new Date().toISOString()
+            };
+
+            // Recalculează remainingAmount dacă s-a schimbat totalInvoiceAmount
+            const newTotalAmount = parseFloat(invoiceDetails.invoiceAmount) || 0;
+            const distributedAmount = existingInvoice.distributedAmount || 0;
+            updateData.remainingAmount = newTotalAmount - distributedAmount;
+            updateData.isFullyDistributed = updateData.remainingAmount <= 0;
+
+            console.log('💾 ExpenseEntryModal - Actualizare factură:', updateData);
+            await updateInvoice(existingInvoice.id, updateData);
+            console.log('✅ ExpenseEntryModal - Factură actualizată în Firebase');
+          } else {
+            console.warn('⚠️ Nu s-a găsit factura pentru actualizare, se creează una nouă');
+            // Dacă nu găsim factura, o creăm
+            await createNewInvoice(invoiceDetails);
+          }
+        } catch (error) {
+          console.error('❌ Eroare la actualizarea facturii:', error);
+          alert('Eroare la actualizarea facturii: ' + error.message);
+        }
+      } else if (addInvoice) {
+        // MOD ADĂUGARE - creează factură nouă
+        await createNewInvoice(invoiceDetails);
+      }
+    }
+
+    // Funcție helper pentru creare factură nouă
+    async function createNewInvoice(invoiceDetails) {
+      try {
+        const config = getExpenseConfig(selectedExpense);
+
+        const firebaseInvoiceData = {
+          expenseType: selectedExpense,
           invoiceNumber: invoiceDetails.invoiceNumber,
+          invoiceAmount: invoiceDetails.invoiceAmount,
           invoiceDate: invoiceDetails.invoiceDate,
           dueDate: invoiceDetails.dueDate,
           notes: invoiceDetails.notes,
-          pdfFile: invoiceDetails.pdfFile
-        }
-      }));
+          sheetId: currentSheet?.id || null,
+          month: currentMonth,
+          supplierId: config?.supplierId || null,
+          supplierName: config?.supplierName || null,
+          amount: 0,  // Încă nu am distribuit nimic
+          totalAmount: 0,
+          vatAmount: 0,
+          totalInvoiceAmount: parseFloat(invoiceDetails.invoiceAmount) || 0,
+          currentDistribution: 0,
+          distributedAmount: 0
+        };
+
+        console.log('💾 ExpenseEntryModal - Salvare imediată factură în Firebase:', firebaseInvoiceData);
+        await addInvoice(firebaseInvoiceData, invoiceDetails.pdfFile);
+        console.log('✅ ExpenseEntryModal - Factură salvată în Firebase');
+      } catch (error) {
+        console.error('❌ Eroare la salvarea facturii:', error);
+        alert('Eroare la salvarea facturii: ' + error.message);
+      }
     }
   };
 
@@ -144,6 +243,13 @@ const ExpenseEntryModal = ({
   };
 
   const handleSubmit = async () => {
+    console.log('🚀 handleSubmit START', {
+      selectedExpense,
+      editingExpense: !!editingExpense,
+      hasSingleInvoice: !!singleInvoice.invoiceNumber,
+      singleInvoice
+    });
+
     if (!selectedExpense) {
       alert('Selectează o cheltuială');
       return;
@@ -266,7 +372,7 @@ const ExpenseEntryModal = ({
     }
 
     // Adaugă invoice data dacă există
-    if (singleInvoice) {
+    if (singleInvoice && singleInvoice.invoiceNumber && singleInvoice.invoiceNumber.trim()) {
       // Folosim singleInvoice pentru toate cazurile (total, per_block, per_stair cu factură unică)
       let currentDist;
 
@@ -283,17 +389,36 @@ const ExpenseEntryModal = ({
         }
       }
 
+      console.log('🔍 ExpenseEntryModal - handleSubmit - Building invoiceData from singleInvoice:', singleInvoice);
+
       newExpense.invoiceData = {
         invoiceNumber: singleInvoice.invoiceNumber,
+        invoiceAmount: singleInvoice.invoiceAmount,
         invoiceDate: singleInvoice.invoiceDate,
         dueDate: singleInvoice.dueDate,
         notes: singleInvoice.notes,
         currentDistribution: currentDist,
-        totalInvoiceAmount: currentDist, // Pentru simplitate, totalul = distribuția curentă
+        totalInvoiceAmount: singleInvoice.invoiceAmount || currentDist, // Folosește invoiceAmount dacă există
         isPartialDistribution: false
       };
       newExpense.pdfFile = singleInvoice.pdfFile;
+
+      console.log('🔍 ExpenseEntryModal - handleSubmit - newExpense.invoiceData:', newExpense.invoiceData);
     }
+
+    // Adaugă facturi separate per bloc/scară dacă există
+    if (Object.keys(separateInvoices).length > 0) {
+      newExpense.separateInvoicesData = separateInvoices;
+      // Adaugă și amounts pentru a ști care e suma pentru fiecare entitate
+      newExpense.entityAmounts = amounts;
+    }
+
+    console.log('🚀 About to save expense', {
+      isEditing: !!editingExpense,
+      hasInvoiceData: !!newExpense.invoiceData,
+      invoiceNumber: newExpense.invoiceData?.invoiceNumber,
+      newExpense
+    });
 
     try {
       if (editingExpense) {
@@ -302,8 +427,10 @@ const ExpenseEntryModal = ({
         await handleUpdateExpense(editingExpense.id, newExpense);
       } else {
         // Mod adăugare - folosește handleAddExpense
-        console.log('📝 ExpenseEntryModal - Adding expense:', newExpense);
+        console.log('📝 ExpenseEntryModal - About to call handleAddExpense with:', newExpense);
+        console.log('📝 handleAddExpense function type:', typeof handleAddExpense);
         await handleAddExpense(newExpense);
+        console.log('✅ handleAddExpense completed');
       }
       onClose();
       resetForm();
@@ -1304,6 +1431,7 @@ const ExpenseEntryModal = ({
           entityName={currentEntityForInvoice.name}
           monthType={monthType}
           supplierName={config?.supplierName}
+          supplierId={config?.supplierId}
           existingInvoice={
             currentEntityForInvoice.id === 'single'
               ? singleInvoice

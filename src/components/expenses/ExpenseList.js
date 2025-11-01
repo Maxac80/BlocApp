@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2, Layers, Building2, BarChart, MoreVertical, Settings } from 'lucide-react';
+import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2, Layers, Building2, BarChart, MoreVertical, Settings, FileText } from 'lucide-react';
 import {
   ConsumptionTable,
   IndividualAmountsTable,
@@ -45,7 +45,10 @@ const ExpenseList = ({
   updateExpenseIndexes,
   updatePendingIndexes,
   getDisabledExpenseTypes,
-  getApartmentParticipation
+  getApartmentParticipation,
+  // Props pentru facturi
+  invoices,
+  getInvoiceForExpense
 }) => {
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -1046,9 +1049,23 @@ const ExpenseList = ({
                         <h4 className="font-semibold text-base text-gray-900 px-2 py-1 -ml-2 rounded inline-block">
                           {expense.name}
                         </h4>
+                        {/* Badge pentru status consumuri/sume individuale */}
+                        {(config.distributionType === 'consumption' || config.distributionType === 'individual') && (() => {
+                          const filteredApartments = getFilteredApartments();
+                          const status = getExpenseStatus(
+                            expense.name,
+                            (expenseTypeName) => expense, // getDistributedExpense
+                            getExpenseConfig,
+                            filteredApartments,
+                            currentSheet
+                          );
+                          return (
+                            <div className="mt-1">
+                              <ExpenseStatusBadge status={status} isConsumption={config.distributionType === 'consumption'} />
+                            </div>
+                          );
+                        })()}
                       </div>
-
-
 
                       {/* Informații pe trei linii compacte */}
                       <div className="space-y-1 text-xs">
@@ -1120,6 +1137,24 @@ const ExpenseList = ({
                             </>
                           )}
                         </div>
+
+                        {/* Linia 4: Factură (dacă există) */}
+                        {(() => {
+                          const invoice = getInvoiceForExpense?.(expense.id);
+                          if (!invoice) return null;
+
+                          return (
+                            <div className="flex items-center gap-3 text-gray-600 pt-1 border-t border-gray-200 mt-1">
+                              <span className="font-medium">Factură:</span>
+                              <span className="text-indigo-600 font-medium">
+                                {invoice.supplierName && `${invoice.supplierName} • `}
+                                Nr. {invoice.invoiceNumber}
+                                {invoice.invoiceDate && ` • ${new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}`}
+                                {invoice.invoiceAmount && ` • ${parseFloat(invoice.invoiceAmount).toFixed(2)} RON`}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -1719,6 +1754,57 @@ const ExpenseList = ({
                 {/* Detalii expandabile */}
                 {isExpanded && (
                   <div className="p-4 bg-white border-t border-gray-200 space-y-4 rounded-b-lg">
+                    {/* Card detalii factură (dacă există) */}
+                    {(() => {
+                      const invoice = getInvoiceForExpense?.(expense.id);
+                      if (!invoice) return null;
+
+                      return (
+                        <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                          <h5 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            Detalii factură
+                          </h5>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            {invoice.supplierName && (
+                              <div>
+                                <div className="text-gray-600 font-medium">Furnizor:</div>
+                                <div className="text-gray-900">{invoice.supplierName}</div>
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-gray-600 font-medium">Număr factură:</div>
+                              <div className="text-gray-900">{invoice.invoiceNumber}</div>
+                            </div>
+                            {invoice.invoiceAmount && (
+                              <div>
+                                <div className="text-gray-600 font-medium">Suma factură:</div>
+                                <div className="text-gray-900 font-semibold">{parseFloat(invoice.invoiceAmount).toFixed(2)} RON</div>
+                              </div>
+                            )}
+                            {invoice.invoiceDate && (
+                              <div>
+                                <div className="text-gray-600 font-medium">Data emiterii:</div>
+                                <div className="text-gray-900">{new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</div>
+                              </div>
+                            )}
+                            {invoice.dueDate && (
+                              <div>
+                                <div className="text-gray-600 font-medium">Data scadenței:</div>
+                                <div className="text-gray-900">{new Date(invoice.dueDate).toLocaleDateString('ro-RO')}</div>
+                              </div>
+                            )}
+                            {invoice.notes && (
+                              <div className="col-span-2">
+                                <div className="text-gray-600 font-medium">Observații:</div>
+                                <div className="text-gray-900">{invoice.notes}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Card detalii pentru cheltuieli pe asociație (receptionMode === 'total') */}
                     {receptionMode === 'total' && getFilterInfo().type === 'all' && (
                       <div>
