@@ -102,18 +102,26 @@ const useInvoices = (associationId, currentSheet) => {
       //   isFullyDistributed
       // });
       
-      // Verifică dacă există deja o intrare pentru acest expenseId în distributionHistory
+      // Verifică dacă există deja o intrare pentru acest expenseId sau expenseTypeId în distributionHistory
       const existingHistory = invoice.distributionHistory || [];
-      const existingEntryIndex = existingHistory.findIndex(
-        entry => entry.expenseId === distributionData.expenseId
-      );
+      const existingEntryIndex = existingHistory.findIndex(entry => {
+        // Verifică după expenseId (ID document) sau expenseTypeId (ID tip cheltuială)
+        if (distributionData.expenseId && entry.expenseId === distributionData.expenseId) {
+          return true;
+        }
+        if (distributionData.expenseTypeId && entry.expenseTypeId === distributionData.expenseTypeId) {
+          return true;
+        }
+        return false;
+      });
 
       let updatedHistory;
       let actualNewDistributedAmount;
 
-      if (existingEntryIndex >= 0 && distributionData.expenseId) {
-        // ACTUALIZARE - există deja o intrare pentru acest expenseId
-        console.log('📊 Actualizare intrare existentă în distributionHistory pentru expenseId:', distributionData.expenseId);
+      if (existingEntryIndex >= 0) {
+        // ACTUALIZARE - există deja o intrare pentru acest expense
+        console.log('📊 Actualizare intrare existentă în distributionHistory pentru expenseId/expenseTypeId:',
+                    distributionData.expenseId, distributionData.expenseTypeId);
 
         const oldAmount = existingHistory[existingEntryIndex].amount || 0;
 
@@ -126,7 +134,8 @@ const useInvoices = (associationId, currentSheet) => {
           sheetId: distributionData.sheetId || existingHistory[existingEntryIndex].sheetId,
           month: distributionData.month || existingHistory[existingEntryIndex].month,
           amount: currentDistribution,
-          expenseType: distributionData.expenseType || existingHistory[existingEntryIndex].expenseType,
+          expenseTypeId: distributionData.expenseTypeId || existingHistory[existingEntryIndex].expenseTypeId,  // ID-ul tipului de cheltuială
+          expenseName: distributionData.expenseName || existingHistory[existingEntryIndex].expenseName,  // Păstrăm numele pentru afișare
           distributedAt: new Date().toISOString(),
           notes: distributionData.notes || existingHistory[existingEntryIndex].notes
         };
@@ -147,7 +156,8 @@ const useInvoices = (associationId, currentSheet) => {
           month: distributionData.month,
           amount: currentDistribution,
           expenseId: distributionData.expenseId || null,
-          expenseType: distributionData.expenseType || null,
+          expenseTypeId: distributionData.expenseTypeId || null,  // ID-ul tipului de cheltuială
+          expenseName: distributionData.expenseName || null,  // Păstrăm numele pentru afișare
           distributedAt: new Date().toISOString(),
           notes: distributionData.notes || ''
         };
@@ -243,8 +253,9 @@ const useInvoices = (associationId, currentSheet) => {
           month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
           amount: currentDistribution,
           expenseId: invoiceData.expenseId || null,
-          expenseType: invoiceData.expenseType || null,
-          notes: invoiceData.distributionNotes || `Distribuție pentru ${invoiceData.expenseType}`
+          expenseTypeId: invoiceData.expenseTypeId || null,  // ID-ul tipului de cheltuială
+          expenseName: invoiceData.expenseName || invoiceData.expenseType || null,  // Păstrăm numele pentru afișare
+          notes: invoiceData.distributionNotes || `Distribuție pentru ${invoiceData.expenseName || invoiceData.expenseType}`
         });
         
         console.log('✅ Distribuție actualizată pentru factura existentă:', existingInvoice.id);
@@ -325,7 +336,8 @@ const useInvoices = (associationId, currentSheet) => {
         month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
         amount: currentDistribution,
         expenseId: invoiceData.expenseId || null,
-        expenseType: invoiceData.expenseType || null,
+        expenseTypeId: invoiceData.expenseTypeId || null,  // ID-ul tipului de cheltuială
+        expenseName: invoiceData.expenseName || invoiceData.expenseType || null,  // Păstrăm numele pentru afișare
         distributedAt: new Date().toISOString(),
         notes: invoiceData.distributionNotes || ''
       };
@@ -336,7 +348,8 @@ const useInvoices = (associationId, currentSheet) => {
         associationId,
         supplierId: supplierData.supplierId,
         supplierName: supplierData.supplierName,
-        expenseType: invoiceData.expenseType,
+        expenseTypeId: invoiceData.expenseTypeId || null,  // ID-ul tipului de cheltuială
+        expenseName: invoiceData.expenseName || invoiceData.expenseType,  // Păstrăm numele pentru afișare și compatibilitate
         expenseId: invoiceData.expenseId || null,
         invoiceNumber: invoiceData.invoiceNumber,
         invoiceDate: invoiceData.invoiceDate,
@@ -569,7 +582,12 @@ const useInvoices = (associationId, currentSheet) => {
                              invoice.supplierName === '';
         
         // Pentru sincronizare, consideră doar facturile care chiar aparțin acestei cheltuieli
-        const matchesExpenseType = !specificExpenseType || invoice.expenseType === specificExpenseType;
+        // Verifică atât după expenseTypeId (NOU) cât și după expenseName/expenseType (backwards compatibility)
+        const expenseConfig = specificExpenseType ? getExpenseConfig(specificExpenseType) : null;
+        const matchesExpenseType = !specificExpenseType ||
+                                   invoice.expenseTypeId === expenseConfig?.id ||
+                                   invoice.expenseName === specificExpenseType ||
+                                   invoice.expenseType === specificExpenseType;
         
         // Debug eliminat pentru a reduce clutterul din consolă
         
@@ -580,28 +598,29 @@ const useInvoices = (associationId, currentSheet) => {
       
       for (const invoice of invoicesWithoutSupplier) {
         try {
-          console.log('🔧 Procesez factura:', invoice.id, 'cu cheltuiala:', invoice.expenseType || 'LIPSEȘTE');
-          
-          // Pentru facturile fără expenseType, folosește specificExpenseType pentru configurare
-          const targetExpenseType = invoice.expenseType || specificExpenseType;
+          console.log('🔧 Procesez factura:', invoice.id, 'cu cheltuiala:', invoice.expenseName || invoice.expenseType || 'LIPSEȘTE');
+
+          // Pentru facturile fără expenseTypeId/expenseName, folosește specificExpenseType pentru configurare
+          const targetExpenseType = invoice.expenseTypeId || invoice.expenseName || invoice.expenseType || specificExpenseType;
           const expenseConfig = getExpenseConfig(targetExpenseType);
-          
+
           if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
             console.log('✅ Actualizez furnizorul pentru factura:', invoice.id, 'cu:', expenseConfig.supplierName);
-            
+
             const docRef = doc(db, 'invoices', invoice.id);
             const updateData = {
               supplierId: expenseConfig.supplierId,
               supplierName: expenseConfig.supplierName,
               updatedAt: new Date().toISOString()
             };
-            
-            // Dacă factura nu are expenseType setat, setează-l
-            if (!invoice.expenseType || invoice.expenseType === '') {
-              updateData.expenseType = specificExpenseType;
-              console.log('🔧 Setez și expenseType pentru factura:', invoice.id, 'la:', specificExpenseType);
+
+            // Dacă factura nu are expenseTypeId și expenseName setate, setează-le
+            if (!invoice.expenseTypeId && expenseConfig.id) {
+              updateData.expenseTypeId = expenseConfig.id;
+              updateData.expenseName = expenseConfig.name;
+              console.log('🔧 Setez expenseTypeId și expenseName pentru factura:', invoice.id, 'la:', expenseConfig.id, expenseConfig.name);
             }
-            
+
             await updateDoc(docRef, updateData);
           } else {
             console.warn('⚠️ Nu s-a găsit configurația furnizorului pentru:', targetExpenseType);
@@ -653,16 +672,17 @@ const useInvoices = (associationId, currentSheet) => {
       // 2. Nu este marcată ca complet distribuită ȘI are totalAmount > 0
       const hasRemaining = remainingAmount > 0 || (isNotFullyDistributed && totalInvoiceAmount > 0);
       
-      // ÎMBUNĂTĂȚIRE: Match pe expenseType SAU pe furnizor
-      let matchesType = !expenseType || invoice.expenseType === expenseType;
-      
-      // Dacă nu găsim pe expenseType, încearcă matching pe furnizor
-      if (!matchesType && expenseType) {
-        const expenseConfig = getExpenseConfig(expenseType);
-        if (expenseConfig?.supplierName && invoice.supplierName) {
-          // Match doar pe furnizor existent
-          matchesType = expenseConfig.supplierName.toLowerCase().trim() === invoice.supplierName.toLowerCase().trim();
-        }
+      // ÎMBUNĂTĂȚIRE: Match pe expenseTypeId/expenseName SAU pe furnizor
+      const expenseConfig = expenseType ? getExpenseConfig(expenseType) : null;
+      let matchesType = !expenseType ||
+                        invoice.expenseTypeId === expenseConfig?.id ||
+                        invoice.expenseName === expenseType ||
+                        invoice.expenseType === expenseType;  // backwards compatibility
+
+      // Dacă nu găsim direct, încearcă matching pe furnizor
+      if (!matchesType && expenseConfig?.supplierName && invoice.supplierName) {
+        // Match doar pe furnizor existent
+        matchesType = expenseConfig.supplierName.toLowerCase().trim() === invoice.supplierName.toLowerCase().trim();
       }
       
       return hasRemaining && matchesType;
@@ -678,8 +698,10 @@ const useInvoices = (associationId, currentSheet) => {
     if (expenseType && filtered.length === 0) {
       const expenseConfig = getExpenseConfig(expenseType);
       if (expenseConfig?.supplierName) {
-        const invoicesNeedingSync = invoices.filter(invoice => 
-          invoice.expenseType === expenseType &&
+        const invoicesNeedingSync = invoices.filter(invoice =>
+          (invoice.expenseTypeId === expenseConfig.id ||
+           invoice.expenseName === expenseType ||
+           invoice.expenseType === expenseType) &&  // backwards compatibility
           (!invoice.supplierName || invoice.supplierName === 'Fără furnizor')
         );
         
@@ -722,25 +744,28 @@ const useInvoices = (associationId, currentSheet) => {
     try {
       console.log('🛠️ Corectez furnizori greșit atribuiți...');
       
-      // Găsește facturi care au expenseType diferit de furnizorul lor
+      // Găsește facturi care au expenseTypeId/expenseName diferit de furnizorul lor
       const problematicInvoices = invoices.filter(invoice => {
-        if (!invoice.expenseType || !invoice.supplierName) return false;
-        
-        const expenseConfig = getExpenseConfig(invoice.expenseType);
+        const expenseIdentifier = invoice.expenseTypeId || invoice.expenseName || invoice.expenseType;
+        if (!expenseIdentifier || !invoice.supplierName) return false;
+
+        const expenseConfig = getExpenseConfig(expenseIdentifier);
         if (!expenseConfig?.supplierName) return false;
-        
-        // Verifică dacă furnizorul din factură nu corespunde cu cel configurat pentru expenseType
+
+        // Verifică dacă furnizorul din factură nu corespunde cu cel configurat
         return expenseConfig.supplierName.toLowerCase().trim() !== invoice.supplierName.toLowerCase().trim();
       });
-      
+
       console.log('🔍 Facturi cu furnizor incorect:', problematicInvoices.length);
-      
+
       for (const invoice of problematicInvoices) {
-        const correctExpenseConfig = getExpenseConfig(invoice.expenseType);
+        const expenseIdentifier = invoice.expenseTypeId || invoice.expenseName || invoice.expenseType;
+        const correctExpenseConfig = getExpenseConfig(expenseIdentifier);
         
         console.log('🔧 Corectez factura:', invoice.id, {
           invoiceNumber: invoice.invoiceNumber,
-          expenseType: invoice.expenseType,
+          expenseTypeId: invoice.expenseTypeId,
+          expenseName: invoice.expenseName || invoice.expenseType,
           currentSupplier: invoice.supplierName,
           correctSupplier: correctExpenseConfig.supplierName
         });
@@ -777,7 +802,7 @@ const useInvoices = (associationId, currentSheet) => {
     const paid = invoices.filter(inv => inv.isPaid).length;
     const unpaid = total - paid;
     const overdue = getOverdueInvoices().length;
-    
+
     const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
     const paidAmount = invoices
       .filter(inv => inv.isPaid)
@@ -794,6 +819,84 @@ const useInvoices = (associationId, currentSheet) => {
       unpaidAmount: Math.round(unpaidAmount * 100) / 100
     };
   }, [invoices, getOverdueInvoices]);
+
+  // 🔄 MIGRARE AUTOMATĂ - Adaugă expenseTypeId în distributionHistory
+  const migrateDistributionHistoryToExpenseTypeId = useCallback(async () => {
+    if (!invoices || invoices.length === 0) {
+      console.log('📊 Nu există facturi de migrat');
+      return { success: true, updated: 0, total: 0 };
+    }
+
+    console.log('🔄 Începe migrarea distributionHistory...');
+    let updatedCount = 0;
+    let totalProcessed = 0;
+
+    for (const invoice of invoices) {
+      totalProcessed++;
+
+      // Verifică dacă are distributionHistory
+      if (!invoice.distributionHistory || invoice.distributionHistory.length === 0) {
+        continue;
+      }
+
+      let needsUpdate = false;
+      const updatedHistory = invoice.distributionHistory.map(entry => {
+        // Dacă deja are expenseTypeId, nu face nimic
+        if (entry.expenseTypeId) {
+          return entry;
+        }
+
+        // Încearcă să găsească expenseTypeId din expenseName sau expenseType
+        const expenseName = entry.expenseName || entry.expenseType;
+        if (!expenseName) {
+          return entry;
+        }
+
+        // Caută tipul de cheltuială după nume
+        const expenseConfig = getExpenseConfig(expenseName);
+
+        // Dacă nu găsim ID (cheltuială custom), nu e o eroare - doar păstrăm expenseName
+        if (!expenseConfig?.id) {
+          // Pentru cheltuieli custom, nu avem expenseTypeId predefinit
+          // Doar ne asigurăm că avem expenseName
+          if (!entry.expenseName && entry.expenseType) {
+            needsUpdate = true;
+            return {
+              ...entry,
+              expenseName: expenseName
+            };
+          }
+          return entry;
+        }
+
+        // Actualizează intrarea cu expenseTypeId pentru cheltuieli standard
+        needsUpdate = true;
+        return {
+          ...entry,
+          expenseTypeId: expenseConfig.id,
+          expenseName: expenseName  // Asigură că avem și expenseName
+        };
+      });
+
+      // Dacă sunt modificări, actualizează factura
+      if (needsUpdate) {
+        try {
+          const docRef = doc(db, 'invoices', invoice.id);
+          await updateDoc(docRef, {
+            distributionHistory: updatedHistory,
+            updatedAt: new Date().toISOString()
+          });
+          updatedCount++;
+          console.log(`✅ Migrat factura ${invoice.invoiceNumber} (${invoice.id})`);
+        } catch (error) {
+          console.error(`❌ Eroare la migrarea facturii ${invoice.id}:`, error);
+        }
+      }
+    }
+
+    console.log(`✅ Migrare completă: ${updatedCount} din ${totalProcessed} facturi actualizate`);
+    return { success: true, updated: updatedCount, total: totalProcessed };
+  }, [invoices, getExpenseConfig]);
 
 
   // 🎯 RETURN API
@@ -826,7 +929,10 @@ const useInvoices = (associationId, currentSheet) => {
     getInvoiceByNumber,
     getInvoiceStats,
     syncSuppliersForExpenseType,
-    fixIncorrectSuppliers
+    fixIncorrectSuppliers,
+
+    // 🔄 Migrare
+    migrateDistributionHistoryToExpenseTypeId
   };
 };
 

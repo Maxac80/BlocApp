@@ -247,6 +247,7 @@ export const useExpenseManagement = ({
       // 1. Adaugă cheltuiala lunară
       const expensePayload = {
         name: expenseData.name,
+        expenseTypeId: expenseSettings.id,  // ID unic al tipului de cheltuială
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
         receptionMode: expenseSettings.receptionMode,
@@ -268,8 +269,10 @@ export const useExpenseManagement = ({
       console.log('🔥 Calling addMonthlyExpense with expensePayload:', expensePayload);
       console.log('🔥 expensePayload.invoiceData:', expensePayload.invoiceData);
       console.log('🔥 expensePayload.separateInvoicesData:', expensePayload.separateInvoicesData);
-      const expenseId = await addMonthlyExpense(expensePayload);
-      console.log('🔥 addMonthlyExpense returned ID:', expenseId);
+      const newExpense = await addMonthlyExpense(expensePayload);
+      const expenseId = newExpense.id;
+      console.log('🔥 addMonthlyExpense returned expense:', newExpense);
+      console.log('🔥 Expense ID:', expenseId);
 
       // 2. Dacă avem detalii factură, salvăm și factura
       // console.log('🔍 DEBUG Condiții salvare factură:', {
@@ -321,7 +324,8 @@ export const useExpenseManagement = ({
                 month: currentMonth,
                 amount: currentDistribution,
                 expenseId: expenseId,
-                expenseType: expenseData.name,
+                expenseTypeId: expenseSettings.id,  // ID-ul tipului de cheltuială
+                expenseName: expenseData.name,  // Păstrăm numele pentru afișare
                 notes: `Distribuție pentru ${expenseData.name}`
               });
 
@@ -349,7 +353,7 @@ export const useExpenseManagement = ({
             expenseId: expenseId,
             supplierId: expenseSettings.supplierId || null,
             supplierName: expenseSettings.supplierName || null,
-            expenseType: expenseData.name,
+            expenseName: expenseData.name,  // Păstrăm numele pentru afișare, dar ID-ul e cheia
             invoiceNumber: invoiceInfo.invoiceNumber,
             invoiceAmount: invoiceInfo.invoiceAmount,
             invoiceDate: invoiceInfo.invoiceDate,
@@ -774,6 +778,7 @@ export const useExpenseManagement = ({
       const updatedExpenseRaw = {
         ...existingExpense,
         name: expenseData.name,
+        expenseTypeId: expenseSettings.id,  // ID unic al tipului de cheltuială
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
         receptionMode: expenseSettings.receptionMode,
@@ -863,7 +868,8 @@ export const useExpenseManagement = ({
                   month: currentMonth,
                   amount: currentDistribution,
                   expenseId: expenseId,
-                  expenseType: expenseData.name,
+                  expenseTypeId: expenseSettings.id,  // ID-ul tipului de cheltuială
+                  expenseName: expenseData.name,  // Păstrăm numele pentru afișare
                   notes: `Distribuție actualizată pentru ${expenseData.name}`
                 });
 
@@ -877,7 +883,8 @@ export const useExpenseManagement = ({
                   month: currentMonth,
                   amount: currentDistribution,
                   expenseId: expenseId,
-                  expenseType: expenseData.name,
+                  expenseTypeId: expenseSettings.id,  // ID-ul tipului de cheltuială
+                  expenseName: expenseData.name,  // Păstrăm numele pentru afișare
                   notes: `Distribuție pentru ${expenseData.name}`
                 });
 

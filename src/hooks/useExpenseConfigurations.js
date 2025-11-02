@@ -30,26 +30,71 @@ const useExpenseConfigurations = (currentSheet) => {
 
   }, [currentSheet]);
 
-  const getExpenseConfig = useCallback((expenseType) => {
+  const getExpenseConfig = useCallback((expenseOrTypeOrId) => {
+    // Compatibilitate: acceptă expense object, expenseTypeId, sau expenseType (nume - backwards)
+    let expenseTypeId, expenseTypeName;
+
+    if (typeof expenseOrTypeOrId === 'object' && expenseOrTypeOrId !== null) {
+      // Este un obiect expense
+      expenseTypeId = expenseOrTypeOrId.expenseTypeId || expenseOrTypeOrId.expenseType;
+      expenseTypeName = expenseOrTypeOrId.name;
+    } else if (typeof expenseOrTypeOrId === 'string') {
+      // Este fie ID, fie nume
+      // Verificăm dacă este un ID (începe cu "expense-type-")
+      if (expenseOrTypeOrId.startsWith('expense-type-')) {
+        expenseTypeId = expenseOrTypeOrId;
+      } else {
+        // Este nume (backwards compatibility)
+        expenseTypeName = expenseOrTypeOrId;
+        // Găsește ID-ul din defaultExpenseTypes
+        const defaultType = defaultExpenseTypes.find(def => def.name === expenseTypeName);
+        expenseTypeId = defaultType?.id;
+      }
+    }
+
     // Încearcă să găsească configurația în Firestore
-    const firestoreConfig = configurations[expenseType];
+    // Prioritate: 1) după ID (nou), 2) după nume (backwards compatibility)
+    let firestoreConfig = expenseTypeId ? configurations[expenseTypeId] : null;
+    if (!firestoreConfig && expenseTypeName) {
+      firestoreConfig = configurations[expenseTypeName];
+    }
 
     // Obține participările apartamentelor pentru acest tip de cheltuială
     const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
     const apartmentParticipation = {};
 
     // Filtrează doar participările pentru acest tip de cheltuială
+    // IMPORTANT: Dacă avem name dar nu ID, încercăm să găsim ID-ul din defaultExpenseTypes
+    let searchKeys = [];
+    if (expenseTypeId) {
+      searchKeys.push(expenseTypeId);
+    }
+    if (expenseTypeName) {
+      searchKeys.push(expenseTypeName);
+      // Dacă nu avem ID dar avem name, caută ID-ul în defaultExpenseTypes
+      if (!expenseTypeId) {
+        const defaultType = defaultExpenseTypes.find(def => def.name === expenseTypeName);
+        if (defaultType?.id) {
+          searchKeys.push(defaultType.id);
+        }
+      }
+    }
+
+    // Caută participările cu toate cheile posibile (ID și name)
     Object.keys(allParticipations).forEach(key => {
-      if (key.endsWith(`-${expenseType}`)) {
-        const apartmentId = key.replace(`-${expenseType}`, '');
-        apartmentParticipation[apartmentId] = allParticipations[key];
+      for (const searchKey of searchKeys) {
+        if (key.endsWith(`-${searchKey}`)) {
+          const apartmentId = key.replace(`-${searchKey}`, '');
+          apartmentParticipation[apartmentId] = allParticipations[key];
+          break; // Găsit, nu mai căuta cu alte chei
+        }
       }
     });
 
     // Obține configurația pentru distribuția diferenței din sheet
     // Prioritate: 1) din expenseConfigurations (NOU) 2) din differenceDistributions (VECHI)
     let differenceDistribution = firestoreConfig?.differenceDistribution ||
-                                  currentSheet?.configSnapshot?.differenceDistributions?.[expenseType];
+                                  currentSheet?.configSnapshot?.differenceDistributions?.[searchKey];
 
     // MIGRAȚIE: Curăță câmpurile vechi și convertește în noua structură
     let needsMigration = false;
@@ -80,7 +125,9 @@ const useExpenseConfigurations = (currentSheet) => {
     if (firestoreConfig) {
       // Verifică dacă lipsește distributionType și completează cu default-ul
       if (!firestoreConfig.distributionType) {
-        const defaultType = defaultExpenseTypes.find(def => def.name === expenseType);
+        const defaultType = defaultExpenseTypes.find(def =>
+          def.id === expenseTypeId || def.name === expenseTypeName
+        );
         const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
         firestoreConfig.distributionType = defaultDistribution;
       }
@@ -101,19 +148,25 @@ const useExpenseConfigurations = (currentSheet) => {
 
       return {
         ...firestoreConfig,
+        id: expenseTypeId,  // Include ID-ul
+        name: expenseTypeName || firestoreConfig.name,  // Include numele
         apartmentParticipation,
         differenceDistribution
       };
     }
 
     // Altfel, folosește configurația default din expenseTypes
-    const defaultType = defaultExpenseTypes.find(def => def.name === expenseType);
+    const defaultType = defaultExpenseTypes.find(def =>
+      def.id === expenseTypeId || def.name === expenseTypeName
+    );
     const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
     const defaultInvoiceEntryMode = defaultType?.invoiceEntryMode || 'single';
     const defaultExpenseEntryMode = defaultType?.expenseEntryMode || 'total';
 
 
     return {
+      id: defaultType?.id,  // Include ID-ul în configurație
+      name: defaultType?.name,  // Include numele pentru afișare
       distributionType: defaultDistribution,
       invoiceEntryMode: defaultInvoiceEntryMode,
       expenseEntryMode: defaultExpenseEntryMode,
@@ -299,6 +352,77 @@ const useExpenseConfigurations = (currentSheet) => {
 
     migrateConfigurations();
   }, [currentSheet?.id, configurations]); // Rulează când se schimbă sheet-ul sau configurațiile
+
+  // 🔄 AUTO-MIGRAȚIE PARTICIPĂRI: Convertește participările vechi (name-based) în ID-based
+  useEffect(() => {
+    if (!currentSheet?.id) {
+      return;
+    }
+
+    const migrateParticipations = async () => {
+      const allParticipations = currentSheet.configSnapshot?.apartmentParticipations || {};
+
+      // Verifică dacă există participări cu chei vechi (fără "expense-type-")
+      const oldKeys = Object.keys(allParticipations).filter(key => {
+        const parts = key.split('-');
+        // Cheile vechi au formatul "apt-{id}-{name}" (3 părți)
+        // Cheile noi au formatul "apt-{id}-expense-type-{slug}" (5+ părți)
+        return parts.length === 3 && parts[0] === 'apt';
+      });
+
+      if (oldKeys.length === 0) {
+        return; // Nu e nevoie de migrație
+      }
+
+      console.log(`🔄 Migrare participări: ${oldKeys.length} chei vechi găsite`);
+
+      const updatedParticipations = { ...allParticipations };
+      let migratedCount = 0;
+
+      oldKeys.forEach(oldKey => {
+        // Extrage apartamentId și numele cheltuielii din cheia veche
+        // Format: "apt-22-Canal" → apartmentId="apt-22", name="Canal"
+        const parts = oldKey.split('-');
+        const apartmentId = `${parts[0]}-${parts[1]}`; // "apt-22"
+        const expenseName = parts[2]; // "Canal"
+
+        // Găsește expenseTypeId din defaultExpenseTypes
+        const defaultType = defaultExpenseTypes.find(def => def.name === expenseName);
+
+        if (defaultType?.id) {
+          const newKey = `${apartmentId}-${defaultType.id}`;
+
+          // Copiază participarea la noua cheie (doar dacă nu există deja)
+          if (!updatedParticipations[newKey]) {
+            updatedParticipations[newKey] = allParticipations[oldKey];
+            console.log(`  ✓ ${oldKey} → ${newKey}`, allParticipations[oldKey]);
+            migratedCount++;
+          }
+
+          // Șterge cheia veche
+          delete updatedParticipations[oldKey];
+        } else {
+          console.warn(`  ⚠️ Nu s-a găsit ID pentru "${expenseName}" - cheia ${oldKey} rămâne`);
+        }
+      });
+
+      if (migratedCount > 0) {
+        try {
+          const sheetRef = doc(db, 'sheets', currentSheet.id);
+          await updateDoc(sheetRef, {
+            'configSnapshot.apartmentParticipations': updatedParticipations,
+            'configSnapshot.updatedAt': serverTimestamp()
+          });
+
+          console.log(`✅ Migrare participări completă: ${migratedCount} chei actualizate`);
+        } catch (error) {
+          console.error('❌ Eroare la migrarea participărilor:', error);
+        }
+      }
+    };
+
+    migrateParticipations();
+  }, [currentSheet?.id]); // Rulează o singură dată când se încarcă sheet-ul
 
   return {
     configurations,

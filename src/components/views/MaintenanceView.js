@@ -146,7 +146,8 @@ const MaintenanceView = ({
     updateInvoiceDistribution,
     getPartiallyDistributedInvoices,
     getInvoiceByNumber,
-    syncSuppliersForExpenseType
+    syncSuppliersForExpenseType,
+    migrateDistributionHistoryToExpenseTypeId
   } = useInvoices(association?.id);
 
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
@@ -337,6 +338,23 @@ const MaintenanceView = ({
       }
     }
   }, [pendingMaintenanceApartmentId, maintenanceData, getUpdatedMaintenanceData, setPendingMaintenanceApartmentId]);
+
+  // 🔄 MIGRARE AUTOMATĂ - Rulează o singură dată când se încarcă facturile
+  const [migrationRun, setMigrationRun] = useState(false);
+  useEffect(() => {
+    if (invoices && invoices.length > 0 && !migrationRun && migrateDistributionHistoryToExpenseTypeId) {
+      console.log('🔄 Pornesc migrarea automată a distributionHistory...');
+      migrateDistributionHistoryToExpenseTypeId()
+        .then(result => {
+          console.log('✅ Migrare completă:', result);
+          setMigrationRun(true);
+        })
+        .catch(error => {
+          console.error('❌ Eroare la migrare:', error);
+          setMigrationRun(true); // Marchează ca rulat chiar și în caz de eroare pentru a nu reîncerca continuu
+        });
+    }
+  }, [invoices, migrationRun, migrateDistributionHistoryToExpenseTypeId]);
 
   // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul curent
   const associationExpenses = currentSheet?.expenses || [];
@@ -1053,7 +1071,23 @@ const MaintenanceView = ({
                     getDisabledExpenseTypes={getDisabledExpenseTypes}
                     getApartmentParticipation={getApartmentParticipation}
                     invoices={invoices}
-                    getInvoiceForExpense={(expenseId) => invoices?.find(inv => inv.expenseId === expenseId)}
+                    getInvoiceForExpense={(expense) => {
+                      // Compatibilitate backwards: caută după expenseId (nou) SAU expenseTypeId SAU expenseType/expenseName (vechi)
+                      const expenseId = expense?.id || expense;
+                      const expenseTypeId = expense?.expenseTypeId;
+                      const expenseName = expense?.name;
+
+                      return invoices?.find(inv =>
+                        inv.distributionHistory?.some(entry =>
+                          // Nou: caută după expenseId (ID document Firebase)
+                          entry.expenseId === expenseId ||
+                          // Nou: caută după expenseTypeId (ID tip cheltuială)
+                          (expenseTypeId && entry.expenseTypeId === expenseTypeId) ||
+                          // Vechi: caută după expenseType sau expenseName (backwards compatibility)
+                          (expenseName && (entry.expenseType === expenseName || entry.expenseName === expenseName))
+                        )
+                      );
+                    }}
                   />
                 </div>
               </div>
@@ -1320,7 +1354,9 @@ const MaintenanceView = ({
             // Build participations for ALL apartments, not just the selected one
             apartments.reduce((acc, apt) => {
               acc[apt.id] = distributedExpenses.reduce((expAcc, expense) => {
-                expAcc[expense.name] = getApartmentParticipation?.(apt.id, expense.name) || {};
+                // Folosește expenseTypeId pentru a căuta participarea corect
+                const expenseKey = expense.expenseTypeId || expense.name;
+                expAcc[expense.name] = getApartmentParticipation?.(apt.id, expenseKey) || {};
                 return expAcc;
               }, {});
               return acc;

@@ -128,7 +128,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     // Get consumption unit from expense config
     const getConsumptionUnit = () => {
       // Try to get config for this expense
-      const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+      const config = getExpenseConfig ? getExpenseConfig(expense) : null;  // Folosește obiectul complet pentru expenseTypeId
 
       if (config) {
         if (config.consumptionUnit === 'custom' && config.customConsumptionUnit) {
@@ -146,22 +146,13 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
       return expense.consumptionUnit || 'unități';
     };
 
-    // Check if apartment is excluded
-    if (participation?.type === 'excluded') {
-      return {
-        type: 'excluded',
-        label: 'Exclus',
-        details: null,
-        participationBadge: 'Exclus',
-        color: 'text-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200'
-      };
-    }
-
-    // Build participation badge
+    // Build participation badge FIRST (înainte de a verifica tipul de distribuție)
     let participationBadge = null;
-    if (participation?.type === 'percentage' && participation.value !== 100) {
+    const isExcluded = participation?.type === 'excluded';
+
+    if (isExcluded) {
+      participationBadge = 'Exclus';
+    } else if (participation?.type === 'percentage' && participation.value !== 100) {
       participationBadge = `Participare ${participation.value}%`;
     } else if (participation?.type === 'fixed') {
       participationBadge = `Sumă fixă: ${participation.value} lei`;

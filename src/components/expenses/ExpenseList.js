@@ -1140,7 +1140,7 @@ const ExpenseList = ({
 
                         {/* Linia 4: Factură (dacă există) */}
                         {(() => {
-                          const invoice = getInvoiceForExpense?.(expense.id);
+                          const invoice = getInvoiceForExpense?.(expense);
                           if (!invoice) return null;
 
                           return (
@@ -1172,10 +1172,14 @@ const ExpenseList = ({
                                 knowsExpectedAmount = true;
                               } else if (receptionMode === 'per_block') {
                                 const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
-                                // Pentru cotaParte, știm întotdeauna suma pentru scară
-                                if (config.distributionType === 'cotaParte') {
+                                // Pentru cotaParte, apartment și person, știm întotdeauna suma pentru scară
+                                // (getRelevantAmount calculează corect suma pe scară prin reponderare)
+                                if (config.distributionType === 'cotaParte' ||
+                                    config.distributionType === 'apartment' ||
+                                    config.distributionType === 'person') {
                                   knowsExpectedAmount = true;
                                 } else {
+                                  // Pentru consumption/individual, știm suma doar dacă blocul are o singură scară
                                   knowsExpectedAmount = blockStairs.length === 1;
                                 }
                               } else if (receptionMode === 'total') {
@@ -1756,7 +1760,7 @@ const ExpenseList = ({
                   <div className="p-4 bg-white border-t border-gray-200 space-y-4 rounded-b-lg">
                     {/* Card detalii factură (dacă există) */}
                     {(() => {
-                      const invoice = getInvoiceForExpense?.(expense.id);
+                      const invoice = getInvoiceForExpense?.(expense);
                       if (!invoice) return null;
 
                       return (

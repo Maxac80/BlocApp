@@ -92,7 +92,7 @@ const ConsumptionInput = ({
     // Adaugă și cheltuielile custom care au distribuție pe consum ȘI ACTIVE
     const customTypes = [];
     associationExpenses.forEach(expense => {
-      const config = getExpenseConfig(expense.name);
+      const config = getExpenseConfig(expense);  // Trimite obiectul complet pentru a accesa expenseTypeId
       if (config.distributionType === 'consumption' &&
           !defaultConsumptionTypes.some(dt => dt.name === expense.name) &&
           !disabledTypes.some(dt => dt.name === expense.name)) {
@@ -105,7 +105,7 @@ const ConsumptionInput = ({
 
     // Adaugă cheltuielile DISTRIBUITE cu sume individuale (doar pentru afișare/editare)
     associationExpenses.forEach(expense => {
-      const config = getExpenseConfig(expense.name);
+      const config = getExpenseConfig(expense);  // Trimite obiectul complet pentru a accesa expenseTypeId
       if (config.distributionType === 'individual' &&
           !disabledTypes.some(dt => dt.name === expense.name) &&
           !customTypes.some(ct => ct.name === expense.name) &&
@@ -180,7 +180,7 @@ const ConsumptionInput = ({
   // Calculează status pentru o cheltuială
   const getExpenseStatus = (expenseTypeName) => {
     const expense = getDistributedExpense(expenseTypeName);
-    const config = getExpenseConfig(expenseTypeName);
+    const config = getExpenseConfig(expense || expenseTypeName);  // Trimite obiectul cheltuielii pentru a accesa expenseTypeId
     const apartments = getFilteredApartments();
     const isConsumption = config.distributionType === 'consumption';
 
@@ -234,7 +234,7 @@ const ConsumptionInput = ({
         return;
       }
 
-      const config = getExpenseConfig(expenseType.name);
+      const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
       const isConsumption = config.distributionType === 'consumption';
 
       // Mapează receptionMode
@@ -303,7 +303,8 @@ const ConsumptionInput = ({
 
   // Verifică dacă există cheltuieli cu sume individuale
   const hasIndividualExpenses = allConsumptionTypes.some(expenseType => {
-    const config = getExpenseConfig(expenseType.name);
+    const expense = getDistributedExpense(expenseType.name);
+    const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
     return config.distributionType === 'individual';
   });
 
@@ -368,7 +369,7 @@ const ConsumptionInput = ({
         <div className="space-y-3">
           {allConsumptionTypes.map(expenseType => {
             const expense = getDistributedExpense(expenseType.name);
-            const config = getExpenseConfig(expenseType.name);
+            const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
             const status = getExpenseStatus(expenseType.name);
             const isExpanded = expandedExpenses[expenseType.name];
             const apartments = getFilteredApartments();
@@ -1750,7 +1751,8 @@ const ConsumptionInput = ({
                                 <td className="px-2 py-2 border-r">
                                   <div className="text-right text-green-700 font-bold">
                                     {(() => {
-                                      const config = getExpenseConfig(expenseType.name);
+                                      const expense = getDistributedExpense(expenseType.name);
+                                      const config = getExpenseConfig(expense || expenseType.name);
                                       const apartmentParticipations = config?.apartmentParticipation || {};
 
                                       const totalAfterParticipation = apartments.reduce((sum, apt) => {
@@ -1825,7 +1827,7 @@ const ConsumptionInput = ({
                                       apartmentsForDiff = getAssociationApartments();
                                     }
 
-                                    const config = getExpenseConfig(expenseType.name);
+                                    const config = getExpenseConfig(expense || expenseType.name);
                                     const apartmentParticipations = config?.apartmentParticipation || {};
 
                                     const totalAfterParticipation = apartmentsForDiff.reduce((sum, apt) => {
@@ -1945,7 +1947,7 @@ const ConsumptionInput = ({
                                         apartmentsForCalculation = getAssociationApartments();
                                       }
 
-                                      const config = getExpenseConfig(expenseType.name);
+                                      const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
                                       const apartmentParticipations = config?.apartmentParticipation || {};
 
                                       // Calculează total după participare pentru apartamentele corecte

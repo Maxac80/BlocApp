@@ -64,6 +64,11 @@ const ExpenseConfigModal = ({
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const justAddedSupplierRef = React.useRef(false);
 
+  // 🔑 Cheia pentru participări: folosește expenseTypeId dacă există, altfel expenseName (backwards compatibility)
+  const expenseKey = useMemo(() => {
+    return expenseConfig?.id || expenseName;
+  }, [expenseConfig, expenseName]);
+
   // Reset tab când se deschide modalul sau se schimbă initialTab
   useEffect(() => {
     if (isOpen) {
@@ -116,14 +121,14 @@ const ExpenseConfigModal = ({
 
   // 🔄 Încarcă participările din Firebase la deschiderea modalului
   useEffect(() => {
-    if (isOpen && expenseName && getApartmentParticipation && getAssociationApartments) {
+    if (isOpen && expenseKey && getApartmentParticipation && getAssociationApartments) {
       const apartments = getAssociationApartments();
       const expenseParticipations = {};
 
-      // Încarcă participările pentru fiecare apartament
+      // Încarcă participările pentru fiecare apartament folosind expenseKey (ID sau name)
       apartments.forEach(apartment => {
-        const participationKey = `${apartment.id}-${expenseName}`;
-        const participation = getApartmentParticipation(apartment.id, expenseName);
+        const participationKey = `${apartment.id}-${expenseKey}`;
+        const participation = getApartmentParticipation(apartment.id, expenseKey);
 
         // Doar dacă există o participare non-default, o adăugăm
         if (participation && participation.type !== 'integral') {
@@ -136,7 +141,7 @@ const ExpenseConfigModal = ({
       // Resetează participările când modalul se închide
       setLocalParticipations({});
     }
-  }, [isOpen, expenseName, getApartmentParticipation, getAssociationApartments]);
+  }, [isOpen, expenseKey, getApartmentParticipation, getAssociationApartments]);
 
   const handleAddNewSupplier = async (supplierData) => {
     try {
@@ -227,7 +232,7 @@ const ExpenseConfigModal = ({
       const incompleteParticipations = [];
 
       apartments.forEach(apartment => {
-        const participationKey = `${apartment.id}-${expenseName}`;
+        const participationKey = `${apartment.id}-${expenseKey}`;
         const participation = localParticipations[participationKey] || { type: 'integral', value: null };
 
         if (participation.type === 'percentage' || participation.type === 'fixed') {
@@ -270,8 +275,8 @@ const ExpenseConfigModal = ({
       // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
       onClose();
 
-      // Salvează direct - fără conversii
-      await updateExpenseConfig(expenseName, localConfig);
+      // Salvează direct - folosește expenseKey (ID sau name) pentru consistență
+      await updateExpenseConfig(expenseKey, localConfig);
 
       // Save apartment participations to Firebase
       if (saveApartmentParticipations) {
@@ -775,7 +780,7 @@ const ExpenseConfigModal = ({
               {filteredApartments.length > 0 ? (
                 <div className="space-y-2">
                   {filteredApartments.map(apartment => {
-                    const participationKey = `${apartment.id}-${expenseName}`;
+                    const participationKey = `${apartment.id}-${expenseKey}`;
                     const participation = localParticipations[participationKey] || { type: 'integral', value: null };
                     const isModified = participation.type !== 'integral';
 

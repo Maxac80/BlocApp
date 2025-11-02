@@ -168,7 +168,7 @@ const useMaintenanceCalculation = ({
       return {}; // Nu e cheltuială pe consum
     }
 
-    const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+    const config = getExpenseConfig ? getExpenseConfig(expense) : null;  // Trimite obiectul complet pentru expenseTypeId
 
     // Configurație default pentru diferență dacă nu există
     const differenceConfig = config?.differenceDistribution || {
@@ -460,7 +460,7 @@ const useMaintenanceCalculation = ({
     const distributionByApartment = {};
 
     // Obține configurația pentru această cheltuială
-    const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+    const config = getExpenseConfig ? getExpenseConfig(expense) : null;  // Trimite obiectul complet pentru expenseTypeId
 
     // Prioritizează distributionType din config, apoi din expense
     const distributionType = config?.distributionType || expense.distributionType || expense.distributionMethod;

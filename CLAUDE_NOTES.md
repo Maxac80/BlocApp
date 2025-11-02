@@ -2574,3 +2574,307 @@ const unitLabel = getUnitLabel(expense.name);
 ---
 
 *This session demonstrated the importance of precise terminology, data consistency protection, and complete calculation logic. Small improvements in clarity and accuracy have significant impact on user trust and system reliability.*
+
+---
+
+## 📅 **SESSION: 2025-11-02 - Fixing Participation Lookups After ID-based Refactoring**
+
+### **CONTEXT**
+
+After the major refactoring to use `expenseTypeId` (e.g., "expense-type-canal") instead of names, participations weren't being applied correctly when editing expenses. The system had a mix of old (name-based) and new (ID-based) data.
+
+---
+
+### **PROBLEMS IDENTIFIED**
+
+#### 1. **Participations Not Applied When Editing Expenses**
+**Symptom**: All apartments showed as "Integral" when editing distributed expenses, even though custom participations were configured.
+
+**Root Cause**: `getExpenseConfig()` was being called with `expense.name` (string) instead of the full expense object, preventing access to `expense.expenseTypeId`.
+
+**Solution**: Updated all 9 calls in `ConsumptionInput.js` to pass the full expense object:
+```javascript
+// BEFORE:
+const config = getExpenseConfig(expense.name);
+
+// AFTER:
+const config = getExpenseConfig(expense);  // Trimite obiectul complet pentru a accesa expenseTypeId
+```
+
+**Files Changed**:
+- `src/components/expenses/ConsumptionInput.js` (lines 95, 108, 183, 237, 307, 372, 1754, 1829, 1949)
+
+---
+
+#### 2. **Incorrect Badge Display in Maintenance Breakdown Modal**
+**Symptom**: Excluded apartments showed double "Exclus" badges instead of showing distribution type (e.g., "Pe consum") + "Exclus".
+
+**Root Cause**: Function returned immediately for excluded apartments with `label: 'Exclus'` without determining the distribution type first.
+
+**Solution**: Reorganized badge logic in `MaintenanceBreakdownModal.js`:
+```javascript
+// Build participation badge FIRST
+let participationBadge = null;
+const isExcluded = participation?.type === 'excluded';
+
+if (isExcluded) {
+  participationBadge = 'Exclus';
+} else if (participation?.type === 'percentage' && participation.value !== 100) {
+  participationBadge = `Participare ${participation.value}%`;
+} else if (participation?.type === 'fixed') {
+  participationBadge = `Sumă fixă: ${participation.value} lei`;
+}
+
+// THEN determine distribution type (apartment, person, consumption, etc.)
+const distType = expense.distributionType || expense.distribution || expense.type;
+// ... switch statement that returns correct label with participationBadge
+```
+
+**Files Changed**:
+- `src/components/modals/MaintenanceBreakdownModal.js` (lines 131, 149-162)
+
+---
+
+#### 3. **Participation Calculations in Maintenance Tables**
+**Symptom**: Calculations in maintenance tables and detail modals weren't respecting participation settings.
+
+**Root Cause**: Similar issue - `getExpenseConfig()` was called with `expense.name` instead of full object.
+
+**Solution**: Updated calls to pass full expense object:
+```javascript
+// BEFORE:
+const config = getExpenseConfig ? getExpenseConfig(expense.name) : null;
+
+// AFTER:
+const config = getExpenseConfig ? getExpenseConfig(expense) : null;
+```
+
+**Files Changed**:
+- `src/hooks/useMaintenanceCalculation.js` (lines 171, 463)
+- `src/components/views/MaintenanceView.js` (lines 1357-1359)
+
+---
+
+#### 4. **Participation Lookup Fallback for Old Expenses** ⭐ **CRITICAL FIX**
+**Symptom**: Old distributed expenses (created before refactoring) couldn't find their participations, showing incorrect "Exclus" status.
+
+**Root Cause**:
+- Old distributed expenses don't have `expenseTypeId` property
+- When `getExpenseConfig(expense)` is called with old expenses, it only has `expense.name`
+- New participations are saved with ID-based keys: `"apt-22-expense-type-canal"`
+- Old participations used name-based keys: `"apt-22-Canal"`
+- Lookup failed because it searched for wrong key
+
+**Solution**: Added multi-key fallback search in `useExpenseConfigurations.js`:
+```javascript
+// Build array of all possible search keys
+let searchKeys = [];
+if (expenseTypeId) {
+  searchKeys.push(expenseTypeId);  // Priority 1: Use ID if exists
+}
+if (expenseTypeName) {
+  searchKeys.push(expenseTypeName);  // Priority 2: Try name
+
+  // Priority 3: CRITICAL FALLBACK - Find ID from defaultExpenseTypes
+  if (!expenseTypeId) {
+    const defaultType = defaultExpenseTypes.find(def => def.name === expenseTypeName);
+    if (defaultType?.id) {
+      searchKeys.push(defaultType.id);  // e.g., "expense-type-canal"
+    }
+  }
+}
+
+// Search with ALL possible keys
+Object.keys(allParticipations).forEach(key => {
+  for (const searchKey of searchKeys) {
+    if (key.endsWith(`-${searchKey}`)) {
+      const apartmentId = key.replace(`-${searchKey}`, '');
+      apartmentParticipation[apartmentId] = allParticipations[key];
+      break;  // Found, stop searching
+    }
+  }
+});
+```
+
+**Why This Matters**: Old distributed expenses don't have `expenseTypeId` in their object, but new participations are saved with ID-based keys. This fallback ensures participations are found even when expense object only has `name` by looking up the ID from `defaultExpenseTypes`.
+
+**Files Changed**:
+- `src/hooks/useExpenseConfigurations.js` (lines 66-92)
+
+---
+
+### **MIGRATION FUNCTION CREATED (OPTIONAL)**
+
+Created automatic migration function to convert old name-based participation keys to ID-based keys:
+
+```javascript
+// 🔄 AUTO-MIGRAȚIE PARTICIPĂRI: Convertește participările vechi (name-based) în ID-based
+useEffect(() => {
+  if (!currentSheet?.id) return;
+
+  const migrateParticipations = async () => {
+    const allParticipations = currentSheet.configSnapshot?.apartmentParticipations || {};
+
+    // Detectează participări cu chei vechi (fără "expense-type-")
+    const oldKeys = Object.keys(allParticipations).filter(key => {
+      const parts = key.split('-');
+      // Cheile vechi: "apt-{id}-{name}" (3 părți)
+      // Cheile noi: "apt-{id}-expense-type-{slug}" (5+ părți)
+      return parts.length === 3 && parts[0] === 'apt';
+    });
+
+    if (oldKeys.length === 0) return; // Nu e nevoie de migrație
+
+    const updatedParticipations = { ...allParticipations };
+    let migratedCount = 0;
+
+    oldKeys.forEach(oldKey => {
+      const parts = oldKey.split('-');
+      const apartmentId = `${parts[0]}-${parts[1]}`; // "apt-22"
+      const expenseName = parts[2]; // "Canal"
+
+      // Găsește expenseTypeId din defaultExpenseTypes
+      const defaultType = defaultExpenseTypes.find(def => def.name === expenseName);
+
+      if (defaultType?.id) {
+        const newKey = `${apartmentId}-${defaultType.id}`;
+
+        // Copiază participarea la noua cheie
+        if (!updatedParticipations[newKey]) {
+          updatedParticipations[newKey] = allParticipations[oldKey];
+          migratedCount++;
+        }
+
+        // Șterge cheia veche
+        delete updatedParticipations[oldKey];
+      }
+    });
+
+    if (migratedCount > 0) {
+      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+        'configSnapshot.apartmentParticipations': updatedParticipations,
+        'configSnapshot.updatedAt': serverTimestamp()
+      });
+    }
+  };
+
+  migrateParticipations();
+}, [currentSheet?.id]);
+```
+
+**Note**: Migration was created but NOT used, as user confirmed old data inconsistencies are acceptable and new expenses work correctly.
+
+**Files Changed**:
+- `src/hooks/useExpenseConfigurations.js` (lines 356-425)
+
+---
+
+### **KEY LEARNINGS**
+
+#### 1. **Data Migration Challenges**
+When refactoring from name-based to ID-based references:
+- **Old data** persists in Firebase with old key formats
+- **New code** expects new key formats
+- Need **backwards compatibility** during transition period
+- Multi-key fallback search is essential for smooth migration
+
+#### 2. **Participation Storage Pattern**
+```javascript
+// Key format: "{apartmentId}-{expenseTypeId}"
+// Example: "apt-22-expense-type-canal"
+
+// OLD (name-based): "apt-22-Canal"
+// NEW (ID-based): "apt-22-expense-type-canal"
+```
+
+#### 3. **Object vs String Parameters**
+Passing full objects instead of just IDs/names provides:
+- Access to multiple identifiers (`expenseTypeId`, `name`)
+- Fallback options when one property is missing
+- Better backwards compatibility
+- More robust lookups
+
+#### 4. **Badge Display Logic**
+When displaying badges with multiple states:
+1. Build **participation badge** first (excluded, percentage, fixed)
+2. Then determine **distribution type** (apartment, person, consumption)
+3. Return both for complete context
+4. Avoid early returns that skip important logic
+
+#### 5. **Migration Strategy**
+For production systems with existing data:
+- **Automatic migration** can clean old data formats
+- **Fallback lookups** provide immediate compatibility
+- **User choice**: migrate old data OR recreate from scratch
+- New data uses correct format from day one
+
+---
+
+### **TESTING INSIGHTS**
+
+#### ✅ **What Works for New Data**
+- Participations save with correct ID-based keys: `"apt-22-expense-type-canal"`
+- Expense objects have `expenseTypeId` property
+- All lookups work correctly
+- Badge display shows proper distribution type + participation
+- Calculations respect participation settings (excluded, percentage, fixed)
+
+#### ⚠️ **What Requires Migration for Old Data**
+- Old participations with name-based keys: `"apt-22-Canal"`
+- Old expense objects without `expenseTypeId`
+- Mixed data causes inconsistent behavior
+- Config modal vs table may show different values
+
+#### 🔧 **Solutions for Old Data**
+1. **Automatic migration** (created but not used)
+2. **Resave configurations** from modal
+3. **Recreate association** from scratch
+4. **Fallback lookups** (implemented) provide basic compatibility
+
+---
+
+### **FILES MODIFIED**
+
+1. **`src/components/expenses/ConsumptionInput.js`**
+   - Lines 95, 108, 183, 237, 307, 372, 1754, 1829, 1949
+   - Changed: `getExpenseConfig(expense.name)` → `getExpenseConfig(expense)`
+
+2. **`src/hooks/useExpenseConfigurations.js`**
+   - Lines 66-92: Multi-key fallback search for participations
+   - Lines 356-425: Optional auto-migration function
+
+3. **`src/components/views/MaintenanceView.js`**
+   - Lines 1357-1359: Use `expenseTypeId` when building `apartmentParticipations`
+
+4. **`src/hooks/useMaintenanceCalculation.js`**
+   - Lines 171, 463: Pass full expense object to `getExpenseConfig`
+
+5. **`src/components/modals/MaintenanceBreakdownModal.js`**
+   - Line 131: Pass full expense object
+   - Lines 149-162: Reorganized badge logic
+
+---
+
+### **BENEFITS**
+
+✅ **Backwards Compatibility**: Multi-key fallback finds participations for both old and new data
+✅ **Correct Badge Display**: Shows distribution type + participation status accurately
+✅ **Accurate Calculations**: Participations properly applied in all calculation contexts
+✅ **Future-Proof**: New expenses work perfectly with ID-based system
+✅ **Migration Ready**: Optional migration function available if needed
+✅ **User Choice**: Can keep old data (with fallbacks) or recreate from scratch
+
+---
+
+### **FUTURE CONSIDERATIONS**
+
+1. **Run Migration**: If user wants to clean old data, migration function is ready
+2. **Monitor Console**: Check for participation lookup issues in production
+3. **Consider Caching**: Multi-key search adds overhead - could cache results
+4. **Audit Old Data**: Review old expenses for missing `expenseTypeId`
+5. **Document Migration**: Guide users on migrating old associations if needed
+6. **Test Edge Cases**: Verify custom expenses, multi-supplier scenarios
+
+---
+
+*This session highlighted the complexity of data migration in production systems. The multi-key fallback search provides immediate backwards compatibility while maintaining clean code for new data. Migration can happen gradually or all at once, giving users flexibility.*
