@@ -2,85 +2,17 @@ import type { Metadata } from 'next';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Link from 'next/link';
+import { getAllPosts, getAllCategories } from '@/lib/blog';
 
 export const metadata: Metadata = {
   title: 'Blog BlocApp | Ghiduri și Resurse Administrare Bloc',
   description: 'Articole, ghiduri și resurse pentru administratori de bloc din România. Învață cum să îți optimizezi munca și să gestionezi mai bine asociația.',
 };
 
-// Articole de blog (în viitor vor veni din CMS sau Markdown)
-const blogPosts = [
-  {
-    id: 1,
-    title: 'Cum să Treci de la Excel la Software Profesionist în 2025',
-    excerpt: 'Ghid complet pentru administratorii care vor să digitalizeze procesul de calculare a întreținerii. Pas cu pas, fără stres.',
-    category: 'Ghiduri',
-    date: '2025-01-15',
-    readTime: '8 min',
-    image: '/blog-placeholder-1.jpg',
-    slug: 'excel-la-software-profesionist',
-    author: 'Echipa BlocApp',
-  },
-  {
-    id: 2,
-    title: 'Top 5 Greșeli Făcute în Excel la Calculul Întreținerii',
-    excerpt: 'Erorile cele mai comune pe care le-am văzut în tabele Excel și cum le poți evita. Experiența din zeci de asociații.',
-    category: 'Best Practices',
-    date: '2025-01-10',
-    readTime: '6 min',
-    image: '/blog-placeholder-2.jpg',
-    slug: 'greseli-excel-intretinere',
-    author: 'Echipa BlocApp',
-  },
-  {
-    id: 3,
-    title: 'Legislație: Ce Sunt Obligat să Afișez ca Administrator',
-    excerpt: 'Obligațiile legale ale administratorului de asociație în 2025. Lista completă cu documente și termene.',
-    category: 'Legal',
-    date: '2025-01-05',
-    readTime: '10 min',
-    image: '/blog-placeholder-3.jpg',
-    slug: 'legislatie-obligatii-administrator',
-    author: 'Echipa BlocApp',
-  },
-  {
-    id: 4,
-    title: 'Calcularea Cotei Părți Indivize - Exemplu Practic',
-    excerpt: 'Cum se calculează și se folosește cota parte indiviza pentru repartizarea cheltuielilor comune. Exemple concrete.',
-    category: 'Ghiduri',
-    date: '2024-12-28',
-    readTime: '7 min',
-    image: '/blog-placeholder-4.jpg',
-    slug: 'calculare-cota-parte-indiviza',
-    author: 'Echipa BlocApp',
-  },
-  {
-    id: 5,
-    title: 'Cum să Gestionezi Penalitățile de Întârziere Corect',
-    excerpt: 'Metodologia legală de calcul a penalităților, cum le comunici proprietarilor și cum le înregistrezi în evidențe.',
-    category: 'Best Practices',
-    date: '2024-12-20',
-    readTime: '5 min',
-    image: '/blog-placeholder-5.jpg',
-    slug: 'gestionare-penalitati-intarziere',
-    author: 'Echipa BlocApp',
-  },
-  {
-    id: 6,
-    title: 'Checklist: Pregătirea Adunării Generale a Proprietarilor',
-    excerpt: 'Tot ce trebuie să pregătești înainte de AG: documente, procese verbale, rapoarte financiare. Lista completă.',
-    category: 'Ghiduri',
-    date: '2024-12-15',
-    readTime: '9 min',
-    image: '/blog-placeholder-6.jpg',
-    slug: 'checklist-adunare-generala',
-    author: 'Echipa BlocApp',
-  },
-];
-
-const categories = ['Toate', 'Ghiduri', 'Best Practices', 'Legal', 'Case Studies', 'Update Produs'];
-
 export default function BlogPage() {
+  // Fetch blog posts and categories from Markdown files
+  const blogPosts = getAllPosts();
+  const categories = getAllCategories();
   return (
     <>
       <Header />
@@ -126,17 +58,16 @@ export default function BlogPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {blogPosts.map((post) => (
                 <article
-                  key={post.id}
+                  key={post.slug}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                  {/* Image Placeholder */}
-                  <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
-                    <div className="text-center px-6">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-lg shadow-md mb-3">
-                        <span className="text-2xl font-bold text-primary-600">B</span>
-                      </div>
-                      <p className="text-sm text-primary-700">Imagine articol</p>
-                    </div>
+                  {/* Featured Image */}
+                  <div className="aspect-video overflow-hidden relative">
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover transition-transform hover:scale-105"
+                    />
                   </div>
 
                   <div className="p-6">

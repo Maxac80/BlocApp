@@ -16,11 +16,11 @@ export default function HomePage() {
               {/* Left Column - Text */}
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                  Administrează blocul fără Excel
+                  Software modern pentru administrarea asociațiilor de bloc
                 </h1>
                 <p className="mt-6 text-lg leading-8 text-gray-600">
-                  Calculează întreținerea automat, elimină erorile și economisește 70% din timp.
-                  Platformă simplă pentru administratori moderni din România.
+                  Automatizează calculele, asigură transparența și economisește până la 10 ore lunar.
+                  Platforma all-in-one pentru administratori profesioniști din România.
                 </p>
 
                 {/* CTA Buttons */}
@@ -56,23 +56,19 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right Column - Image Placeholder */}
+              {/* Right Column - Hero Image */}
               <div className="relative">
                 <div className="aspect-[4/3] rounded-2xl bg-gray-100 border-2 border-gray-200 shadow-2xl overflow-hidden">
-                  {/* Placeholder pentru screenshot dashboard */}
-                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary-100 to-primary-200">
-                    <div className="text-center px-8">
-                      <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-                        <span className="text-4xl font-bold text-primary-600">B</span>
-                      </div>
-                      <p className="text-lg font-semibold text-primary-900">
-                        Screenshot Dashboard BlocApp
-                      </p>
-                      <p className="text-sm text-primary-700 mt-2">
-                        (va fi înlocuit cu imagine reală)
-                      </p>
-                    </div>
-                  </div>
+                  <img
+                    src="/hero-dashboard-temp.jpg"
+                    alt="Dashboard BlocApp - Administrare Asociații"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Floating badge */}
+                <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-4 border-2 border-primary-200">
+                  <p className="text-sm font-semibold text-gray-900">✓ 100% Cloud</p>
+                  <p className="text-xs text-gray-600">Acces de oriunde</p>
                 </div>
               </div>
             </div>
