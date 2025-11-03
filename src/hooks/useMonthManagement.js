@@ -6,6 +6,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import useSheetManagement from './useSheetManagement';
+import { validateReadyToPublish } from '../utils/validationHelpers';
 
 export const useMonthManagement = (associationId) => {
   // Folosește useSheetManagement pentru conectare la Firebase
@@ -18,6 +19,7 @@ export const useMonthManagement = (associationId) => {
     error,
     createInitialSheet,
     publishCurrentSheet,
+    unpublishSheet, // 🆕 FAZA 8
     addExpenseToSheet,
     removeExpenseFromSheet,
     updateExpenseInSheet,
@@ -341,12 +343,35 @@ export const useMonthManagement = (associationId) => {
 
   // Helper pentru a determina dacă butonul "Publică Luna" trebuie să apară
   // IMPORTANT: Butonul apare doar când toate cheltuielile active au fost adăugate ȘI completate
+  // Funcție completă de validare pentru publicare (nouă - FAZA 2)
+  const validatePublishing = useCallback((params) => {
+    const {
+      month,
+      expenses,
+      maintenanceData,
+      apartments,
+      associationId
+    } = params;
+
+    // Folosește validateReadyToPublish din validationHelpers
+    return validateReadyToPublish({
+      expenses,
+      maintenanceTable: maintenanceData,
+      apartments,
+      associationId
+    });
+  }, []);
+
   const shouldShowPublishButton = useCallback((month, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments) => {
+    // Log comentat pentru a reduce "zgomotul" în consolă
+    // console.log('\n🔍 shouldShowPublishButton called for month:', month);
+
     // Verifică mai întâi condițiile de bază pentru publicare
     const canPublishBasic = currentSheet && currentSheet.monthYear === month && getMonthStatus(month) === "in_lucru";
 
     // Pentru primul sheet (când nu există sheet-uri create încă)
     const isFirstSheet = !currentSheet && !publishedSheet && sheets.length === 0 && getMonthStatus(month) === "in_lucru";
+    // console.log('   isFirstSheet:', isFirstSheet);
 
     if (!canPublishBasic && !isFirstSheet) {
       return false;
@@ -356,7 +381,9 @@ export const useMonthManagement = (associationId) => {
     if (isFirstSheet) {
       const currentDate = new Date();
       const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+      // console.log('   Checking first sheet month:', { param: month, current: currentMonthStr });
       if (month !== currentMonthStr) {
+        // console.log('   ❌ FAILED: Month mismatch for first sheet');
         return false;
       }
     }
@@ -364,22 +391,30 @@ export const useMonthManagement = (associationId) => {
     // CONDIȚIA 1: Toate cheltuielile active trebuie să fie adăugate
     if (typeof getAvailableExpenseTypes === 'function') {
       const availableExpenses = getAvailableExpenseTypes();
+      // console.log('   Available expense types to add:', availableExpenses.length);
       if (availableExpenses.length > 0) {
-        // Încă mai sunt cheltuieli de adăugat
+        // console.log('   ❌ FAILED: Still have expenses to add:', availableExpenses);
         return false;
       }
     }
 
     // CONDIȚIA 2: Toate cheltuielile adăugate trebuie să fie complet completate
     if (typeof areAllExpensesFullyCompleted === 'function' && typeof getAssociationApartments === 'function') {
+      // console.log('   Checking if all expenses are fully completed...');
       const allCompleted = areAllExpensesFullyCompleted(getAssociationApartments);
+      // console.log('   All expenses completed:', allCompleted);
       if (!allCompleted) {
-        // Încă mai sunt câmpuri necompletate
+        // console.log('   ❌ FAILED: Not all expenses completed');
         return false;
       }
     }
 
+    // NOTĂ: Validarea totale (Total Cheltuieli = Total Tabel)
+    // se face separat în UI prin validatePublishing() pentru feedback vizual
+    // Publicarea efectivă va verifica din nou toate condițiile
+
     // Toate condițiile sunt îndeplinite
+    // console.log('   ✅ SUCCESS: All conditions met - button should show!\n');
     return true;
   }, [currentSheet, publishedSheet, sheets, getMonthStatus]);
 
@@ -547,7 +582,7 @@ export const useMonthManagement = (associationId) => {
     availableMonths,
     currentMonth,
     loadingStatus: loading,
-    
+
     // Core methods
     initializeMonths,
     getMonthStatus,
@@ -558,6 +593,7 @@ export const useMonthManagement = (associationId) => {
     isMonthReadOnly,
     shouldShowAdjustButton,
     shouldShowPublishButton,
+    validatePublishing, // 🆕 FAZA 2: Validare completă publicare
     getAvailableMonths,
     getCurrentActiveMonth,
     getNextActiveMonth,
@@ -605,6 +641,7 @@ export const useMonthManagement = (associationId) => {
     addExpenseToSheet,
     removeExpenseFromSheet,
     updateExpenseInSheet,
+    unpublishSheet, // 🆕 FAZA 8: Depublicare cu safeguard
 
     getCurrentSheetBalance: useCallback((apartmentId) => {
       if (!currentSheet) return { restante: 0, penalitati: 0 };

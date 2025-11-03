@@ -2878,3 +2878,75 @@ For production systems with existing data:
 ---
 
 *This session highlighted the complexity of data migration in production systems. The multi-key fallback search provides immediate backwards compatibility while maintaining clean code for new data. Migration can happen gradually or all at once, giving users flexibility.*
+
+---
+
+## SESSION 2025-11-03: Sistem Publicare + Debug Totale Oscilante
+
+### PROBLEME REZOLVATE
+
+1. Butonul "Publica Luna" nu apare - Fixed: Migrat areAllExpensesFullyCompleted la sheet-based
+2. Badge validare lipsa - Fixed: Restaurat imports si calcul totalsValidation
+3. Totale oscilante 7950-8450 RON - IDENTIFICAT: Participari lipsesc din sheet pentru "Apa noua"
+
+### CAUZA REALA OSCILATII
+
+Sheet-urile nu au apartmentParticipations salvate complet. Functiile de calcul folosesc getExpenseConfig() care citeste din global expenses (asincron, inconsistent).
+
+Fix tentat (revert): Fortat folosire participari din sheet - a creat alte probleme.
+Solutie: Sterge Firebase si recreaza asociatie cu date curate.
+
+### LECTII INVATATE
+
+A. Sheet-based = DOAR date din sheet, NU din global collections
+B. Debugging sistematic: logging tintit + validare suspiciuni
+C. Data integrity > Code fixes - uneori problema e in date corupte
+D. Document failures pentru viitor
+
+### SISTEM PUBLICARE STATUS
+
+Toate 8 faze implementate complet. Gata de testare cu date curate.
+
+### NEXT STEPS
+
+1. Sterge Firebase complet
+2. Recreaza asociatie cu participari complete in sheets
+3. Testing complet flow publicare
+4. Monitor ca nu mai apar "participari: NONE"
+
+
+---
+
+## SESSION 2025-11-03: Sistem Publicare + Debug Totale Oscilante
+
+### PROBLEME REZOLVATE
+
+1. Butonul "Publica Luna" nu apare - Fixed: Migrat areAllExpensesFullyCompleted la sheet-based
+2. Badge validare lipsa - Fixed: Restaurat imports si calcul totalsValidation  
+3. Totale oscilante 7950-8450 RON - IDENTIFICAT: Participari lipsesc din sheet pentru "Apa noua"
+
+### CAUZA REALA OSCILATII
+
+Sheet-urile nu au apartmentParticipations salvate complet. Functiile de calcul folosesc getExpenseConfig() care citeste din global expenses (asincron, inconsistent).
+
+Fix tentat (revert): Fortat folosire participari din sheet - a creat alte probleme.
+Solutie: Sterge Firebase si recreaza asociatie cu date curate.
+
+### LECTII INVATATE
+
+A. Sheet-based = DOAR date din sheet, NU din global collections
+B. Debugging sistematic: logging tintit + validare suspiciuni  
+C. Data integrity > Code fixes - uneori problema e in date corupte
+D. Document failures pentru viitor
+
+### SISTEM PUBLICARE STATUS
+
+Toate 8 faze implementate complet. Gata de testare cu date curate.
+
+### NEXT STEPS
+
+1. Sterge Firebase complet
+2. Recreaza asociatie cu participari complete in sheets
+3. Testing complet flow publicare
+4. Monitor ca nu mai apar "participari: NONE"
+

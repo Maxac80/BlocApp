@@ -1,93 +1,93 @@
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  query,
+  where,
   onSnapshot,
   updateDoc,
-  deleteDoc,
   doc,
   serverTimestamp,
   getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export const useIncasari = (association, currentMonth) => {
+export const useIncasari = (association, currentMonth, publishedSheet = null) => { // 🆕 FAZA 4: publishedSheet param
   const [incasari, setIncasari] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastReceiptNumber, setLastReceiptNumber] = useState(0);
   
-  // Ascultă încasările pentru asociația și luna curentă
+  // 🆕 FAZA 4: Ascultă încasările din sheet publicat
   useEffect(() => {
-    if (!association?.id || !currentMonth) return;
-    
+    if (!publishedSheet?.id) {
+      setIncasari([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    
-    // Query simplificat care nu necesită index compus
-    // Filtrăm doar pe associationId și facem filtrarea pe month în client
-    const q = query(
-      collection(db, 'incasari'),
-      where('associationId', '==', association.id)
-    );
-    
+
+    // Listener pe document-ul sheet-ului publicat
+    const sheetRef = doc(db, 'sheets', publishedSheet.id);
+
     const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const incasariData = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          // Filtrăm pe month în client-side
-          if (data.month === currentMonth) {
-            incasariData.push({ id: doc.id, ...data });
-          }
-        });
-        
-        // Sortăm în client-side după timestamp sau createdAt
-        incasariData.sort((a, b) => {
-          const dateA = new Date(a.timestamp || a.createdAt?.toDate() || 0);
-          const dateB = new Date(b.timestamp || b.createdAt?.toDate() || 0);
-          return dateB - dateA; // Descendent (cele mai recente primele)
-        });
-        
-        setIncasari(incasariData);
+      sheetRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const sheetData = docSnapshot.data();
+          const payments = sheetData.payments || [];
+
+          // Sortăm după timestamp descendent (cele mai recente primele)
+          const sortedPayments = [...payments].sort((a, b) => {
+            const dateA = new Date(a.timestamp || a.createdAt || 0);
+            const dateB = new Date(b.timestamp || b.createdAt || 0);
+            return dateB - dateA;
+          });
+
+          setIncasari(sortedPayments);
+        } else {
+          setIncasari([]);
+        }
         setLoading(false);
       },
       (err) => {
-        console.error('Eroare la încărcarea încasărilor:', err);
+        console.error('Eroare la încărcarea încasărilor din sheet:', err);
         setError(err.message);
         setLoading(false);
       }
     );
-    
+
     return () => unsubscribe();
-  }, [association?.id, currentMonth]);
+  }, [publishedSheet?.id]);
   
-  // Obține ultimul număr de chitanță
+  // 🆕 FAZA 4: Obține ultimul număr de chitanță din toate sheet-urile asociației
   useEffect(() => {
     const getLastReceiptNumber = async () => {
       if (!association?.id) return;
-      
+
       try {
-        // Query simplificat - preluăm toate încasările asociației
+        // Query toate sheet-urile asociației
         const q = query(
-          collection(db, 'incasari'),
+          collection(db, 'sheets'),
           where('associationId', '==', association.id)
         );
-        
+
         const snapshot = await getDocs(q);
         let maxReceiptNumber = 0;
-        
-        // Găsim numărul maxim de chitanță
-        snapshot.forEach((doc) => {
-          const receiptNum = doc.data().receiptNumber || 0;
-          if (receiptNum > maxReceiptNumber) {
-            maxReceiptNumber = receiptNum;
-          }
+
+        // Parcurgem toate sheet-urile și căutăm numărul maxim de chitanță
+        snapshot.forEach((docSnapshot) => {
+          const sheetData = docSnapshot.data();
+          const payments = sheetData.payments || [];
+
+          payments.forEach((payment) => {
+            const receiptNum = payment.receiptNumber || 0;
+            if (receiptNum > maxReceiptNumber) {
+              maxReceiptNumber = receiptNum;
+            }
+          });
         });
-        
+
         setLastReceiptNumber(maxReceiptNumber);
       } catch (err) {
         console.error('Eroare la obținerea ultimului număr de chitanță:', err);
@@ -95,7 +95,7 @@ export const useIncasari = (association, currentMonth) => {
         setLastReceiptNumber(0);
       }
     };
-    
+
     getLastReceiptNumber();
   }, [association?.id]);
   
@@ -104,36 +104,61 @@ export const useIncasari = (association, currentMonth) => {
     if (!association?.id) {
       throw new Error('Nu există asociație selectată');
     }
-    
+
+    // 🆕 FAZA 4: OBLIGATORIU să existe sheet publicat
+    if (!publishedSheet) {
+      throw new Error('Plățile se pot înregistra doar pe luni publicate. Vă rugăm să publicați mai întâi luna curentă.');
+    }
+
+    if (publishedSheet.status !== 'PUBLISHED') {
+      throw new Error('Plățile se pot înregistra doar pe luni publicate');
+    }
+
+    // Verifică că apartamentul există în maintenanceTable capturat la publicare
+    const apartmentInTable = publishedSheet.maintenanceTable?.find(
+      item => item.apartmentId === incasareData.apartmentId
+    );
+
+    if (!apartmentInTable) {
+      throw new Error('Apartamentul nu există în tabelul de întreținere publicat');
+    }
+
     try {
       const newReceiptNumber = lastReceiptNumber + 1;
-      
-      // Structura compatibilă cu PaymentModal
-      const docRef = await addDoc(collection(db, 'incasari'), {
-        associationId: association.id,
+
+      // 🆕 FAZA 4: Structura plății pentru array-ul din sheet
+      const paymentRecord = {
+        id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID unic
         apartmentId: incasareData.apartmentId,
-        month: incasareData.month,
+        apartmentNumber: incasareData.apartmentNumber,
+        owner: incasareData.owner,
         restante: incasareData.restante || 0,
         intretinere: incasareData.intretinere || 0,
         penalitati: incasareData.penalitati || 0,
         total: incasareData.total,
         timestamp: incasareData.timestamp || new Date().toISOString(),
         receiptNumber: newReceiptNumber,
-        createdAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
         createdBy: incasareData.createdBy || 'Administrator',
-        // Câmpuri adiționale pentru chitanță
-        apartmentNumber: incasareData.apartmentNumber,
-        owner: incasareData.owner,
         paymentMethod: incasareData.paymentMethod || 'cash',
         notes: incasareData.notes || ''
+      };
+
+      // 🆕 FAZA 4: Adaugă plata în array-ul payments din sheet
+      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const currentPayments = publishedSheet.payments || [];
+
+      await updateDoc(sheetRef, {
+        payments: [...currentPayments, paymentRecord],
+        updatedAt: serverTimestamp()
       });
-      
+
       setLastReceiptNumber(newReceiptNumber);
-      
-      return { 
-        success: true, 
-        id: docRef.id,
-        receiptNumber: newReceiptNumber 
+
+      return {
+        success: true,
+        id: paymentRecord.id,
+        receiptNumber: newReceiptNumber
       };
     } catch (err) {
       console.error('Eroare la adăugarea încasării:', err);
@@ -141,29 +166,56 @@ export const useIncasari = (association, currentMonth) => {
     }
   };
   
-  // Actualizează o încasare existentă
-  const updateIncasare = async (incasareId, updates) => {
+  // 🆕 FAZA 4: Actualizează o plată în array-ul din sheet
+  const updateIncasare = async (paymentId, updates) => {
+    if (!publishedSheet?.id) {
+      throw new Error('Nu există sheet publicat');
+    }
+
     try {
-      const incasareRef = doc(db, 'incasari', incasareId);
-      await updateDoc(incasareRef, {
-        ...updates,
+      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const currentPayments = publishedSheet.payments || [];
+
+      // Găsește și actualizează plata
+      const updatedPayments = currentPayments.map(payment =>
+        payment.id === paymentId
+          ? { ...payment, ...updates, updatedAt: new Date().toISOString() }
+          : payment
+      );
+
+      await updateDoc(sheetRef, {
+        payments: updatedPayments,
         updatedAt: serverTimestamp()
       });
-      
+
       return { success: true };
     } catch (err) {
-      console.error('Eroare la actualizarea încasării:', err);
+      console.error('Eroare la actualizarea plății:', err);
       return { success: false, error: err.message };
     }
   };
-  
-  // Șterge o încasare
-  const deleteIncasare = async (incasareId) => {
+
+  // 🆕 FAZA 4: Șterge o plată din array-ul din sheet
+  const deleteIncasare = async (paymentId) => {
+    if (!publishedSheet?.id) {
+      throw new Error('Nu există sheet publicat');
+    }
+
     try {
-      await deleteDoc(doc(db, 'incasari', incasareId));
+      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const currentPayments = publishedSheet.payments || [];
+
+      // Filtrează plata care trebuie ștearsă
+      const updatedPayments = currentPayments.filter(payment => payment.id !== paymentId);
+
+      await updateDoc(sheetRef, {
+        payments: updatedPayments,
+        updatedAt: serverTimestamp()
+      });
+
       return { success: true };
     } catch (err) {
-      console.error('Eroare la ștergerea încasării:', err);
+      console.error('Eroare la ștergerea plății:', err);
       return { success: false, error: err.message };
     }
   };

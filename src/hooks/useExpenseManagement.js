@@ -140,35 +140,45 @@ export const useExpenseManagement = ({
 
   // 🔍 VERIFICARE DACĂ TOATE CHELTUIELILE SUNT COMPLET COMPLETATE
   const areAllExpensesFullyCompleted = useCallback((getAssociationApartments) => {
-    if (!association?.id || !getAssociationApartments) return false;
+    if (!association?.id || !getAssociationApartments || !currentSheet) return false;
 
-    const associationExpenses = expenses.filter(exp =>
-      exp.associationId === association.id && exp.month === currentMonth
-    );
+    // 🆕 SHEET-BASED: Folosim cheltuielile din sheet, nu din global expenses
+    const sheetExpenses = currentSheet.expenses || [];
 
-    if (associationExpenses.length === 0) return false;
+    if (sheetExpenses.length === 0) return false;
 
     const apartments = getAssociationApartments();
     if (apartments.length === 0) return false;
 
     // Verifică fiecare cheltuială să fie complet completată
-    return associationExpenses.every(expense => {
+    const result = sheetExpenses.every(expense => {
       const expenseSettings = getExpenseConfig(expense.name);
 
-      return apartments.every(apartment => {
+      const apartmentResults = apartments.map(apartment => {
+        const participation = expense.config?.apartmentParticipation?.[apartment.id];
+
+        // Apartamentele excluse sunt considerate OK
+        if (participation?.type === 'excluded') {
+          return true;
+        }
+
         if (expenseSettings.distributionType === "individual") {
           const value = expense.individualAmounts?.[apartment.id];
-          return value && parseFloat(value) > 0;
+          return value !== undefined && parseFloat(value) >= 0;
         } else if (expenseSettings.distributionType === "consumption") {
           const value = expense.consumption?.[apartment.id];
-          return value && parseFloat(value) > 0;
+          return value !== undefined && parseFloat(value) >= 0;
         } else {
           // Pentru cheltuieli pe apartament, nu trebuie verificate consumuri
           return true;
         }
       });
+
+      return apartmentResults.every(r => r);
     });
-  }, [association?.id, expenses, currentMonth, getExpenseConfig]);
+
+    return result;
+  }, [association?.id, currentSheet, getExpenseConfig]);
 
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
   // NOTE: NU folosim useCallback aici pentru a evita probleme cu parametrii

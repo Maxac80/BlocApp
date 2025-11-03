@@ -1,1000 +1,675 @@
-  Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
-ExpenseList.js:707 === CALCULATE TOTALS DEBUG ===
-ExpenseList.js:708 Filter: Object
-ExpenseList.js:816 Cheltuială: Întreținere lift
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 850.00
-ExpenseList.js:819   Suma așteptată: 850.00
-ExpenseList.js:820   Suma distribuită: 850.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Energie electrică
-ExpenseList.js:817   Tip: person
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Căldură
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 4950.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 4950.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Apă caldă
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 4960.00
-ExpenseList.js:819   Suma așteptată: 5000.00
-ExpenseList.js:820   Suma distribuită: 5000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -40.00
-ExpenseList.js:816 Cheltuială: Apă rece
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 750.00
-ExpenseList.js:820   Suma distribuită: 750.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -150.00
-ExpenseList.js:816 Cheltuială: Canal
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 2300.00
-ExpenseList.js:819   Suma așteptată: 2400.00
-ExpenseList.js:820   Suma distribuită: 2400.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -100.00
-ExpenseList.js:816 Cheltuială: Apa pe scara
-ExpenseList.js:817   Tip: consumption
-ExpenseList.js:817   Suma introdusă: 952.50
-ExpenseList.js:819   Suma așteptată: 1080.00
-ExpenseList.js:820   Suma distribuită: 1080.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: -127.50
-ExpenseList.js:816 Cheltuială: Caldura pe bloc
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 310.00
-ExpenseList.js:819   Suma așteptată: 360.00
-ExpenseList.js:820   Suma distribuită: 310.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -50.00
-ExpenseList.js:816 Cheltuială: Caldura pe scara
-ExpenseList.js:817   Tip: individual
-ExpenseList.js:817   Suma introdusă: 260.00
-ExpenseList.js:819   Suma așteptată: 620.00
-ExpenseList.js:820   Suma distribuită: 260.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: false
-ExpenseList.js:824   Should include: true
-ExpenseList.js:825   Diferență: -360.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe cota parte indiviza pe asociatie
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:819   Suma așteptată: 100.00
-ExpenseList.js:820   Suma distribuită: 100.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte sume pe bloc
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 690.00
-ExpenseList.js:819   Suma așteptată: 690.00
-ExpenseList.js:820   Suma distribuită: 690.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cota parte suma pe scara
-ExpenseList.js:817   Tip: cotaParte
-ExpenseList.js:817   Suma introdusă: 1060.00
-ExpenseList.js:819   Suma așteptată: 1060.00
-ExpenseList.js:820   Suma distribuită: 1060.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe asociatie
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 500.00
-ExpenseList.js:819   Suma așteptată: 500.00
-ExpenseList.js:820   Suma distribuită: 500.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament cu sume pe bloc
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 600.00
-ExpenseList.js:819   Suma așteptată: 600.00
-ExpenseList.js:820   Suma distribuită: 600.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:816 Cheltuială: Cheltuiala pe apartament sume pe scara
-ExpenseList.js:817   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 1000.00
-ExpenseList.js:819   Suma așteptată: 1000.00
-ExpenseList.js:820   Suma distribuită: 1000.00
-ExpenseList.js:821   Knows expected: true
-ExpenseList.js:822   Is fully distributed: true
-ExpenseList.js:824   Should include: false
-ExpenseList.js:825   Diferență: 0.00
-ExpenseList.js:837 === TOTALS ===
-ExpenseList.js:838 Total introdus: 5520.00
-ExpenseList.js:839 Total așteptat: 5980.00
-ExpenseList.js:840 Total distribuit: 5520.00
-ExpenseList.js:841 DIFERENȚĂ: -460.00
+react refresh:37 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useExpenseManagement.js:50 ⚠️ Nu există participări în sheet, resetez state-ul
+useExpenseManagement.js:50 ⚠️ Nu există participări în sheet, resetez state-ul
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (0) ===
+useMaintenanceCalculation.js:781    Has participations: undefined
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:797 ⚠️ Sheet incomplet - returnăm array gol
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (7) ===
+useMaintenanceCalculation.js:781    Has participations: true
+useMaintenanceCalculation.js:787    🚰 "Apa noua" participări: NONE
+useMaintenanceCalculation.js:791   - Apă caldă: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apă rece: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apa noua: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Service interfon: 600 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Cheltuieli cu asociația: 400 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Salarii NETE: 500 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Impozit ANAF: 700 RON (type: apartment)
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:902 💰 TOTAL currentMaintenance: 7950.04 RON (from 16 apartments)
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (7) ===
+useMaintenanceCalculation.js:781    Has participations: true
+useMaintenanceCalculation.js:787    🚰 "Apa noua" participări: NONE
+useMaintenanceCalculation.js:791   - Apă caldă: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apă rece: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apa noua: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Service interfon: 600 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Cheltuieli cu asociația: 400 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Salarii NETE: 500 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Impozit ANAF: 700 RON (type: apartment)
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:902 💰 TOTAL currentMaintenance: 7950.04 RON (from 16 apartments)
+useExpenseManagement.js:47 ✅ Participări încărcate din sheet: {1759591333519-expense-type-sewage: {…}, 1759591333417-Căldură: {…}, 1759654521073-Întreținere lift: {…}, 1759591333519-Test: {…}, 1761034267416-Întreținere lift: {…}, …}
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (7) ===
+useMaintenanceCalculation.js:781    Has participations: true
+useMaintenanceCalculation.js:787    🚰 "Apa noua" participări: NONE
+useMaintenanceCalculation.js:791   - Apă caldă: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apă rece: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apa noua: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Service interfon: 600 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Cheltuieli cu asociația: 400 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Salarii NETE: 500 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Impozit ANAF: 700 RON (type: apartment)
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:902 💰 TOTAL currentMaintenance: 8449.97 RON (from 16 apartments)
+useMaintenanceCalculation.js:780 
+📋 === SHEET EXPENSES (7) ===
+useMaintenanceCalculation.js:781    Has participations: true
+useMaintenanceCalculation.js:787    🚰 "Apa noua" participări: NONE
+useMaintenanceCalculation.js:791   - Apă caldă: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apă rece: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Apa noua: 0 RON (type: consumption)
+useMaintenanceCalculation.js:791   - Service interfon: 600 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Cheltuieli cu asociația: 400 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Salarii NETE: 500 RON (type: apartment)
+useMaintenanceCalculation.js:791   - Impozit ANAF: 700 RON (type: apartment)
+useMaintenanceCalculation.js:793 📋 === END SHEET EXPENSES ===
+
+useMaintenanceCalculation.js:902 💰 TOTAL currentMaintenance: 8449.97 RON (from 16 apartments)
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+MaintenanceView.js:346 🔄 Pornesc migrarea automată a distributionHistory...
+useInvoices.js:830 🔄 Începe migrarea distributionHistory...
+useInvoices.js:897 ✅ Migrare completă: 0 din 9 facturi actualizate
+MaintenanceView.js:349 ✅ Migrare completă: {success: true, updated: 0, total: 9}
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+ExpenseList.js:715 === CALCULATE TOTALS DEBUG ===
+ExpenseList.js:716 Filter: {type: 'all'}
+ExpenseList.js:824 Cheltuială: Apă caldă
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 4960.00
+ExpenseList.js:827   Suma așteptată: 4460.00
+ExpenseList.js:828   Suma distribuită: 4460.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 500.00
+ExpenseList.js:824 Cheltuială: Apă rece
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 497.50
+ExpenseList.js:827   Suma așteptată: 750.00
+ExpenseList.js:828   Suma distribuită: 647.50
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: false
+ExpenseList.js:831   Should include: true
+ExpenseList.js:832   Diferență: -252.50
+ExpenseList.js:824 Cheltuială: Apa noua
+ExpenseList.js:825   Tip: consumption
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Service interfon
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 600.00
+ExpenseList.js:827   Suma așteptată: 600.00
+ExpenseList.js:828   Suma distribuită: 600.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Cheltuieli cu asociația
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 400.00
+ExpenseList.js:827   Suma așteptată: 400.00
+ExpenseList.js:828   Suma distribuită: 400.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Salarii NETE
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 500.00
+ExpenseList.js:827   Suma așteptată: 500.00
+ExpenseList.js:828   Suma distribuită: 500.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:824 Cheltuială: Impozit ANAF
+ExpenseList.js:825   Tip: apartment
+ExpenseList.js:826   Suma introdusă: 700.00
+ExpenseList.js:827   Suma așteptată: 700.00
+ExpenseList.js:828   Suma distribuită: 700.00
+ExpenseList.js:829   Knows expected: true
+ExpenseList.js:830   Is fully distributed: true
+ExpenseList.js:831   Should include: false
+ExpenseList.js:832   Diferență: 0.00
+ExpenseList.js:845 === TOTALS ===
+ExpenseList.js:846 Total introdus: 497.50
+ExpenseList.js:847 Total așteptat: 750.00
+ExpenseList.js:848 Total distribuit: 647.50
+ExpenseList.js:849 DIFERENȚĂ: -252.50
+
+refresh 1
+

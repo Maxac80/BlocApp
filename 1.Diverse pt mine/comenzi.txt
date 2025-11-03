@@ -3,6 +3,28 @@ npm start
 
 /init ca sa creeze claude.md
 
+  Ai acum totul configurat corect:
+  - npm start → pornește aplicația pe port 3000
+  - cd website && npm run dev → pornește website-ul pe port 3001
 
 
+  Tehnologia Website-ului - Recap
 
+  Framework: Next.js 16 (NOT React simplu!)
+  - Next.js este un framework React cu super-puteri pentru SEO și performance
+  - Server-Side Rendering (SSR) - Google indexează perfect paginile
+  - App Router (React 19) - arhitectură modernă
+
+  Styling: Tailwind CSS 3.4.0
+  - Utility-first CSS framework
+  - Design system cu culori custom (primary blue, secondary green, accent orange)
+
+  Hosting Recomandat: Vercel (gratis pentru proiecte personale)
+  - Vercel este făcut de creatorii Next.js
+  - Deploy automat din Git
+  - CDN global, SSL gratuit, domeniu custom inclus
+  - Zero configurare necesară
+
+  Alternative Hosting:
+  - Netlify (similar cu Vercel)
+  - Railway, Render (dacă vrei control mai mare)

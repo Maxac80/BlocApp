@@ -1,6 +1,6 @@
 // src/components/dashboard/DashboardMaintenanceTable.js
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Calculator, FileDown, Plus, Search } from 'lucide-react';
+import { Calculator, Search } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed } from '../tables';
 
 const DashboardMaintenanceTable = ({
@@ -19,6 +19,7 @@ const DashboardMaintenanceTable = ({
 }) => {
   const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
   if (!maintenanceData || maintenanceData.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -41,8 +42,13 @@ const DashboardMaintenanceTable = ({
     );
   }
 
+  // 🆕 FAZA 6: Filtrează datele după scară selectată
+  const stairFilteredData = selectedStairTab === 'all'
+    ? maintenanceData
+    : maintenanceData.filter(data => data.stairId === selectedStairTab);
+
   // Filtrează datele în funcție de căutare
-  const filteredData = maintenanceData.filter(data => {
+  const filteredData = stairFilteredData.filter(data => {
     const searchLower = searchTerm.toLowerCase();
     return (
       data.apartment.toString().includes(searchLower) ||
@@ -50,6 +56,12 @@ const DashboardMaintenanceTable = ({
       data.paymentStatus?.toLowerCase().includes(searchLower)
     );
   });
+
+  // 🆕 FAZA 6: Obține scările asociației curente
+  const associationBlocks = blocks?.filter(block => block.associationId === association?.id) || [];
+  const associationStairs = stairs?.filter(stair =>
+    associationBlocks.some(block => block.id === stair.blockId)
+  ) || [];
 
   return (
     <div className={`rounded-xl shadow-lg overflow-hidden ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
@@ -154,7 +166,46 @@ const DashboardMaintenanceTable = ({
           </div>
         </div>
       </div>
-      
+
+      {/* 🆕 FAZA 6: Tab-uri pentru scări */}
+      {associationStairs.length > 0 && (
+        <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200" style={{ position: 'sticky' }}>
+          <div className="flex overflow-x-auto px-4">
+            {/* Tab "Toate" */}
+            <button
+              onClick={() => setSelectedStairTab('all')}
+              className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                selectedStairTab === 'all'
+                  ? 'bg-blue-50 text-blue-700 border-blue-700'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Toate ({maintenanceData.length})
+            </button>
+
+            {/* Tab pentru fiecare scară */}
+            {associationStairs.map(stair => {
+              const block = associationBlocks.find(b => b.id === stair.blockId);
+              const stairDataCount = maintenanceData.filter(data => data.stairId === stair.id).length;
+
+              return (
+                <button
+                  key={stair.id}
+                  onClick={() => setSelectedStairTab(stair.id)}
+                  className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                    selectedStairTab === stair.id
+                      ? 'bg-blue-50 text-blue-700 border-blue-700'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {block?.name} - {stair.name} ({stairDataCount})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         {activeMaintenanceTab === "simple" ? (
           <MaintenanceTableSimple

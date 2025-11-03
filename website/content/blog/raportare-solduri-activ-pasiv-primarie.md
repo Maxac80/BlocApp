@@ -4,7 +4,7 @@ date: "2025-01-21"
 category: "Legal"
 excerpt: "Ghid pas cu pas pentru raportarea trimestrială a soldurilor către primărie: ce înseamnă Activ-Pasiv, cum calculezi, termene, formulare și cum eviți amenzile de 1,000-3,000 lei."
 author: "Echipa BlocApp"
-image: "/blog/activ-pasiv-report-city-hall.jpg"
+image: "/blog/financial-reporting-documents.jpg"
 readTime: "8 min"
 slug: "raportare-solduri-activ-pasiv-primarie"
 keywords: ["raportare activ pasiv primarie", "solduri asociatie proprietari", "raportare trimestriala asociatie"]

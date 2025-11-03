@@ -39,14 +39,17 @@ const DashboardView = ({
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   
   // Hook-uri pentru gestionarea încasărilor
-  const { addIncasare } = useIncasari(association, currentMonth);
+  // 🆕 FAZA 4: Transmite currentSheet (care poate fi publishedSheet)
+  const publishedSheet = currentSheet?.status === 'PUBLISHED' ? currentSheet : null;
+  const { addIncasare } = useIncasari(association, currentMonth, publishedSheet);
   
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
-  const { 
-    getUpdatedMaintenanceData, 
+  // 🆕 FAZA 5: Transmite currentSheet pentru sincronizare cross-sheet
+  const {
+    getUpdatedMaintenanceData,
     getApartmentPayments,
-    getPaymentStats 
-  } = usePaymentSync(association, currentMonth);
+    getPaymentStats
+  } = usePaymentSync(association, currentMonth, currentSheet);
   
   // State pentru modalul de plăți
   const [showPaymentModal, setShowPaymentModal] = useState(false);

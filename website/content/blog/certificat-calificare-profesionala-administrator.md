@@ -4,7 +4,7 @@ date: "2025-01-20"
 category: "Legal"
 excerpt: "Tot ce trebuie să știi despre certificatul de administrator: cine are nevoie, cum îl obții, cât costă, ce cuprinde examenul și cum te pregătești. Ghid actualizat 2025."
 author: "Echipa BlocApp"
-image: "/blog/professional-certificate-administrator.jpg"
+image: "/blog/professional-certificate-exam.jpg"
 readTime: "9 min"
 slug: "certificat-calificare-profesionala-administrator"
 keywords: ["certificat administrator bloc", "calificare profesionala administrator", "examen administrator asociatie"]

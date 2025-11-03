@@ -973,6 +973,7 @@ const MaintenanceView = ({
           getCurrentActiveMonth={getCurrentActiveMonth}
           getNextActiveMonth={getNextActiveMonth}
           getMonthType={getMonthType}
+          expenses={associationExpenses}
           onAdjustBalances={() => {
             const modalData = getAssociationApartments().map(apartment => {
               // Găsește datele din tabelul de întreținere pentru sincronizare (folosind datele actualizate)

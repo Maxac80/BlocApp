@@ -1476,6 +1476,123 @@ export const useSheetManagement = (associationId) => {
     }
   }, [currentSheet]);
 
+  // 🆕 FAZA 8: Depublicare cu safeguard
+  const unpublishSheet = useCallback(async (sheetId) => {
+    if (!sheetId) {
+      throw new Error('sheetId este obligatoriu pentru depublicare');
+    }
+
+    try {
+      // 1. Încarcă sheet-ul care trebuie depublicat
+      const sheetRef = doc(db, 'sheets', sheetId);
+      const sheetDoc = await getDoc(sheetRef);
+
+      if (!sheetDoc.exists()) {
+        throw new Error('Sheet-ul nu există');
+      }
+
+      const sheetData = sheetDoc.data();
+
+      // 2. SAFEGUARD: Verifică că nu există plăți înregistrate
+      const payments = sheetData.payments || [];
+      if (payments.length > 0) {
+        throw new Error(
+          `Nu se poate depublica sheet-ul deoarece există ${payments.length} plată/plăți înregistrată/înregistrate. ` +
+          'Pentru a depublica, mai întâi ștergeți toate plățile asociate acestui sheet.'
+        );
+      }
+
+      // 3. Verifică că sheet-ul este PUBLISHED
+      if (sheetData.status !== SHEET_STATUS.PUBLISHED) {
+        throw new Error('Doar sheet-urile cu status PUBLISHED pot fi depublicate');
+      }
+
+      // 4. Găsește sheet-ul IN_PROGRESS (creat automat la publicare)
+      const nextSheetQuery = query(
+        collection(db, 'sheets'),
+        where('associationId', '==', sheetData.associationId),
+        where('status', '==', SHEET_STATUS.IN_PROGRESS)
+      );
+
+      const nextSheetSnapshot = await getDocs(nextSheetQuery);
+      let nextSheetId = null;
+
+      if (!nextSheetSnapshot.empty) {
+        nextSheetId = nextSheetSnapshot.docs[0].id;
+      }
+
+      const batch = writeBatch(db);
+
+      // 5. Schimbă statusul sheet-ului la IN_PROGRESS
+      batch.update(sheetRef, {
+        status: SHEET_STATUS.IN_PROGRESS,
+        publishedAt: null,
+        publishedBy: null,
+        unpublishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // 6. Opțional: Șterge sheet-ul următoare creat automat (dacă există)
+      if (nextSheetId) {
+        const nextSheetRef = doc(db, 'sheets', nextSheetId);
+        // Nu ștergem, ci îl marcăm ca ARCHIVED pentru istoric
+        batch.update(nextSheetRef, {
+          status: SHEET_STATUS.ARCHIVED,
+          archivedAt: serverTimestamp(),
+          archivedReason: 'Sheet depublicat - creat automat anulat',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      // 7. Găsește sheet-ul ARCHIVED anterior și îl restaurează ca PUBLISHED
+      const archivedSheetQuery = query(
+        collection(db, 'sheets'),
+        where('associationId', '==', sheetData.associationId),
+        where('status', '==', SHEET_STATUS.ARCHIVED)
+      );
+
+      const archivedSnapshot = await getDocs(archivedSheetQuery);
+
+      if (!archivedSnapshot.empty) {
+        // Găsește cel mai recent sheet arhivat
+        const archivedSheets = archivedSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .sort((a, b) => {
+            const dateA = a.archivedAt?.toDate?.() || new Date(0);
+            const dateB = b.archivedAt?.toDate?.() || new Date(0);
+            return dateB - dateA;
+          });
+
+        if (archivedSheets.length > 0) {
+          const previousSheetRef = doc(db, 'sheets', archivedSheets[0].id);
+          batch.update(previousSheetRef, {
+            status: SHEET_STATUS.PUBLISHED,
+            archivedAt: null,
+            restoredAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
+
+      await batch.commit();
+
+      console.log('✅ Sheet depublicat cu succes:', {
+        sheetId,
+        month: sheetData.monthYear,
+        nextSheetArchived: !!nextSheetId,
+        previousSheetRestored: !archivedSnapshot.empty
+      });
+
+      return {
+        success: true,
+        message: 'Sheet depublicat cu succes'
+      };
+    } catch (error) {
+      console.error('❌ Eroare la depublicarea sheet-ului:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     // State
     sheets,
@@ -1493,6 +1610,7 @@ export const useSheetManagement = (associationId) => {
     removeExpenseFromSheet,
     updateExpenseInSheet,
     publishCurrentSheet,
+    unpublishSheet, // 🆕 FAZA 8
     addPaymentToPublishedSheet,
     getSheetByMonth,
     updateSheetCustomName,

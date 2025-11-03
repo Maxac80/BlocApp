@@ -1,66 +1,163 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
+import {
+  collection,
+  query,
+  where,
   onSnapshot,
   doc,
-  setDoc,
   updateDoc,
-  getDoc
+  getDocs,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
 /**
- * Hook pentru sincronizarea plăților cu tabelul de întreținere
+ * 🆕 FAZA 5: Hook pentru sincronizarea plăților cu tabelul de întreținere
  * Gestionează diminuarea datoriilor conform încasărilor efectuate
+ * Sincronizare cross-sheet: plăți în Sheet-1 → actualizează restante în Sheet-2
  */
-export const usePaymentSync = (association, currentMonth) => {
+export const usePaymentSync = (association, currentMonth, currentSheet = null) => {
   const [paymentSummary, setPaymentSummary] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Ascultă încasările pentru luna curentă și calculează totalurile per apartament
+  // 🆕 FAZA 5: Ascultă plățile din sheet-ul PUBLISHED curent
   useEffect(() => {
-    if (!association?.id || !currentMonth) return;
+    if (!currentSheet?.id || currentSheet.status !== 'PUBLISHED') {
+      setPaymentSummary({});
+      return;
+    }
 
-    const q = query(
-      collection(db, 'incasari'),
-      where('associationId', '==', association.id),
-      where('month', '==', currentMonth)
+    setLoading(true);
+
+    // Listener pe sheet-ul publicat pentru a lua payments
+    const sheetRef = doc(db, 'sheets', currentSheet.id);
+
+    const unsubscribe = onSnapshot(
+      sheetRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const sheetData = docSnapshot.data();
+          const payments = sheetData.payments || [];
+
+          // Grupăm plățile pe apartamentId
+          const summary = {};
+
+          payments.forEach((payment) => {
+            const apartmentId = payment.apartmentId;
+
+            if (!summary[apartmentId]) {
+              summary[apartmentId] = {
+                totalRestante: 0,
+                totalIntretinere: 0,
+                totalPenalitati: 0,
+                totalIncasat: 0,
+                incasari: []
+              };
+            }
+
+            summary[apartmentId].totalRestante += payment.restante || 0;
+            summary[apartmentId].totalIntretinere += payment.intretinere || 0;
+            summary[apartmentId].totalPenalitati += payment.penalitati || 0;
+            summary[apartmentId].totalIncasat += payment.total || 0;
+            summary[apartmentId].incasari.push(payment);
+          });
+
+          setPaymentSummary(summary);
+        } else {
+          setPaymentSummary({});
+        }
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Eroare la ascultarea plăților din sheet:', err);
+        setPaymentSummary({});
+        setLoading(false);
+      }
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const summary = {};
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const apartmentId = data.apartmentId;
-        
-        if (!summary[apartmentId]) {
-          summary[apartmentId] = {
-            totalRestante: 0,
-            totalIntretinere: 0,
-            totalPenalitati: 0,
-            totalIncasat: 0,
-            incasari: []
-          };
-        }
-        
-        summary[apartmentId].totalRestante += data.restante || 0;
-        summary[apartmentId].totalIntretinere += data.intretinere || 0;
-        summary[apartmentId].totalPenalitati += data.penalitati || 0;
-        summary[apartmentId].totalIncasat += data.total || 0;
-        summary[apartmentId].incasari.push({
-          id: doc.id,
-          ...data
-        });
-      });
-      
-      setPaymentSummary(summary);
-    });
-
     return () => unsubscribe();
-  }, [association?.id, currentMonth]);
+  }, [currentSheet?.id, currentSheet?.status]);
+
+  // 🆕 FAZA 5: Sincronizare cross-sheet automată
+  // Când se înregistrează plăți în currentSheet, actualizează nextSheet automat
+  useEffect(() => {
+    if (!currentSheet?.id || !association?.id || Object.keys(paymentSummary).length === 0) {
+      return;
+    }
+
+    // Găsește sheet-ul IN_PROGRESS pentru luna următoare
+    const findAndUpdateNextSheet = async () => {
+      try {
+        const sheetsQuery = query(
+          collection(db, 'sheets'),
+          where('associationId', '==', association.id),
+          where('status', '==', 'IN_PROGRESS')
+        );
+
+        const snapshot = await getDocs(sheetsQuery);
+
+        // Căutăm sheet-ul cu luna imediat următoare
+        const currentSheetMonth = new Date(currentSheet.month + '-01');
+        const nextMonthDate = new Date(currentSheetMonth);
+        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+        const nextMonthStr = nextMonthDate.toISOString().substring(0, 7); // Format: 2025-12
+
+        let nextSheet = null;
+        snapshot.forEach((doc) => {
+          if (doc.data().month === nextMonthStr) {
+            nextSheet = { id: doc.id, ...doc.data() };
+          }
+        });
+
+        if (!nextSheet) {
+          // Nu există sheet următor, nu facem nimic
+          return;
+        }
+
+        // Actualizăm balanceAdjustments pentru fiecare apartament cu plăți
+        const maintenanceTable = currentSheet.maintenanceTable || [];
+        const updatedAdjustments = { ...(nextSheet.configSnapshot?.balanceAdjustments || {}) };
+
+        Object.keys(paymentSummary).forEach((apartmentId) => {
+          // Găsim datele apartamentului din maintenanceTable capturat la publicare
+          const apartmentData = maintenanceTable.find(item => item.apartmentId === apartmentId);
+
+          if (!apartmentData) return;
+
+          const payments = paymentSummary[apartmentId];
+          const initialRestante = apartmentData.restante || 0;
+          const initialIntretinere = apartmentData.currentMaintenance || 0;
+
+          // Calculăm ce a mai rămas de plătit
+          const remainingRestante = Math.max(0, initialRestante - payments.totalRestante);
+          const remainingIntretinere = Math.max(0, initialIntretinere - payments.totalIntretinere);
+
+          // Formula: Restanță pentru Sheet-2 = restante rămase + întreținere rămasă
+          const newRestante = remainingRestante + remainingIntretinere;
+
+          // Actualizăm adjustment pentru acest apartament
+          updatedAdjustments[apartmentId] = {
+            restante: newRestante,
+            reason: `Transfer automat din ${currentSheet.month}`,
+            timestamp: new Date().toISOString()
+          };
+        });
+
+        // Actualizăm sheet-ul următorului cu noile adjustments
+        const nextSheetRef = doc(db, 'sheets', nextSheet.id);
+        await updateDoc(nextSheetRef, {
+          'configSnapshot.balanceAdjustments': updatedAdjustments,
+          updatedAt: serverTimestamp()
+        });
+
+        console.log(`✅ Sincronizare cross-sheet: Sheet ${currentSheet.month} → Sheet ${nextMonthStr}`);
+      } catch (err) {
+        console.error('Eroare la sincronizarea cross-sheet:', err);
+      }
+    };
+
+    findAndUpdateNextSheet();
+  }, [paymentSummary, currentSheet?.id, currentSheet?.month, association?.id, currentSheet?.maintenanceTable]);
 
   /**
    * Calculează datoriile rămase pentru un apartament
@@ -214,44 +311,6 @@ export const usePaymentSync = (association, currentMonth) => {
     return stats;
   }, [paymentSummary]);
 
-  /**
-   * Salvează statusul de plată în Firebase (pentru persistență)
-   */
-  const savePaymentStatus = useCallback(async (apartmentId, month, status) => {
-    if (!association?.id || !apartmentId || !month) return false;
-    
-    try {
-      const paymentStatusRef = doc(db, 'paymentStatus', `${association.id}_${month}_${apartmentId}`);
-      
-      await updateDoc(paymentStatusRef, {
-        associationId: association.id,
-        apartmentId: apartmentId,
-        month: month,
-        ...status,
-        updatedAt: new Date().toISOString()
-      });
-      
-      return true;
-    } catch (error) {
-      // Dacă documentul nu există, îl creăm
-      try {
-        const paymentStatusRef = doc(db, 'paymentStatus', `${association.id}_${month}_${apartmentId}`);
-        await setDoc(paymentStatusRef, {
-          associationId: association.id,
-          apartmentId: apartmentId,
-          month: month,
-          ...status,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-        return true;
-      } catch (err) {
-        console.error('Eroare la salvarea statusului de plată:', err);
-        return false;
-      }
-    }
-  }, [association?.id]);
-
   return {
     paymentSummary,
     loading,
@@ -259,7 +318,6 @@ export const usePaymentSync = (association, currentMonth) => {
     calculateRemainingDebt,
     hasPayments,
     getUpdatedMaintenanceData,
-    getPaymentStats,
-    savePaymentStatus
+    getPaymentStats
   };
 };
