@@ -1,0 +1,80 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded square background with gradient -->
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="115" fill="url(#blueGradient)"/>
+
+  <!-- Building floor plan view from above (subtle) -->
+  <g opacity="0.15">
+    <!-- Main building outline -->
+    <rect x="100" y="150" width="312" height="260" fill="none" stroke="white" stroke-width="3"/>
+
+    <!-- Vertical divider (scara separator) -->
+    <line x1="256" y1="150" x2="256" y2="410" stroke="white" stroke-width="2"/>
+
+    <!-- Horizontal apartment dividers -->
+    <line x1="100" y1="215" x2="412" y2="215" stroke="white" stroke-width="1.5"/>
+    <line x1="100" y1="280" x2="412" y2="280" stroke="white" stroke-width="1.5"/>
+    <line x1="100" y1="345" x2="412" y2="345" stroke="white" stroke-width="1.5"/>
+
+    <!-- Window grid pattern (subtle dots representing windows) -->
+    <!-- Left section windows -->
+    <circle cx="140" cy="182" r="3" fill="white"/>
+    <circle cx="170" cy="182" r="3" fill="white"/>
+    <circle cx="200" cy="182" r="3" fill="white"/>
+    <circle cx="230" cy="182" r="3" fill="white"/>
+
+    <circle cx="140" cy="247" r="3" fill="white"/>
+    <circle cx="170" cy="247" r="3" fill="white"/>
+    <circle cx="200" cy="247" r="3" fill="white"/>
+    <circle cx="230" cy="247" r="3" fill="white"/>
+
+    <circle cx="140" cy="312" r="3" fill="white"/>
+    <circle cx="170" cy="312" r="3" fill="white"/>
+    <circle cx="200" cy="312" r="3" fill="white"/>
+    <circle cx="230" cy="312" r="3" fill="white"/>
+
+    <circle cx="140" cy="377" r="3" fill="white"/>
+    <circle cx="170" cy="377" r="3" fill="white"/>
+    <circle cx="200" cy="377" r="3" fill="white"/>
+    <circle cx="230" cy="377" r="3" fill="white"/>
+
+    <!-- Right section windows -->
+    <circle cx="282" cy="182" r="3" fill="white"/>
+    <circle cx="312" cy="182" r="3" fill="white"/>
+    <circle cx="342" cy="182" r="3" fill="white"/>
+    <circle cx="372" cy="182" r="3" fill="white"/>
+
+    <circle cx="282" cy="247" r="3" fill="white"/>
+    <circle cx="312" cy="247" r="3" fill="white"/>
+    <circle cx="342" cy="247" r="3" fill="white"/>
+    <circle cx="372" cy="247" r="3" fill="white"/>
+
+    <circle cx="282" cy="312" r="3" fill="white"/>
+    <circle cx="312" cy="312" r="3" fill="white"/>
+    <circle cx="342" cy="312" r="3" fill="white"/>
+    <circle cx="372" cy="312" r="3" fill="white"/>
+
+    <circle cx="282" cy="377" r="3" fill="white"/>
+    <circle cx="312" cy="377" r="3" fill="white"/>
+    <circle cx="342" cy="377" r="3" fill="white"/>
+    <circle cx="372" cy="377" r="3" fill="white"/>
+  </g>
+
+  <!-- Large letter B on top -->
+  <text
+    x="256"
+    y="340"
+    font-family="Arial, sans-serif"
+    font-size="280"
+    font-weight="bold"
+    fill="white"
+    text-anchor="middle"
+    dominant-baseline="middle">B</text>
+</svg>

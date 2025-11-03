@@ -329,3 +329,138 @@ C:\blocapp\website\
 - [x] Art. 11: "Notare în Cartea Funciară - Debite >3 Luni"
 - [x] Art. 12: "Metodologia Legală de Repartizare a Cheltuielilor"
 
+
+#### **Batch 3: Articole 13-18 (Best Practices Focus)** ✅ COMPLETAT!
+- [x] Art. 13: "Sistem de Gestiune Facturi cu Dual Storage"
+- [x] Art. 14: "Plăți Online pentru Locatari: Avantaje și Implementare"
+- [x] Art. 15: "Cum să Gestionezi Mai Multe Blocuri Eficient"
+- [x] Art. 16: "Transparență Totală: Construiește Încredere cu Locatarii"
+- [x] Art. 17: "Automatizarea Transferului de Balanțe între Luni"
+- [x] Art. 18: "Checklist: Pregătirea Adunării Generale"
+
+---
+
+## 📅 Sesiunea 3 - 3 Noiembrie 2025 (Continuare)
+
+### ✅ REALIZAT ASTĂZI
+
+#### 🐛 **Bug Fixes & Îmbunătățiri UI**
+
+- [x] **Rezolvat duplicate imagini:**
+  - Descărcat 2 imagini noi unice (professional-certificate-exam.jpg, financial-reporting-documents.jpg)
+  - Actualizat frontmatter pentru articolele 9 și 10
+
+- [x] **Implementat category filtering funcțional:**
+  - Split blog page în Server Component (page.tsx) și Client Component (BlogClient.tsx)
+  - useState pentru selectedCategory și currentPage
+  - useMemo pentru filtrare eficientă
+  - Tab-uri complet funcționale (Toate, Legal, Ghiduri, Best Practices)
+
+- [x] **Implementat pagination funcțională:**
+  - Logică calcul page count și slice
+  - Butoane Previous/Next cu disable logic
+  - Page numbers cu active state
+  - Afișare rezultate: "X articole în categoria Y"
+
+- [x] **Bug Fix: Module not found 'fs' error**
+  - **Problema:** Converted blog page to 'use client' caused fs module error
+  - **Soluție:** Split în Server Component (data fetching) + Client Component (UI state)
+  - **Status:** ✅ Rezolvat și confirmat de user
+
+#### 📝 **Conținut Blog Batch 3 (6 Articole Best Practices - Complete)**
+
+- [x] **Articol 13 (Best Practices):** "Sistem de Gestiune Facturi cu Dual Storage: Ghid Complet 2025" (1,800 cuvinte)
+  - Proceduri scanare și arhivare (fizică + digitală)
+  - Structură folder cloud organizată
+  - Backup strategies și legal compliance
+  - Instrumente recomandate (cloud storage comparison)
+
+- [x] **Articol 14 (Best Practices):** "Plăți Online pentru Locatari: Avantaje și Ghid de Implementare 2025" (1,700 cuvinte)
+  - Platforme recomandate (Stripe, Netopia, Revolut)
+  - Cost analysis și ROI calculation
+  - Pași implementare completă (5 etape)
+  - Strategie creștere adoptare (60%+ în 6 luni)
+
+- [x] **Articol 15 (Best Practices):** "Cum să Gestionezi Mai Multe Blocuri Eficient: Ghid pentru Administrator Profesionist" (1,400 cuvinte)
+  - Principii scalare: standardizare, automatizare, centralizare
+  - Organizare săptămână tip pentru multi-building management
+  - Scaling progresiv (1-3 → 10+ blocuri)
+  - Evitarea burnout-ului
+
+- [x] **Articol 16 (Best Practices):** "Transparență Totală: Cum Construiești Încredere cu Proprietarii în 2025" (1,500 cuvinte)
+  - 3 niveluri transparență (minim legal → digital ideal)
+  - Ce și cum să comunici (situații lunare, decizii majore, FAQ)
+  - Instrumente: portal online, newsletter, grup chat
+  - Gestionarea criticilor (scenarii + răspunsuri)
+
+- [x] **Articol 17 (Best Practices):** "Automatizarea Transferului de Balanțe între Luni: Ghid Practic 2025" (1,300 cuvinte)
+  - Explicație transfer balanțe (sold negativ/pozitiv/zero)
+  - Procedură manuală vs automată (3-5h → 10-15min economie)
+  - Verificări obligatorii (3 checkuri critice)
+  - Situații speciale (plăți după închidere, erori descoperite târziu)
+
+- [x] **Articol 18 (Best Practices):** "Checklist Complet: Pregătirea Adunării Generale în 2025" (1,600 cuvinte)
+  - Timeline complet 30 zile (de la stabilire dată până la PV final)
+  - Convocare conformă Legea 196/2018 (model inclus)
+  - Desfășurare adunare (cvorum, vot, proces-verbal)
+  - Situații speciale (conflicte, cvorum limită, contestații)
+
+**Total conținut Batch 3:** ~9,300 cuvinte (practical best practices!)
+
+#### 🎨 **Design & Imagini Batch 3**
+
+- [x] Descărcat și integrat 6 imagini profesionale Unsplash (800x600px, total ~420KB):
+  - `invoice-management-system.jpg` (72KB)
+  - `online-payment-system.jpg` (68KB)
+  - `multiple-buildings-management.jpg` (75KB)
+  - `transparency-trust-building.jpg` (71KB)
+  - `month-end-automation.jpg` (66KB)
+  - `general-assembly-checklist.jpg` (68KB)
+- [x] Toate articolele Batch 3 au path-uri corecte către imagini
+
+#### 📊 **Statistici Cumulative (Sesiuni 1+2+3)**
+
+- **Total articole:** 18 (6 Ghiduri + 6 Legal + 6 Best Practices)
+- **Total cuvinte:** ~35,400 cuvinte
+- **Total imagini:** 21 (18 articole + 2 duplicate fixes + 1 hero homepage)
+- **Total mărime imagini:** ~1,638KB (~1.6MB)
+- **Progress:** 75% din cele 24 articole planificate (18/24) ✅
+
+### 📈 TOKEN USAGE SESIUNEA 3
+
+- **Consumat Sesiune 3:** ~42k tokens
+- **Total consumat (Sesiune 1+2+3):** ~123k / 200k tokens (61.5%)
+- **Rămas:** ~77k tokens (suficient pentru Batch 4 final!)
+
+### 🎯 WHAT'S WORKING GREAT
+
+✅ **Category filtering** - Completamente funcțional, UX smooth
+✅ **Pagination** - 6 posturi per pagină, navigare intuitivă
+✅ **Server/Client split** - Arhitectură Next.js 16 corectă
+✅ **Blog SEO** - Metadata completă, imagini optimizate
+✅ **Content quality** - Articole 1,300-2,600 cuvinte, foarte detaliate
+
+---
+
+## 🎯 NEXT STEPS FINAL
+
+### 🔴 **URGENT (Ultima Sesiune - Batch 4)**
+
+#### **Batch 4: Articole 19-24 (Case Studies & Comparații)** - REMAINING
+- [ ] Art. 19: "BlocApp vs Excel: Comparație Timp și Costuri Reale"
+- [ ] Art. 20: "De ce Software-urile Vechi nu Mai Sunt Suficiente în 2025"
+- [ ] Art. 21: "Cum un Administrator Gestionează 12 Blocuri cu BlocApp"
+- [ ] Art. 22: "3 Moduri în Care Software-ul Reduce Conflictele"
+- [ ] Art. 23: "Caracteristica Ignorată de Concurență: Sistem Sheet-Based"
+- [ ] Art. 24: "Cum să Alegi Software-ul Potrivit pentru Asociația Ta"
+
+### 🟡 **POST-LAUNCH**
+- [ ] **Screenshot Dashboard Real:** Înlocui `hero-dashboard-temp.jpg` cu screenshot real
+- [ ] **Internal linking:** Link-uri între articole related
+- [ ] **Footer page navigation:** Implementare butoane pagini în footer (menționat de user)
+- [ ] **Review final:** Verificare typos, consistență ton, CTA-uri
+
+---
+
+**Ultima actualizare:** 3 Noiembrie 2025, 21:45
+**Próxima sesiune:** Batch 4 Final (articole 19-24) - ~77k tokens rămași
