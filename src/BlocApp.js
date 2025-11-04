@@ -14,12 +14,6 @@ import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 import useExpenseConfigurations from './hooks/useExpenseConfigurations';
 import useInvoices from './hooks/useInvoices';
 
-// Migration tools
-import { exposeMigrationTools } from './utils/dataMigration';
-import './utils/testMigration';
-import './utils/cleanupOldCollections';
-import './utils/structureMigration';
-
 // Components
 import Sidebar from './components/common/Sidebar';
 import {
@@ -214,9 +208,6 @@ export default function BlocApp() {
     if (createInitialSheet && association) {
       window.createInitialSheet = () => createInitialSheet(association);
     }
-
-    // Expune migration tools pentru debugging
-    exposeMigrationTools();
 
   }, [fixTransferredBalances, createInitialSheet, association, currentSheet, publishedSheet, sheets]);
 

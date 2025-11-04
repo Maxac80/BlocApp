@@ -1,6 +1,6 @@
 // hooks/useDataOperations.js
 import { useCallback } from 'react';
-import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export const useDataOperations = ({

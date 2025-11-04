@@ -11,7 +11,8 @@
       "WebSearch",
       "Bash(firebase --version:*)",
       "Bash(dir /b /s firestore.indexes.json 2)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": [],
