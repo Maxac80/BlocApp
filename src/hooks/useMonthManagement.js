@@ -7,6 +7,7 @@ import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import useSheetManagement from './useSheetManagement';
 import { validateReadyToPublish } from '../utils/validationHelpers';
+import { createNewSheetRef } from '../utils/firestoreHelpers';
 
 export const useMonthManagement = (associationId) => {
   // Folosește useSheetManagement pentru conectare la Firebase
@@ -508,7 +509,7 @@ export const useMonthManagement = (associationId) => {
         notes: 'Primul sheet publicat'
       };
 
-      const sheetRef = doc(collection(db, 'sheets'));
+      const sheetRef = createNewSheetRef(associationId);
       await setDoc(sheetRef, sheetData);
 
       return sheetRef.id;

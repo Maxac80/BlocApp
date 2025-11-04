@@ -10,6 +10,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
 
 export const useIncasari = (association, currentMonth, publishedSheet = null) => { // 🆕 FAZA 4: publishedSheet param
   const [incasari, setIncasari] = useState([]);
@@ -28,7 +29,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
     setLoading(true);
 
     // Listener pe document-ul sheet-ului publicat
-    const sheetRef = doc(db, 'sheets', publishedSheet.id);
+    const sheetRef = getSheetRef(association.id, publishedSheet.id);
 
     const unsubscribe = onSnapshot(
       sheetRef,
@@ -67,10 +68,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
 
       try {
         // Query toate sheet-urile asociației
-        const q = query(
-          collection(db, 'sheets'),
-          where('associationId', '==', association.id)
-        );
+        const q = getSheetsCollection(association.id);
 
         const snapshot = await getDocs(q);
         let maxReceiptNumber = 0;
@@ -145,7 +143,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
       };
 
       // 🆕 FAZA 4: Adaugă plata în array-ul payments din sheet
-      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const sheetRef = getSheetRef(association.id, publishedSheet.id);
       const currentPayments = publishedSheet.payments || [];
 
       await updateDoc(sheetRef, {
@@ -173,7 +171,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const sheetRef = getSheetRef(association.id, publishedSheet.id);
       const currentPayments = publishedSheet.payments || [];
 
       // Găsește și actualizează plata
@@ -202,7 +200,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', publishedSheet.id);
+      const sheetRef = getSheetRef(association.id, publishedSheet.id);
       const currentPayments = publishedSheet.payments || [];
 
       // Filtrează plata care trebuie ștearsă

@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { defaultExpenseTypes } from '../data/expenseTypes';
+import { getSheetRef } from '../utils/firestoreHelpers';
 
 const useExpenseConfigurations = (currentSheet) => {
   const [configurations, setConfigurations] = useState({});
@@ -211,7 +212,7 @@ const useExpenseConfigurations = (currentSheet) => {
     if (!currentSheet || !currentSheet.id) return;
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
 
       // Obține configurațiile existente din sheet
       const existingConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
@@ -327,7 +328,7 @@ const useExpenseConfigurations = (currentSheet) => {
       const { [expenseType]: deletedConfig, ...updatedConfigurations } = currentConfigurations;
 
       // Actualizează în Firebase
-      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+      await updateDoc(getSheetRef(currentSheet.associationId, currentSheet.id), {
         'configSnapshot.expenseConfigurations': updatedConfigurations,
         updatedAt: serverTimestamp()
       });
@@ -348,7 +349,7 @@ const useExpenseConfigurations = (currentSheet) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
 
       // Salvează participările în sheet
       await updateDoc(sheetRef, {
@@ -401,7 +402,7 @@ const useExpenseConfigurations = (currentSheet) => {
 
       if (hasChanges) {
         try {
-          const sheetRef = doc(db, 'sheets', currentSheet.id);
+          const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
           await updateDoc(sheetRef, {
             'configSnapshot.expenseConfigurations': updatedConfigs,
             'configSnapshot.updatedAt': serverTimestamp()
@@ -472,7 +473,7 @@ const useExpenseConfigurations = (currentSheet) => {
 
       if (migratedCount > 0) {
         try {
-          const sheetRef = doc(db, 'sheets', currentSheet.id);
+          const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
           await updateDoc(sheetRef, {
             'configSnapshot.apartmentParticipations': updatedParticipations,
             'configSnapshot.updatedAt': serverTimestamp()

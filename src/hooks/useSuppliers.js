@@ -5,6 +5,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getSheetRef } from '../utils/firestoreHelpers';
 
 const useSuppliers = (currentSheet) => {
   const [suppliers, setSuppliers] = useState([]);
@@ -42,7 +43,7 @@ const useSuppliers = (currentSheet) => {
       const currentSuppliers = currentSheet.configSnapshot?.suppliers || [];
       const updatedSuppliers = [...currentSuppliers, newSupplier];
 
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
       await updateDoc(sheetRef, {
         'configSnapshot.suppliers': updatedSuppliers,
         'configSnapshot.updatedAt': serverTimestamp()
@@ -100,7 +101,7 @@ const useSuppliers = (currentSheet) => {
         }
       }
 
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
       await updateDoc(sheetRef, updateData);
 
       setSuppliers(updatedSuppliers);
@@ -139,7 +140,7 @@ const useSuppliers = (currentSheet) => {
         }
       });
 
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(currentSheet.associationId, currentSheet.id);
       await updateDoc(sheetRef, {
         'configSnapshot.suppliers': updatedSuppliers,
         'configSnapshot.expenseConfigurations': updatedConfigurations,

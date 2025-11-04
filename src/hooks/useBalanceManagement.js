@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, g
 import { db } from '../firebase';
 import { SHEET_STATUS } from './useSheetManagement';
 import { defaultExpenseTypes } from '../data/expenseTypes';
+import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
 
 /**
  * 💰 Custom Hook pentru Gestionarea Soldurilor
@@ -115,8 +116,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
 
       // Încarcă direct din sheet-ul IN_PROGRESS
       const sheetsQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', association.id),
+        getSheetsCollection(association.id),
         where('status', '==', 'IN_PROGRESS')
       );
       const sheetsSnapshot = await getDocs(sheetsQuery);
@@ -290,7 +290,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
 
     try {
       // Citește sheet-ul direct folosind ID-ul
-      const sheetDoc = await getDoc(doc(db, 'sheets', sheetId));
+      const sheetDoc = await getDoc(getSheetRef(association.id, sheetId));
 
       if (!sheetDoc.exists()) {
         console.warn('⚠️ Nu există sheet-ul cu ID-ul', sheetId);
@@ -310,7 +310,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       }
 
       // Actualizează direct în Firebase
-      await updateDoc(doc(db, 'sheets', sheetDoc.id), {
+      await updateDoc(getSheetRef(association.id, sheetDoc.id), {
         'configSnapshot.disabledExpenses': updatedExpenseNames
       });
     } catch (error) {
@@ -367,7 +367,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       };
 
       // Salvează în Firebase
-      await updateDoc(doc(db, 'sheets', sheetId), {
+      await updateDoc(getSheetRef(association.id, sheetId), {
         'configSnapshot.expenseConfigurations': updatedConfigurations,
         'configSnapshot.updatedAt': serverTimestamp()
       });

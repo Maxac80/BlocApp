@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { defaultExpenseTypes } from '../data/expenseTypes';
+import { getSheetRef, getSheetsCollection, createNewSheetRef } from '../utils/firestoreHelpers';
 
 /**
  * Sheet Status Types:
@@ -84,11 +85,8 @@ export const useSheetManagement = (associationId) => {
     if (!associationId) return;
 
     setLoading(true);
-    // Query simplu fără orderBy pentru a evita probleme de index
-    const sheetsQuery = query(
-      collection(db, 'sheets'),
-      where('associationId', '==', associationId)
-    );
+    // Query-ul folosește acum nested structure - nu mai e nevoie de where clause
+    const sheetsQuery = getSheetsCollection(associationId);
 
     const unsubscribe = onSnapshot(
       sheetsQuery,
@@ -219,7 +217,7 @@ export const useSheetManagement = (associationId) => {
         notes: 'Primul sheet creat pentru asociație'
       };
 
-      const sheetRef = doc(collection(db, 'sheets'));
+      const sheetRef = createNewSheetRef(idToUse);
       await setDoc(sheetRef, sheetData);
 
       console.log('✅ Sheet inițial creat:', monthYear);
@@ -243,7 +241,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // 🔄 AUTOLOADING: Încarcă datele din Firebase dacă nu sunt furnizate sau sunt incomplete
       let structureData = completeStructureData;
@@ -356,7 +354,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Creează copie completă a cheltuielii cu toate datele, eliminând undefined
       const cleanedExpense = Object.fromEntries(
@@ -410,7 +408,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Obține cheltuielile actuale din sheet
       const currentExpenses = currentSheet.expenses || [];
@@ -469,7 +467,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Obține cheltuielile actuale din sheet
       const currentExpenses = currentSheet.expenses || [];
@@ -522,7 +520,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // 🆕 UNIFIED STRUCTURE: Creează snapshot doar cu structura unificată
       // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
@@ -571,7 +569,7 @@ export const useSheetManagement = (associationId) => {
 
     try {
       // 1. Actualizează sheet-ul curent ca PUBLISHED
-      const currentSheetRef = doc(db, 'sheets', currentSheet.id);
+      const currentSheetRef = getSheetRef(associationId, currentSheet.id);
 
       // 🎯 CAPTUREAZĂ datele calculate la publicare
       const updateData = {
@@ -592,7 +590,7 @@ export const useSheetManagement = (associationId) => {
 
       // 2. Arhivează sheet-ul publicat anterior (dacă există)
       if (publishedSheet) {
-        const previousSheetRef = doc(db, 'sheets', publishedSheet.id);
+        const previousSheetRef = getSheetRef(associationId, publishedSheet.id);
         batch.update(previousSheetRef, {
           status: SHEET_STATUS.ARCHIVED,
           archivedAt: serverTimestamp(),
@@ -691,9 +689,9 @@ export const useSheetManagement = (associationId) => {
         });
       };
 
-      const newSheetRef = doc(collection(db, 'sheets'));
+      const newSheetRef = createNewSheetRef(associationId);
       const newSheetData = {
-        associationId: currentSheet.associationId, // IMPORTANT: folosim associationId din sheet-ul curent!
+        associationId: associationId, // IMPORTANT: folosim associationId din hook!
         monthYear: nextWorkingMonth, // Folosim luna de lucru calculată
         customMonthName: nextWorkingMonth, // Setăm direct luna de lucru
         consumptionMonth: nextConsumptionMonth, // Setăm luna de consum calculată
@@ -811,7 +809,7 @@ export const useSheetManagement = (associationId) => {
 
     try {
       // 1. Actualizează sheet-ul publicat cu plata
-      const publishedSheetRef = doc(db, 'sheets', publishedSheet.id);
+      const publishedSheetRef = getSheetRef(associationId, publishedSheet.id);
       const updatedPayments = [...(publishedSheet.payments || []), paymentData];
       
       // Recalculează balanța pentru sheet-ul publicat
@@ -828,7 +826,7 @@ export const useSheetManagement = (associationId) => {
 
       // 2. Actualizează soldurile în sheet-ul curent (în lucru) pentru corelație în timp real
       if (currentSheet && currentSheet.balances?.transferredFrom === publishedSheet.id) {
-        const currentSheetRef = doc(db, 'sheets', currentSheet.id);
+        const currentSheetRef = getSheetRef(associationId, currentSheet.id);
         
         // Actualizează soldurile individuale per apartament
         const updatedApartmentBalances = { ...currentSheet.balances.apartmentBalances };
@@ -891,8 +889,7 @@ export const useSheetManagement = (associationId) => {
   const getSheetByMonth = useCallback(async (monthYear) => {
     try {
       const sheetsQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', associationId),
+        getSheetsCollection(associationId),
         where('monthYear', '==', monthYear)
       );
 
@@ -1036,7 +1033,7 @@ export const useSheetManagement = (associationId) => {
 
 
     // Actualizează sheet-ul curent cu soldurile corectate
-    const currentSheetRef = doc(db, 'sheets', currentSheet.id);
+    const currentSheetRef = getSheetRef(associationId, currentSheet.id);
     await updateDoc(currentSheetRef, {
       'balances.apartmentBalances': correctedBalances,
       'balances.transferred': true,
@@ -1062,7 +1059,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', sheetId);
+      const sheetRef = getSheetRef(associationId, sheetId);
       await updateDoc(sheetRef, {
         customMonthName: customName,
         updatedAt: serverTimestamp()
@@ -1084,7 +1081,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', sheetId);
+      const sheetRef = getSheetRef(associationId, sheetId);
       await updateDoc(sheetRef, {
         customMonthName: workingMonth,
         consumptionMonth: consumptionMonth,
@@ -1107,7 +1104,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
       await updateDoc(sheetRef, {
         maintenanceTable: maintenanceTable,
         updatedAt: serverTimestamp()
@@ -1130,10 +1127,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetsQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', associationId)
-      );
+      const sheetsQuery = getSheetsCollection(associationId);
 
       const snapshot = await getDocs(sheetsQuery);
       const batch = writeBatch(db);
@@ -1160,7 +1154,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Creează noul bloc cu ID unic
       const newBlock = {
@@ -1204,7 +1198,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       const newStair = {
         id: Date.now().toString(),
@@ -1244,7 +1238,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       const newApartment = {
         id: Date.now().toString(),
@@ -1292,7 +1286,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Filtrează blocurile pentru a-l elimina pe cel cu ID-ul specificat
       const currentBlocks = currentSheet.associationSnapshot?.blocks || [];
@@ -1338,7 +1332,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Filtrează scările pentru a-o elimina pe cea cu ID-ul specificat
       const currentStairs = currentSheet.associationSnapshot?.stairs || [];
@@ -1377,7 +1371,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Filtrează apartamentele pentru a-l elimina pe cel cu ID-ul specificat
       const currentApartments = currentSheet.associationSnapshot?.apartments || [];
@@ -1411,7 +1405,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Actualizează blocul în lista de blocuri
       const currentBlocks = currentSheet.associationSnapshot?.blocks || [];
@@ -1448,7 +1442,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Actualizează scara în lista de scări
       const currentStairs = currentSheet.associationSnapshot?.stairs || [];
@@ -1485,7 +1479,7 @@ export const useSheetManagement = (associationId) => {
     }
 
     try {
-      const sheetRef = doc(db, 'sheets', currentSheet.id);
+      const sheetRef = getSheetRef(associationId, currentSheet.id);
 
       // Actualizează apartamentul în lista de apartamente
       const currentApartments = currentSheet.associationSnapshot?.apartments || [];
@@ -1521,7 +1515,7 @@ export const useSheetManagement = (associationId) => {
 
     try {
       // 1. Încarcă sheet-ul care trebuie depublicat
-      const sheetRef = doc(db, 'sheets', sheetId);
+      const sheetRef = getSheetRef(associationId, sheetId);
       const sheetDoc = await getDoc(sheetRef);
 
       if (!sheetDoc.exists()) {
@@ -1546,8 +1540,7 @@ export const useSheetManagement = (associationId) => {
 
       // 4. Găsește sheet-ul IN_PROGRESS (creat automat la publicare)
       const nextSheetQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', sheetData.associationId),
+        getSheetsCollection(associationId),
         where('status', '==', SHEET_STATUS.IN_PROGRESS)
       );
 
@@ -1571,7 +1564,7 @@ export const useSheetManagement = (associationId) => {
 
       // 6. Opțional: Șterge sheet-ul următoare creat automat (dacă există)
       if (nextSheetId) {
-        const nextSheetRef = doc(db, 'sheets', nextSheetId);
+        const nextSheetRef = getSheetRef(associationId, nextSheetId);
         // Nu ștergem, ci îl marcăm ca ARCHIVED pentru istoric
         batch.update(nextSheetRef, {
           status: SHEET_STATUS.ARCHIVED,
@@ -1583,8 +1576,7 @@ export const useSheetManagement = (associationId) => {
 
       // 7. Găsește sheet-ul ARCHIVED anterior și îl restaurează ca PUBLISHED
       const archivedSheetQuery = query(
-        collection(db, 'sheets'),
-        where('associationId', '==', sheetData.associationId),
+        getSheetsCollection(associationId),
         where('status', '==', SHEET_STATUS.ARCHIVED)
       );
 
@@ -1601,7 +1593,7 @@ export const useSheetManagement = (associationId) => {
           });
 
         if (archivedSheets.length > 0) {
-          const previousSheetRef = doc(db, 'sheets', archivedSheets[0].id);
+          const previousSheetRef = getSheetRef(associationId, archivedSheets[0].id);
           batch.update(previousSheetRef, {
             status: SHEET_STATUS.PUBLISHED,
             archivedAt: null,

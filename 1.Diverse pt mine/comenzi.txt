@@ -28,3 +28,16 @@ npm start
   Alternative Hosting:
   - Netlify (similar cu Vercel)
   - Railway, Render (dacă vrei control mai mare)
+
+
+    1. useSheetManagement.js - 32 locații
+  2. useBalanceManagement.js - 4 locații
+  3. useIncasari.js - 5 locații
+  4. usePaymentSync.js - 3 locații
+  5. useExpenseManagement.js - 3 locații
+  6. useExpenseConfigurations.js - 5 locații
+  7. useSuppliers.js - 3 locații
+  8. useFirestore.js - 1 locație
+  9. useMonthManagement.js - 1 locație
+  10. Migration utils - 7 locații (optional, dacă nu le folosești pot skip)
+  11. useDataOperations.js - 1 locație3

@@ -10,6 +10,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
 
 /**
  * 🆕 FAZA 5: Hook pentru sincronizarea plăților cu tabelul de întreținere
@@ -30,7 +31,7 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
     setLoading(true);
 
     // Listener pe sheet-ul publicat pentru a lua payments
-    const sheetRef = doc(db, 'sheets', currentSheet.id);
+    const sheetRef = getSheetRef(association.id, currentSheet.id);
 
     const unsubscribe = onSnapshot(
       sheetRef,
@@ -89,8 +90,7 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
     const findAndUpdateNextSheet = async () => {
       try {
         const sheetsQuery = query(
-          collection(db, 'sheets'),
-          where('associationId', '==', association.id),
+          getSheetsCollection(association.id),
           where('status', '==', 'IN_PROGRESS')
         );
 
@@ -144,7 +144,7 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
         });
 
         // Actualizăm sheet-ul următorului cu noile adjustments
-        const nextSheetRef = doc(db, 'sheets', nextSheet.id);
+        const nextSheetRef = getSheetRef(association.id, nextSheet.id);
         await updateDoc(nextSheetRef, {
           'configSnapshot.balanceAdjustments': updatedAdjustments,
           updatedAt: serverTimestamp()

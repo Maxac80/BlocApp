@@ -5,7 +5,13 @@
       "Bash(npm start)",
       "Bash(cat:*)",
       "Bash(\"C:\\blocapp\\claude_notes.md\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Rezolvare display issues + UI improvements pentru Configurare Cheltuieli\n\n## Probleme critice rezolvate:\n\n1. **Error \"apartments is not defined\"** la selectare \"Pe cotă parte indiviză\"\n   - Fix: Adăugat useMemo pentru apartments în ExpenseConfigModal\n\n2. **Cheltuieli custom nu se găseau** cu getExpenseConfig\n   - Fix: Recunoaștere ID-uri custom-* în useExpenseConfigurations\n\n3. **Display arăta distributionType greșit** (salvare OK, afișare greșită)\n   - Cauze: State stale, logic incomplet, modal primea name în loc de ID\n   - Fix: Pass expenseConfigurations parameter, adăugat case cotaParte, folosit ID-uri\n\n4. **Modal title arăta ID** în loc de nume\n   - Fix: Extract name din config cu getExpenseConfig\n\n## UI Improvements:\n\n- Badge-uri colorate pentru tipuri distribuție (blue/purple/amber/indigo/teal)\n- Badge-uri mai puțin rotunjite (rounded, nu rounded-full)\n- Format curat: \"Distribuție: [BADGE] • Furnizor: Nume\"\n- \"Fără furnizor\" styling: text-orange-600 italic\n- Badge verde \"Distribuită\" pentru cheltuieli folosite în calcul\n- Tab Furnizori: labels dinamice (Cheltuială/Cheltuieli), buton consistent\n- Eliminat iconițe decorative, debug logs curățați\n\n## Files modified:\n- useExpenseConfigurations.js - Custom ID recognition\n- useExpenseManagement.js - State sync cu expenseConfigurations parameter\n- BlocApp.js - Pass expenseConfigurations\n- ExpensesViewNew.js - Badge system + display formatting\n- ExpenseConfigModal.js - Fix apartments undefined\n- claude_notes.md - Documentare detaliată sesiune\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "WebSearch",
+      "Bash(firebase --version:*)",
+      "Bash(dir /b /s firestore.indexes.json 2)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": [],

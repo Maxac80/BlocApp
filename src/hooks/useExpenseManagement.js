@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { defaultExpenseTypes } from '../data/expenseTypes';
+import { getSheetRef } from '../utils/firestoreHelpers';
 
 /**
  * 💰 Custom Hook pentru Gestionarea Cheltuielilor
@@ -608,10 +609,9 @@ export const useExpenseManagement = ({
       };
 
       // Salvează în sheet folosind updateDoc direct pe sheet
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../firebase');
+      const { updateDoc } = await import('firebase/firestore');
 
-      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+      await updateDoc(getSheetRef(association.id, currentSheet.id), {
         pendingConsumptions: updatedPendingConsumptions
       });
 
@@ -643,10 +643,9 @@ export const useExpenseManagement = ({
       };
 
       // Salvează în sheet folosind updateDoc direct pe sheet
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../firebase');
+      const { updateDoc } = await import('firebase/firestore');
 
-      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+      await updateDoc(getSheetRef(association.id, currentSheet.id), {
         pendingIndividualAmounts: updatedPendingAmounts
       });
 
@@ -708,10 +707,9 @@ export const useExpenseManagement = ({
       };
 
       // Salvează în sheet folosind updateDoc direct pe sheet
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../firebase');
+      const { updateDoc } = await import('firebase/firestore');
 
-      await updateDoc(doc(db, 'sheets', currentSheet.id), {
+      await updateDoc(getSheetRef(association.id, currentSheet.id), {
         pendingIndexes: updatedPendingIndexes
       });
 

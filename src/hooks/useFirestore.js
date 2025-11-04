@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { useAuthEnhanced } from "../context/AuthContextEnhanced";
 import { db } from "../firebase";
+import { getSheetsCollection } from "../utils/firestoreHelpers";
 
 export const useAssociationData = (sheetOperationsRef = null) => {
   const { userProfile, currentUser } = useAuthEnhanced();
@@ -189,8 +190,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     try {
       // Încarcă din sheet în loc de colecție
       const sheetsQuery = query(
-        collection(db, "sheets"),
-        where("associationId", "==", associationId),
+        getSheetsCollection(associationId),
         where("status", "==", "IN_PROGRESS")
       );
       const sheetsSnapshot = await getDocs(sheetsQuery);
