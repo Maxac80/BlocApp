@@ -537,12 +537,6 @@ const ExpenseList = ({
         const stairApts = allApts.filter(apt => apt.stairId === filterInfo.stairId);
         const totalAssociationAmount = expense.isUnitBased ? expense.billAmount : expense.amount;
 
-        console.log(`[getRelevantAmount] Cheltuială: ${expense.name}`);
-        console.log(`  Tip distribuție: ${config?.distributionType}`);
-        console.log(`  Reception mode: ${receptionMode}`);
-        console.log(`  Filter: scară ${filterInfo.stairId}`);
-        console.log(`  Suma asociație: ${totalAssociationAmount}`);
-        console.log(`  Scări în asociație: ${allApts.length} apartamente, ${stairApts.length} în scara curentă`);
 
         // SPECIAL: Pentru cheltuieli pe CONSUM, INDIVIDUAL sau COTĂ PARTE INDIVIZĂ, calculează suma cu participări aplicate
         if (config?.distributionType === 'consumption' || config?.distributionType === 'individual' ||
@@ -712,9 +706,6 @@ const ExpenseList = ({
     let totalDistribuit = 0;
     let allKnowExpectedAmount = true;
 
-    console.log('=== CALCULATE TOTALS DEBUG ===');
-    console.log('Filter:', filterInfo);
-
     filteredExpenses.forEach(expense => {
       const config = getExpenseConfig(expense.name);
 
@@ -841,12 +832,6 @@ const ExpenseList = ({
         }
       }
     });
-
-    console.log('=== TOTALS ===');
-    console.log(`Total introdus: ${totalIntrodus.toFixed(2)}`);
-    console.log(`Total așteptat: ${totalAsteptat.toFixed(2)}`);
-    console.log(`Total distribuit: ${totalDistribuit.toFixed(2)}`);
-    console.log(`DIFERENȚĂ: ${(totalIntrodus - totalAsteptat).toFixed(2)}`);
 
     return { totalIntrodus, totalAsteptat, totalDistribuit, allKnowExpectedAmount };
   };

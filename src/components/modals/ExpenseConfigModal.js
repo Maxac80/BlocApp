@@ -2,13 +2,25 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Settings, Users, Building2, Info, Activity, Plus, Trash2 } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import SupplierModal from './SupplierModal';
+import { defaultExpenseTypes } from '../../data/expenseTypes';
+
+// Funcție pentru normalizarea textului (elimină diacriticele și convertește la lowercase)
+const normalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
 
 const ExpenseConfigModal = ({
+  mode = 'edit', // 'add' | 'edit'
   isOpen,
   onClose,
-  expenseName,
-  expenseConfig,
-  updateExpenseConfig,
+  expenseName, // Optional when mode='add'
+  expenseConfig, // Optional when mode='add'
+  updateExpenseConfig, // Used in 'edit' mode
+  onAddExpense, // Used in 'add' mode
   getAssociationApartments,
   getApartmentParticipation,
   setApartmentParticipation,
@@ -16,10 +28,12 @@ const ExpenseConfigModal = ({
   saveApartmentParticipations,
   blocks = [],
   stairs = [],
-  initialTab = 'general'
+  initialTab = 'general',
+  getAssociationExpenseTypes // For duplicate name checking in 'add' mode
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedStairTab, setSelectedStairTab] = useState('all');
+  const [inputExpenseName, setInputExpenseName] = useState(''); // For 'add' mode
   const [localConfig, setLocalConfig] = useState({
     distributionType: 'apartment',
     consumptionUnit: 'mc',
@@ -64,10 +78,13 @@ const ExpenseConfigModal = ({
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const justAddedSupplierRef = React.useRef(false);
 
-  // 🔑 Cheia pentru participări: folosește expenseTypeId dacă există, altfel expenseName (backwards compatibility)
+  // 🔑 Cheia pentru participări: folosește expenseTypeId sau expenseName (sau inputExpenseName în modul add)
   const expenseKey = useMemo(() => {
-    return expenseConfig?.id || expenseName;
-  }, [expenseConfig, expenseName]);
+    if (mode === 'add') {
+      return inputExpenseName.trim(); // In ADD mode, use the input name
+    }
+    return expenseConfig?.id || expenseName; // In EDIT mode, use config ID or passed name
+  }, [mode, inputExpenseName, expenseConfig, expenseName]);
 
   // Reset tab când se deschide modalul sau se schimbă initialTab
   useEffect(() => {
@@ -76,12 +93,55 @@ const ExpenseConfigModal = ({
     }
   }, [isOpen, initialTab]);
 
+  // Reset form when modal opens in ADD mode
   useEffect(() => {
-    if (expenseConfig && !justAddedSupplierRef.current) {
+    if (isOpen && mode === 'add') {
+      setInputExpenseName('');
+      setLocalConfig({
+        distributionType: 'apartment',
+        consumptionUnit: 'mc',
+        customConsumptionUnit: '',
+        invoiceMode: 'single',
+        receptionMode: 'total',
+        appliesTo: {
+          blocks: [],
+          stairs: []
+        },
+        supplierId: null,
+        supplierName: '',
+        contractNumber: '',
+        contactPerson: '',
+        fixedAmountMode: 'apartment',
+        indexConfiguration: {
+          enabled: false,
+          inputMode: 'mixed',
+          indexTypes: []
+        },
+        differenceDistribution: {
+          method: 'apartment',
+          adjustmentMode: 'none',
+          apartmentTypeRatios: {},
+          includeFixedAmountInDifference: true,
+          includeExcludedInDifference: false
+        }
+      });
+      setShowCustomUnit(false);
+      setLocalParticipations({});
+    }
+  }, [isOpen, mode]);
+
+  // Load config when modal opens in EDIT mode
+  useEffect(() => {
+    if (isOpen && mode === 'edit' && expenseConfig && !justAddedSupplierRef.current) {
+      console.log('🔧 [ExpenseConfigModal] EDIT MODE - expenseConfig received:', {
+        id: expenseConfig.id,
+        name: expenseConfig.name,
+        distributionType: expenseConfig.distributionType
+      });
       const distributionType = expenseConfig.distributionType || 'apartment';
       const defaultFixedAmountMode = distributionType === 'person' ? 'person' : 'apartment';
 
-      setLocalConfig({
+      const newLocalConfig = {
         distributionType: distributionType,
         consumptionUnit: expenseConfig.consumptionUnit || 'mc',
         customConsumptionUnit: expenseConfig.customConsumptionUnit || '',
@@ -112,12 +172,14 @@ const ExpenseConfigModal = ({
           includeFixedAmountInDifference: true,
           includeExcludedInDifference: false
         }
-      });
+      };
+      console.log('🔧 [ExpenseConfigModal] Setting localConfig with distributionType:', newLocalConfig.distributionType);
+      setLocalConfig(newLocalConfig);
 
       // Setează showCustomUnit dacă unitatea e custom
       setShowCustomUnit(expenseConfig.consumptionUnit === 'custom');
     }
-  }, [expenseConfig]);
+  }, [isOpen, mode, expenseConfig]);
 
   // 🔄 Încarcă participările din Firebase la deschiderea modalului
   useEffect(() => {
@@ -147,7 +209,7 @@ const ExpenseConfigModal = ({
     try {
       const newSupplier = await addSupplier({
         ...supplierData,
-        serviceTypes: [expenseName]
+        serviceTypes: [expenseKey]  // Folosește ID-ul cheltuielii, nu numele
       });
 
       // Setează flag-ul că tocmai am adăugat un furnizor
@@ -187,44 +249,55 @@ const ExpenseConfigModal = ({
 
   const handleSave = async () => {
     try {
+      // ADD MODE: Validate expense name
+      if (mode === 'add') {
+        if (!inputExpenseName.trim()) {
+          alert('Numele cheltuielii este obligatoriu');
+          return;
+        }
+
+        // Validare Mod introducere: dacă e per_block sau per_stair, trebuie să aibă cel puțin un element selectat
+        if (localConfig.receptionMode === 'per_block' && localConfig.appliesTo.blocks.length === 0) {
+          alert('Selectați cel puțin un bloc sau alegeți "Pe asociație"');
+          return;
+        }
+        if (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.length === 0) {
+          alert('Selectați cel puțin o scară sau alegeți "Pe asociație"');
+          return;
+        }
+
+        const normalizedInputName = normalizeText(inputExpenseName);
+
+        // Verifică dacă numele există în cheltuielile standard
+        const standardExpenseExists = defaultExpenseTypes.some(expense =>
+          normalizeText(expense.name) === normalizedInputName
+        );
+
+        if (standardExpenseExists) {
+          alert(`Cheltuiala cu numele "${inputExpenseName.trim()}" există deja în cheltuielile standard. Vă rugăm să alegeți un alt nume.`);
+          return;
+        }
+
+        // Verifică dacă numele cheltuielii există deja în cheltuielile custom
+        if (getAssociationExpenseTypes) {
+          const existingExpenseTypes = getAssociationExpenseTypes();
+          const nameExists = existingExpenseTypes.some(expense =>
+            normalizeText(expense.name) === normalizedInputName
+          );
+
+          if (nameExists) {
+            alert(`Cheltuiala cu numele "${inputExpenseName.trim()}" există deja. Vă rugăm să alegeți un alt nume.`);
+            return;
+          }
+        }
+      }
+
       // Validare unitate de măsură custom
       if (localConfig.distributionType === 'consumption' &&
           localConfig.consumptionUnit === 'custom' &&
           !localConfig.customConsumptionUnit?.trim()) {
         alert('Vă rog completați unitatea de măsură personalizată');
         return;
-      }
-
-      // ADĂUGAT: Validare suprafețe pentru cotă parte indiviză
-      if (localConfig.distributionType === 'cotaParte') {
-        const apartments = getAssociationApartments();
-
-        // Verifică apartamente fără suprafață
-        const apartmentsWithoutSurface = apartments.filter(apt => !apt.surface || apt.surface <= 0);
-
-        if (apartmentsWithoutSurface.length > 0) {
-          const apartmentNumbers = apartmentsWithoutSurface
-            .map(apt => `Apt ${apt.number}`)
-            .join(', ');
-
-          alert(
-            `⚠️ ATENȚIE: Distribuția pe cotă parte indiviză necesită suprafața utilă completată la TOATE apartamentele!\n\n` +
-            `Apartamente fără suprafață (${apartmentsWithoutSurface.length}): ${apartmentNumbers}\n\n` +
-            `📝 Pași pentru rezolvare:\n` +
-            `1. Accesați secțiunea "Apartamente" din meniul lateral\n` +
-            `2. Editați fiecare apartament și completați câmpul "Suprafața utilă (mp)"\n` +
-            `3. Reveniți aici pentru a configura distribuția pe cotă parte indiviză\n\n` +
-            `💡 Suprafața utilă este necesară pentru calculul corect al cotei părți (% din total).`
-          );
-          return;
-        }
-
-        // Verifică că există cel puțin o suprafață validă
-        const totalSurface = apartments.reduce((sum, apt) => sum + (apt.surface || 0), 0);
-        if (totalSurface === 0) {
-          alert('⚠️ Suprafața totală este 0. Adăugați suprafața utilă la apartamente.');
-          return;
-        }
       }
 
       // Validare participări - verifică dacă există sume/procente necompletate
@@ -254,8 +327,8 @@ const ExpenseConfigModal = ({
         return;
       }
 
-      // VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
-      if (expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
+      // EDIT MODE: VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
+      if (mode === 'edit' && expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
         // Verifică dacă există o cheltuială distribuită în luna curentă
         const existingExpense = currentSheet?.expenses?.find(exp => exp.name === expenseName);
 
@@ -275,8 +348,18 @@ const ExpenseConfigModal = ({
       // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
       onClose();
 
-      // Salvează direct - folosește expenseKey (ID sau name) pentru consistență
-      await updateExpenseConfig(expenseKey, localConfig);
+      // ADD MODE: Call onAddExpense
+      if (mode === 'add') {
+        await onAddExpense({
+          name: inputExpenseName.trim(),
+          defaultDistribution: localConfig.distributionType,
+          receptionMode: localConfig.receptionMode,
+          appliesTo: localConfig.appliesTo
+        }, localConfig);
+      } else {
+        // EDIT MODE: Call updateExpenseConfig
+        await updateExpenseConfig(expenseKey, localConfig);
+      }
 
       // Save apartment participations to Firebase
       if (saveApartmentParticipations) {
@@ -328,15 +411,17 @@ const ExpenseConfigModal = ({
       invoiceMode: mode
     };
 
-    // Dacă se alege "separate" și receptionMode este "total", schimbă automat la per_block
+    // Dacă se alege "separate" și receptionMode este "total", schimbă automat la per_block sau per_stair
     if (mode === 'separate' && localConfig.receptionMode === 'total') {
-      if (blocks.length > 1) {
+      // Prioritizează per_block dacă există cel puțin 2 blocuri
+      if (blocks.length >= 2) {
         newConfig.receptionMode = 'per_block';
         newConfig.appliesTo = {
           blocks: blocks.map(b => b.id),
           stairs: []
         };
-      } else if (stairs.length > 1) {
+      } else if (stairs.length >= 2) {
+        // Fallback la per_stair dacă există cel puțin 2 scări
         newConfig.receptionMode = 'per_stair';
         newConfig.appliesTo = {
           blocks: [],
@@ -448,28 +533,36 @@ const ExpenseConfigModal = ({
     });
   }, [blocks, stairs]);
 
+  // Obține toate apartamentele - ÎNAINTE de return
+  const apartments = useMemo(() => {
+    if (!getAssociationApartments) return [];
+    return getAssociationApartments();
+  }, [getAssociationApartments]);
+
   // Filtrează apartamentele pe baza tab-ului selectat - ÎNAINTE de return
   const filteredApartments = useMemo(() => {
-    if (!getAssociationApartments) return [];
-    const apartments = getAssociationApartments();
     if (selectedStairTab === 'all') return apartments;
     return apartments.filter(apt => apt.stairId === selectedStairTab);
-  }, [selectedStairTab, getAssociationApartments]);
+  }, [selectedStairTab, apartments]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-        <div className="p-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+        <div className={`p-6 bg-gradient-to-r ${mode === 'add' ? 'from-green-600 to-green-700' : 'from-purple-600 to-purple-700'} text-white`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">⚙️ Configurare: {expenseName}</h2>
-              <p className="text-purple-100 mt-1">Setări de distribuție și furnizor</p>
+              <h2 className="text-2xl font-bold">
+                {mode === 'add' ? 'Adaugă cheltuială nouă' : `⚙️ Configurare: ${expenseName}`}
+              </h2>
+              <p className={`${mode === 'add' ? 'text-green-100' : 'text-purple-100'} mt-1`}>
+                Setări de distribuție și furnizor
+              </p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-purple-800 p-2 rounded-lg transition-colors"
+              className={`text-white ${mode === 'add' ? 'hover:bg-green-800' : 'hover:bg-purple-800'} p-2 rounded-lg transition-colors`}
             >
               <X className="w-6 h-6" />
             </button>
@@ -482,7 +575,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('general')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'general'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -493,7 +586,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('participation')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'participation'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -504,7 +597,7 @@ const ExpenseConfigModal = ({
               onClick={() => setActiveTab('supplier')}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === 'supplier'
-                  ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                  ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -517,7 +610,7 @@ const ExpenseConfigModal = ({
                 onClick={() => setActiveTab('indexes')}
                 className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                   activeTab === 'indexes'
-                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                    ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -531,6 +624,26 @@ const ExpenseConfigModal = ({
         <div className="flex-1 p-6 overflow-y-auto">
           {activeTab === 'general' && (
             <div className="space-y-6">
+              {/* Expense Name Field - Only in ADD mode */}
+              {mode === 'add' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Numele cheltuielii *
+                  </label>
+                  <input
+                    type="text"
+                    value={inputExpenseName}
+                    onChange={(e) => setInputExpenseName(e.target.value)}
+                    placeholder="ex: Deratizare, Dezinsecție, etc."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    autoFocus
+                  />
+                  <p className="mt-2 text-sm text-gray-600">
+                    Introduceți numele cheltuielii personalizate. Acest nume va fi folosit pentru identificare în sistem.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Distribuție
@@ -548,11 +661,11 @@ const ExpenseConfigModal = ({
                   }}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
-                  <option value="apartment">Pe apartament (egal)</option>
-                  <option value="individual">Pe apartament (individual)</option>
-                  <option value="person">Pe persoană</option>
-                  <option value="consumption">Pe consum</option>
                   <option value="cotaParte">Pe cotă parte indiviză</option>
+                  <option value="consumption">Pe consum</option>
+                  <option value="person">Pe persoană</option>
+                  <option value="apartment">Pe apartament</option>
+                  <option value="individual">Sume individuale pe apartament</option>
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.distributionType === 'apartment' && 'Cheltuiala se împarte egal între toate apartamentele'}
@@ -561,6 +674,16 @@ const ExpenseConfigModal = ({
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
                   {localConfig.distributionType === 'cotaParte' && 'Cheltuiala se distribuie proporțional cu cota parte indiviză (% din suprafața utilă totală)'}
                 </p>
+                {localConfig.distributionType === 'cotaParte' && apartments.length === 0 && (
+                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                    ⚠️ Nu ai apartamente introduse. Nu vei putea publica întreținerea până nu adaugi apartamente și completezi suprafețele.
+                  </p>
+                )}
+                {localConfig.distributionType === 'cotaParte' && apartments.length > 0 && apartments.some(apt => !apt.suprafataUtila || apt.suprafataUtila === 0) && (
+                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                    ⚠️ Unele apartamente nu au suprafața utilă completată. Nu vei putea publica întreținerea până nu completezi toate suprafețele.
+                  </p>
+                )}
               </div>
 
               {/* Mod participare sumă fixă - apare doar pentru distribuție pe persoană */}
@@ -640,9 +763,10 @@ const ExpenseConfigModal = ({
                   value={localConfig.invoiceMode}
                   onChange={(e) => handleInvoiceModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  disabled={blocks.length < 2 && stairs.length < 2 && localConfig.invoiceMode === 'single'}
                 >
                   <option value="single">O singură factură</option>
-                  <option value="separate">Facturi separate (per scară/bloc)</option>
+                  {(blocks.length >= 2 || stairs.length >= 2) && <option value="separate">Facturi separate (per scară/bloc)</option>}
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'total' && 'O factură pe asociație'}
@@ -651,6 +775,11 @@ const ExpenseConfigModal = ({
                   {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_block' && 'Facturi separate pentru fiecare bloc'}
                   {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_stair' && 'Facturi separate pentru fiecare scară'}
                 </p>
+                {blocks.length < 2 && stairs.length < 2 && (
+                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                    ⚠️ Adaugă cel puțin 2 blocuri sau 2 scări pentru a putea folosi "Facturi separate"
+                  </p>
+                )}
               </div>
 
               {/* Introducere sume */}
@@ -662,10 +791,11 @@ const ExpenseConfigModal = ({
                   value={localConfig.receptionMode}
                   onChange={(e) => handleReceptionModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  disabled={blocks.length < 2 && stairs.length < 2 && localConfig.receptionMode === 'total'}
                 >
                   {localConfig.invoiceMode !== 'separate' && <option value="total">Pe asociație</option>}
-                  {(blocks.length > 1 || localConfig.receptionMode === 'per_block') && <option value="per_block">Per bloc</option>}
-                  {(stairs.length > 1 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Per scară</option>}
+                  {(blocks.length >= 2 || localConfig.receptionMode === 'per_block') && <option value="per_block">Per bloc</option>}
+                  {(stairs.length >= 2 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Per scară</option>}
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
                   {localConfig.receptionMode === 'total' && 'Suma se introduce o singură dată pentru întreaga asociație'}
@@ -675,6 +805,11 @@ const ExpenseConfigModal = ({
                 {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'total' && (
                   <p className="mt-2 text-sm text-orange-600 font-medium">
                     ⚠️ Mod "Facturi separate" necesită "Per bloc" sau "Per scară"
+                  </p>
+                )}
+                {blocks.length < 2 && stairs.length < 2 && localConfig.invoiceMode !== 'separate' && (
+                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                    ⚠️ Adaugă cel puțin 2 blocuri sau 2 scări pentru a putea folosi "Per bloc" sau "Per scară"
                   </p>
                 )}
               </div>
@@ -1470,9 +1605,13 @@ const ExpenseConfigModal = ({
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className={`px-6 py-3 text-white rounded-lg transition-colors ${
+              mode === 'add'
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-purple-600 hover:bg-purple-700'
+            }`}
           >
-            Salvează configurație
+            {mode === 'add' ? 'Adaugă cheltuială' : 'Salvează configurație'}
           </button>
         </div>
       </div>

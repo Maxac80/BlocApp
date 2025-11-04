@@ -24,6 +24,7 @@ const useExpenseConfigurations = (currentSheet) => {
     const sheetConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
     const sheetSuppliers = currentSheet.configSnapshot?.suppliers || [];
 
+    console.log('📥 [useExpenseConfigurations] Loading configurations from sheet:', Object.keys(sheetConfigurations).length, 'configs');
     setConfigurations(sheetConfigurations);
     setSuppliers(sheetSuppliers);
     setLoading(false);
@@ -34,14 +35,16 @@ const useExpenseConfigurations = (currentSheet) => {
     // Compatibilitate: acceptă expense object, expenseTypeId, sau expenseType (nume - backwards)
     let expenseTypeId, expenseTypeName;
 
+    console.log('🔍 [getExpenseConfig] INPUT:', expenseOrTypeOrId);
+
     if (typeof expenseOrTypeOrId === 'object' && expenseOrTypeOrId !== null) {
       // Este un obiect expense
       expenseTypeId = expenseOrTypeOrId.expenseTypeId || expenseOrTypeOrId.expenseType;
       expenseTypeName = expenseOrTypeOrId.name;
     } else if (typeof expenseOrTypeOrId === 'string') {
       // Este fie ID, fie nume
-      // Verificăm dacă este un ID (începe cu "expense-type-")
-      if (expenseOrTypeOrId.startsWith('expense-type-')) {
+      // Verificăm dacă este un ID (începe cu "expense-type-" sau "custom-")
+      if (expenseOrTypeOrId.startsWith('expense-type-') || expenseOrTypeOrId.startsWith('custom-')) {
         expenseTypeId = expenseOrTypeOrId;
       } else {
         // Este nume (backwards compatibility)
@@ -52,12 +55,21 @@ const useExpenseConfigurations = (currentSheet) => {
       }
     }
 
-    // Încearcă să găsească configurația în Firestore
+    console.log('🔍 [getExpenseConfig] EXTRACTED - ID:', expenseTypeId, 'Name:', expenseTypeName);
+
+    // Încearcă să găsește configurația în Firestore
     // Prioritate: 1) după ID (nou), 2) după nume (backwards compatibility)
     let firestoreConfig = expenseTypeId ? configurations[expenseTypeId] : null;
     if (!firestoreConfig && expenseTypeName) {
       firestoreConfig = configurations[expenseTypeName];
     }
+
+    console.log('🔍 [getExpenseConfig] FIRESTORE CONFIG:', firestoreConfig ? {
+      id: firestoreConfig.id,
+      name: firestoreConfig.name,
+      distributionType: firestoreConfig.distributionType,
+      isCustom: firestoreConfig.isCustom
+    } : 'NOT FOUND');
 
     // Obține participările apartamentelor pentru acest tip de cheltuială
     const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
@@ -137,22 +149,34 @@ const useExpenseConfigurations = (currentSheet) => {
         const currentSupplier = suppliers.find(s => s.id === firestoreConfig.supplierId);
         if (currentSupplier && currentSupplier.name !== firestoreConfig.supplierName) {
           // Returnează configurația cu numele actualizat în timp real
-          return {
+          const result = {
             ...firestoreConfig,
             apartmentParticipation,
             differenceDistribution,
             supplierName: currentSupplier.name
           };
+          console.log('✅ [getExpenseConfig] RETURN (with supplier update):', {
+            id: result.id,
+            name: result.name,
+            distributionType: result.distributionType
+          });
+          return result;
         }
       }
 
-      return {
+      const result = {
         ...firestoreConfig,
         id: expenseTypeId,  // Include ID-ul
         name: expenseTypeName || firestoreConfig.name,  // Include numele
         apartmentParticipation,
         differenceDistribution
       };
+      console.log('✅ [getExpenseConfig] RETURN (from firestore):', {
+        id: result.id,
+        name: result.name,
+        distributionType: result.distributionType
+      });
+      return result;
     }
 
     // Altfel, folosește configurația default din expenseTypes
@@ -163,8 +187,7 @@ const useExpenseConfigurations = (currentSheet) => {
     const defaultInvoiceEntryMode = defaultType?.invoiceEntryMode || 'single';
     const defaultExpenseEntryMode = defaultType?.expenseEntryMode || 'total';
 
-
-    return {
+    const result = {
       id: defaultType?.id,  // Include ID-ul în configurație
       name: defaultType?.name,  // Include numele pentru afișare
       distributionType: defaultDistribution,
@@ -176,6 +199,12 @@ const useExpenseConfigurations = (currentSheet) => {
       contactPerson: '',
       apartmentParticipation
     };
+    console.log('✅ [getExpenseConfig] RETURN (default):', {
+      id: result.id,
+      name: result.name,
+      distributionType: result.distributionType
+    });
+    return result;
   }, [configurations, suppliers, currentSheet]);
 
   const updateExpenseConfig = useCallback(async (expenseType, config) => {
@@ -187,17 +216,45 @@ const useExpenseConfigurations = (currentSheet) => {
       // Obține configurațiile existente din sheet
       const existingConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
 
-      // Actualizează configurația pentru tipul de cheltuială specific
-      // IMPORTANT: Pentru differenceDistribution, NU facem merge - înlocuim complet
+      // 🆕 UNIFIED STRUCTURE: Asigură-te că configurația include name, id, isCustom, isEnabled
       const oldConfig = existingConfigs[expenseType] || {};
       const { differenceDistribution: oldDiff, ...oldConfigRest } = oldConfig;
       const { differenceDistribution: newDiff, ...newConfigRest } = config;
 
+      // Determină ID-ul și numele cheltuielii
+      let expenseId = config.id || oldConfig.id || expenseType;
+      let expenseName = config.name || oldConfig.name;
+
+      // Dacă expenseType este un ID (începe cu "expense-type-"), folosește-l ca ID
+      if (expenseType.startsWith('expense-type-') || expenseType.startsWith('custom-')) {
+        expenseId = expenseType;
+      } else {
+        // expenseType este un nume - găsește ID-ul din defaultExpenseTypes
+        const defaultType = defaultExpenseTypes.find(def => def.name === expenseType);
+        if (defaultType) {
+          expenseId = defaultType.id;
+          expenseName = expenseName || defaultType.name;
+        }
+      }
+
+      // Determină isCustom și isEnabled
+      const isCustom = config.isCustom !== undefined ? config.isCustom :
+                       (oldConfig.isCustom !== undefined ? oldConfig.isCustom :
+                        expenseId.startsWith('custom-'));
+
+      const isEnabled = config.isEnabled !== undefined ? config.isEnabled :
+                        (oldConfig.isEnabled !== undefined ? oldConfig.isEnabled : true);
+
       const updatedConfigs = {
         ...existingConfigs,
-        [expenseType]: {
+        [expenseId]: {
           ...oldConfigRest,
           ...newConfigRest,
+          // 🆕 Asigură-te că aceste câmpuri există întotdeauna
+          id: expenseId,
+          name: expenseName,
+          isCustom: isCustom,
+          isEnabled: isEnabled,
           // Înlocuiește complet differenceDistribution (nu face merge!)
           differenceDistribution: newDiff || oldDiff || {
             method: 'apartment',
@@ -210,6 +267,12 @@ const useExpenseConfigurations = (currentSheet) => {
         }
       };
 
+      // Dacă cheia veche (name-based) este diferită de noua cheie (ID-based), șterge cheia veche
+      if (expenseType !== expenseId && existingConfigs[expenseType]) {
+        delete updatedConfigs[expenseType];
+        console.log(`🔄 Migrare configurație: "${expenseType}" → "${expenseId}"`);
+      }
+
       // Salvează în sheet-ul curent
       await updateDoc(sheetRef, {
         'configSnapshot.expenseConfigurations': updatedConfigs,
@@ -217,6 +280,7 @@ const useExpenseConfigurations = (currentSheet) => {
       });
 
       // Actualizează state-ul local pentru feedback instant
+      console.log('💾 [updateExpenseConfig] Actualizare state local pentru:', expenseId, 'cu distributionType:', updatedConfigs[expenseId]?.distributionType);
       setConfigurations(updatedConfigs);
     } catch (error) {
       console.error('Error updating expense configuration in sheet:', error);

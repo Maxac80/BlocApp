@@ -3,21 +3,23 @@
 // Fiecare sheet = snapshot complet al unei luni publicate
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
+import {
+  doc,
+  setDoc,
+  getDoc,
   updateDoc,
-  collection, 
-  query, 
-  where, 
-  orderBy, 
+  collection,
+  query,
+  where,
+  orderBy,
   onSnapshot,
   serverTimestamp,
   writeBatch,
-  getDocs
+  getDocs,
+  deleteField
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { defaultExpenseTypes } from '../data/expenseTypes';
 
 /**
  * Sheet Status Types:
@@ -29,6 +31,43 @@ export const SHEET_STATUS = {
   IN_PROGRESS: 'in_progress',
   PUBLISHED: 'published',
   ARCHIVED: 'archived'
+};
+
+/**
+ * Helper: Inițializează expenseConfigurations cu toate cheltuielile standard
+ * Fiecare cheltuială standard primește:  id, name, isCustom: false, isEnabled: true
+ */
+const initializeStandardExpenseConfigurations = () => {
+  const configs = {};
+
+  defaultExpenseTypes.forEach(expenseType => {
+    configs[expenseType.id] = {
+      id: expenseType.id,
+      name: expenseType.name,
+      isCustom: false,
+      isEnabled: true,
+
+      // Setări default din expenseTypes.js
+      defaultDistribution: expenseType.defaultDistribution,
+      ...(expenseType.consumptionUnit && { consumptionUnit: expenseType.consumptionUnit }),
+      ...(expenseType.invoiceEntryMode && { invoiceEntryMode: expenseType.invoiceEntryMode }),
+      ...(expenseType.expenseEntryMode && { expenseEntryMode: expenseType.expenseEntryMode }),
+      ...(expenseType.fixedAmountMode && { fixedAmountMode: expenseType.fixedAmountMode }),
+
+      // Configurare utilizator (inițial goală)
+      distributionType: expenseType.defaultDistribution,
+      method: expenseType.defaultDistribution,
+      supplierId: null,
+      supplierName: '',
+      contractNumber: '',
+      contactPerson: '',
+
+      // Timestamps
+      createdAt: new Date().toISOString()
+    };
+  });
+
+  return configs;
 };
 
 export const useSheetManagement = (associationId) => {
@@ -161,15 +200,16 @@ export const useSheetManagement = (associationId) => {
           transferred: false
         },
 
-        // Configurări inițiale (toate goale, se vor popula pe măsură ce se configurează)
+        // Configurări inițiale
+        // IMPORTANT: expenseConfigurations se inițializează cu TOATE cheltuielile standard
         configSnapshot: {
-          expenseConfigurations: {},
+          expenseConfigurations: initializeStandardExpenseConfigurations(), // ✅ Toate cheltuielile standard cu name, id, isCustom, isEnabled
           balanceAdjustments: {},
-          disabledExpenses: [],
           suppliers: [],
           sheetInitialBalances: {},
           customSettings: {},
           createdAt: serverTimestamp()
+          // NU mai cream customExpenses sau disabledExpenses - totul e în expenseConfigurations
         },
 
         // Metadata
@@ -483,23 +523,26 @@ export const useSheetManagement = (associationId) => {
 
     try {
       const sheetRef = doc(db, 'sheets', currentSheet.id);
-      
-      // Creează snapshot complet de configurări
-      const configSnapshot = {
-        expenseConfigurations: configData.expenseConfigurations ? {...configData.expenseConfigurations} : {},
-        balanceAdjustments: configData.balanceAdjustments ? {...configData.balanceAdjustments} : {},
-        disabledExpenses: configData.disabledExpenses ? [...(configData.disabledExpenses || [])] : [],
-        customExpenses: configData.customExpenses ? [...(configData.customExpenses || [])] : [],
-        customSettings: configData.customSettings ? {...configData.customSettings} : {},
-        // Păstrează TOATE configurările
-        ...configData,
-        lastConfigUpdate: serverTimestamp()
+
+      // 🆕 UNIFIED STRUCTURE: Creează snapshot doar cu structura unificată
+      // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
+
+      // Construiește update-ul cu deleteField pentru câmpurile vechi
+      const updates = {
+        'configSnapshot.expenseConfigurations': configData.expenseConfigurations ? {...configData.expenseConfigurations} : {},
+        'configSnapshot.balanceAdjustments': configData.balanceAdjustments ? {...configData.balanceAdjustments} : {},
+        'configSnapshot.suppliers': configData.suppliers ? [...configData.suppliers] : [],
+        'configSnapshot.sheetInitialBalances': configData.sheetInitialBalances ? {...configData.sheetInitialBalances} : {},
+        'configSnapshot.customSettings': configData.customSettings ? {...configData.customSettings} : {},
+        'configSnapshot.lastConfigUpdate': serverTimestamp(),
+        'updatedAt': serverTimestamp()
       };
 
-      await setDoc(sheetRef, {
-        configSnapshot: configSnapshot,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      // Șterge explicit câmpurile vechi (customExpenses, disabledExpenses)
+      updates['configSnapshot.customExpenses'] = deleteField();
+      updates['configSnapshot.disabledExpenses'] = deleteField();
+
+      await updateDoc(sheetRef, updates);
 
       console.log('✅ Configurări snapshot actualizate pentru sheet:', currentSheet.monthYear);
     } catch (error) {
@@ -692,9 +735,6 @@ export const useSheetManagement = (associationId) => {
         
         // Transfer solduri din luna publicată (CALCULAT CORECT cu încasările PER APARTAMENT)
         balances: (() => {
-          console.log('🔍 DEBUG Transfer solduri - maintenanceData la publicare:', maintenanceData);
-          console.log('🔍 DEBUG Transfer solduri - currentSheet.payments:', currentSheet.payments || []);
-
           const apartmentBalances = calculateApartmentBalancesAfterPayments(maintenanceData, currentSheet.payments || []);
           const totalBalance = calculateTotalBalanceAfterPayments(maintenanceData, currentSheet.payments || []);
           
@@ -977,11 +1017,8 @@ export const useSheetManagement = (associationId) => {
       return;
     }
 
-    console.log('🔍 DEBUG published sheet structure:', publishedSheet);
-
     if (!publishedSheet.maintenanceTable || publishedSheet.maintenanceTable.length === 0) {
       console.error('❌ Sheet-ul publicat nu are maintenanceTable');
-      console.log('🔧 Încerc să corectez folosind datele calculate din hook...');
 
       // Dacă sheet-ul publicat nu are maintenanceTable, încearcă să folosești datele calculate
       // din useMaintenanceCalculation pentru luna publicată

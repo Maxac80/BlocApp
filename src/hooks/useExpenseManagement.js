@@ -24,7 +24,8 @@ export const useExpenseManagement = ({
   deleteMonthlyExpense,
   addCustomExpense,
   deleteCustomExpense,
-  getExpenseConfig  // Funcția din useExpenseConfigurations pentru configurări Firebase
+  getExpenseConfig,  // Funcția din useExpenseConfigurations pentru configurări Firebase
+  expenseConfigurations  // 🆕 Obiectul configurations din useExpenseConfigurations (pentru date instant)
 }) => {
   // 📊 STATE LOCAL PENTRU PARTICIPARE APARTAMENTE (configurările sunt în useExpenseConfigurations)
   const [expenseParticipation, setExpenseParticipation] = useState({});
@@ -44,10 +45,8 @@ export const useExpenseManagement = ({
   useEffect(() => {
     if (currentSheet?.configSnapshot?.apartmentParticipations) {
       setExpenseParticipation(currentSheet.configSnapshot.apartmentParticipations);
-      console.log('✅ Participări încărcate din sheet:', currentSheet.configSnapshot.apartmentParticipations);
     } else {
       setExpenseParticipation({});
-      console.log('⚠️ Nu există participări în sheet, resetez state-ul');
     }
   }, [currentSheet?.id, currentSheet?.configSnapshot?.apartmentParticipations]);
 
@@ -68,7 +67,7 @@ export const useExpenseManagement = ({
     return expenseParticipation[key] || { type: "integral", value: null };
   }, [expenseParticipation]);
 
-  // 📋 TIPURILE DE CHELTUIELI ASOCIAȚIEI - OPTIMIZAT
+  // 📋 TIPURILE DE CHELTUIELI ASOCIAȚIEI - OPTIMIZAT - CITEȘTE DIN expenseConfigurations
   const getAssociationExpenseTypes = useCallback(() => {
     if (!defaultExpenseTypes) return [];
 
@@ -77,43 +76,152 @@ export const useExpenseManagement = ({
       return defaultExpenseTypes;
     }
 
-    // SHEET-BASED: folosim ID-ul sheet-ului în loc de lună
-    const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
-    const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
+    // 🆕 UNIFIED STRUCTURE: Folosește expenseConfigurations din parametru (state actualizat instant)
+    // Fallback la currentSheet pentru backwards compatibility
+    const configs = expenseConfigurations || currentSheet?.configSnapshot?.expenseConfigurations || {};
 
-    const activeDefaultExpenses = defaultExpenseTypes.filter(exp =>
-      !monthDisabledExpenses.includes(exp.name)
-    );
+    // Dacă nu există configurații (sheet vechi), folosește logica veche (backwards compatibility)
+    if (Object.keys(configs).length === 0) {
 
-    // SHEET-BASED: customExpenses din sheet nu mai au associationId (sheet-ul aparține deja asociației)
-    const activeCustomExpenses = customExpenses.filter(exp =>
-      !monthDisabledExpenses.includes(exp.name)
-    );
-    
-    return [...activeDefaultExpenses, ...activeCustomExpenses];
-  }, [association?.id, currentMonth, currentSheet?.id, disabledExpenses, customExpenses]);
+      const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
+      const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
 
-  // 📋 TIPURILE DE CHELTUIELI DEZACTIVATE
+      const activeDefaultExpenses = defaultExpenseTypes.filter(exp =>
+        !monthDisabledExpenses.includes(exp.name)
+      );
+
+      const activeCustomExpenses = customExpenses.filter(exp =>
+        !monthDisabledExpenses.includes(exp.name)
+      );
+
+      return [...activeDefaultExpenses, ...activeCustomExpenses];
+    }
+
+    // 🆕 UNIFIED STRUCTURE: Filtrează doar cheltuielile active (isEnabled: true)
+    const activeExpenses = Object.values(configs)
+      .filter(config => config.isEnabled === true)
+      .map(config => {
+        // Pentru cheltuielile custom, returnăm structura completă
+        if (config.isCustom) {
+          return {
+            id: config.id,
+            name: config.name,
+            defaultDistribution: config.defaultDistribution || config.distributionType || 'equal',
+            consumptionUnit: config.consumptionUnit,
+            invoiceEntryMode: config.invoiceEntryMode,
+            expenseEntryMode: config.expenseEntryMode,
+            fixedAmountMode: config.fixedAmountMode
+          };
+        }
+
+        // Pentru cheltuielile standard, folosim defaultExpenseTypes pentru detalii complete
+        const defaultExpenseType = defaultExpenseTypes.find(exp => exp.id === config.id);
+        if (defaultExpenseType) {
+          return defaultExpenseType;
+        }
+
+        // Fallback: returnăm config-ul ca expense type (pentru date vechi)
+        return {
+          id: config.id,
+          name: config.name,
+          defaultDistribution: config.defaultDistribution || config.distributionType || 'equal'
+        };
+      });
+
+    // Sortează cheltuielile: standard în ordinea din defaultExpenseTypes, apoi custom
+    const sortedExpenses = activeExpenses.sort((a, b) => {
+      // Cheltuielile custom merg la final
+      if (a.id.startsWith('custom-') && !b.id.startsWith('custom-')) return 1;
+      if (!a.id.startsWith('custom-') && b.id.startsWith('custom-')) return -1;
+
+      // Ambele sunt custom - sortează după nume
+      if (a.id.startsWith('custom-') && b.id.startsWith('custom-')) {
+        return a.name.localeCompare(b.name);
+      }
+
+      // Ambele sunt standard - sortează după ordinea din defaultExpenseTypes
+      const indexA = defaultExpenseTypes.findIndex(exp => exp.id === a.id);
+      const indexB = defaultExpenseTypes.findIndex(exp => exp.id === b.id);
+      return indexA - indexB;
+    });
+
+    return sortedExpenses;
+  }, [association?.id, currentMonth, currentSheet, disabledExpenses, customExpenses, defaultExpenseTypes, expenseConfigurations]);
+
+  // 📋 TIPURILE DE CHELTUIELI DEZACTIVATE - CITEȘTE DIN expenseConfigurations
   const getDisabledExpenseTypes = useCallback(() => {
     if (!association?.id) return [];
 
-    // SHEET-BASED: folosim ID-ul sheet-ului în loc de lună
-    const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
-    const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
-    
-    // Cheltuieli standard dezactivate
-    const disabledDefaultExpenses = defaultExpenseTypes.filter(exp => 
-      monthDisabledExpenses.includes(exp.name)
-    );
-    
-    // Cheltuieli custom dezactivate
-    // SHEET-BASED: customExpenses din sheet nu mai au associationId (sheet-ul aparține deja asociației)
-    const disabledCustomExpenses = customExpenses.filter(exp =>
-      monthDisabledExpenses.includes(exp.name)
-    );
-    
-    return [...disabledDefaultExpenses, ...disabledCustomExpenses];
-  }, [association?.id, customExpenses, currentMonth, currentSheet?.id, disabledExpenses]);
+    // 🆕 UNIFIED STRUCTURE: Citește configurațiile din expenseConfigurations
+    const expenseConfigurations = currentSheet?.configSnapshot?.expenseConfigurations || {};
+
+    // Dacă nu există configurații (sheet vechi), folosește logica veche (backwards compatibility)
+    if (Object.keys(expenseConfigurations).length === 0) {
+
+      const disabledKey = currentSheet?.id ? `${association.id}-${currentSheet.id}` : `${association.id}-${currentMonth}`;
+      const monthDisabledExpenses = disabledExpenses[disabledKey] || [];
+
+      const disabledDefaultExpenses = defaultExpenseTypes.filter(exp =>
+        monthDisabledExpenses.includes(exp.name)
+      );
+
+      const disabledCustomExpenses = customExpenses.filter(exp =>
+        monthDisabledExpenses.includes(exp.name)
+      );
+
+      return [...disabledDefaultExpenses, ...disabledCustomExpenses];
+    }
+
+    // 🆕 UNIFIED STRUCTURE: Filtrează doar cheltuielile dezactivate (isEnabled: false)
+    const disabledExpensesUnsorted = Object.values(expenseConfigurations)
+      .filter(config => config.isEnabled === false)
+      .map(config => {
+        // Pentru cheltuielile custom, returnăm structura completă
+        if (config.isCustom) {
+          return {
+            id: config.id,
+            name: config.name,
+            defaultDistribution: config.defaultDistribution || config.distributionType || 'equal',
+            consumptionUnit: config.consumptionUnit,
+            invoiceEntryMode: config.invoiceEntryMode,
+            expenseEntryMode: config.expenseEntryMode,
+            fixedAmountMode: config.fixedAmountMode
+          };
+        }
+
+        // Pentru cheltuielile standard, folosim defaultExpenseTypes pentru detalii complete
+        const defaultExpenseType = defaultExpenseTypes.find(exp => exp.id === config.id);
+        if (defaultExpenseType) {
+          return defaultExpenseType;
+        }
+
+        // Fallback: returnăm config-ul ca expense type (pentru date vechi)
+        return {
+          id: config.id,
+          name: config.name,
+          defaultDistribution: config.defaultDistribution || config.distributionType || 'equal'
+        };
+      });
+
+    // Sortează cheltuielile: standard în ordinea din defaultExpenseTypes, apoi custom
+    const sortedDisabledExpenses = disabledExpensesUnsorted.sort((a, b) => {
+      // Cheltuielile custom merg la final
+      if (a.id.startsWith('custom-') && !b.id.startsWith('custom-')) return 1;
+      if (!a.id.startsWith('custom-') && b.id.startsWith('custom-')) return -1;
+
+      // Ambele sunt custom - sortează după nume
+      if (a.id.startsWith('custom-') && b.id.startsWith('custom-')) {
+        return a.name.localeCompare(b.name);
+      }
+
+      // Ambele sunt standard - sortează după ordinea din defaultExpenseTypes
+      const indexA = defaultExpenseTypes.findIndex(exp => exp.id === a.id);
+      const indexB = defaultExpenseTypes.findIndex(exp => exp.id === b.id);
+      return indexA - indexB;
+    });
+
+    return sortedDisabledExpenses;
+  }, [association?.id, currentMonth, currentSheet, disabledExpenses, customExpenses, defaultExpenseTypes]);
 
   // 📋 TIPURILE DE CHELTUIELI DISPONIBILE PENTRU ADĂUGARE - SHEET-BASED
   const getAvailableExpenseTypes = useCallback(() => {
@@ -302,13 +410,6 @@ export const useExpenseManagement = ({
       //   addInvoiceFnType: typeof addInvoiceFn,
       //   conditionResult: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
       // });
-      
-      console.log('🔍 useExpenseManagement - Checking invoice data:', {
-        hasInvoiceData: !!expenseData.invoiceData,
-        invoiceData: expenseData.invoiceData,
-        hasInvoiceNumber: !!expenseData.invoiceData?.invoiceNumber,
-        hasAddInvoiceFn: !!addInvoiceFn
-      });
 
       // NOTĂ: Factura a fost deja salvată în InvoiceDetailsModal prin handleSaveInvoice
       // Aici doar actualizăm distributionHistory pentru factura existentă

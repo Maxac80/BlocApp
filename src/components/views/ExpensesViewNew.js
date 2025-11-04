@@ -3,7 +3,6 @@ import { Plus, Settings, Trash2, Building2, Package, MoreVertical, Home, Users, 
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import DashboardHeader from '../dashboard/DashboardHeader';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
-import ExpenseAddModal from '../modals/ExpenseAddModal';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 
@@ -61,8 +60,8 @@ const ExpensesViewNew = ({
 
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
-  const handleConfigureExpense = (expenseName) => {
-    setSelectedExpense(expenseName);
+  const handleConfigureExpense = (expenseIdOrName) => {
+    setSelectedExpense(expenseIdOrName);
     setConfigModalOpen(true);
   };
 
@@ -92,8 +91,6 @@ const ExpensesViewNew = ({
 
   const handleAddExpenseFromModal = async (expenseData, configData) => {
     try {
-      console.log('🔄 Adăugare cheltuială din modal:', expenseData, configData);
-
       // Verifică dacă numele cheltuielii există deja
       const existingExpenseTypes = getAssociationExpenseTypes();
       const nameExists = existingExpenseTypes.some(expense =>
@@ -105,29 +102,25 @@ const ExpensesViewNew = ({
         return;
       }
 
-      // Add custom expense directly with reception mode and applies to
-      await addCustomExpense({
+      // Generează un ID unic pentru noua cheltuială custom
+      const newExpenseId = `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Creează configurația completă pentru noua cheltuială
+      // Merge expenseData și configData pentru configurație completă
+      await updateExpenseConfig(newExpenseId, {
+        // Include toate câmpurile din configData (localConfig din modal)
+        ...configData,
+        // Suprascrie/adaugă câmpuri esențiale
+        id: newExpenseId,
         name: expenseData.name,
-        defaultDistribution: expenseData.defaultDistribution || "apartment",
-        receptionMode: expenseData.receptionMode || 'total',
-        appliesTo: expenseData.appliesTo || { blocks: [], stairs: [] }
+        isCustom: true,
+        isEnabled: true,
+        // Asigură-te că distributionType vine din configData, nu defaultDistribution
+        distributionType: configData.distributionType || expenseData.defaultDistribution || 'apartment',
+        receptionMode: configData.receptionMode || expenseData.receptionMode || 'total',
+        appliesTo: configData.appliesTo || expenseData.appliesTo || { blocks: [], stairs: [] }
       });
 
-      // Update configuration if provided
-      if (configData && Object.keys(configData).length > 0) {
-        console.log('🔄 Actualizare configurație:', configData);
-        await updateExpenseConfig(expenseData.name, {
-          distributionType: configData.distributionType,
-          supplierId: configData.supplierId,
-          supplierName: configData.supplierName,
-          contractNumber: configData.contractNumber,
-          contactPerson: configData.contactPerson,
-          receptionMode: configData.receptionMode || 'total',
-          appliesTo: configData.appliesTo || { blocks: [], stairs: [] }
-        });
-      }
-
-      console.log('✅ Cheltuială adăugată cu succes din modal cu mod introducere:', expenseData.receptionMode, 'se aplică pe:', expenseData.appliesTo);
       return true;
     } catch (error) {
       console.error('❌ Eroare la adăugarea cheltuielii din modal:', error);
@@ -215,43 +208,50 @@ const ExpensesViewNew = ({
           <div className="p-6">
             {activeTab === 'expenses' && (
               <div className="space-y-6">
-                {(() => {
-                  const customExpenses = getAssociationExpenseTypes().filter(expenseType =>
-                    !defaultExpenseTypes.find(def => def.name === expenseType.name)
-                  );
-                  const hasCustomExpenses = customExpenses.length > 0;
-
-                  return hasCustomExpenses ? (
-                    <div className="flex justify-end mb-4">
-                      <button
-                        onClick={() => setAddModalOpen(true)}
-                        className="w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center shadow-lg"
-                        title="Adaugă cheltuială nouă"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-end mb-4">
-                      <button
-                        onClick={() => setAddModalOpen(true)}
-                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
-                      >
-                        Adaugă cheltuială
-                      </button>
-                    </div>
-                  );
-                })()}
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => setAddModalOpen(true)}
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                  >
+                    Adaugă cheltuială
+                  </button>
+                </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-4">Cheltuieli active pentru {currentMonth}</h3>
                   <div className="space-y-3">
                     {getAssociationExpenseTypes().map((expenseType, index, array) => {
-                      const config = getExpenseConfig(expenseType.name);
+                      const config = getExpenseConfig(expenseType.id || expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
                       const supplierName = config.supplierName || 'Fără furnizor';
+                      const hasSupplier = config.supplierName && config.supplierName.trim() !== '';
                       const isLastItem = index >= array.length - 2; // ultimele 2 iteme
-                      
+
+                      // Verifică dacă cheltuiala a fost distribuită în calcul întreținere
+                      const isDistributed = currentSheet?.expenses?.some(exp =>
+                        (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
+                        exp.amount > 0
+                      );
+
+                      // Determină textul și culoarea pentru tipul de distribuție
+                      let distributionText, distributionBadgeClass;
+                      if (config.distributionType === "apartment") {
+                        distributionText = "Pe apartament";
+                        distributionBadgeClass = "bg-blue-100 text-blue-700";
+                      } else if (config.distributionType === "individual") {
+                        distributionText = "Sume individuale";
+                        distributionBadgeClass = "bg-purple-100 text-purple-700";
+                      } else if (config.distributionType === "person") {
+                        distributionText = "Pe persoană";
+                        distributionBadgeClass = "bg-amber-100 text-amber-700";
+                      } else if (config.distributionType === "cotaParte") {
+                        distributionText = "Pe cotă parte";
+                        distributionBadgeClass = "bg-indigo-100 text-indigo-700";
+                      } else {
+                        distributionText = "Pe consum";
+                        distributionBadgeClass = "bg-teal-100 text-teal-700";
+                      }
+
                       return (
                         <div key={expenseType.name} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex items-center justify-between">
@@ -261,22 +261,24 @@ const ExpensesViewNew = ({
                                 {isCustom && (
                                   <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Custom</span>
                                 )}
+                                {isDistributed && (
+                                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Distribuită</span>
+                                )}
                               </div>
-                              <div className="mt-1 text-sm text-gray-600 flex items-center gap-3">
-                                <span className="flex items-center gap-1">
-                                  {config.distributionType === "apartment" ? (
-                                    <><Home className="w-4 h-4 inline" /> Pe apartament (egal)</>
-                                  ) : config.distributionType === "individual" ? (
-                                    <><User className="w-4 h-4 inline" /> Pe apartament (individual)</>
-                                  ) : config.distributionType === "person" ? (
-                                    <><Users className="w-4 h-4 inline" /> Pe persoană</>
-                                  ) : (
-                                    <><BarChart3 className="w-4 h-4 inline" /> Pe consum</>
-                                  )}
+                              <div className="mt-1 text-sm text-gray-600 flex items-center gap-2">
+                                <span className="font-medium text-gray-700">Distribuție:</span>
+                                <span className={`px-2 py-0.5 text-xs rounded ${distributionBadgeClass}`}>
+                                  {distributionText}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <Building2 className="w-4 h-4 inline" /> {supplierName}
-                                </span>
+                                <span className="mx-1">•</span>
+                                <span className="font-medium text-gray-700">Furnizor:</span>{' '}
+                                {hasSupplier ? (
+                                  <span className="text-gray-900 font-medium">{supplierName}</span>
+                                ) : (
+                                  <span className="text-orange-600 italic">
+                                    {supplierName}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="relative" data-dropdown-container>
@@ -302,7 +304,7 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleConfigureExpense(expenseType.name);
+                                        handleConfigureExpense(expenseType.id || expenseType.name);
                                         setOpenDropdown(null);
                                       }}
                                       className="w-full px-4 py-2 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2"
@@ -352,9 +354,30 @@ const ExpensesViewNew = ({
                     <h3 className="font-semibold text-gray-500 mb-4">Cheltuieli dezactivate pentru {currentMonth}</h3>
                     <div className="space-y-3 opacity-60">
                       {getDisabledExpenseTypes().map((expenseType, index, array) => {
-                        const config = getExpenseConfig(expenseType.name);
+                        const config = getExpenseConfig(expenseType.id || expenseType.name);
                         const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
                         const isLastItem = index >= array.length - 2; // ultimele 2 iteme
+                        const supplierName = config.supplierName || 'Fără furnizor';
+                        const hasSupplier = config.supplierName && config.supplierName.trim() !== '';
+
+                        // Determină textul și culoarea pentru tipul de distribuție
+                        let distributionText, distributionBadgeClass;
+                        if (config.distributionType === "apartment") {
+                          distributionText = "Pe apartament";
+                          distributionBadgeClass = "bg-blue-100 text-blue-700";
+                        } else if (config.distributionType === "individual") {
+                          distributionText = "Sume individuale";
+                          distributionBadgeClass = "bg-purple-100 text-purple-700";
+                        } else if (config.distributionType === "person") {
+                          distributionText = "Pe persoană";
+                          distributionBadgeClass = "bg-amber-100 text-amber-700";
+                        } else if (config.distributionType === "cotaParte") {
+                          distributionText = "Pe cotă parte";
+                          distributionBadgeClass = "bg-indigo-100 text-indigo-700";
+                        } else {
+                          distributionText = "Pe consum";
+                          distributionBadgeClass = "bg-teal-100 text-teal-700";
+                        }
 
                         return (
                           <div key={expenseType.name} className="p-4 bg-gray-100 rounded-lg">
@@ -366,11 +389,20 @@ const ExpensesViewNew = ({
                                     <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full opacity-60">Custom</span>
                                   )}
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {config.distributionType === "apartment" ? "Pe apartament (egal)" :
-                                   config.distributionType === "individual" ? "Pe apartament (individual)" :
-                                   config.distributionType === "person" ? "Pe persoană" :
-                                   "Pe consum"}
+                                <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
+                                  <span className="font-medium text-gray-600">Distribuție:</span>
+                                  <span className={`px-2 py-0.5 text-xs rounded opacity-60 ${distributionBadgeClass}`}>
+                                    {distributionText}
+                                  </span>
+                                  <span className="mx-1">•</span>
+                                  <span className="font-medium text-gray-600">Furnizor:</span>{' '}
+                                  {hasSupplier ? (
+                                    <span className="text-gray-600 font-medium">{supplierName}</span>
+                                  ) : (
+                                    <span className="text-orange-600 italic opacity-60">
+                                      {supplierName}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="relative" data-dropdown-container>
@@ -435,30 +467,14 @@ const ExpensesViewNew = ({
 
             {activeTab === 'suppliers' && (
               <div className="space-y-6">
-                {(() => {
-                  const hasSuppliers = suppliers.length > 0;
-
-                  return hasSuppliers ? (
-                    <div className="flex justify-end mb-4">
-                      <button
-                        onClick={handleAddSupplier}
-                        className="w-10 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center shadow-lg"
-                        title="Adaugă furnizor nou"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-end mb-4">
-                      <button
-                        onClick={handleAddSupplier}
-                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
-                      >
-                        Adaugă furnizor
-                      </button>
-                    </div>
-                  );
-                })()}
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={handleAddSupplier}
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                  >
+                    Adaugă furnizor
+                  </button>
+                </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-4">Lista furnizorilor</h3>
@@ -476,20 +492,18 @@ const ExpensesViewNew = ({
                         return (
                         <div
                           key={supplier.id}
-                          onClick={() => setSelectedSupplierId(isSelected ? null : supplier.id)}
-                          className={`p-4 rounded-lg transition-all duration-200 cursor-pointer ${
-                            isSelected
-                              ? 'bg-green-100 border-2 border-green-500 shadow-md'
-                              : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                          }`}
+                          className="p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <div className="font-medium text-lg text-gray-900">{supplier.name}</div>
                               {activeExpenseTypes.length > 0 && (
-                                <div className="mt-1">
+                                <div className="mt-1 text-sm text-gray-600 flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-gray-700">
+                                    {activeExpenseTypes.length === 1 ? 'Cheltuială:' : 'Cheltuieli:'}
+                                  </span>
                                   {activeExpenseTypes.map(type => (
-                                    <span key={type} className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full mr-2">
+                                    <span key={type} className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">
                                       {type}
                                     </span>
                                   ))}
@@ -560,7 +574,7 @@ const ExpensesViewNew = ({
             setConfigModalOpen(false);
             setSelectedExpense(null);
           }}
-          expenseName={selectedExpense}
+          expenseName={selectedExpense ? (getExpenseConfig(selectedExpense)?.name || selectedExpense) : null}
           expenseConfig={selectedExpense ? getExpenseConfig(selectedExpense) : null}
           updateExpenseConfig={updateExpenseConfig}
           saveApartmentParticipations={saveApartmentParticipations}
@@ -572,7 +586,9 @@ const ExpensesViewNew = ({
           stairs={stairs}
         />
 
-        <ExpenseAddModal
+        {/* Unified modal in ADD mode */}
+        <ExpenseConfigModal
+          mode="add"
           isOpen={addModalOpen}
           onClose={() => setAddModalOpen(false)}
           onAddExpense={handleAddExpenseFromModal}

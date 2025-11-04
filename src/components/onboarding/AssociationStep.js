@@ -202,22 +202,8 @@ export default function AssociationStep({ stepData, onUpdateData }) {
 
   // 🎨 RENDER FIELD SUCCESS
   const renderFieldSuccess = (fieldPath) => {
-    const value = fieldPath.includes('.') ?
-      associationData[fieldPath.split('.')[0]]?.[fieldPath.split('.')[1]] :
-      associationData[fieldPath];
-    const isTouched = touchedFields.has(fieldPath);
-    const hasError = validationErrors[fieldPath];
-
-    if (!isTouched || hasError || !value || value.toString().trim().length === 0) {
-      return null;
-    }
-
-    return (
-      <p className="mt-1 text-xs text-green-600 flex items-center">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Completat
-      </p>
-    );
+    // Nu afișăm mesaje de succes pentru a păstra UI-ul compact
+    return null;
   };
 
   // 🚨 RENDER FIELD ERROR

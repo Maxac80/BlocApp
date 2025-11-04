@@ -2950,3 +2950,255 @@ Toate 8 faze implementate complet. Gata de testare cu date curate.
 3. Testing complet flow publicare
 4. Monitor ca nu mai apar "participari: NONE"
 
+
+---
+
+## SESSION 2025-11-04: Fix Display Issues & UI Improvements - ID-Based Expense System
+
+### CONTEXT IMPORTANT
+
+**⚠️ SISTEM BAZAT PE ID-URI - ATENȚIE LA REFERINȚE!**
+
+Aplicația folosește acum un sistem unificat bazat pe ID-uri pentru cheltuieli:
+- **ID-uri predefinite**: `expense-type-*` (ex: `expense-type-hot-water`, `expense-type-elevator`)
+- **ID-uri custom**: `custom-{timestamp}-{random}` (ex: `custom-1762276751832-x7a8b0cv5`)
+
+### PROBLEME CRITICE REZOLVATE
+
+#### 1. **Error la selectare "Pe cotă parte indiviză"**
+- **Eroare**: `ReferenceError: apartments is not defined`
+- **Cauză**: Variabila `apartments` folosită în warning-uri dar nedefinită în scope
+- **Fix**: Adăugat `useMemo` pentru a defini `apartments` în `ExpenseConfigModal.js:425-429`
+
+#### 2. **Cheltuieli custom nu se găseau cu getExpenseConfig**
+- **Eroare**: Returna "NOT FOUND" pentru ID-uri `custom-*`
+- **Cauză**: Funcția recunoștea doar `expense-type-*`
+- **Fix**: Adăugat `|| expenseOrTypeOrId.startsWith('custom-')` în `useExpenseConfigurations.js:44`
+
+#### 3. **Display arăta wrong distributionType**
+- **Simptome**:
+  - Salvează corect ca `cotaParte` în Firebase
+  - Afișează "Pe consum" în listă
+  - Afișează "Pe apartament" în modal edit
+- **Cauze multiple**:
+  1. `getAssociationExpenseTypes()` citea din `currentSheet` vechi, nu din state actualizat
+  2. Display logic lipsea case pentru `cotaParte`
+  3. Modal primea `name` în loc de `id` la deschidere
+- **Fixes**:
+  1. Pass `expenseConfigurations` parameter la `useExpenseManagement` (`BlocApp.js:326`)
+  2. Adăugat case `cotaParte` în display logic (`ExpensesViewNew.js:247`)
+  3. Schimbat `handleConfigureExpense(expenseType.name)` → `handleConfigureExpense(expenseType.id)` (linia 291)
+
+#### 4. **Modal title arăta ID în loc de nume**
+- **Simptome**: Titlu modal afișa `custom-1762276751832-x7a8b0cv5`
+- **Cauză**: `expenseName` prop primea direct `selectedExpense` (care acum e ID)
+- **Fix**: `expenseName={selectedExpense ? (getExpenseConfig(selectedExpense)?.name || selectedExpense) : null}` (linia 545)
+
+### UI IMPROVEMENTS - PAGINA "CONFIGURARE CHELTUIELI"
+
+#### Design Changes Implemented:
+
+1. **Buton modificat**:
+   - Final: "Adaugă cheltuială"
+   - Fără icon Plus
+
+2. **Eliminat iconițe decorative**:
+   - Șters: Home, Building2, BarChart3, Users, User icons
+   - Înlocuit cu format text curat
+
+3. **Badge-uri colorate pentru tipuri distribuție**:
+   - 🔵 **Pe apartament** - `bg-blue-100 text-blue-700`
+   - 🟣 **Sume individuale** - `bg-purple-100 text-purple-700`
+   - 🟡 **Pe persoană** - `bg-amber-100 text-amber-700` (inițial orange → schimbat la amber)
+   - 🔷 **Pe cotă parte** - `bg-indigo-100 text-indigo-700`
+   - 🟢 **Pe consum** - `bg-teal-100 text-teal-700`
+   - Styling: `px-2 py-0.5 text-xs rounded` (nu `rounded-full` - colțuri mai puțin rotunjite)
+
+4. **Format informații cheltuială**:
+   ```
+   Distribuție: [BADGE COLORAT] • Furnizor: Nume Furnizor
+   ```
+   - Label-uri bold: "Distribuție:" și "Furnizor:"
+   - Separator: bullet (•)
+
+5. **Styling furnizor**:
+   - **Cu furnizor**: `text-gray-900 font-medium`
+   - **Fără furnizor**: `text-orange-600 italic` (fără badge, doar text italic portocaliu)
+
+6. **Badge "Distribuită"**:
+   - Verde: `bg-green-100 text-green-700`
+   - Apare când cheltuiala e folosită în calcul (verifică `currentSheet.expenses` cu `amount > 0`)
+
+7. **Tab Furnizori**:
+   - Badge-uri cheltuieli: `rounded` (nu `rounded-full`)
+   - Label dinamic: "Cheltuială:" (singular) sau "Cheltuieli:" (plural)
+   - Buton: Întotdeauna text complet "Adaugă furnizor" (nu mai buton mic cu +)
+
+8. **Secțiune dezactivate**: Același format, cu `opacity-60` pentru efect faded
+
+### DEBUG LOG-URI ȘTERSE
+
+Eliminat console.log-uri din:
+- `ExpensesViewNew.js` - handleAddExpenseFromModal (liniile 94, 126)
+- Păstrate doar error logs critice
+
+### LECȚII ÎNVĂȚATE - DATA INTEGRITY
+
+#### A. **SISTEM ID-BASED - REGULI CRITICE**
+
+1. **Întotdeauna folosește ID-uri pentru referințe**:
+   ```javascript
+   // ✅ CORECT
+   handleConfigureExpense(expenseType.id || expenseType.name)
+   getExpenseConfig(expenseId)
+
+   // ❌ GREȘIT
+   handleConfigureExpense(expenseType.name)
+   ```
+
+2. **Multi-key fallback pentru compatibilitate**:
+   ```javascript
+   // getExpenseConfig acceptă: ID, name, sau obiect
+   if (expenseOrTypeOrId.startsWith('expense-type-') ||
+       expenseOrTypeOrId.startsWith('custom-')) {
+     expenseTypeId = expenseOrTypeOrId;
+   }
+   ```
+
+3. **State synchronization**:
+   - Pass `expenseConfigurations` la hooks pentru date instant
+   - Nu citi din `currentSheet` vechi pentru config live
+   - Folosește parameter în loc de closure stale state
+
+#### B. **DEBUGGING METODIC**
+
+1. **Console.logs strategice**:
+   - Tag-uri emoji pentru identificare rapidă (🔍, ✅, ❌, 💾)
+   - Log INPUT → PROCESS → OUTPUT
+   - Include ID + name în logs pentru context
+
+2. **Verificare end-to-end**:
+   - Firebase save ✓
+   - State update ✓
+   - UI display ✓
+   - Modal edit ✓
+
+3. **Cautarea sistematică**:
+   - Verifică fiecare pas din data flow
+   - Nu presupune - confirmă cu logs
+   - Testează edge cases (custom expenses, missing data)
+
+#### C. **UI/UX CONSISTENCY**
+
+1. **Badge styling uniform**:
+   - Toate badge-urile: `rounded` (nu mix de `rounded-full` și `rounded`)
+   - Padding consistent: `px-2 py-0.5`
+   - Sizing: `text-xs`
+
+2. **Color psychology**:
+   - Verde = success, active, distributed
+   - Roșu = custom, delete, warning
+   - Portocaliu = missing, attention needed
+   - Neutral = informational
+
+3. **Labels clare**:
+   - Plural dinamic: "Cheltuială:" vs "Cheltuieli:"
+   - Format consistent: "Label: Value"
+
+### FILES MODIFIED
+
+1. **useExpenseConfigurations.js**:
+   - Linia 44: Recunoaștere ID-uri custom
+   - Debug logging complet
+
+2. **useExpenseManagement.js**:
+   - Linia 28: Adăugat parameter `expenseConfigurations`
+   - Linia 81: Folosește parameter în loc de currentSheet
+   - Linia 149: Updated dependency array
+
+3. **BlocApp.js**:
+   - Linia 326: Pass `expenseConfigurations` la useExpenseManagement
+
+4. **ExpensesViewNew.js**:
+   - Linii 236-253: Badge-uri colorate distribuție (active)
+   - Linii 268-282: Format display cu labels și conditional styling
+   - Linia 291: Fix modal opening cu ID
+   - Linia 545: Fix modal title cu name extraction
+   - Linii 363-380: Badge-uri distribuție (dezactivate)
+   - Linii 392-406: Format display dezactivate
+   - Linii 470-477: Buton furnizor simplificat
+   - Linii 501-510: Labels + badge-uri furnizori
+
+5. **ExpenseConfigModal.js**:
+   - Linii 425-429: useMemo pentru apartments variable
+   - Debug logging pentru edit mode
+
+### DATA MODEL IMPORTANT
+
+**expenseConfigurations structure în Firebase:**
+```javascript
+{
+  "expense-type-hot-water": {
+    id: "expense-type-hot-water",
+    name: "Apă caldă",
+    distributionType: "consumption", // NU defaultDistribution!
+    supplierId: "supplier-123",
+    supplierName: "PPC",
+    isCustom: false,
+    isEnabled: true
+  },
+  "custom-1762276751832-x7a8b0cv5": {
+    id: "custom-1762276751832-x7a8b0cv5",
+    name: "Test cheltuială",
+    distributionType: "cotaParte",
+    isCustom: true,
+    isEnabled: true
+  }
+}
+```
+
+**⚠️ ATENȚIE**: `distributionType` (nu `defaultDistribution`!) - diferența contează!
+
+### TESTE NECESARE
+
+1. ✅ Salvare cheltuială nouă cu "Pe cotă parte" - funcționează
+2. ✅ Afișare corectă distributionType în listă - funcționează
+3. ✅ Edit modal arată distributionType corect - funcționează
+4. ✅ Title modal arată name, nu ID - funcționează
+5. ✅ Badge-uri colorate pentru toate tipurile - funcționează
+6. ✅ "Fără furnizor" styling portocaliu italic - funcționează
+7. ✅ Badge "Distribuită" apare când e folosită - funcționează
+8. ⏳ Testare cu date reale după multiple edit-uri
+
+### BEST PRACTICES CONFIRMATE
+
+1. **ID-first approach**: Întotdeauna referențiază prin ID, fallback la name doar pentru compatibilitate
+2. **State management**: Pass state explicit prin props/parameters, evită closure stale state
+3. **UI consistency**: Badge styling uniform, color coding meaningful, labels clare
+4. **Debug methodology**: Logging strategic cu tags, verificare end-to-end, documentare findings
+5. **Data integrity**: Verifică Firebase → State → UI full pipeline
+
+### RISC AREAS - MONITOR
+
+1. **Old data migration**: Cheltuieli vechi fără `expenseTypeId` - fallback search funcționează dar e overhead
+2. **Custom expense deletion**: Verifică că se șterge corect din toate locațiile
+3. **Supplier changes**: Testează update supplier când e asociat cu cheltuieli
+4. **Multi-user concurrency**: Conflicte posibile la edit simultan
+5. **Badge color accessibility**: Verifică contrast pentru users cu probleme de vedere
+
+### NEXT STEPS RECOMANDATE
+
+1. Testare extensivă cu date reale
+2. Monitor console pentru erori neașteptate
+3. Verifică performance cu multe cheltuieli (30+ items)
+4. Consider data migration pentru asociații vechi
+5. User feedback pe noul UI design
+
+---
+
+**💡 CONCLUZII CHEIE**:
+- Sistemul ID-based e solid dar necesită atenție la detalii
+- State synchronization e critică pentru display corect
+- UI improvements au făcut interfața mai clară și mai profesională
+- Debugging metodic a rezolvat toate issues-urile complexe
+- Documentarea detaliată va ajuta la troubleshooting viitor

@@ -73,8 +73,7 @@ export default function ProfileStep({
   useEffect(() => {
     const requiredFields = [
       'firstName', 'lastName', 'phone',
-      'address.city', 'address.county', 'address.street',
-      'professionalInfo.position'
+      'address.city', 'address.county', 'address.street'
     ];
 
     const completedFields = requiredFields.filter(field => {
@@ -90,8 +89,7 @@ export default function ProfileStep({
   useEffect(() => {
     const requiredFields = [
       'firstName', 'lastName', 'phone',
-      'address.city', 'address.county', 'address.street',
-      'professionalInfo.position'
+      'address.city', 'address.county', 'address.street'
     ];
 
     // Marchează câmpurile pre-completate ca touched
@@ -124,8 +122,7 @@ export default function ProfileStep({
       // Calculează validarea pentru parent
       const requiredFields = [
         'firstName', 'lastName', 'phone',
-        'address.city', 'address.county', 'address.street',
-        'professionalInfo.position'
+        'address.city', 'address.county', 'address.street'
       ];
 
       const completedFields = requiredFields.filter(field => {
@@ -262,20 +259,8 @@ export default function ProfileStep({
 
   // 🎨 RENDER FIELD SUCCESS
   const renderFieldSuccess = (fieldPath) => {
-    const value = getNestedValue(formData, fieldPath);
-    const isTouched = touchedFields.has(fieldPath);
-    const hasError = fieldErrors[fieldPath];
-    
-    if (!isTouched || hasError || !value || value.toString().trim().length === 0) {
-      return null;
-    }
-    
-    return (
-      <p className="mt-1 text-xs text-green-600 flex items-center">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Completat
-      </p>
-    );
+    // Nu afișăm mesaje de succes pentru a păstra UI-ul compact
+    return null;
   };
 
   return (
@@ -408,60 +393,6 @@ export default function ProfileStep({
                 />
                 {renderFieldError('address.street')}
                 {renderFieldSuccess('address.street')}
-              </div>
-            </div>
-          </div>
-
-          {/* DATE PROFESIONALE */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-              <Building className="w-5 h-5 mr-2" />
-              Date profesionale
-            </h4>
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Funcția <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value="Administrator asociație"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                  readOnly
-                />
-                {renderFieldError('professionalInfo.position')}
-                {renderFieldSuccess('professionalInfo.position')}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Compania/Firma
-                </label>
-                <input
-                  type="text"
-                  value={formData.professionalInfo.companyName}
-                  onChange={(e) => handleInputChange('professionalInfo.companyName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Ex: SC Admin Bloc SRL"
-                />
-                {renderFieldError('professionalInfo.companyName')}
-                {renderFieldSuccess('professionalInfo.companyName')}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Număr atestat administrator
-                </label>
-                <input
-                  type="text"
-                  value={formData.professionalInfo.licenseNumber}
-                  onChange={(e) => handleInputChange('professionalInfo.licenseNumber', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Ex: ADM123456"
-                />
-                {renderFieldError('professionalInfo.licenseNumber')}
-                {renderFieldSuccess('professionalInfo.licenseNumber')}
               </div>
             </div>
           </div>

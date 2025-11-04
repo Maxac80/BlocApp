@@ -142,7 +142,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       // Încarcă apartamentele pentru aceste scări
       const apartmentsQuery = query(collection(db, "apartments"), where("stairId", "in", stairIds));
       const apartmentsSnapshot = await getDocs(apartmentsQuery);
-      console.log('🔍 Apartments found in Firebase:', apartmentsSnapshot.docs.length);
       const apartmentsData = apartmentsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -685,43 +684,80 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     if (!association) throw new Error("Nu există asociație");
 
     try {
+      // 🎯 PRIORITATE: Salvează în expenseConfigurations din sheet
+      if (sheetOperationsRef?.current?.updateConfigSnapshot && sheetOperationsRef?.current?.currentSheet) {
+        const currentSheet = sheetOperationsRef.current.currentSheet;
+        const currentExpenseConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
+        const currentCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+
+        // Generează un ID unic pentru noua cheltuială custom
+        const newExpenseId = `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Creează configurația noii cheltuieli în formatul unificat
+        const newExpenseConfig = {
+          id: newExpenseId,
+          name: data.name,
+          isCustom: true,
+          isEnabled: true,
+
+          // Setări default pentru cheltuială custom
+          defaultDistribution: data.defaultDistribution || 'equal',
+          distributionType: data.defaultDistribution || 'equal',
+          method: data.defaultDistribution || 'equal',
+
+          // Opțional - dacă cheltuiala custom are unitate de consum
+          ...(data.consumptionUnit && { consumptionUnit: data.consumptionUnit }),
+          ...(data.invoiceEntryMode && { invoiceEntryMode: data.invoiceEntryMode }),
+          ...(data.expenseEntryMode && { expenseEntryMode: data.expenseEntryMode }),
+          ...(data.fixedAmountMode && { fixedAmountMode: data.fixedAmountMode }),
+
+          // Configurare furnizor
+          supplierId: null,
+          supplierName: '',
+          contractNumber: '',
+          contactPerson: '',
+
+          // Timestamps
+          createdAt: new Date().toISOString()
+        };
+
+        // Adaugă noua configurație la expenseConfigurations
+        const updatedExpenseConfigs = {
+          ...currentExpenseConfigs,
+          [newExpenseId]: newExpenseConfig
+        };
+
+        // Actualizează configSnapshot doar cu noua structură unificată
+        // ⚠️ IMPORTANT: Nu pasăm ...currentSheet.configSnapshot pentru a evita restaurarea customExpenses/disabledExpenses
+        await sheetOperationsRef.current.updateConfigSnapshot({
+          expenseConfigurations: updatedExpenseConfigs,
+          balanceAdjustments: currentSheet.configSnapshot?.balanceAdjustments || {},
+          suppliers: currentSheet.configSnapshot?.suppliers || [],
+          sheetInitialBalances: currentSheet.configSnapshot?.sheetInitialBalances || {},
+          customSettings: currentSheet.configSnapshot?.customSettings || {}
+          // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
+        });
+
+        console.log("✅ [SHEET-BASED] Cheltuială custom adăugată în expenseConfigurations:", newExpenseConfig);
+
+        // Returnează obiectul în formatul așteptat (cu id și name)
+        return {
+          id: newExpenseId,
+          name: data.name,
+          defaultDistribution: data.defaultDistribution || 'equal',
+          ...(data.consumptionUnit && { consumptionUnit: data.consumptionUnit }),
+          createdAt: new Date().toISOString()
+        };
+      }
+
+      // FALLBACK: Metoda veche cu colecții separate (pentru compatibilitate)
+      console.warn('⚠️ Folosesc fallback la colecții separate pentru customExpenses');
+
       const expenseData = {
         ...data,
         associationId: association.id,
         createdAt: new Date().toISOString(),
       };
-
-      // 🎯 PRIORITATE: Salvează în sheet-based storage dacă este disponibil
-      if (sheetOperationsRef?.current?.updateConfigSnapshot && sheetOperationsRef?.current?.currentSheet) {
-        const currentSheet = sheetOperationsRef.current.currentSheet;
-        const currentCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
-
-        // Generează un ID unic pentru noua cheltuială custom (fără associationId)
-        const newExpenseWithId = {
-          id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...data, // folosește data originală fără associationId
-          createdAt: new Date().toISOString()
-        };
-
-        // Adaugă noua cheltuială la array
-        const updatedCustomExpenses = [...currentCustomExpenses, newExpenseWithId];
-
-        // Actualizează configSnapshot
-        await sheetOperationsRef.current.updateConfigSnapshot({
-          ...currentSheet.configSnapshot,
-          customExpenses: updatedCustomExpenses
-        });
-
-        console.log("✅ [SHEET-BASED] Cheltuială custom adăugată în sheet:", newExpenseWithId);
-
-        // Actualizează direct state-ul local pentru afișare imediată
-        setCustomExpenses(updatedCustomExpenses);
-
-        return newExpenseWithId;
-      }
-
-      // FALLBACK: Metoda veche cu colecții separate (pentru compatibilitate)
-      console.warn('⚠️ Folosesc fallback la colecții separate pentru customExpenses');
 
       const docRef = await addDoc(collection(db, "customExpenses"), expenseData);
       const newExpense = { id: docRef.id, ...expenseData };
@@ -741,33 +777,44 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     if (!association) throw new Error("Nu există asociație");
 
     try {
-      // 🎯 PRIORITATE: Șterge din sheet-based storage dacă este disponibil
+      // 🎯 PRIORITATE: Șterge din sheet-based storage (doar din expenseConfigurations)
       if (sheetOperationsRef?.current?.updateConfigSnapshot && sheetOperationsRef?.current?.currentSheet) {
         const currentSheet = sheetOperationsRef.current.currentSheet;
-        const currentCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+        const currentExpenseConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
 
-        // Filtrează pentru a elimina cheltuiala cu numele specificat
-        const updatedCustomExpenses = currentCustomExpenses.filter(
-          expense => expense.name !== expenseName
+        // Găsește ID-ul cheltuielii care se șterge
+        let expenseId = null;
+
+        // Caută ID-ul în expenseConfigurations
+        const configEntry = Object.entries(currentExpenseConfigs).find(
+          ([id, config]) => config.name === expenseName
         );
 
-        // Elimină cheltuiala și din disabledExpenses dacă există acolo
-        const currentDisabledExpenses = currentSheet.configSnapshot?.disabledExpenses || [];
-        const updatedDisabledExpenses = currentDisabledExpenses.filter(
-          disabledExpenseName => disabledExpenseName !== expenseName
-        );
+        if (configEntry) {
+          expenseId = configEntry[0];
+        }
 
-        // Actualizează configSnapshot cu ambele modificări
+        // Șterge cheltuiala din expenseConfigurations
+        const updatedExpenseConfigs = { ...currentExpenseConfigs };
+        if (expenseId && updatedExpenseConfigs[expenseId]) {
+          delete updatedExpenseConfigs[expenseId];
+          console.log(`🗑️ Cheltuială custom ștearsă: "${expenseName}" (${expenseId})`);
+        } else {
+          console.warn(`⚠️ Nu s-a găsit cheltuiala "${expenseName}" în expenseConfigurations`);
+        }
+
+        // Actualizează configSnapshot doar cu noua structură
+        // ⚠️ IMPORTANT: Nu pasăm ...currentSheet.configSnapshot pentru a evita restaurarea customExpenses/disabledExpenses
         await sheetOperationsRef.current.updateConfigSnapshot({
-          ...currentSheet.configSnapshot,
-          customExpenses: updatedCustomExpenses,
-          disabledExpenses: updatedDisabledExpenses
+          expenseConfigurations: updatedExpenseConfigs,
+          balanceAdjustments: currentSheet.configSnapshot?.balanceAdjustments || {},
+          suppliers: currentSheet.configSnapshot?.suppliers || [],
+          sheetInitialBalances: currentSheet.configSnapshot?.sheetInitialBalances || {},
+          customSettings: currentSheet.configSnapshot?.customSettings || {}
+          // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
         });
 
-        console.log(`✅ [SHEET-BASED] Cheltuială custom "${expenseName}" ștearsă din sheet`);
-
-        // Actualizează direct state-ul local pentru afișare imediată
-        setCustomExpenses(updatedCustomExpenses);
+        console.log(`✅ Cheltuială custom "${expenseName}" ștearsă cu succes`);
 
         return;
       }

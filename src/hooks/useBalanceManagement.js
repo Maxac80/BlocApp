@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { SHEET_STATUS } from './useSheetManagement';
+import { defaultExpenseTypes } from '../data/expenseTypes';
 
 /**
  * 💰 Custom Hook pentru Gestionarea Soldurilor
@@ -318,65 +319,66 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
   }, []);
 
-  // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE
+  // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE - UNIFIED STRUCTURE: Folosește isEnabled flag
   const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
     if (!association?.id || !sheetOperations?.currentSheet?.id) return;
 
-    // Folosim ID-ul sheet-ului în loc de lună
     const sheetId = sheetOperations.currentSheet.id;
-    const disabledKey = `${association.id}-${sheetId}`;
+    const currentSheet = sheetOperations.currentSheet;
+    const expenseConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
 
     try {
-      // Actualizează starea locală INSTANT pentru feedback imediat
-      let optimisticState;
-      setDisabledExpenses(prev => {
-        const currentDisabled = prev[disabledKey] || [];
+      // 🆕 UNIFIED STRUCTURE: Găsește ID-ul cheltuielii din expenseName
+      let expenseId = expenseName;
 
-        let newDisabled;
-        if (disable) {
-          newDisabled = [...currentDisabled, expenseName];
+      // Verifică dacă expenseName este deja un ID
+      if (!expenseName.startsWith('expense-type-') && !expenseName.startsWith('custom-')) {
+        // Este un nume - caută ID-ul
+        // 1. Caută în configurații existente
+        const existingConfig = Object.values(expenseConfigurations).find(config => config.name === expenseName);
+        if (existingConfig) {
+          expenseId = existingConfig.id;
         } else {
-          newDisabled = currentDisabled.filter(name => name !== expenseName);
-        }
-
-        optimisticState = newDisabled;
-
-        return {
-          ...prev,
-          [disabledKey]: newDisabled
-        };
-      });
-
-      // Marchează update-ul ca fiind în curs
-      pendingUpdatesRef.current.set(disabledKey, optimisticState);
-
-      // Salvează în Firebase în fundal (fără await pentru a nu bloca UI)
-      saveDisabledExpenses(sheetId, expenseName, disable).catch(error => {
-        console.error('❌ Eroare la salvarea în Firebase:', error);
-        // Elimină update-ul din pending și rollback
-        pendingUpdatesRef.current.delete(disabledKey);
-
-        // Rollback state local dacă salvarea eșuează
-        setDisabledExpenses(prev => {
-          const currentDisabled = prev[disabledKey] || [];
-          let revertedDisabled;
-          if (disable) {
-            revertedDisabled = currentDisabled.filter(name => name !== expenseName);
-          } else {
-            revertedDisabled = [...currentDisabled, expenseName];
+          // 2. Caută în defaultExpenseTypes
+          const defaultType = defaultExpenseTypes.find(def => def.name === expenseName);
+          if (defaultType) {
+            expenseId = defaultType.id;
           }
-          return {
-            ...prev,
-            [disabledKey]: revertedDisabled
-          };
-        });
+        }
+      }
+
+      console.log(`🔄 Toggle expense status: "${expenseName}" (ID: ${expenseId}) - disable: ${disable}`);
+
+      // 🆕 UNIFIED STRUCTURE: Actualizează isEnabled în expenseConfigurations
+      const existingConfig = expenseConfigurations[expenseId] || {};
+
+      const updatedConfig = {
+        ...existingConfig,
+        id: expenseId,
+        name: expenseName,
+        isEnabled: !disable, // disable=true → isEnabled=false
+        isCustom: existingConfig.isCustom !== undefined ? existingConfig.isCustom : expenseId.startsWith('custom-'),
+        updatedAt: new Date().toISOString()
+      };
+
+      const updatedConfigurations = {
+        ...expenseConfigurations,
+        [expenseId]: updatedConfig
+      };
+
+      // Salvează în Firebase
+      await updateDoc(doc(db, 'sheets', sheetId), {
+        'configSnapshot.expenseConfigurations': updatedConfigurations,
+        'configSnapshot.updatedAt': serverTimestamp()
       });
+
+      console.log(`✅ Expense status toggled successfully: "${expenseName}" - isEnabled: ${!disable}`);
 
     } catch (error) {
       console.error('❌ Eroare la actualizarea statusului cheltuielii:', error);
       throw error;
     }
-  }, [association?.id, sheetOperations, saveDisabledExpenses]);
+  }, [association?.id, sheetOperations]);
 
   // 📋 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI
   const loadBalanceAdjustments = useCallback(async () => {
@@ -494,22 +496,7 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
           // Calculează totalul rămas
           totalRemaining = remainingRestante + remainingMaintenance + remainingPenalties;
         }
-        
-        console.log(`🔍 Ap.${row.apartment} - Analiza plăți:`, {
-          totalDatorat: row.totalDatorat,
-          totalIntretinere: row.totalIntretinere,
-          currentMaintenance: row.currentMaintenance,
-          restante: row.restante,
-          penalitati: row.penalitati,
-          remainingRestante,
-          remainingMaintenance,
-          remainingPenalties,
-          totalRemaining,
-          isPaid: row.isPaid,
-          calculatedNextRestante: remainingRestante + remainingMaintenance,
-          paymentInfo: row.paymentInfo
-        });
-        
+
         if (totalRemaining > 0) {
           // Mai sunt datorii de transferat în luna următoare
           // Pentru luna următoare, ce rămâne neplătit din luna curentă devine "restanță"

@@ -322,7 +322,8 @@ export default function BlocApp() {
     deleteMonthlyExpense: removeExpenseFromSheet, // SHEET-BASED: folosește removeExpenseFromSheet
     addCustomExpense,
     deleteCustomExpense,
-    getExpenseConfig: getFirestoreExpenseConfig  // FIREBASE: funcția pentru configurări din useExpenseConfigurations
+    getExpenseConfig: getFirestoreExpenseConfig,  // FIREBASE: funcția pentru configurări din useExpenseConfigurations
+    expenseConfigurations  // 🆕 Obiectul configurations pentru feedback instant după salvare
   });
 
   // 🔧 Auto-fix configurations DISABLED - users can configure manually
@@ -373,19 +374,28 @@ export default function BlocApp() {
   // 🗑️ FUNCȚIE WRAPPER PENTRU ȘTERGEREA CHELTUIELILOR CUSTOM CU CLEANUP COMPLET
   const handleDeleteCustomExpenseWithCleanup = async (expenseName) => {
     try {
-      // 1. Șterge cheltuiala custom (din sheet și din state-ul customExpenses)
-      await handleDeleteCustomExpense(expenseName);
+      // 🆕 UNIFIED STRUCTURE: Găsește ID-ul cheltuielii din expenseConfigurations
+      const expenseConfigurations = currentSheet?.configSnapshot?.expenseConfigurations || {};
+      let expenseId = null;
 
-      // 2. Șterge și configurația cheltuielii din expenseConfigurations
-      try {
-        await deleteFirestoreExpenseConfig(expenseName);
-        console.log(`✅ Configurația pentru "${expenseName}" ștearsă cu succes`);
-      } catch (configError) {
-        console.warn(`⚠️ Nu s-a putut șterge configurația pentru "${expenseName}":`, configError);
-        // Nu opresc procesul pentru această eroare non-critică
+      // Caută ID-ul în expenseConfigurations
+      const configEntry = Object.entries(expenseConfigurations).find(
+        ([id, config]) => config.name === expenseName && config.isCustom
+      );
+
+      if (configEntry) {
+        expenseId = configEntry[0];
       }
 
-      // 3. Actualizează și state-ul pentru disabledExpenses să elimine cheltuiala ștearsă
+      console.log(`🗑️ Ștergere cheltuială custom "${expenseName}" (ID: ${expenseId || 'nu s-a găsit'})`);
+
+      // Șterge cheltuiala custom folosind funcția din useFirestore
+      // Aceasta va șterge direct din expenseConfigurations
+      await handleDeleteCustomExpense(expenseName);
+
+      console.log(`✅ Cheltuiala custom "${expenseName}" ștearsă cu succes`);
+
+      // 4. Actualizează și state-ul pentru disabledExpenses să elimine cheltuiala ștearsă
       if (association?.id && currentSheet?.monthYear) {
         const key = `${association.id}-${currentSheet.monthYear}`;
         setDisabledExpenses(prev => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building, Check, AlertCircle, UserCircle } from 'lucide-react';
+import { Building, Check, UserCircle } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import ProfileStep from './ProfileStep';
 import AssociationStep from './AssociationStep';
@@ -117,19 +117,12 @@ export default function OnboardingTabs({ onComplete }) {
   const getTabClassName = (tab) => {
     const base = "inline-flex items-center justify-start px-8 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap w-64";
 
+    // Tab activ - albastru
     if (activeTab === tab.id) {
       return `${base} border-blue-500 text-blue-600 bg-blue-50`;
     }
 
-    const validation = tabValidation[tab.id];
-    if (validation?.isValid) {
-      return `${base} border-green-500 text-green-600 hover:bg-green-50`;
-    }
-
-    if (validation?.progress > 0) {
-      return `${base} border-orange-500 text-orange-600 hover:bg-orange-50`;
-    }
-
+    // Tab inactiv - gri (indiferent de stare completare)
     return `${base} border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300`;
   };
 
@@ -137,15 +130,13 @@ export default function OnboardingTabs({ onComplete }) {
   const getTabIcon = (tab) => {
     const validation = tabValidation[tab.id];
 
+    // Verde când e completat
     if (validation?.isValid) {
       return <Check className="w-5 h-5 text-green-500" />;
     }
 
-    if (tab.required && validation?.progress === 0) {
-      return <AlertCircle className="w-5 h-5 text-red-400" />;
-    }
-
-    return <tab.icon className="w-5 h-5" />;
+    // Gri neutru când nu e completat
+    return <tab.icon className="w-5 h-5 text-gray-400" />;
   };
 
   return (
@@ -234,9 +225,9 @@ export default function OnboardingTabs({ onComplete }) {
                     {validation?.isValid ? (
                       <Check className="w-4 h-4 text-green-500" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <tab.icon className="w-4 h-4 text-orange-500" />
                     )}
-                    <span className={validation?.isValid ? 'text-green-600' : 'text-red-500'}>
+                    <span className={validation?.isValid ? 'text-green-600' : 'text-orange-600'}>
                       {tab.title}
                     </span>
                   </div>
