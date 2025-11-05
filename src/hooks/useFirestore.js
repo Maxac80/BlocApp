@@ -648,37 +648,9 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     }
   };
 
-  // Funcție pentru actualizarea în masă a soldurilor inițiale
-  const updateInitialBalances = async (balancesData) => {
-    if (!association) throw new Error("Nu există asociație");
-
-    try {
-      const updatePromises = balancesData.map(async ({ apartmentId, restante, penalitati }) => {
-        const updateData = {
-          initialBalance: {
-            restante: parseFloat(restante) || 0,
-            penalitati: parseFloat(penalitati) || 0,
-            setupMonth: new Date().toISOString().slice(0, 7),
-            createdAt: new Date().toISOString()
-          },
-          updatedAt: new Date().toISOString()
-        };
-        
-        return updateDoc(doc(db, "apartments", apartmentId), updateData);
-      });
-
-      await Promise.all(updatePromises);
-      
-      // Reîncarcă apartamentele pentru sincronizare
-      await loadApartments(association.id);
-
-      // console.log("✅ Solduri inițiale actualizate pentru", balancesData.length, "apartamente");
-      return true;
-    } catch (err) {
-      console.error("❌ Eroare la actualizarea soldurilor inițiale:", err);
-      throw err;
-    }
-  };
+  // ❌ REMOVED: updateInitialBalances() - deprecated function eliminated (2025-01-05)
+  // This function wrote to apartment.initialBalance which created duplicate data.
+  // Use useBalanceManagement.saveInitialBalances() for sheet-based storage instead.
 
   const addCustomExpense = async (data) => {
     if (!association) throw new Error("Nu există asociație");
@@ -965,7 +937,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     addApartment,
     updateApartment,
     deleteApartment,
-    updateInitialBalances,
+    // updateInitialBalances, // ❌ REMOVED - use useBalanceManagement.saveInitialBalances()
     addCustomExpense,
     deleteCustomExpense,
     addMonthlyExpense,

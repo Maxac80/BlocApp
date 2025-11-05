@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getDocs, doc, query, where, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { SHEET_STATUS } from './useSheetManagement';
 import { defaultExpenseTypes } from '../data/expenseTypes';
 import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
 
@@ -89,31 +88,12 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
   });
 
 
-  // 📥 ÎNCĂRCAREA SOLDURILOR ȘI CONFIGURĂRILOR DIN FIRESTORE
+  // 📥 ÎNCĂRCAREA SOLDURILOR DIN SHEET
+  // SHEET-BASED ARCHITECTURE: Citește DOAR din currentSheet.configSnapshot.balanceAdjustments
   const loadInitialBalances = useCallback(async () => {
     if (!association?.id) return;
 
     try {
-      
-      // 1. Încarcă soldurile inițiale
-      const balancesQuery = query(
-        collection(db, 'initialBalances'),
-        where('associationId', '==', association.id)
-      );
-      const balancesSnapshot = await getDocs(balancesQuery);
-      
-      const loadedBalances = {};
-      balancesSnapshot.docs.forEach(docSnapshot => {
-        const data = docSnapshot.data();
-        loadedBalances[data.apartmentId] = {
-          restante: data.restante || 0,
-          penalitati: data.penalitati || 0
-        };
-      });
-      
-      // 2. Încarcă cheltuielile eliminate din sheet
-      let loadedDisabledExpenses = {};
-
       // Încarcă direct din sheet-ul IN_PROGRESS
       const sheetsQuery = query(
         getSheetsCollection(association.id),
@@ -121,9 +101,23 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       );
       const sheetsSnapshot = await getDocs(sheetsQuery);
 
+      let loadedBalances = {};
+      let loadedDisabledExpenses = {};
+
       if (!sheetsSnapshot.empty) {
         const sheetDoc = sheetsSnapshot.docs[0];
         const sheetData = sheetDoc.data();
+
+        // 1. Încarcă soldurile inițiale din configSnapshot.balanceAdjustments
+        const balanceAdjustments = sheetData.configSnapshot?.balanceAdjustments || {};
+        Object.entries(balanceAdjustments).forEach(([apartmentId, balance]) => {
+          loadedBalances[apartmentId] = {
+            restante: balance.restante || 0,
+            penalitati: balance.penalitati || 0
+          };
+        });
+
+        // 2. Încarcă cheltuielile eliminate din configSnapshot.disabledExpenses
         const sheetDisabledExpenses = sheetData.configSnapshot?.disabledExpenses || [];
 
         // Convertește formatul din sheet în formatul așteptat de componente
@@ -131,152 +125,117 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         const key = `${association.id}-${sheetData.monthYear}`;
         loadedDisabledExpenses[key] = sheetDisabledExpenses;
 
-        console.log('✅ Cheltuieli dezactivate încărcate din sheet:', {
+        console.log('✅ Configurații încărcate din sheet:', {
           sheetId: sheetDoc.id,
           monthYear: sheetData.monthYear,
-          disabledExpenses: sheetDisabledExpenses
+          balances: Object.keys(loadedBalances).length,
+          disabledExpenses: sheetDisabledExpenses.length
         });
       }
 
       // 3. Actualizează state-urile
       setDisabledExpenses(loadedDisabledExpenses);
-      
+
       if (Object.keys(loadedBalances).length > 0) {
         setHasInitialBalances(true);
         setInitialBalances(loadedBalances);
       }
-      
-      // console.log('✅ Configurații încărcate:', {
-      //   solduri: Object.keys(loadedBalances).length,
-      //   cheltuieliEliminate: Object.keys(loadedDisabledExpenses).length
-      // });
-      
+
       return {
         balances: loadedBalances,
         disabledExpenses: loadedDisabledExpenses
       };
-      
+
     } catch (error) {
-      console.error('❌ Eroare la încărcarea configurărilor:', error);
+      console.error('❌ Eroare la încărcarea configurărilor din sheet:', error);
       throw error;
     }
   }, [association?.id]);
 
-  // 💾 SALVAREA SOLDURILOR INIȚIALE ÎN FIRESTORE
+  // 💾 SALVAREA SOLDURILOR INIȚIALE ÎN SHEET
+  // SHEET-BASED ARCHITECTURE: Scrie DOAR în configSnapshot.balanceAdjustments
   const saveInitialBalances = useCallback(async (monthlyBalances, currentMonth) => {
     if (!association?.id) {
       throw new Error('Nu există asociație selectată');
     }
-    
+
+    // 🎯 REQUIRED: Necesită sheet operations pentru arhitectura sheet-based
+    if (!sheetOperations?.updateConfigSnapshot || !sheetOperations?.currentSheet) {
+      throw new Error('Sheet operations not available. Cannot save balances without sheet.');
+    }
+
     try {
-      console.log('💾 Salvez soldurile inițiale...');
-      
+      console.log('💾 Salvez soldurile inițiale în sheet...');
+
       const currentMonthStr = currentMonth || new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
       const monthKey = `${association.id}-${currentMonthStr}`;
       const currentBalances = monthlyBalances[monthKey] || {};
-      
-      // Șterge doar soldurile pentru această lună specifică, nu toate
-      const existingBalancesQuery = query(
-        collection(db, 'initialBalances'),
-        where('associationId', '==', association.id),
-        where('month', '==', currentMonthStr)
-      );
-      const existingSnapshot = await getDocs(existingBalancesQuery);
-      
-      const deletePromises = existingSnapshot.docs.map(docSnapshot => 
-        deleteDoc(doc(db, 'initialBalances', docSnapshot.id))
-      );
-      await Promise.all(deletePromises);
-      
-      // Salvează noile solduri
-      const savePromises = Object.entries(currentBalances).map(([apartmentId, balance]) => {
-        return addDoc(collection(db, 'initialBalances'), {
-          associationId: association.id,
-          apartmentId: apartmentId,
-          month: currentMonthStr, // Adăugăm câmpul month pentru filtrare
+
+      // Creează obiectul de ajustări pentru sheet indexat după apartmentId
+      const balanceAdjustments = {};
+      Object.entries(currentBalances).forEach(([apartmentId, balance]) => {
+        balanceAdjustments[apartmentId] = {
           restante: balance.restante || 0,
           penalitati: balance.penalitati || 0,
-          savedAt: new Date().toISOString()
-        });
+          savedAt: new Date().toISOString(),
+          month: currentMonthStr
+        };
       });
-      
-      await Promise.all(savePromises);
-      
+
+      // Actualizează config snapshot-ul în sheet
+      const updatedConfigData = {
+        ...sheetOperations.currentSheet.configSnapshot,
+        balanceAdjustments: balanceAdjustments
+      };
+
+      await sheetOperations.updateConfigSnapshot(updatedConfigData);
+
       setHasInitialBalances(true);
-      console.log('✅ Solduri inițiale salvate în Firestore');
-      
+      console.log('✅ Solduri inițiale salvate în sheet:', Object.keys(balanceAdjustments).length, 'apartamente');
+
       return true;
     } catch (error) {
-      console.error('❌ Eroare la salvarea soldurilor:', error);
+      console.error('❌ Eroare la salvarea soldurilor în sheet:', error);
       throw error;
     }
-  }, [association?.id]);
+  }, [association?.id, sheetOperations]);
 
-  // 🔄 SALVAREA AJUSTĂRILOR DE SOLDURI
+  // 🔄 SALVAREA AJUSTĂRILOR DE SOLDURI ÎN SHEET
+  // SHEET-BASED ARCHITECTURE: Scrie DOAR în configSnapshot.balanceAdjustments
   const saveBalanceAdjustments = useCallback(async (month, adjustmentData) => {
     if (!association?.id) {
       throw new Error('Nu există asociație selectată');
     }
 
+    // 🎯 REQUIRED: Necesită sheet operations pentru arhitectura sheet-based
+    if (!sheetOperations?.updateConfigSnapshot || !sheetOperations?.currentSheet) {
+      throw new Error('Sheet operations not available. Cannot save balance adjustments without sheet.');
+    }
+
     try {
-      // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
-      if (sheetOperations?.updateConfigSnapshot && sheetOperations?.currentSheet) {
-
-        // Creează obiectul de ajustări indexat după apartmentId
-        const balanceAdjustments = {};
-        adjustmentData.forEach(apartmentData => {
-          balanceAdjustments[apartmentData.apartmentId] = {
-            restante: apartmentData.restanteAjustate || 0,
-            penalitati: apartmentData.penalitatiAjustate || 0,
-            savedAt: new Date().toISOString(),
-            month: month
-          };
-        });
-
-        // Actualizează config snapshot-ul în sheet
-        const updatedConfigData = {
-          ...sheetOperations.currentSheet.configSnapshot,
-          balanceAdjustments: balanceAdjustments
-        };
-
-        await sheetOperations.updateConfigSnapshot(updatedConfigData);
-        return;
-      }
-
-      // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('📦 COLLECTION-FALLBACK: Salvez ajustările în colecții...');
-
-      // Șterge ajustările existente pentru această lună
-      const existingQuery = query(
-        collection(db, 'balanceAdjustments'),
-        where('associationId', '==', association.id),
-        where('month', '==', month)
-      );
-      const existingSnapshot = await getDocs(existingQuery);
-
-      const deletePromises = existingSnapshot.docs.map(docSnapshot =>
-        deleteDoc(doc(db, 'balanceAdjustments', docSnapshot.id))
-      );
-      await Promise.all(deletePromises);
-
-      // Salvează noile ajustări
-      const savePromises = adjustmentData.map(apartmentData => {
-        return addDoc(collection(db, 'balanceAdjustments'), {
-          associationId: association.id,
-          month: month,
-          apartmentId: apartmentData.apartmentId,
+      // Creează obiectul de ajustări indexat după apartmentId
+      const balanceAdjustments = {};
+      adjustmentData.forEach(apartmentData => {
+        balanceAdjustments[apartmentData.apartmentId] = {
           restante: apartmentData.restanteAjustate || 0,
           penalitati: apartmentData.penalitatiAjustate || 0,
-          savedAt: new Date().toISOString()
-        });
+          savedAt: new Date().toISOString(),
+          month: month
+        };
       });
 
-      await Promise.all(savePromises);
-      console.log(`✅ Ajustări solduri salvate în colecții pentru ${month}:`, adjustmentData.length, 'apartamente');
-      
+      // Actualizează config snapshot-ul în sheet
+      const updatedConfigData = {
+        ...sheetOperations.currentSheet.configSnapshot,
+        balanceAdjustments: balanceAdjustments
+      };
+
+      await sheetOperations.updateConfigSnapshot(updatedConfigData);
+      console.log(`✅ Ajustări solduri salvate în sheet pentru ${month}:`, adjustmentData.length, 'apartamente');
+
       return true;
     } catch (error) {
-      console.error('❌ Eroare la salvarea ajustărilor:', error);
+      console.error('❌ Eroare la salvarea ajustărilor în sheet:', error);
       throw error;
     }
   }, [association?.id, sheetOperations]);
@@ -408,30 +367,11 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         return loadedAdjustments;
       }
 
-      // 📦 FALLBACK: Citește din colecțiile Firebase (pentru compatibilitate)
-      console.log('📖 COLLECTION-FALLBACK: Citesc ajustările din colecții...');
-
-      const adjustmentsQuery = query(
-        collection(db, 'balanceAdjustments'),
-        where('associationId', '==', association.id)
-      );
-      const adjustmentsSnapshot = await getDocs(adjustmentsQuery);
-
-      const loadedAdjustments = {};
-      adjustmentsSnapshot.docs.forEach(docSnapshot => {
-        const data = docSnapshot.data();
-        const monthKey = `${data.associationId}-${data.month}`;
-        if (!loadedAdjustments[monthKey]) {
-          loadedAdjustments[monthKey] = {};
-        }
-        loadedAdjustments[monthKey][data.apartmentId] = {
-          restante: data.restante || 0,
-          penalitati: data.penalitati || 0
-        };
-      });
-      
-      console.log('✅ Ajustări încărcate pentru', Object.keys(loadedAdjustments).length, 'luni');
-      return loadedAdjustments;
+      // ❌ FALLBACK REMOVED (2025-01-05): No longer reading from balanceAdjustments collection
+      // All balance data is now stored exclusively in sheets (currentSheet.configSnapshot.balanceAdjustments)
+      // If no sheet data exists, return empty object (no legacy collection fallback)
+      console.log('ℹ️ No balance adjustments found in sheet - returning empty');
+      return {};
       
     } catch (error) {
       console.error('❌ Eroare la încărcarea ajustărilor:', error);

@@ -102,6 +102,168 @@ The application's core functionality is divided across specialized hooks:
 - `useMonthManagement` - Monthly operations and status tracking
 - `useIncasari` - Payment collection management
 
+## Balance Storage Architecture
+
+### 🎯 SOURCE OF TRUTH: Sheet-Based Storage ONLY
+
+BlocApp uses a **sheet-based architecture** for all balance data. Balances are stored exclusively within monthly sheet documents, providing perfect data isolation and time-based snapshots.
+
+### ✅ Active Storage Locations (USE THESE)
+
+#### 1. **Manual Balance Adjustments**
+```javascript
+currentSheet.configSnapshot.balanceAdjustments = {
+  "apartmentId": {
+    restante: 150.50,
+    penalitati: 10.00,
+    savedAt: "2025-09-29T...",
+    month: "septembrie 2025"
+  }
+}
+```
+- **Read**: `useMaintenanceCalculation.getApartmentBalance()` - CAZ 3 (highest priority for manual adjustments)
+- **Write**: `useBalanceManagement.saveInitialBalances()` or `useBalanceManagement.saveBalanceAdjustments()`
+- **Purpose**: Administrator-entered initial balances or manual corrections
+
+#### 2. **Auto-Transferred Balances**
+```javascript
+currentSheet.balances.apartmentBalances = {
+  "apartmentId": {
+    original: 200,
+    paid: 50,
+    remaining: 150
+  }
+}
+```
+- **Read**: `useMaintenanceCalculation.getApartmentBalance()` - CAZ 2 (transferred from previous month)
+- **Write**: `useSheetManagement.publishCurrentSheet()` - automatic on publish
+- **Update**: `useSheetManagement.addPaymentToPublishedSheet()` - real-time payment updates
+- **Purpose**: Calculated balances carried forward from previous published month
+
+#### 3. **Published Sheet Data (Locked Historical)**
+```javascript
+publishedSheet.maintenanceTable = [
+  {
+    apartmentId: "...",
+    restante: 100,
+    penalitati: 10,
+    currentMaintenance: 200,
+    totalDatorat: 310,
+    // ... other fields
+  }
+]
+```
+- **Read**: `useMaintenanceCalculation.getApartmentBalance()` - CAZ 1 (locked data for published periods)
+- **Write**: `useSheetManagement.publishCurrentSheet()` - one-time on publish
+- **Purpose**: Immutable historical records for published months
+
+### 🔄 Balance Read Priority (CAZ System)
+
+The `useMaintenanceCalculation.getApartmentBalance()` function implements a priority cascade:
+
+```javascript
+// CAZ 1 (Highest): Published sheet maintenanceTable (LOCKED)
+if (publishedSheet && publishedSheet.monthYear === currentMonth) {
+  return publishedSheet.maintenanceTable[apartmentId];
+}
+
+// CAZ 2: Calculate from published sheet + payments
+if (publishedSheet && currentSheet.monthYear !== publishedSheet.monthYear) {
+  return calculateFromPublishedPlusPayments(apartmentId);
+}
+
+// CAZ 3: Manual adjustments in current sheet
+if (currentSheet.configSnapshot?.balanceAdjustments?.[apartmentId]) {
+  return currentSheet.configSnapshot.balanceAdjustments[apartmentId];
+}
+
+// CAZ 4: Current sheet maintenanceTable (in-progress)
+if (currentSheet.maintenanceTable?.[apartmentId]) {
+  return currentSheet.maintenanceTable[apartmentId];
+}
+
+// CAZ 5 (Fallback): apartment.initialBalance (DEPRECATED)
+if (apartment.initialBalance) {
+  return apartment.initialBalance; // Legacy support only
+}
+```
+
+### ❌ DEPRECATED Storage (DO NOT USE)
+
+#### 1. `apartment.initialBalance` (in apartment document)
+```javascript
+// ❌ DEPRECATED - DO NOT WRITE HERE
+apartment.initialBalance = {
+  restante: 0,
+  penalitati: 0,
+  setupMonth: "2025-09",
+  createdAt: "..."
+}
+```
+- **Status**: ELIMINATED - No write operations exist in codebase
+- **Why Deprecated**: No time-based isolation, shared across all periods
+- **Function**: `useFirestore.updateInitialBalances()` removed completely (2025-01-05)
+- **Read Fallback**: Only used as last resort in CAZ 5 (legacy data support)
+
+#### 2. `initialBalances` collection (root Firebase collection)
+```javascript
+// ❌ DEPRECATED - NO LONGER USED
+{
+  associationId: "...",
+  apartmentId: "...",
+  month: "septembrie 2025",
+  restante: 0,
+  penalitati: 0
+}
+```
+- **Status**: ELIMINATED - Not written or read anymore
+- **Why Deprecated**: Redundant with sheet-based storage, created "write-only" data
+- **Removed**: January 2025 cleanup
+
+#### 3. `balanceAdjustments` collection (root Firebase collection)
+```javascript
+// ❌ DEPRECATED - NO LONGER USED
+{
+  associationId: "...",
+  month: "...",
+  apartmentId: "...",
+  restante: 0,
+  penalitati: 0
+}
+```
+- **Status**: ELIMINATED - No write operations, read fallback removed (2025-01-05)
+- **Why Deprecated**: Dual-write pattern eliminated in favor of sheet-only storage
+- **Code Cleanup**: `useBalanceManagement.loadBalanceAdjustments()` no longer queries this collection
+- **Removed**: January 2025 cleanup
+
+### 📋 Migration Guide
+
+#### For New Features
+**✅ DO:**
+- Read balances via `useMaintenanceCalculation.getApartmentBalance()`
+- Write balances via `useBalanceManagement.saveInitialBalances()` or `saveBalanceAdjustments()`
+- Trust the CAZ priority system - it handles all edge cases
+
+**❌ DON'T:**
+- Write directly to `apartment.initialBalance`
+- Create documents in `initialBalances` or `balanceAdjustments` collections
+- Query Firebase collections for balance data
+
+#### For Excel Import
+The Excel import functionality (`excelParser.js`) still uses `useFirestore.updateInitialBalances()` for backward compatibility. After import:
+1. Data writes to `apartment.initialBalance`
+2. First access migrates to `currentSheet.configSnapshot.balanceAdjustments`
+3. Subsequent reads come from sheet (CAZ 3)
+
+### 🏗️ Benefits of Sheet-Based Architecture
+
+1. **Perfect Data Isolation**: Each month's data is completely separate
+2. **Time-Based Snapshots**: Historical records are immutable after publish
+3. **Real-Time Updates**: Payment updates don't require republishing
+4. **No Migration Pain**: Old months keep working with their locked data
+5. **Simplified Logic**: Single source of truth per period
+6. **Audit Trail**: Full history preserved in published sheets
+
 ## Layout and Scroll Management Patterns
 
 ### Horizontal Scroll Isolation for Wide Tables
