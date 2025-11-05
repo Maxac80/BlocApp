@@ -54,7 +54,7 @@ export const useSecurity = () => {
   }, []);
 
   // 📊 AUDIT LOG - Înregistrare activitate utilizator
-  const logActivity = async (userId, action, details = {}) => {
+  const logActivity = async (userId, action, details = {}, associationId = null) => {
     try {
       const activityData = {
         userId,
@@ -67,7 +67,13 @@ export const useSecurity = () => {
         sessionId: sessionStorage.getItem('sessionId') || 'no-session'
       };
 
-      await addDoc(collection(db, 'audit_logs'), activityData);
+      // Write în locația nested dacă avem associationId
+      if (associationId) {
+        await addDoc(collection(db, `associations/${associationId}/audit_logs`), activityData);
+      } else {
+        // Fallback la root pentru acțiuni globale (login, register, etc.)
+        await addDoc(collection(db, 'audit_logs'), activityData);
+      }
       // console.log('✅ Activity logged:', action, details);
     } catch (error) {
       console.error('❌ Error logging activity:', error);
@@ -350,21 +356,42 @@ export const useSecurity = () => {
   };
 
   // 📋 OBȚINERE ISTORIC ACTIVITATE UTILIZATOR
-  const getUserActivityHistory = async (userId, limitCount = 50) => {
+  const getUserActivityHistory = async (userId, associationId = null, limitCount = 50) => {
     try {
-      const logsQuery = query(
-        collection(db, 'audit_logs'),
-        where('userId', '==', userId),
-        orderBy('timestamp', 'desc'),
-        limit(limitCount)
-      );
-      
-      const logsSnapshot = await getDocs(logsQuery);
-      const activities = logsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
+      let activities = [];
+
+      // Citește din locația nested dacă avem associationId
+      if (associationId) {
+        const logsQuery = query(
+          collection(db, `associations/${associationId}/audit_logs`),
+          where('userId', '==', userId),
+          orderBy('timestamp', 'desc'),
+          limit(limitCount)
+        );
+
+        const logsSnapshot = await getDocs(logsQuery);
+        activities = logsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      }
+
+      // Fallback: dacă nu găsim logs în nested sau nu avem associationId, citește din root
+      if (activities.length === 0) {
+        const rootLogsQuery = query(
+          collection(db, 'audit_logs'),
+          where('userId', '==', userId),
+          orderBy('timestamp', 'desc'),
+          limit(limitCount)
+        );
+
+        const rootLogsSnapshot = await getDocs(rootLogsQuery);
+        activities = rootLogsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      }
+
       return activities;
     } catch (error) {
       console.error('❌ Error getting user activity:', error);

@@ -109,16 +109,25 @@ const parseStairSheet = (worksheet, sheetName) => {
   const existingNumbers = [];
   
   // Găsește rândul cu header-ele (Nr_Apt*, Proprietar*, etc.)
+  // IMPORTANT: Template-ul are 2 headere - unul în zona de exemplu, unul în zona de date
+  // Trebuie să găsim AL DOILEA header (cel din zona de DATE)!
   let headerRowIndex = -1;
   let headers = [];
-  
-  for (let i = 0; i < Math.min(10, data.length); i++) {
+  let headersFound = 0;
+
+  for (let i = 0; i < Math.min(20, data.length); i++) {
     const row = data[i];
     if (row && row[0] && row[0].toString().includes('Nr_Apt')) {
-      headerRowIndex = i;
-      headers = row;
-      // console.log(`📍 Header găsit la rândul ${i + 1}: ${headers.slice(0, 3).join(', ')}...`);
-      break;
+      headersFound++;
+      // console.log(`📍 Header #${headersFound} găsit la index ${i} (Excel row ~${i + 1}): ${row.slice(0, 3).join(', ')}...`);
+
+      // Vrem AL DOILEA header (cel din zona de DATE)
+      if (headersFound === 2) {
+        headerRowIndex = i;
+        headers = row;
+        // console.log(`✅ Folosim header-ul #2 (zona de DATE)`);
+        break;
+      }
     }
   }
   
@@ -128,22 +137,13 @@ const parseStairSheet = (worksheet, sheetName) => {
     return { sheetName, apartments, errors: validationErrors, warnings: validationWarnings };
   }
   
-  // Găsește unde încep datele (caută după "ÎNCEPE COMPLETAREA" sau pornește de la un offset fix)
-  let dataStartIndex = headerRowIndex + 1; // Implicit, începe imediat după header
-  
-  // Caută mesajul de început
-  for (let i = headerRowIndex + 1; i < data.length; i++) {
-    const row = data[i];
-    const firstCell = row[0] ? row[0].toString() : '';
-    
-    if (firstCell.includes('ÎNCEPE COMPLETAREA') || firstCell.includes('✏️')) {
-      dataStartIndex = i + 1; // Skip doar acest rând, nu și unul suplimentar
-      // console.log(`📝 Am găsit marcajul de început la rândul ${i + 1}, încep să citesc de la ${dataStartIndex + 1}`);
-      break;
-    }
-  }
-  
-  // console.log(`🔍 Încep să citesc datele de la rândul ${dataStartIndex + 1}`);
+  // Găsește unde încep datele
+  // În template: row 13 = header, row 14 = explicații/marker, row 15+ = date
+  // Deci skip 2 rânduri după header (header + explicații)
+  let dataStartIndex = headerRowIndex + 2;
+
+  // console.log(`🔍 Header găsit la index ${headerRowIndex} (rând Excel ${headerRowIndex + 1})`);
+  // console.log(`🔍 Skip 2 rânduri (header + explicații), datele încep de la index ${dataStartIndex} (rând Excel ${dataStartIndex + 1})`);
   
   let processedRows = 0;
   let skippedEmpty = 0;
@@ -157,7 +157,7 @@ const parseStairSheet = (worksheet, sheetName) => {
     headers.forEach((header, index) => {
       row[header] = rowData[index] || '';
     });
-    
+
     // Skip rândurile complet goale
     const hasData = rowData.some(cell => cell && cell.toString().trim() !== '');
     if (!hasData) {
@@ -210,9 +210,9 @@ const parseStairSheet = (worksheet, sheetName) => {
       // Log pentru apartamentele cu erori
       // console.log(`❌ Apartament din rândul ${i + 1} nu a fost adăugat. Erori:`, validation.errors);
       // console.log(`   Date rând:`, {
-        // 'Nr_Apt*': row['Nr_Apt*'],
-        // 'Proprietar*': row['Proprietar*'],
-        // 'Nr_Persoane*': row['Nr_Persoane*']
+      //   'Nr_Apt*': row['Nr_Apt*'],
+      //   'Proprietar*': row['Proprietar*'],
+      //   'Nr_Persoane*': row['Nr_Persoane*']
       // });
     }
   }

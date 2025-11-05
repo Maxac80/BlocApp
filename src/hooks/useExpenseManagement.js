@@ -370,7 +370,6 @@ export const useExpenseManagement = ({
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
         receptionMode: expenseSettings.receptionMode,
-        expenseEntryMode: expenseSettings.expenseEntryMode,  // Adaugă expenseEntryMode pentru a ști cum să distribuie
         isUnitBased: isConsumptionBased,
         unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
@@ -891,7 +890,6 @@ export const useExpenseManagement = ({
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
         receptionMode: expenseSettings.receptionMode,
-        expenseEntryMode: expenseSettings.expenseEntryMode,
         isUnitBased: isConsumptionBased,
         unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,

@@ -2,12 +2,29 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 /**
- * 📊 GENERATOR TEMPLATE EXCEL PENTRU APARTAMENTE
- * 
- * Generează un fișier Excel cu mai multe sheet-uri:
- * - Sheet "Instrucțiuni" cu ghid de completare
- * - Sheet pentru fiecare scară cu structura apartamentelor
- * - Validări și dropdown-uri integrate
+ * 📊 GENERATOR TEMPLATE EXCEL PREMIUM PENTRU APARTAMENTE - V2.0
+ *
+ * Generează un fișier Excel profesional cu design modern:
+ *
+ * ✨ FEATURES:
+ * - Sheet "Instrucțiuni" cu design premium și layout modern
+ * - Sheet pentru fiecare scară cu styling profesional
+ * - Color scheme modern (albastru, verde mentă, galben pale)
+ * - Headers cu icoane și explicații clare
+ * - Freeze panes pentru vizibilitate permanentă a header-ului
+ * - Alternating row colors pentru citire ușoară
+ * - Borders fine și subtile
+ * - Metadata Excel completă (autor, descriere, proprietăți custom)
+ * - Optimizat pentru copy-paste rapid de date existente
+ * - Spațiu generos (35+ rânduri) pentru introducere date
+ * - Compression activată pentru fișiere mai mici
+ *
+ * 🎨 DESIGN:
+ * - Palette modernă: #2563EB, #3B82F6, #D1FAE5, #FEF3C7, #F9FAFB
+ * - Typography: Hierarhie clară cu font-uri bold pentru titluri
+ * - Visual separators: Linii Unicode elegante pentru separare secțiuni
+ * - Example rows: Fundal verde mentă pentru vizibilitate
+ * - Reference sections: Fundal galben pale pentru highlight
  */
 
 // 🏠 OPȚIUNI PREDEFINITE PENTRU DROPDOWN-URI
@@ -28,76 +45,265 @@ const HEATING_SOURCES = [
 ];
 
 /**
- * 📖 GENEREAZĂ SHEET-UL CU INSTRUCȚIUNI
+ * 📖 GENEREAZĂ SHEET-UL CU INSTRUCȚIUNI - DESIGN PREMIUM
  */
 const generateInstructionsSheet = (associationName) => {
   const data = [
-    ['🏠 GHID COMPLETARE APARTAMENTE - ' + associationName],
+    // === HEADER ZONE CU BRANDING ===
+    [''],
+    ['🏢  TEMPLATE IMPORT APARTAMENTE', '', '', '', '', '', ''],
+    [associationName.toUpperCase(), '', '', '', '', '', ''],
+    [''],
+
+    // === QUICK START SECTION ===
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '', '', '', '', '', ''],
+    [''],
+    ['   GHID RAPID DE UTILIZARE', '', '', '', '', '', ''],
+    [''],
+    ['   Acest template vă permite să importați apartamentele în mod rapid și simplu.', '', '', '', '', '', ''],
+    ['   Puteți copia datele dvs. existente direct în sheet-urile corespunzătoare fiecărei scări.', '', '', '', '', '', ''],
+    [''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '', '', '', '', '', ''],
     [''],
     [''],
-    ['📌 PAȘI DE URMAT:'],
+
+    // === PAȘI CU NUMEROTARE VIZUALĂ ===
+    ['   PAȘI DE URMAT', '', '', '', '', '', ''],
     [''],
-    ['✅ PASUL 1: Deschide fiecare sheet pentru scara respectivă'],
-    ['✅ PASUL 2: Completează datele apartamentelor începând de la rândul 17'],
-    ['✅ PASUL 3: Câmpurile cu * sunt OBLIGATORII (Nr_Apt, Proprietar, Nr_Persoane)'],
-    ['✅ PASUL 4: Pentru Tip Apartament și Sursa Încălzire - COPIAZĂ din opțiunile disponibile'],
-    ['✅ PASUL 5: Soldurile se completează doar dacă există restanțe anterioare'],
-    ['✅ PASUL 6: Salvează fișierul și încarcă-l în aplicație'],
-    [''],
-    [''],
-    ['⚠️ REGULI IMPORTANTE:'],
-    [''],
-    ['❌ NU modifica antetele coloanelor (rândul cu Nr_Apt*, Proprietar*, etc.)'],
-    ['❌ NU șterge sheet-urile existente'],
-    ['❌ NU folosi numere duplicate pentru apartamente în aceeași scară'],
-    ['✅ COPIAZĂ exact opțiunile pentru Tip Apartament și Sursa Încălzire'],
-    ['✅ VERIFICĂ că ai completat toate câmpurile obligatorii'],
+    ['   ① Selectați sheet-ul corespunzător scării pe care doriți să o completați', '', '', '', '', '', ''],
+    ['   ② Copiați datele din Excel-ul dvs. și inserați-le începând cu rândul marcat "Date apartamente"', '', '', '', '', '', ''],
+    ['   ③ Asigurați-vă că cele 3 câmpuri obligatorii sunt completate pentru fiecare apartament', '', '', '', '', '', ''],
+    ['   ④ Salvați fișierul și încărcați-l în aplicație prin butonul "Import Excel"', '', '', '', '', '', ''],
     [''],
     [''],
-    ['📋 DESCRIERE DETALIATĂ A CÂMPURILOR:'],
+
+    // === STRUCTURA DATELOR - TABEL ===
+    ['   STRUCTURA COLOANELOR', '', '', '', '', '', ''],
+    [''],
+    ['   ┌─────────────────────────────────────────────────────────────────────────────────────────────┐', '', '', '', '', '', ''],
+    ['   │  Coloană             │  Obligatoriu  │  Descriere și Format                             │', '', '', '', '', '', ''],
+    ['   ├─────────────────────────────────────────────────────────────────────────────────────────────┤', '', '', '', '', '', ''],
+    ['   │  Nr_Apt*            │      DA       │  Număr apartament (ex: 1, 2, 24)                 │', '', '', '', '', '', ''],
+    ['   │  Proprietar*        │      DA       │  Nume complet (ex: Ion Popescu)                  │', '', '', '', '', '', ''],
+    ['   │  Nr_Persoane*       │      DA       │  Număr persoane (minim 1)                        │', '', '', '', '', '', ''],
+    ['   │  Tip_Apartament     │      NU       │  Garsoniera, 2 camere, 3 camere, etc.            │', '', '', '', '', '', ''],
+    ['   │  Suprafata_mp       │      NU       │  Suprafață în m² (ex: 65.5)                      │', '', '', '', '', '', ''],
+    ['   │  Sursa_Incalzire    │      NU       │  Termoficare, Centrală proprie, etc.             │', '', '', '', '', '', ''],
+    ['   │  Restanta_RON       │      NU       │  Restanțe anterioare în lei (ex: 150.00)         │', '', '', '', '', '', ''],
+    ['   │  Penalitati_RON     │      NU       │  Penalități în lei (ex: 25.50)                   │', '', '', '', '', '', ''],
+    ['   └─────────────────────────────────────────────────────────────────────────────────────────────┘', '', '', '', '', '', ''],
     [''],
     [''],
-    ['🔴 CÂMPURI OBLIGATORII:'],
+
+    // === OPȚIUNI DISPONIBILE ===
+    ['   OPȚIUNI DISPONIBILE', '', '', '', '', '', ''],
     [''],
-    ['  📍 Nr_Apt* → Numărul apartamentului (număr întreg: 1, 2, 15, 24)'],
-    ['  📍 Proprietar* → Numele complet (ex: Ion Popescu, Maria Georgescu)'],
-    ['  📍 Nr_Persoane* → Număr persoane (minimum 1)'],
-    [''],
-    [''],
-    ['🟡 CÂMPURI OPȚIONALE:'],
-    [''],
-    ['  📍 Tip_Apartament → COPIAZĂ din lista: ' + APARTMENT_TYPES.join(', ')],
-    ['  📍 Suprafata_mp → Metri pătrați (ex: 45, 65.5, 82.3)'],
-    ['  📍 Sursa_Incalzire → COPIAZĂ din lista: ' + HEATING_SOURCES.join(', ')],
-    ['  📍 Restanta_RON → Lei (implicit 0 - ex: 150, 75.50)'],
-    ['  📍 Penalitati_RON → Lei (implicit 0 - ex: 25.50, 10)'],
+    ['   Pentru Tip_Apartament:     ' + APARTMENT_TYPES.join('  •  '), '', '', '', '', '', ''],
+    ['   Pentru Sursa_Incalzire:    ' + HEATING_SOURCES.join('  •  '), '', '', '', '', '', ''],
     [''],
     [''],
-    ['📞 SUPORT:'],
-    ['Pentru ajutor, contactează administratorul sistemului.'],
+
+    // === REGULI IMPORTANTE - HIGHLIGHT ===
+    ['   ⚠️  IMPORTANT DE REȚINUT', '', '', '', '', '', ''],
+    [''],
+    ['   •  Nu modificați antetele coloanelor (rândul cu Nr_Apt*, Proprietar*, etc.)', '', '', '', '', '', ''],
+    ['   •  Nu ștergeți sheet-urile existente', '', '', '', '', '', ''],
+    ['   •  Numerele de apartamente trebuie să fie unice în cadrul aceleiași scări', '', '', '', '', '', ''],
+    ['   •  Pentru opțiuni (Tip_Apartament, Sursa_Incalzire) copiați exact textul din lista de mai sus', '', '', '', '', '', ''],
     [''],
     [''],
-    ['🎯 SUCCES LA COMPLETARE!']
+
+    // === FOOTER ===
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '', '', '', '', '', ''],
+    [''],
+    ['   SUPORT TEHNIC', '', '', '', '', '', ''],
+    ['   Pentru asistență, contactați administratorul sistemului.', '', '', '', '', '', ''],
+    [''],
+    ['   Succes la completare! 🎯', '', '', '', '', '', ''],
+    ['']
   ];
 
   const worksheet = XLSX.utils.aoa_to_sheet(data);
-  
-  // Setează width-ul coloanei A pentru a fi mult mai lat
+
+  // === SETARE LĂȚIMI COLOANE ===
   worksheet['!cols'] = [
-    { width: 100 }  // Coloana A foarte lată pentru a afișa tot textul
+    { width: 120 },  // Coloana A - foarte lată pentru conținut
+    { width: 2 },    // Coloane auxiliare pentru layout
+    { width: 2 },
+    { width: 2 },
+    { width: 2 },
+    { width: 2 },
+    { width: 2 }
   ];
-  
+
+  // === MERGE CELLS PENTRU HEADER ===
+  worksheet['!merges'] = [
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },  // Header title
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },  // Association name
+    { s: { r: 4, c: 0 }, e: { r: 4, c: 6 } },  // Separator
+    { s: { r: 6, c: 0 }, e: { r: 6, c: 6 } },  // Quick start title
+    { s: { r: 8, c: 0 }, e: { r: 8, c: 6 } },  // Description 1
+    { s: { r: 9, c: 0 }, e: { r: 9, c: 6 } },  // Description 2
+    { s: { r: 11, c: 0 }, e: { r: 11, c: 6 } }, // Separator
+    { s: { r: 14, c: 0 }, e: { r: 14, c: 6 } }, // Steps title
+    { s: { r: 16, c: 0 }, e: { r: 16, c: 6 } }, // Step 1
+    { s: { r: 17, c: 0 }, e: { r: 17, c: 6 } }, // Step 2
+    { s: { r: 18, c: 0 }, e: { r: 18, c: 6 } }, // Step 3
+    { s: { r: 19, c: 0 }, e: { r: 19, c: 6 } }  // Step 4
+  ];
+
+  // === STILIZARE PREMIUM ===
+
+  // Header principal (rândul 1-2)
+  if (worksheet['A2']) {
+    worksheet['A2'].s = {
+      font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "2563EB" } },  // Albastru modern
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+  }
+
+  if (worksheet['A3']) {
+    worksheet['A3'].s = {
+      font: { bold: true, sz: 14, color: { rgb: "1F2937" } },
+      fill: { fgColor: { rgb: "DBEAFE" } },  // Albastru ice
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+  }
+
+  // Separators
+  ['A5', 'A12'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { color: { rgb: "E5E7EB" } },
+        alignment: { horizontal: "center" }
+      };
+    }
+  });
+
+  // Section titles (Quick Start, Steps, etc.)
+  ['A7', 'A15', 'A23', 'A38', 'A48'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { bold: true, sz: 13, color: { rgb: "2563EB" } },
+        fill: { fgColor: { rgb: "F3F4F6" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  });
+
+  // Description text
+  ['A9', 'A10'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 11, color: { rgb: "6B7280" }, italic: true },
+        alignment: { horizontal: "left", vertical: "center", wrapText: true }
+      };
+    }
+  });
+
+  // Steps (numbered items)
+  ['A17', 'A18', 'A19', 'A20'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 11, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "DBEAFE" } },  // Light blue background
+        alignment: { horizontal: "left", vertical: "center", wrapText: true },
+        border: {
+          left: { style: "thick", color: { rgb: "2563EB" } }
+        }
+      };
+    }
+  });
+
+  // Table border
+  if (worksheet['A24']) {
+    worksheet['A24'].s = {
+      font: { color: { rgb: "9CA3AF" } }
+    };
+  }
+
+  // Table rows (25-33)
+  for (let row = 24; row <= 32; row++) {
+    const cellRef = `A${row + 1}`;
+    if (worksheet[cellRef]) {
+      worksheet[cellRef].s = {
+        font: { sz: 10, color: { rgb: "374151" }, name: "Consolas" },
+        fill: { fgColor: { rgb: row % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  }
+
+  // Options section
+  ['A40', 'A41'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 10, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "FEF3C7" } },  // Yellow pale
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  });
+
+  // Important section (warning)
+  if (worksheet['A45']) {
+    worksheet['A45'].s = {
+      font: { bold: true, sz: 12, color: { rgb: "DC2626" } },
+      fill: { fgColor: { rgb: "FEE2E2" } },  // Red pale
+      alignment: { horizontal: "left", vertical: "center" }
+    };
+  }
+
+  // Warning items
+  ['A47', 'A48', 'A49', 'A50'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 10, color: { rgb: "7C2D12" } },
+        fill: { fgColor: { rgb: "FEF3C7" } },
+        alignment: { horizontal: "left", vertical: "center", wrapText: true }
+      };
+    }
+  });
+
+  // Footer
+  ['A54', 'A55'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 11, color: { rgb: "6B7280" }, italic: true },
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  });
+
+  if (worksheet['A57']) {
+    worksheet['A57'].s = {
+      font: { bold: true, sz: 12, color: { rgb: "059669" } },
+      alignment: { horizontal: "left", vertical: "center" }
+    };
+  }
+
+  // === SET ROW HEIGHTS ===
+  if (!worksheet['!rows']) worksheet['!rows'] = [];
+  worksheet['!rows'][1] = { hpt: 35 };  // Header
+  worksheet['!rows'][2] = { hpt: 25 };  // Subheader
+  worksheet['!rows'][6] = { hpt: 25 };  // Section titles
+  worksheet['!rows'][14] = { hpt: 25 };
+
   return worksheet;
 };
 
 /**
- * 🏗️ GENEREAZĂ SHEET PENTRU O SCARĂ
+ * 🏗️ GENEREAZĂ SHEET PENTRU O SCARĂ - DESIGN PREMIUM
  */
 const generateStairSheet = (stair, block) => {
-  // Header-ul tabelului
+  // === HEADER INFO ===
+  const blockStairTitle = `${block.name} - ${stair.name}`;
+
+  // === COLUMN HEADERS ===
   const headers = [
     'Nr_Apt*',
-    'Proprietar*', 
+    'Proprietar*',
     'Nr_Persoane*',
     'Tip_Apartament',
     'Suprafata_mp',
@@ -106,19 +312,30 @@ const generateStairSheet = (stair, block) => {
     'Penalitati_RON'
   ];
 
-  // Rând cu explicații pentru fiecare coloană
-  const explanations = [
-    '(număr întreg)',
-    '(nume complet)',
-    '(min. 1 persoană)',
-    '(selectează din opțiuni)',
-    '(metri pătrați opțional)',
-    '(selectează din opțiuni)',
-    '(lei - implicit 0)',
-    '(lei - implicit 0)'
+  // === COLUMN ICONS & DESCRIPTIONS ===
+  const headerIcons = [
+    '🏠',      // Nr_Apt
+    '👤',      // Proprietar
+    '👥',      // Nr_Persoane
+    '🔑',      // Tip_Apartament
+    '📐',      // Suprafata
+    '🔥',      // Sursa Incalzire
+    '💰',      // Restanta
+    '⚠️'       // Penalitati
   ];
 
-  // Rând exemplu
+  const explanations = [
+    'întreg pozitiv',
+    'nume complet',
+    'min. 1',
+    'opțional',
+    'm² (opțional)',
+    'opțional',
+    'lei (opțional)',
+    'lei (opțional)'
+  ];
+
+  // === EXAMPLE ROW ===
   const exampleRow = [
     1,
     'Ion Popescu',
@@ -130,154 +347,246 @@ const generateStairSheet = (stair, block) => {
     25.50
   ];
 
-  // Construiește datele sheet-ului cu mai multe spații
+  // === BUILD SHEET DATA ===
   const data = [
-    [`📍 ${block.name} - ${stair.name}`, '', '', '', '', '', '', ''],
-    [], // rând gol
-    headers,
+    // Header zone with title
+    [''],
+    [blockStairTitle, '', '', '', '', '', '', ''],
+    [''],
+    [''],
+
+    // Column headers with icons
+    headers.map((h, i) => `${headerIcons[i]} ${h}`),
     explanations,
-    [], // rând gol
-    ['⬇️ EXEMPLU DE COMPLETARE (șterge după ce înțelegi formatul) ⬇️', '', '', '', '', '', '', ''],
+
+    // Separator
+    [''],
+
+    // Example section
+    ['📋 EXEMPLU DE COMPLETARE', '', '', '', '', '', '', ''],
     exampleRow,
-    [], // rând gol
-    [], // rând gol
-    ['📋 OPȚIUNI DISPONIBILE PENTRU DROPDOWN-URI:', '', '', '', '', '', '', ''],
-    [], // rând gol
-    ['TIP APARTAMENT:', ...APARTMENT_TYPES, '', ''],
-    ['SURSA ÎNCĂLZIRE:', ...HEATING_SOURCES],
-    [], // rând gol
-    [], // rând gol
-    ['✏️ ÎNCEPE COMPLETAREA APARTAMENTELOR DE MAI JOS:', '', '', '', '', '', '', ''],
-    [], // rând gol
-    // Adăugăm 10 rânduri goale pentru completare
-    [], [], [], [], [], [], [], [], [], []
+    [''],
+
+    // Reference section
+    ['📚 REFERINȚĂ RAPIDĂ - Opțiuni disponibile pentru copiere:', '', '', '', '', '', '', ''],
+    [''],
+    ['Tip_Apartament:', APARTMENT_TYPES.join('  •  '), '', '', '', '', '', ''],
+    ['Sursa_Incalzire:', HEATING_SOURCES.join('  •  '), '', '', '', '', '', ''],
+    [''],
+    [''],
+
+    // Data entry section marker
+    ['✏️ DATE APARTAMENTE - Copiați datele începând de aici ⬇️', '', '', '', '', '', '', ''],
+    ['']
   ];
+
+  // Add 35 empty rows for data entry (ample space for copy-paste)
+  for (let i = 0; i < 35; i++) {
+    data.push([]);
+  }
 
   const worksheet = XLSX.utils.aoa_to_sheet(data);
 
-  // 🎨 FORMATARE ȘI STILURI
-  const range = XLSX.utils.decode_range(worksheet['!ref']);
-
-  // Setează width-ul coloanelor - prima coloană mult mai lată pentru textele descriptive
+  // === COLUMN WIDTHS ===
   worksheet['!cols'] = [
-    { width: 55 },  // Coloana A - foarte lată pentru textele descriptive și opțiuni
-    { width: 25 },  // Proprietar
-    { width: 18 },  // Nr_Persoane
-    { width: 22 },  // Tip_Apartament
-    { width: 20 },  // Suprafata_mp
-    { width: 22 },  // Sursa_Incalzire
-    { width: 18 },  // Restanta_RON
-    { width: 18 }   // Penalitati_RON
+    { width: 12 },  // Nr_Apt
+    { width: 28 },  // Proprietar
+    { width: 14 },  // Nr_Persoane
+    { width: 18 },  // Tip_Apartament
+    { width: 15 },  // Suprafata_mp
+    { width: 20 },  // Sursa_Incalzire
+    { width: 15 },  // Restanta_RON
+    { width: 15 }   // Penalitati_RON
   ];
 
-  // 📋 COLORAREA CELULELOR (folosind stiluri de bază disponibile în xlsx)
-  // Aplicăm stiluri pentru anumite celule importante
-  
-  // Titlul sheet-ului (rândul 0)
-  if (worksheet['A1']) {
-    worksheet['A1'].s = {
-      font: { bold: true, sz: 14 },
-      fill: { fgColor: { rgb: "4472C4" } },
-      alignment: { horizontal: "center" }
+  // === MERGE CELLS ===
+  worksheet['!merges'] = [
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } },   // Title
+    { s: { r: 7, c: 0 }, e: { r: 7, c: 7 } },   // Example label
+    { s: { r: 10, c: 0 }, e: { r: 10, c: 7 } },  // Reference label
+    { s: { r: 12, c: 1 }, e: { r: 12, c: 7 } },  // Apartment types
+    { s: { r: 13, c: 1 }, e: { r: 13, c: 7 } },  // Heating sources
+    { s: { r: 16, c: 0 }, e: { r: 16, c: 7 } }   // Data section marker
+  ];
+
+  // === PREMIUM STYLING ===
+
+  // Title (row 1)
+  if (worksheet['A2']) {
+    worksheet['A2'].s = {
+      font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+      fill: {
+        fgColor: { rgb: "2563EB" },  // Blue gradient start
+        patternType: "solid"
+      },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        bottom: { style: "medium", color: { rgb: "1E40AF" } }
+      }
     };
   }
 
-  // Header-ul tabelului (rândul 2)
+  // Column headers (row 4) - with gradient effect
   for (let col = 0; col < headers.length; col++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 2, c: col });
+    const cellRef = XLSX.utils.encode_cell({ r: 4, c: col });
     if (worksheet[cellRef]) {
       worksheet[cellRef].s = {
-        font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "4472C4" } },
-        alignment: { horizontal: "center" },
+        font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "3B82F6" } },  // Blue
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "1E40AF" } },
+          bottom: { style: "thin", color: { rgb: "1E40AF" } },
+          left: { style: "thin", color: { rgb: "60A5FA" } },
+          right: { style: "thin", color: { rgb: "60A5FA" } }
         }
       };
     }
   }
 
-  // Rândul cu explicații (rândul 3)
+  // Explanations (row 5)
   for (let col = 0; col < explanations.length; col++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
+    const cellRef = XLSX.utils.encode_cell({ r: 5, c: col });
     if (worksheet[cellRef]) {
       worksheet[cellRef].s = {
-        font: { italic: true, sz: 10, color: { rgb: "666666" } },
-        fill: { fgColor: { rgb: "F2F2F2" } },
-        alignment: { horizontal: "center" }
-      };
-    }
-  }
-
-  // Exemplu (rândul 6)
-  for (let col = 0; col < 8; col++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 6, c: col });
-    if (worksheet[cellRef]) {
-      worksheet[cellRef].s = {
-        fill: { fgColor: { rgb: "E7F3E7" } },
-        font: { color: { rgb: "006600" } },
+        font: { italic: true, sz: 9, color: { rgb: "6B7280" } },
+        fill: { fgColor: { rgb: "F3F4F6" } },
+        alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "70AD47" } },
-          bottom: { style: "thin", color: { rgb: "70AD47" } },
-          left: { style: "thin", color: { rgb: "70AD47" } },
-          right: { style: "thin", color: { rgb: "70AD47" } }
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } }
         }
       };
     }
   }
 
-  // Rândul cu opțiuni pentru Tip Apartament (rândul 11)
-  if (worksheet['A12']) {
-    worksheet['A12'].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "ED7D31" } }
+  // Example label (row 7)
+  if (worksheet['A8']) {
+    worksheet['A8'].s = {
+      font: { bold: true, sz: 11, color: { rgb: "047857" } },
+      fill: { fgColor: { rgb: "D1FAE5" } },  // Green mint pale
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "10B981" } },
+        bottom: { style: "thin", color: { rgb: "10B981" } }
+      }
     };
   }
 
-  // Rândul cu opțiuni pentru Sursa Încălzire (rândul 12)
-  if (worksheet['A13']) {
-    worksheet['A13'].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "FFC000" } }
+  // Example row (row 8)
+  for (let col = 0; col < 8; col++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 8, c: col });
+    if (worksheet[cellRef]) {
+      worksheet[cellRef].s = {
+        fill: { fgColor: { rgb: "ECFDF5" } },  // Very light green
+        font: { sz: 10, color: { rgb: "065F46" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "A7F3D0" } },
+          bottom: { style: "thin", color: { rgb: "A7F3D0" } },
+          left: { style: "thin", color: { rgb: "A7F3D0" } },
+          right: { style: "thin", color: { rgb: "A7F3D0" } }
+        }
+      };
+    }
+  }
+
+  // Reference label (row 10)
+  if (worksheet['A11']) {
+    worksheet['A11'].s = {
+      font: { bold: true, sz: 11, color: { rgb: "92400E" } },
+      fill: { fgColor: { rgb: "FEF3C7" } },  // Yellow pale
+      alignment: { horizontal: "left", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "F59E0B" } },
+        bottom: { style: "thin", color: { rgb: "F59E0B" } }
+      }
     };
   }
 
-  // Setăm înălțimea unor rânduri
+  // Reference data rows (rows 12-13)
+  ['A13', 'A14'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { bold: true, sz: 10, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "FFFBEB" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  });
+
+  ['B13', 'B14'].forEach(cell => {
+    if (worksheet[cell]) {
+      worksheet[cell].s = {
+        font: { sz: 9, color: { rgb: "4B5563" } },
+        fill: { fgColor: { rgb: "FFFBEB" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      };
+    }
+  });
+
+  // Data section marker (row 16)
+  if (worksheet['A17']) {
+    worksheet['A17'].s = {
+      font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "6366F1" } },  // Indigo
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "medium", color: { rgb: "4F46E5" } },
+        bottom: { style: "medium", color: { rgb: "4F46E5" } }
+      }
+    };
+  }
+
+  // Data entry rows (starting from row 17) - alternating colors
+  for (let row = 17; row < 52; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+      if (worksheet[cellRef] || true) {  // Style even empty cells
+        if (!worksheet[cellRef]) worksheet[cellRef] = { t: 's', v: '' };
+
+        worksheet[cellRef].s = {
+          fill: { fgColor: { rgb: row % 2 === 0 ? "FFFFFF" : "F9FAFB" } },
+          alignment: { horizontal: col === 1 ? "left" : "center", vertical: "center" },
+          border: {
+            top: { style: "hair", color: { rgb: "E5E7EB" } },
+            bottom: { style: "hair", color: { rgb: "E5E7EB" } },
+            left: { style: "hair", color: { rgb: "E5E7EB" } },
+            right: { style: "hair", color: { rgb: "E5E7EB" } }
+          }
+        };
+      }
+    }
+  }
+
+  // === ROW HEIGHTS ===
   if (!worksheet['!rows']) worksheet['!rows'] = [];
-  worksheet['!rows'][0] = { height: 30 }; // titlu
-  worksheet['!rows'][2] = { height: 25 }; // header
-  worksheet['!rows'][3] = { height: 20 }; // explicații
-  
-  // Adăugăm comentarii pentru câmpurile cu dropdown
-  if (!worksheet['!comments']) worksheet['!comments'] = [];
+  worksheet['!rows'][1] = { hpt: 35 };   // Title
+  worksheet['!rows'][4] = { hpt: 30 };   // Headers
+  worksheet['!rows'][5] = { hpt: 18 };   // Explanations
+  worksheet['!rows'][7] = { hpt: 25 };   // Example label
+  worksheet['!rows'][8] = { hpt: 22 };   // Example data
+  worksheet['!rows'][10] = { hpt: 25 };  // Reference label
+  worksheet['!rows'][16] = { hpt: 28 };  // Data marker
 
-  // Comentariu pentru coloana Tip_Apartament (D3)
-  worksheet['!comments'].push({
-    ref: 'D3',
-    author: 'BlocApp',
-    text: `📋 COPIAZĂ din opțiunile de la rândul 12:\n${APARTMENT_TYPES.join('\n')}`
-  });
-
-  // Comentariu pentru coloana Sursa_Incalzire (F3)
-  worksheet['!comments'].push({
-    ref: 'F3', 
-    author: 'BlocApp',
-    text: `🔥 COPIAZĂ din opțiunile de la rândul 13:\n${HEATING_SOURCES.join('\n')}`
-  });
+  // === FREEZE PANES - Keep headers visible ===
+  worksheet['!freeze'] = {
+    xSplit: 0,
+    ySplit: 6,  // Freeze after row 6 (headers and explanations)
+    topLeftCell: 'A7',
+    activePane: 'bottomLeft',
+    state: 'frozen'
+  };
 
   return worksheet;
 };
 
 /**
- * 📊 FUNCȚIA PRINCIPALĂ DE GENERARE TEMPLATE
+ * 📊 FUNCȚIA PRINCIPALĂ DE GENERARE TEMPLATE - CU METADATA PROFESIONALĂ
  */
 export const generateExcelTemplate = async (association, blocks, stairs) => {
   try {
     // console.log('📊 Generez template Excel pentru asociația:', association.name);
-    
+
     // Verifică că avem date valide
     if (!association || !blocks || !stairs) {
       throw new Error('Date incomplete pentru generarea template-ului');
@@ -285,7 +594,7 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
 
     // Filtrează blocurile și scările pentru asociația curentă
     const associationBlocks = blocks.filter(block => block.associationId === association.id);
-    const associationStairs = stairs.filter(stair => 
+    const associationStairs = stairs.filter(stair =>
       associationBlocks.some(block => block.id === stair.blockId)
     );
 
@@ -300,6 +609,37 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
     // Creează workbook-ul gol (fără sheet-uri automate)
     const workbook = { SheetNames: [], Sheets: {} };
 
+    // === ADAUGĂ METADATA PROFESIONALĂ ===
+    workbook.Props = {
+      Title: `Template Import Apartamente - ${association.name}`,
+      Subject: 'Template pentru importul apartamentelor în BlocApp',
+      Author: 'BlocApp - Sistem Management Asociații',
+      Manager: association.name,
+      Company: 'BlocApp',
+      Category: 'Import Date',
+      Keywords: 'apartamente, import, template, asociație, bloc',
+      Comments: `Template generat pentru importul apartamentelor în asociația ${association.name}. Include ${associationBlocks.length} bloc(uri) și ${associationStairs.length} scară(ri).`,
+      LastAuthor: 'BlocApp',
+      CreatedDate: new Date(),
+      ModifiedDate: new Date(),
+      Application: 'BlocApp v1.0',
+      AppVersion: '1.0.0',
+      DocSecurity: 0,
+      HyperlinksChanged: false,
+      LinksUpToDate: true,
+      ScaleCrop: false,
+      SharedDoc: false
+    };
+
+    // === ADAUGĂ CUSTOM PROPERTIES ===
+    workbook.Custprops = {
+      'Asociație': association.name,
+      'Număr Blocuri': associationBlocks.length,
+      'Număr Scări': associationStairs.length,
+      'Data Generare': new Date().toISOString().split('T')[0],
+      'Versiune Template': '2.0 Premium'
+    };
+
     // 📖 Adaugă sheet-ul cu instrucțiuni
     const instructionsSheet = generateInstructionsSheet(association.name);
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, '📖 INSTRUCȚIUNI');
@@ -310,20 +650,42 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
       const block = associationBlocks.find(b => b.id === stair.blockId);
       if (block) {
         const stairSheet = generateStairSheet(stair, block);
-        
+
         // Nume sheet-ului (max 31 caractere pentru Excel)
         const blockName = block.name.substring(0, 10);
         const stairName = stair.name.substring(0, 10);
         const sheetName = `${blockName}_${stairName}`.substring(0, 31);
-        
+
         XLSX.utils.book_append_sheet(workbook, stairSheet, sheetName);
         stairCount++;
       }
     }
 
+    // === WORKBOOK VIEW SETTINGS (Professional defaults) ===
+    workbook.Workbook = {
+      Views: [{
+        RTL: false,
+        activeTab: 0,
+        firstSheet: 0,
+        showHorizontalScroll: true,
+        showSheetTabs: true,
+        showVerticalScroll: true,
+        tabRatio: 600,
+        windowHeight: 20000,
+        windowWidth: 28000,
+        xWindow: 0,
+        yWindow: 0
+      }],
+      WBProps: {
+        date1904: false,
+        filterPrivacy: false,
+        CodeName: 'BlocAppTemplate'
+      }
+    };
+
     // 💾 Generează și descarcă fișierul
     const fileName = `Template_Apartamente_${association.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    
+
     // console.log(`✅ Template generat cu succes:`, {
     //   associatie: association.name,
     //   blocuri: associationBlocks.length,
@@ -331,12 +693,18 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
     //   fileName
     // });
 
-    // Convertește la buffer și descarcă
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    // Convertește la buffer și descarcă - cu compression pentru file mai mic
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array',
+      compression: true,  // Enable compression
+      bookSST: true       // Use shared string table for better compression
+    });
+
     const blob = new Blob([excelBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     saveAs(blob, fileName);
 
     return {

@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  collection, 
-  doc,
-  getDoc,
+import {
   addDoc,
   updateDoc,
   deleteDoc,
-  onSnapshot,
-  query,
-  where
+  onSnapshot
 } from 'firebase/firestore';
 // Firebase Storage nu mai este necesar - folosim Base64
 import { db } from '../firebase';
+import { getInvoicesCollection, getInvoiceRef } from '../utils/firestoreHelpers';
 import useExpenseConfigurations from './useExpenseConfigurations';
 
 /**
@@ -37,30 +33,27 @@ const useInvoices = (associationId, currentSheet) => {
       setLoading(false);
       return;
     }
-    
-    // Query pentru toate facturile asociației (fără orderBy pentru a evita problema cu index-ul)
-    const invoicesQuery = query(
-      collection(db, 'invoices'),
-      where('associationId', '==', associationId)
-      // Temporar fără orderBy până creez index-ul în Firebase
-    );
+
+    // Query pentru toate facturile asociației din structura nested
+    // NU mai e nevoie de where('associationId', '==', associationId)
+    // pentru că path-ul deja izolează facturile per asociație
+    const invoicesCollection = getInvoicesCollection(associationId);
 
     // Listener pentru modificări în timp real
     const unsubscribe = onSnapshot(
-      invoicesQuery,
+      invoicesCollection,
       (snapshot) => {
         const invoicesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        
+
         setInvoices(invoicesData);
         setLoading(false);
         // console.log('📋 Lista facturilor încărcate:', invoicesData.map(inv => ({
         //   id: inv.id,
         //   month: inv.month,
         //   invoiceNumber: inv.invoiceNumber,
-        //   associationId: inv.associationId,
         //   supplierName: inv.supplierName,
         //   supplierId: inv.supplierId
         // })));
@@ -169,8 +162,8 @@ const useInvoices = (associationId, currentSheet) => {
       const actualIsFullyDistributed = actualNewRemainingAmount <= 0;
 
       // Actualizează factura
-      const docRef = doc(db, 'invoices', invoiceId);
-      await updateDoc(docRef, {
+      const invoiceRef = getInvoiceRef(associationId, invoiceId);
+      await updateDoc(invoiceRef, {
         distributedAmount: actualNewDistributedAmount,
         remainingAmount: actualNewRemainingAmount,
         isFullyDistributed: actualIsFullyDistributed,
@@ -345,7 +338,7 @@ const useInvoices = (associationId, currentSheet) => {
       // Creează documentul facturii
 
       const dataToSave = {
-        associationId,
+        // associationId NU mai e necesar - este implicit în path
         supplierId: supplierData.supplierId,
         supplierName: supplierData.supplierName,
         expenseTypeId: invoiceData.expenseTypeId || null,  // ID-ul tipului de cheltuială
@@ -384,13 +377,12 @@ const useInvoices = (associationId, currentSheet) => {
       };
       
       // Data ready pentru Firebase
-      
-      const docRef = await addDoc(collection(db, 'invoices'), dataToSave);
+
+      const docRef = await addDoc(getInvoicesCollection(associationId), dataToSave);
 
       console.log('✅ Factură salvată cu ID:', docRef.id);
       console.log('📊 Factură salvată cu datele:', {
         id: docRef.id,
-        associationId,
         month: invoiceData.month,
         invoiceNumber: invoiceData.invoiceNumber,
         supplierName: supplierData.supplierName,
@@ -415,8 +407,8 @@ const useInvoices = (associationId, currentSheet) => {
     try {
       console.log('📝 Actualizez factura:', invoiceId);
 
-      const docRef = doc(db, 'invoices', invoiceId);
-      await updateDoc(docRef, {
+      const invoiceRef = getInvoiceRef(associationId, invoiceId);
+      await updateDoc(invoiceRef, {
         ...updates,
         updatedAt: new Date().toISOString()
       });
@@ -454,15 +446,15 @@ const useInvoices = (associationId, currentSheet) => {
       console.error('❌ Eroare la actualizarea facturii după număr:', error);
       throw error;
     }
-  }, [invoices, updateInvoice]);
+  }, [associationId, invoices, updateInvoice]);
 
   // 🗑️ ȘTERGEREA UNEI FACTURI
   const deleteInvoice = useCallback(async (invoiceId) => {
     try {
       console.log('🗑️ Șterg factura:', invoiceId);
-      
-      const docRef = doc(db, 'invoices', invoiceId);
-      await deleteDoc(docRef);
+
+      const invoiceRef = getInvoiceRef(associationId, invoiceId);
+      await deleteDoc(invoiceRef);
 
       console.log('✅ Factură ștearsă:', invoiceId);
       
@@ -470,7 +462,7 @@ const useInvoices = (associationId, currentSheet) => {
       console.error('❌ Eroare la ștergerea facturii:', error);
       throw error;
     }
-  }, []);
+  }, [associationId]);
 
   // ✅ MARCAREA FACTURII CA PLĂTITĂ
   const markInvoiceAsPaid = useCallback(async (invoiceId, paymentData = {}) => {
@@ -607,7 +599,7 @@ const useInvoices = (associationId, currentSheet) => {
           if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
             console.log('✅ Actualizez furnizorul pentru factura:', invoice.id, 'cu:', expenseConfig.supplierName);
 
-            const docRef = doc(db, 'invoices', invoice.id);
+            const invoiceRef = getInvoiceRef(associationId, invoice.id);
             const updateData = {
               supplierId: expenseConfig.supplierId,
               supplierName: expenseConfig.supplierName,
@@ -621,7 +613,7 @@ const useInvoices = (associationId, currentSheet) => {
               console.log('🔧 Setez expenseTypeId și expenseName pentru factura:', invoice.id, 'la:', expenseConfig.id, expenseConfig.name);
             }
 
-            await updateDoc(docRef, updateData);
+            await updateDoc(invoiceRef, updateData);
           } else {
             console.warn('⚠️ Nu s-a găsit configurația furnizorului pentru:', targetExpenseType);
           }
@@ -769,9 +761,9 @@ const useInvoices = (associationId, currentSheet) => {
           currentSupplier: invoice.supplierName,
           correctSupplier: correctExpenseConfig.supplierName
         });
-        
-        const docRef = doc(db, 'invoices', invoice.id);
-        await updateDoc(docRef, {
+
+        const invoiceRef = getInvoiceRef(associationId, invoice.id);
+        await updateDoc(invoiceRef, {
           supplierId: correctExpenseConfig.supplierId,
           supplierName: correctExpenseConfig.supplierName,
           updatedAt: new Date().toISOString()
@@ -784,7 +776,7 @@ const useInvoices = (associationId, currentSheet) => {
       console.error('❌ Eroare la corecția furnizorilor:', error);
       throw error;
     }
-  }, [invoices, getExpenseConfig]);
+  }, [associationId, invoices, getExpenseConfig]);
   
   // 🔄 SINCRONIZARE AUTOMATĂ FURNIZORI PENTRU UN TIP DE CHELTUIALĂ
   const syncSuppliersForExpenseType = useCallback(async (expenseType) => {
@@ -881,8 +873,8 @@ const useInvoices = (associationId, currentSheet) => {
       // Dacă sunt modificări, actualizează factura
       if (needsUpdate) {
         try {
-          const docRef = doc(db, 'invoices', invoice.id);
-          await updateDoc(docRef, {
+          const invoiceRef = getInvoiceRef(associationId, invoice.id);
+          await updateDoc(invoiceRef, {
             distributionHistory: updatedHistory,
             updatedAt: new Date().toISOString()
           });
@@ -896,7 +888,7 @@ const useInvoices = (associationId, currentSheet) => {
 
     console.log(`✅ Migrare completă: ${updatedCount} din ${totalProcessed} facturi actualizate`);
     return { success: true, updated: updatedCount, total: totalProcessed };
-  }, [invoices, getExpenseConfig]);
+  }, [associationId, invoices, getExpenseConfig]);
 
 
   // 🎯 RETURN API

@@ -114,11 +114,7 @@ export const calculateTotals = (
 
     // Mapează receptionMode
     let receptionMode = expense.receptionMode || 'total';
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    }
+    // expenseEntryMode removed - using receptionMode directly
 
     // Determină dacă știm suma așteptată pentru această cheltuială
     let knowsExpectedAmount = filterInfo.type === 'all';
@@ -336,7 +332,7 @@ export const ConsumptionTable = ({
                     if (expense.expenseEntryMode) {
                       if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
                       else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-                      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+                      else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
                     }
 
                     let receptionText = '';
@@ -868,7 +864,7 @@ const ConsumptionTableFooter = ({
               if (expense.expenseEntryMode) {
                 if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
                 else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-                else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+                else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
               }
 
               // Determină suma așteptată și apartamentele pentru calcul
@@ -888,7 +884,7 @@ const ConsumptionTableFooter = ({
                 const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
                 const blockStairIds = blockStairs.map(s => s.id);
                 apartmentsForDiff = allApts.filter(apt => blockStairIds.includes(apt.stairId));
-              } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+              } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
                 // Când filtrezi pe scară dar suma e pe asociație, calculează diferența la nivel de ASOCIAȚIE
                 expectedAmount = parseFloat(expense?.billAmount || 0);
                 apartmentsForDiff = getAssociationApartments();
@@ -919,7 +915,7 @@ const ConsumptionTableFooter = ({
                 let diferentaLabel = 'Diferență';
                 if (filterInfo.type === 'stair' && receptionMode === 'per_block') {
                   diferentaLabel = 'Diferență pe bloc';
-                } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+                } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
                   diferentaLabel = 'Diferență pe asociație';
                 }
 
@@ -982,7 +978,7 @@ const ConsumptionTableFooter = ({
             if (expense.expenseEntryMode) {
               if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
               else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-              else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+              else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
             }
 
             // Determină suma așteptată și apartamentele pentru calcul
@@ -1002,7 +998,7 @@ const ConsumptionTableFooter = ({
               const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
               const blockStairIds = blockStairs.map(s => s.id);
               apartmentsForDiff = allApts.filter(apt => blockStairIds.includes(apt.stairId));
-            } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+            } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
               // Când filtrezi pe scară dar suma e pe asociație, calculează diferența la nivel de ASOCIAȚIE
               expectedAmount = parseFloat(expense?.billAmount || 0);
               apartmentsForDiff = getAssociationApartments();
@@ -1051,7 +1047,7 @@ const ConsumptionTableFooter = ({
               let diferentaLabel = 'Diferență';
               if (filterInfo.type === 'stair' && receptionMode === 'per_block') {
                 diferentaLabel = 'Diferență pe bloc';
-              } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+              } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
                 diferentaLabel = 'Diferență pe asociație';
               }
 
@@ -1093,7 +1089,7 @@ const ConsumptionTableFooter = ({
                   if (expense.expenseEntryMode) {
                     if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
                     else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-                    else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+                    else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
                   }
 
                   if (receptionMode === 'per_stair') {
@@ -1148,7 +1144,7 @@ const ConsumptionTableFooter = ({
               if (expense.expenseEntryMode) {
                 if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
                 else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-                else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+                else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
               }
 
               let scopeApartments = allApartments;
@@ -1457,7 +1453,7 @@ const IndividualAmountsTableFooter = ({
             if (expense.expenseEntryMode) {
               if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
               else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-              else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+              else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
             }
 
             // Determină suma așteptată și apartamentele pentru calcul
@@ -1477,7 +1473,7 @@ const IndividualAmountsTableFooter = ({
               const blockStairs = stairs?.filter(s => s.blockId === filterInfo.blockId) || [];
               const blockStairIds = blockStairs.map(s => s.id);
               apartmentsForDiff = allApts.filter(apt => blockStairIds.includes(apt.stairId));
-            } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+            } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
               // Când filtrezi pe scară dar suma e pe asociație, calculează diferența la nivel de ASOCIAȚIE
               expectedAmount = parseFloat(expense?.amount || 0);
               apartmentsForDiff = getAssociationApartments();
@@ -1506,7 +1502,7 @@ const IndividualAmountsTableFooter = ({
               let diferentaLabel = 'Diferență';
               if (filterInfo.type === 'stair' && receptionMode === 'per_block') {
                 diferentaLabel = 'Diferență pe bloc';
-              } else if (filterInfo.type === 'stair' && receptionMode === 'total') {
+              } else if (filterInfo.type === 'stair' && receptionMode === 'per_association') {
                 diferentaLabel = 'Diferență pe asociație';
               }
 

@@ -105,3 +105,74 @@ export const validateSheetOwnership = (associationId, sheet) => {
 export const isNestedStructure = (path) => {
   return path && path.includes('associations/') && path.includes('/sheets/');
 };
+
+/**
+ * Firestore Helper Functions for Nested Invoices Structure
+ *
+ * These helpers ensure consistent path construction for the nested invoices
+ * collection under associations.
+ *
+ * Structure: associations/{associationId}/invoices/{invoiceId}
+ */
+
+/**
+ * Get a reference to a specific invoice document
+ *
+ * @param {string} associationId - The association ID
+ * @param {string} invoiceId - The invoice ID
+ * @returns {DocumentReference} Firestore document reference
+ *
+ * @example
+ * const invoiceRef = getInvoiceRef(associationId, invoiceId);
+ * await updateDoc(invoiceRef, { isPaid: true });
+ */
+export const getInvoiceRef = (associationId, invoiceId) => {
+  if (!associationId) {
+    throw new Error('associationId is required for getInvoiceRef');
+  }
+  if (!invoiceId) {
+    throw new Error('invoiceId is required for getInvoiceRef');
+  }
+  return doc(db, 'associations', associationId, 'invoices', invoiceId);
+};
+
+/**
+ * Get a reference to the invoices collection for an association
+ *
+ * @param {string} associationId - The association ID
+ * @returns {CollectionReference} Firestore collection reference
+ *
+ * @example
+ * const invoicesQuery = query(
+ *   getInvoicesCollection(associationId),
+ *   where('isPaid', '==', false)
+ * );
+ * const snapshot = await getDocs(invoicesQuery);
+ */
+export const getInvoicesCollection = (associationId) => {
+  if (!associationId) {
+    throw new Error('associationId is required for getInvoicesCollection');
+  }
+  return collection(db, 'associations', associationId, 'invoices');
+};
+
+/**
+ * Create a new invoice document reference with auto-generated ID
+ *
+ * @param {string} associationId - The association ID
+ * @returns {DocumentReference} Firestore document reference with auto-generated ID
+ *
+ * @example
+ * const newInvoiceRef = createNewInvoiceRef(associationId);
+ * await setDoc(newInvoiceRef, {
+ *   invoiceNumber: 'F1',
+ *   invoiceDate: '2025-11-04',
+ *   ...invoiceData
+ * });
+ */
+export const createNewInvoiceRef = (associationId) => {
+  if (!associationId) {
+    throw new Error('associationId is required for createNewInvoiceRef');
+  }
+  return doc(getInvoicesCollection(associationId));
+};

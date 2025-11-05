@@ -21,13 +21,14 @@ export const useOnboarding = () => {
   const { logActivity } = useSecurity();
   const { loadUserProfile, completeOnboarding } = useUserProfile();
   const { initializeMonths } = useMonthManagement();
-  
+
   const [onboardingData, setOnboardingData] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepsCompleted, setStepsCompleted] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [associationId, setAssociationId] = useState(null); // Track current association for nested storage
 
   // 📋 DEFINIREA PAȘILOR ONBOARDING
   const onboardingSteps = [
@@ -123,20 +124,32 @@ export const useOnboarding = () => {
   };
 
   // 🎯 ÎNCĂRCARE PROGRES ONBOARDING
-  const loadOnboardingProgress = async (userId) => {
+  const loadOnboardingProgress = async (userId, associationId = null) => {
     if (!userId) return;
-    
+
     setIsLoading(true);
     try {
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
-      const onboardingDoc = await getDoc(onboardingRef);
-      
+      let onboardingRef, onboardingDoc;
+
+      // Try nested location first if associationId provided
+      if (associationId) {
+        onboardingRef = doc(db, `associations/${associationId}/onboarding_progress`, userId);
+        onboardingDoc = await getDoc(onboardingRef);
+      }
+
+      // Fallback to root location if not found in nested or no associationId
+      if (!onboardingDoc || !onboardingDoc.exists()) {
+        onboardingRef = doc(db, 'onboarding_progress', userId);
+        onboardingDoc = await getDoc(onboardingRef);
+      }
+
       if (onboardingDoc.exists()) {
         const data = onboardingDoc.data();
         setOnboardingData(data);
         setCurrentStep(data.currentStep || 0);
         setStepsCompleted(data.stepsCompleted || {});
-        
+        setAssociationId(associationId); // Store associationId for subsequent writes
+
         // Verifică dacă poate face skip
         updateSkipAvailability(data.currentStep, data.stepsCompleted);
       } else {
@@ -149,15 +162,23 @@ export const useOnboarding = () => {
           completed: false,
           skipped: false
         };
-        
+
+        // Write to nested location if associationId provided, otherwise root
+        if (associationId) {
+          onboardingRef = doc(db, `associations/${associationId}/onboarding_progress`, userId);
+        } else {
+          onboardingRef = doc(db, 'onboarding_progress', userId);
+        }
+
         await setDoc(onboardingRef, initialData);
         setOnboardingData(initialData);
         setCurrentStep(0);
         setStepsCompleted({});
-        
+        setAssociationId(associationId); // Store associationId for subsequent writes
+
         await logActivity(userId, 'ONBOARDING_STARTED', {
           totalSteps: onboardingSteps.length
-        });
+        }, associationId);
       }
     } catch (error) {
       console.error('❌ Error loading onboarding progress:', error);
@@ -169,11 +190,11 @@ export const useOnboarding = () => {
   // 💾 SALVARE PROGRES PAS
   const saveStepProgress = async (userId, stepId, stepData, isCompleted = false) => {
     if (!userId || !onboardingData) return;
-    
+
     try {
       // Curăță datele de obiecte File care nu pot fi salvate în Firestore
       const cleanStepData = cleanDataForFirestore(stepData);
-      
+
       const updatedStepsCompleted = {
         ...stepsCompleted,
         [stepId]: {
@@ -183,29 +204,33 @@ export const useOnboarding = () => {
           lastUpdated: new Date().toISOString()
         }
       };
-      
+
       const updatedOnboardingData = {
         ...onboardingData,
         stepsCompleted: updatedStepsCompleted,
         lastUpdated: new Date().toISOString()
       };
-      
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
+
+      // Use nested location if associationId is set, otherwise root
+      const onboardingRef = associationId
+        ? doc(db, `associations/${associationId}/onboarding_progress`, userId)
+        : doc(db, 'onboarding_progress', userId);
+
       await updateDoc(onboardingRef, updatedOnboardingData);
-      
+
       setOnboardingData(updatedOnboardingData);
       setStepsCompleted(updatedStepsCompleted);
-      
+
       // Update skip availability
       updateSkipAvailability(currentStep, updatedStepsCompleted);
-      
+
       await logActivity(userId, 'ONBOARDING_STEP_PROGRESS', {
         stepId,
         isCompleted,
         stepNumber: currentStep + 1,
         totalSteps: onboardingSteps.length
-      });
-      
+      }, associationId);
+
       return true;
     } catch (error) {
       console.error('❌ Error saving step progress:', error);
@@ -247,20 +272,24 @@ export const useOnboarding = () => {
   // 🔄 UPDATE CURRENT STEP
   const updateCurrentStep = async (userId, stepIndex) => {
     try {
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
+      // Use nested location if associationId is set, otherwise root
+      const onboardingRef = associationId
+        ? doc(db, `associations/${associationId}/onboarding_progress`, userId)
+        : doc(db, 'onboarding_progress', userId);
+
       await updateDoc(onboardingRef, {
         currentStep: stepIndex,
         lastUpdated: new Date().toISOString()
       });
-      
+
       setCurrentStep(stepIndex);
       updateSkipAvailability(stepIndex, stepsCompleted);
-      
+
       await logActivity(userId, 'ONBOARDING_STEP_CHANGED', {
         fromStep: currentStep,
         toStep: stepIndex,
         stepName: onboardingSteps[stepIndex]?.id
-      });
+      }, associationId);
     } catch (error) {
       console.error('❌ Error updating current step:', error);
     }
@@ -269,21 +298,25 @@ export const useOnboarding = () => {
   // ⏭️ SKIP ONBOARDING (cu condiții)
   const skipOnboarding = async (userId) => {
     if (!canSkip) return false;
-    
+
     try {
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
+      // Use nested location if associationId is set, otherwise root
+      const onboardingRef = associationId
+        ? doc(db, `associations/${associationId}/onboarding_progress`, userId)
+        : doc(db, 'onboarding_progress', userId);
+
       await updateDoc(onboardingRef, {
         skipped: true,
         skippedAt: new Date().toISOString(),
         completed: false,
         lastUpdated: new Date().toISOString()
       });
-      
+
       await logActivity(userId, 'ONBOARDING_SKIPPED', {
         atStep: currentStep + 1,
         stepsCompleted: Object.keys(stepsCompleted).length
-      });
-      
+      }, associationId);
+
       return true;
     } catch (error) {
       console.error('❌ Error skipping onboarding:', error);
@@ -294,28 +327,32 @@ export const useOnboarding = () => {
   // ✅ FINALIZARE ONBOARDING COMPLET
   const completeOnboardingProcess = async (userId) => {
     try {
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
+      // Use nested location if associationId is set, otherwise root
+      const onboardingRef = associationId
+        ? doc(db, `associations/${associationId}/onboarding_progress`, userId)
+        : doc(db, 'onboarding_progress', userId);
+
       await updateDoc(onboardingRef, {
         completed: true,
         completedAt: new Date().toISOString(),
         lastUpdated: new Date().toISOString()
       });
-      
+
       // Salvează asociația dacă a fost creată în onboarding
       await saveAssociationFromOnboarding(userId);
-      
+
       // Marchează profilul ca având onboarding complet
       await completeOnboarding(userId);
-      
+
       // Trimite email de welcome
       await sendWelcomeEmail(userId);
-      
+
       await logActivity(userId, 'ONBOARDING_COMPLETED', {
         totalSteps: onboardingSteps.length,
         stepsCompleted: Object.keys(stepsCompleted).length,
         duration: calculateOnboardingDuration()
-      });
-      
+      }, associationId);
+
       return true;
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
@@ -539,9 +576,14 @@ export const useOnboarding = () => {
   };
 
   // 🔄 RESET ONBOARDING (pentru test/debug)
-  const resetOnboarding = async (userId) => {
+  const resetOnboarding = async (userId, resetAssociationId = null) => {
     try {
-      const onboardingRef = doc(db, 'onboarding_progress', userId);
+      // Use provided associationId or current one, or fallback to root
+      const targetAssociationId = resetAssociationId || associationId;
+      const onboardingRef = targetAssociationId
+        ? doc(db, `associations/${targetAssociationId}/onboarding_progress`, userId)
+        : doc(db, 'onboarding_progress', userId);
+
       const resetData = {
         userId,
         startedAt: new Date().toISOString(),
@@ -552,17 +594,18 @@ export const useOnboarding = () => {
         reset: true,
         resetAt: new Date().toISOString()
       };
-      
+
       await setDoc(onboardingRef, resetData);
       setOnboardingData(resetData);
       setCurrentStep(0);
       setStepsCompleted({});
       setCanSkip(false);
-      
+      setAssociationId(targetAssociationId);
+
       await logActivity(userId, 'ONBOARDING_RESET', {
         reason: 'manual_reset'
-      });
-      
+      }, targetAssociationId);
+
       return true;
     } catch (error) {
       console.error('❌ Error resetting onboarding:', error);
@@ -708,7 +751,11 @@ export const useOnboarding = () => {
         }
 
         // Marchează onboarding-ul ca fiind complet
-        const onboardingRef = doc(db, 'onboarding_progress', currentUser.uid);
+        // Use nested location if associationId is set, otherwise root
+        const onboardingRef = associationId
+          ? doc(db, `associations/${associationId}/onboarding_progress`, currentUser.uid)
+          : doc(db, 'onboarding_progress', currentUser.uid);
+
         await updateDoc(onboardingRef, {
           completed: true,
           completedAt: new Date().toISOString(),

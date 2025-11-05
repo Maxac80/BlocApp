@@ -81,14 +81,14 @@ export const knowsExpectedAmount = (expense, config, filterInfo, stairs) => {
   if (expense.expenseEntryMode) {
     if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
     else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-    else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+    else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
   }
 
   const distributionType = config?.distributionType;
 
   // Tab "Toate" - știm suma doar dacă e pe asociație
   if (filterInfo.type === 'all') {
-    return receptionMode === 'total';
+    return receptionMode === 'per_association';
   }
 
   // Tab "Scară" - depinde de nivelul introducerii
@@ -105,7 +105,7 @@ export const knowsExpectedAmount = (expense, config, filterInfo, stairs) => {
     // Sume pe asociație când vizualizăm o scară:
     // - Pentru apartment/person/cotaParte: ȘTIM suma (reponderare automată)
     // - Pentru consumption/individual: NU știm suma (depinde de input manual)
-    if (receptionMode === 'total') {
+    if (receptionMode === 'per_association') {
       return distributionType === 'apartment' ||
              distributionType === 'person' ||
              distributionType === 'cotaParte';
@@ -132,7 +132,7 @@ export const getRelevantAmount = (expense, filterInfo) => {
   if (expense.expenseEntryMode) {
     if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
     else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-    else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+    else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
   }
 
   // Tab "Toate" - suma pe asociație

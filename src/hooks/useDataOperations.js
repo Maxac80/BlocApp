@@ -61,7 +61,7 @@ export const useDataOperations = ({
         'apartments',
         'stairs',
         'blocks',
-        'associations', // Șterge asociațiile (și toate subcollections nested cum ar fi sheets)
+        'associations', // Șterge asociațiile (și toate subcollections nested cum ar fi sheets și invoices)
         'balanceAdjustments',
         'disabledExpenses',
         'initialBalances',
@@ -73,7 +73,7 @@ export const useDataOperations = ({
         'user_profiles',
         'expenseConfigurations',
         'incasari',
-        'invoices',
+        // 'invoices' removed - now nested under associations/{id}/invoices (auto-deleted with parent)
         'monthStatuses',
         // 'sheets' removed - now nested under associations/{id}/sheets (auto-deleted with parent)
         'suppliers',

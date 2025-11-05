@@ -333,10 +333,10 @@ const ExpenseConfigModal = ({
         const existingExpense = currentSheet?.expenses?.find(exp => exp.name === expenseName);
 
         if (existingExpense) {
-          const oldMode = expenseConfig.receptionMode === 'total' ? 'Pe asociație' :
+          const oldMode = expenseConfig.receptionMode === 'per_association' ? 'Pe asociație' :
                          expenseConfig.receptionMode === 'per_block' ? 'Per bloc' :
                          expenseConfig.receptionMode === 'per_stair' ? 'Per scară' : expenseConfig.receptionMode;
-          const newMode = localConfig.receptionMode === 'total' ? 'Pe asociație' :
+          const newMode = localConfig.receptionMode === 'per_association' ? 'Pe asociație' :
                          localConfig.receptionMode === 'per_block' ? 'Per bloc' :
                          localConfig.receptionMode === 'per_stair' ? 'Per scară' : localConfig.receptionMode;
 
@@ -412,7 +412,7 @@ const ExpenseConfigModal = ({
     };
 
     // Dacă se alege "separate" și receptionMode este "total", schimbă automat la per_block sau per_stair
-    if (mode === 'separate' && localConfig.receptionMode === 'total') {
+    if (mode === 'separate' && localConfig.receptionMode === 'per_association') {
       // Prioritizează per_block dacă există cel puțin 2 blocuri
       if (blocks.length >= 2) {
         newConfig.receptionMode = 'per_block';
@@ -769,7 +769,7 @@ const ExpenseConfigModal = ({
                   {(blocks.length >= 2 || stairs.length >= 2) && <option value="separate">Facturi separate (per scară/bloc)</option>}
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
-                  {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'total' && 'O factură pe asociație'}
+                  {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_association' && 'O factură pe asociație'}
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_block' && 'O factură cu suma totală distribuită pe blocuri'}
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_stair' && 'O factură cu suma totală distribuită pe scări'}
                   {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_block' && 'Facturi separate pentru fiecare bloc'}
@@ -791,18 +791,18 @@ const ExpenseConfigModal = ({
                   value={localConfig.receptionMode}
                   onChange={(e) => handleReceptionModeChange(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  disabled={blocks.length < 2 && stairs.length < 2 && localConfig.receptionMode === 'total'}
+                  disabled={blocks.length < 2 && stairs.length < 2 && localConfig.receptionMode === 'per_association'}
                 >
-                  {localConfig.invoiceMode !== 'separate' && <option value="total">Pe asociație</option>}
+                  {localConfig.invoiceMode !== 'separate' && <option value="per_association">Pe asociație</option>}
                   {(blocks.length >= 2 || localConfig.receptionMode === 'per_block') && <option value="per_block">Per bloc</option>}
                   {(stairs.length >= 2 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Per scară</option>}
                 </select>
                 <p className="mt-2 text-sm text-gray-600">
-                  {localConfig.receptionMode === 'total' && 'Suma se introduce o singură dată pentru întreaga asociație'}
+                  {localConfig.receptionMode === 'per_association' && 'Suma se introduce o singură dată pentru întreaga asociație'}
                   {localConfig.receptionMode === 'per_block' && 'Sume separate per bloc'}
                   {localConfig.receptionMode === 'per_stair' && 'Sume separate per scară'}
                 </p>
-                {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'total' && (
+                {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_association' && (
                   <p className="mt-2 text-sm text-orange-600 font-medium">
                     ⚠️ Mod "Facturi separate" necesită "Per bloc" sau "Per scară"
                   </p>
@@ -815,7 +815,7 @@ const ExpenseConfigModal = ({
               </div>
 
               {/* Se aplică pe (bife) - doar pentru per_block și per_stair */}
-              {localConfig.receptionMode !== 'total' && (
+              {localConfig.receptionMode !== 'per_association' && (
                 <div className="border-t pt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     🏢 Se aplică pe: (bifează)
@@ -884,7 +884,7 @@ const ExpenseConfigModal = ({
                     </button>
                     {stairTabs.map(stair => {
                       // Verifică dacă scara este activă în configurație
-                      const isStairActive = localConfig.receptionMode === 'total' ||
+                      const isStairActive = localConfig.receptionMode === 'per_association' ||
                         (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(stair.id)) ||
                         (localConfig.receptionMode === 'per_block' && (() => {
                           const stairObj = stairs.find(s => s.id === stair.id);
@@ -924,7 +924,7 @@ const ExpenseConfigModal = ({
                     const block = stair ? blocks.find(b => b.id === stair.blockId) : null;
 
                     // Verifică dacă apartamentul este activ (scara/blocul este selectat)
-                    const isApartmentActive = localConfig.receptionMode === 'total' ||
+                    const isApartmentActive = localConfig.receptionMode === 'per_association' ||
                       (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(apartment.stairId)) ||
                       (localConfig.receptionMode === 'per_block' && block && localConfig.appliesTo.blocks.includes(block.id));
 

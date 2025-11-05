@@ -1,5 +1,222 @@
 ---
 
+### 🗂️ **MIGRARE: COLECȚIA INVOICES LA STRUCTURĂ NESTED - 05 NOIEMBRIE 2025**
+
+#### **CONTEXT ȘI DECIZIE ARHITECTURALĂ**
+
+**Problema inițială**: Colecția `invoices` era creată la nivel de root în Firestore:
+```
+invoices/{invoiceId}
+  ├─ associationId: "..." (necesită where clause pentru filtrare)
+  ├─ invoiceNumber: "F1"
+  └─ ...
+```
+
+**Întrebare cheie**: Să fie nested la nivel de **asociație** sau la nivel de **sheet**?
+
+**Decizia**: **La nivel de ASOCIAȚIE** (`associations/{associationId}/invoices/{invoiceId}`)
+
+**Motivație principală - Facturi Parțiale**:
+- O factură poate fi distribuită pe **mai multe luni/sheets**
+- Exemplu real:
+  ```
+  Octombrie: Factură 500 RON → distribui 200 RON (sheet octombrie)
+  Noiembrie: Continuă distribuția → distribui 200 RON (sheet noiembrie)
+  Decembrie: Finalizează → distribui 100 RON (sheet decembrie)
+  ```
+- Dacă invoices ar fi nested în sheets → ar trebui **3 copii ale aceleiași facturi** cu sincronizare complexă!
+- Cu invoices la nivel asociație → **1 singură factură** cu `distributionHistory` array
+
+**Alte argumente pentru nivel asociație**:
+1. **Factura = entitate financiară permanentă** - nu aparține unei luni, ci asociației
+2. **Tracking global simplu**: `remainingAmount`, `isFullyDistributed` au sens doar global
+3. **Raportare anuală**: queries simple pentru toate facturile anului
+4. **Pattern consistent**: Similar cu sheets (ambele nested sub asociație)
+
+#### **MODIFICĂRI IMPLEMENTATE**
+
+**1. HELPER FUNCTIONS NOI** (`src/utils/firestoreHelpers.js`)
+```javascript
+// 3 funcții noi pentru invoices (pattern identic cu sheets)
+export const getInvoiceRef = (associationId, invoiceId) => {
+  return doc(db, 'associations', associationId, 'invoices', invoiceId);
+};
+
+export const getInvoicesCollection = (associationId) => {
+  return collection(db, 'associations', associationId, 'invoices');
+};
+
+export const createNewInvoiceRef = (associationId) => {
+  return doc(getInvoicesCollection(associationId));
+};
+```
+
+**2. REFACTORIZARE COMPLETĂ** (`src/hooks/useInvoices.js`)
+
+**Import actualizat**:
+```javascript
+// Eliminat: collection, doc, getDoc, query, where
+// Adăugat: getInvoicesCollection, getInvoiceRef
+import { getInvoicesCollection, getInvoiceRef } from '../utils/firestoreHelpers';
+```
+
+**READ Operations** (linii 30-69):
+```javascript
+// ÎNAINTE:
+const invoicesQuery = query(
+  collection(db, 'invoices'),
+  where('associationId', '==', associationId)
+);
+
+// ACUM:
+const invoicesCollection = getInvoicesCollection(associationId);
+// NU mai e nevoie de where clause - path-ul izolează automat!
+```
+
+**CREATE Operations** (linia 381):
+```javascript
+// ÎNAINTE:
+const dataToSave = {
+  associationId,  // <- Trebuia salvat explicit
+  supplierId: ...,
+  ...
+};
+await addDoc(collection(db, 'invoices'), dataToSave);
+
+// ACUM:
+const dataToSave = {
+  // associationId NU mai e necesar - implicit în path
+  supplierId: ...,
+  ...
+};
+await addDoc(getInvoicesCollection(associationId), dataToSave);
+```
+
+**UPDATE Operations** (6 locații modificate):
+```javascript
+// ÎNAINTE:
+const docRef = doc(db, 'invoices', invoiceId);
+await updateDoc(docRef, {...});
+
+// ACUM:
+const invoiceRef = getInvoiceRef(associationId, invoiceId);
+await updateDoc(invoiceRef, {...});
+
+// Locații:
+// - Linia 165: updateInvoiceDistribution
+// - Linia 410: updateInvoice
+// - Linia 602: updateMissingSuppliersForExistingInvoices
+// - Linia 765: fixIncorrectSuppliers
+// - Linia 876: migrateDistributionHistory
+```
+
+**DELETE Operations** (linia 456):
+```javascript
+// ÎNAINTE:
+const docRef = doc(db, 'invoices', invoiceId);
+await deleteDoc(docRef);
+
+// ACUM:
+const invoiceRef = getInvoiceRef(associationId, invoiceId);
+await deleteDoc(invoiceRef);
+```
+
+**3. CLEANUP COLECȚII ROOT** (`src/hooks/useDataOperations.js`)
+
+Linia 76 - Eliminat `'invoices'` din lista `collectionsToDelete`:
+```javascript
+const collectionsToDelete = [
+  'expenses',
+  'apartments',
+  'associations', // Șterge și subcollections: sheets ȘI invoices
+  // 'invoices' removed - now nested under associations/{id}/invoices
+  ...
+];
+```
+
+#### **STRUCTURA FINALĂ**
+
+```
+associations/{associationId}/invoices/{invoiceId}
+{
+  // Invoice identity (fără associationId - implicit în path)
+  invoiceNumber: "F1",
+  invoiceDate: "2025-11-04",
+  supplierId: "...",
+  supplierName: "...",
+  totalInvoiceAmount: 500,
+
+  // Distribution tracking (GLOBAL pe toate sheets)
+  distributedAmount: 400,      // suma distribuită în toate luni
+  remainingAmount: 100,         // ce mai rămâne
+  isFullyDistributed: false,
+
+  // Distribution history (MULTIPLE SHEETS)
+  distributionHistory: [
+    {
+      sheetId: "sheet_oct_2025",
+      month: "octombrie 2025",
+      amount: 200,
+      expenseId: "...",
+      distributedAt: "..."
+    },
+    {
+      sheetId: "sheet_nov_2025",
+      month: "noiembrie 2025",
+      amount: 200,
+      expenseId: "...",
+      distributedAt: "..."
+    }
+  ],
+
+  // Payment status (GLOBAL)
+  isPaid: false,
+  paidDate: null,
+
+  // Metadata
+  createdAt: "...",
+  updatedAt: "..."
+}
+```
+
+#### **BENEFICII OBȚINUTE**
+
+1. **Izolare Perfectă**: Fiecare asociație are propriile facturi complet separate
+2. **Queries Mai Simple**: NU mai trebuie `where('associationId', '==', ...)` - path-ul izolează automat
+3. **Ștergere Automată**: Când ștergi o asociație, toate facturile se șterg automat (subcollection)
+4. **Suport Facturi Parțiale**: O factură poate fi distribuită pe N sheets fără duplicare
+5. **Tracking Global Simplificat**: `remainingAmount` și `isFullyDistributed` sunt global per factură
+6. **Pattern Consistent**: Structură identică cu `sheets` collection
+7. **Zero Migration Overhead**: Aplicație în dezvoltare, nu e nevoie de migrare date existente
+
+#### **LECȚII ÎNVĂȚATE**
+
+1. **Nested Collections = Izolare Naturală**:
+   - Path-ul `associations/{id}/invoices` oferă izolare automată
+   - Elimină nevoia de `where` clauses și filtrare manuală
+   - Reduce riscul de query pe date din alte asociații
+
+2. **Entities cu Lifecycle Lung ≠ Nested în Timp**:
+   - Facturi = entități permanente care span multiple perioade
+   - Sheets = perioade temporale discrete
+   - Invoices nested în asociație (owner), NU în sheet (period)
+
+3. **distributionHistory Pattern**:
+   - Array cu referințe `sheetId` permite tracking multi-period
+   - Mai simplu decât duplicare factură în fiecare sheet
+   - Similar cu git commits - o factură, multiple "distribuții"
+
+4. **Helper Functions Consistency**:
+   - Pattern uniform: `getXRef`, `getXCollection`, `createNewXRef`
+   - Face refactoring-ul mai ușor (search & replace consistent)
+   - Validări centralizate (null checks în helpers)
+
+5. **Dependency Arrays în React**:
+   - Când schimbi de la filter la path, trebuie `associationId` în deps
+   - Altfel: callback-uri stale cu `associationId` vechi
+
+---
+
 ### 🧹 **CLEANUP COMPLET: ELIMINARE COD DEPRECATED PENTRU BALANCE STORAGE - 5 NOIEMBRIE 2025**
 
 #### **CONTEXT ȘI MOTIVAȚIE**

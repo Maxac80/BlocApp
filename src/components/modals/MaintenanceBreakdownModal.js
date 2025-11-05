@@ -33,11 +33,14 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     if (!allApartments || !stairs) return allApartments || [];
 
     // Determine reception mode
-    let receptionMode = expense.receptionMode || expense.expenseEntryMode || 'total';
+    let receptionMode = expense.receptionMode || expense.expenseEntryMode || 'per_association';
+
+    // Backward compatibility: map old values to new ones
     if (receptionMode === 'building') receptionMode = 'per_block';
     else if (receptionMode === 'staircase') receptionMode = 'per_stair';
     else if (receptionMode === 'per_blocuri') receptionMode = 'per_block';
     else if (receptionMode === 'per_scari') receptionMode = 'per_stair';
+    else if (receptionMode === 'total') receptionMode = 'per_association';
 
     // Filter apartments based on reception mode
     if (receptionMode === 'per_block' && currentBlockId) {
@@ -89,7 +92,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         foundIntegralApartment = true;
 
         console.log(`[PerApartment Debug] ${expense.name}:`, {
-          receptionMode: expense.receptionMode || expense.expenseEntryMode || 'total',
+          receptionMode: expense.receptionMode || expense.expenseEntryMode || 'per_association',
           currentBlockId,
           currentStairId,
           groupApartmentsCount: groupApartments.length,
@@ -216,7 +219,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
               standardPricePerPerson = aptAmount / apt.persons;
 
               console.log(`[PerPerson Debug] ${expense.name}:`, {
-                receptionMode: expense.receptionMode || expense.expenseEntryMode || 'total',
+                receptionMode: expense.receptionMode || expense.expenseEntryMode || 'per_association',
                 currentBlockId,
                 currentStairId,
                 groupApartmentsCount: groupApartmentsForPerson.length,

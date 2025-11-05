@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Layers, Building2, Home, Users, Receipt } from 'lucide-react';
-import { generateExcelTemplate } from '../../utils/excelTemplateGenerator';
+import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
 import BlockModal from '../modals/BlockModal';
@@ -1632,38 +1632,38 @@ return (
                                                         </span>
                                                       </div>
 
-                                                      {/* Etichetele cu formatare tabelară fixă - pornesc de la același punct */}
-                                                      <div className="flex items-center gap-2">
-                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
+                                                      {/* Etichetele cu formatare tabelară flexibilă - responsive */}
+                                                      <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-0.5 rounded w-32 text-center">
                                                           {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
                                                         </span>
 
                                                         {apartment.apartmentType ? (
-                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
+                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded w-28 text-center">
                                                             🏠 {apartment.apartmentType}
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-28 text-center">
                                                             🏠 -
                                                           </span>
                                                         )}
 
                                                         {apartment.surface ? (
-                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
+                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded w-24 text-center">
                                                             📐 {apartment.surface} mp
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-24 text-center">
                                                             📐 - mp
                                                           </span>
                                                         )}
 
                                                         {apartment.heatingSource ? (
-                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
+                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded w-40 text-center">
                                                             🔥 {apartment.heatingSource}
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-40 text-center">
                                                             🔥 -
                                                           </span>
                                                         )}
@@ -1679,36 +1679,36 @@ return (
                                                       </div>
 
                                                       <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded-full w-24 text-center">
+                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-0.5 rounded w-32 text-center">
                                                           {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
                                                         </span>
 
                                                         {apartment.apartmentType ? (
-                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full w-24 text-center">
+                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded w-28 text-center">
                                                             🏠 {apartment.apartmentType}
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-24 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-28 text-center">
                                                             🏠 -
                                                           </span>
                                                         )}
 
                                                         {apartment.surface ? (
-                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full w-20 text-center">
+                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded w-24 text-center">
                                                             📐 {apartment.surface} mp
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-20 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-24 text-center">
                                                             📐 - mp
                                                           </span>
                                                         )}
 
                                                         {apartment.heatingSource ? (
-                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full w-36 text-center">
+                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded w-40 text-center">
                                                             🔥 {apartment.heatingSource}
                                                           </span>
                                                         ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-1 rounded-full w-36 text-center">
+                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-40 text-center">
                                                             🔥 -
                                                           </span>
                                                         )}

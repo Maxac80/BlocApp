@@ -171,24 +171,26 @@ export const useUserProfile = () => {
   // 📥 ÎNCĂRCARE PROFIL COMPLET
   const loadUserProfile = async (userId) => {
     if (!userId) return null;
-    
+
     setProfileLoading(true);
     try {
-      const profileRef = doc(db, 'user_profiles', userId);
-      const profileDoc = await getDoc(profileRef);
-      
-      if (profileDoc.exists()) {
-        const existingProfile = profileDoc.data();
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const existingProfile = userData.profile || {};
+
         // Merge cu structura default pentru a adăuga câmpuri noi
         const mergedProfile = mergeWithDefault(existingProfile, defaultProfileStructure);
         const completion = calculateProfileCompletion(mergedProfile);
-        
+
         setProfileData(mergedProfile);
         setProfileCompletion(completion);
-        
+
         return mergedProfile;
       } else {
-        // Creează profil nou cu structura default
+        // Creează profil nou cu structura default în users collection
         const newProfile = {
           ...defaultProfileStructure,
           metadata: {
@@ -197,15 +199,19 @@ export const useUserProfile = () => {
             lastUpdated: new Date().toISOString()
           }
         };
-        
-        await setDoc(profileRef, newProfile);
+
+        // Write nested profile in users document
+        await updateDoc(userRef, {
+          profile: newProfile
+        });
+
         setProfileData(newProfile);
         setProfileCompletion(0);
-        
+
         await logActivity(userId, 'PROFILE_CREATED', {
           profileVersion: newProfile.metadata.profileVersion
         });
-        
+
         return newProfile;
       }
     } catch (error) {
@@ -234,10 +240,10 @@ export const useUserProfile = () => {
   // 💾 ACTUALIZARE PROFIL
   const updateUserProfile = async (userId, updates, section = null) => {
     if (!userId || !profileData) return false;
-    
+
     try {
-      const profileRef = doc(db, 'user_profiles', userId);
-      
+      const userRef = doc(db, 'users', userId);
+
       let updatedProfile;
       if (section) {
         // Update specific section
@@ -260,28 +266,32 @@ export const useUserProfile = () => {
           }
         };
       }
-      
+
       // Calculează completion nou
       const newCompletion = calculateProfileCompletion(updatedProfile);
       updatedProfile.metadata.completionPercentage = newCompletion;
-      
-      await updateDoc(profileRef, updatedProfile);
+
+      // Write to nested profile field
+      await updateDoc(userRef, {
+        profile: updatedProfile
+      });
+
       setProfileData(updatedProfile);
       setProfileCompletion(newCompletion);
-      
+
       // Log modificarea
       await logActivity(userId, 'PROFILE_UPDATED', {
         section: section || 'full_profile',
         completionPercentage: newCompletion,
         fieldsUpdated: Object.keys(updates)
       });
-      
+
       // Update și Firebase Auth profile dacă e necesar
       if (updates.firstName || updates.lastName) {
         const displayName = `${updatedProfile.personalInfo.firstName} ${updatedProfile.personalInfo.lastName}`.trim();
         await updateProfile(auth.currentUser, { displayName });
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error updating profile:', error);
@@ -405,20 +415,41 @@ export const useUserProfile = () => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Nu există utilizator autentificat');
-      
+
       await updateEmail(user, newEmail);
       await sendEmailVerification(user);
-      
-      // Update profil
-      await updateUserProfile(user.uid, {
-        'metadata.emailVerified': false
-      });
-      
+
+      // Update both auth email and profile metadata
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const currentProfile = userData.profile || {};
+
+        const updatedProfile = {
+          ...currentProfile,
+          metadata: {
+            ...currentProfile.metadata,
+            emailVerified: false,
+            lastUpdated: new Date().toISOString()
+          }
+        };
+
+        await updateDoc(userRef, {
+          email: newEmail,
+          emailVerified: false,
+          profile: updatedProfile
+        });
+
+        setProfileData(updatedProfile);
+      }
+
       await logActivity(user.uid, 'EMAIL_UPDATED', {
         oldEmail: user.email,
         newEmail: newEmail
       });
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error updating email:', error);
@@ -454,22 +485,41 @@ export const useUserProfile = () => {
   // ✅ MARCARE ONBOARDING COMPLET
   const completeOnboarding = async (userId) => {
     try {
-      // Actualizează în profilul extins
-      await updateUserProfile(userId, {
-        'metadata.onboardingCompleted': true
-      });
-      
-      // Actualizează și în documentul principal users pentru compatibilitate
       const userRef = doc(db, 'users', userId);
+
+      // Load current user data
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentProfile = userData.profile || {};
+
+      // Update profile metadata
+      const updatedProfile = {
+        ...currentProfile,
+        metadata: {
+          ...currentProfile.metadata,
+          onboardingCompleted: true,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+
+      // Update both profile and auth fields in one write
       await updateDoc(userRef, {
+        profile: updatedProfile,
         needsOnboarding: false,
         onboardingCompletedAt: new Date().toISOString()
       });
-      
+
+      setProfileData(updatedProfile);
+
       await logActivity(userId, 'ONBOARDING_COMPLETED', {
         completionPercentage: profileCompletion
       });
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);

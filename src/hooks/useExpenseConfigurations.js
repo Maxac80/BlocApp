@@ -25,8 +25,28 @@ const useExpenseConfigurations = (currentSheet) => {
     const sheetConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
     const sheetSuppliers = currentSheet.configSnapshot?.suppliers || [];
 
-    console.log('📥 [useExpenseConfigurations] Loading configurations from sheet:', Object.keys(sheetConfigurations).length, 'configs');
-    setConfigurations(sheetConfigurations);
+    // Aplică backward compatibility pentru receptionMode
+    const normalizedConfigurations = {};
+    Object.keys(sheetConfigurations).forEach(key => {
+      const config = { ...sheetConfigurations[key] };
+
+      // Normalizează receptionMode pentru backward compatibility
+      if (config.receptionMode === 'total') {
+        config.receptionMode = 'per_association';
+      } else if (config.receptionMode === 'per_blocuri') {
+        config.receptionMode = 'per_block';
+      } else if (config.receptionMode === 'per_scari') {
+        config.receptionMode = 'per_stair';
+      } else if (config.receptionMode === 'building') {
+        config.receptionMode = 'per_block';
+      } else if (config.receptionMode === 'staircase') {
+        config.receptionMode = 'per_stair';
+      }
+
+      normalizedConfigurations[key] = config;
+    });
+
+    setConfigurations(normalizedConfigurations);
     setSuppliers(sheetSuppliers);
     setLoading(false);
 
@@ -35,8 +55,6 @@ const useExpenseConfigurations = (currentSheet) => {
   const getExpenseConfig = useCallback((expenseOrTypeOrId) => {
     // Compatibilitate: acceptă expense object, expenseTypeId, sau expenseType (nume - backwards)
     let expenseTypeId, expenseTypeName;
-
-    console.log('🔍 [getExpenseConfig] INPUT:', expenseOrTypeOrId);
 
     if (typeof expenseOrTypeOrId === 'object' && expenseOrTypeOrId !== null) {
       // Este un obiect expense
@@ -56,21 +74,12 @@ const useExpenseConfigurations = (currentSheet) => {
       }
     }
 
-    console.log('🔍 [getExpenseConfig] EXTRACTED - ID:', expenseTypeId, 'Name:', expenseTypeName);
-
     // Încearcă să găsește configurația în Firestore
     // Prioritate: 1) după ID (nou), 2) după nume (backwards compatibility)
     let firestoreConfig = expenseTypeId ? configurations[expenseTypeId] : null;
     if (!firestoreConfig && expenseTypeName) {
       firestoreConfig = configurations[expenseTypeName];
     }
-
-    console.log('🔍 [getExpenseConfig] FIRESTORE CONFIG:', firestoreConfig ? {
-      id: firestoreConfig.id,
-      name: firestoreConfig.name,
-      distributionType: firestoreConfig.distributionType,
-      isCustom: firestoreConfig.isCustom
-    } : 'NOT FOUND');
 
     // Obține participările apartamentelor pentru acest tip de cheltuială
     const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
@@ -150,34 +159,22 @@ const useExpenseConfigurations = (currentSheet) => {
         const currentSupplier = suppliers.find(s => s.id === firestoreConfig.supplierId);
         if (currentSupplier && currentSupplier.name !== firestoreConfig.supplierName) {
           // Returnează configurația cu numele actualizat în timp real
-          const result = {
+          return {
             ...firestoreConfig,
             apartmentParticipation,
             differenceDistribution,
             supplierName: currentSupplier.name
           };
-          console.log('✅ [getExpenseConfig] RETURN (with supplier update):', {
-            id: result.id,
-            name: result.name,
-            distributionType: result.distributionType
-          });
-          return result;
         }
       }
 
-      const result = {
+      return {
         ...firestoreConfig,
         id: expenseTypeId,  // Include ID-ul
         name: expenseTypeName || firestoreConfig.name,  // Include numele
         apartmentParticipation,
         differenceDistribution
       };
-      console.log('✅ [getExpenseConfig] RETURN (from firestore):', {
-        id: result.id,
-        name: result.name,
-        distributionType: result.distributionType
-      });
-      return result;
     }
 
     // Altfel, folosește configurația default din expenseTypes
@@ -186,26 +183,20 @@ const useExpenseConfigurations = (currentSheet) => {
     );
     const defaultDistribution = defaultType?.defaultDistribution || 'apartment';
     const defaultInvoiceEntryMode = defaultType?.invoiceEntryMode || 'single';
-    const defaultExpenseEntryMode = defaultType?.expenseEntryMode || 'total';
+    const defaultReceptionMode = defaultType?.receptionMode || 'per_association';
 
-    const result = {
+    return {
       id: defaultType?.id,  // Include ID-ul în configurație
       name: defaultType?.name,  // Include numele pentru afișare
       distributionType: defaultDistribution,
       invoiceEntryMode: defaultInvoiceEntryMode,
-      expenseEntryMode: defaultExpenseEntryMode,
+      receptionMode: defaultReceptionMode,
       supplierId: null,
       supplierName: '',
       contractNumber: '',
       contactPerson: '',
       apartmentParticipation
     };
-    console.log('✅ [getExpenseConfig] RETURN (default):', {
-      id: result.id,
-      name: result.name,
-      distributionType: result.distributionType
-    });
-    return result;
   }, [configurations, suppliers, currentSheet]);
 
   const updateExpenseConfig = useCallback(async (expenseType, config) => {
@@ -281,7 +272,6 @@ const useExpenseConfigurations = (currentSheet) => {
       });
 
       // Actualizează state-ul local pentru feedback instant
-      console.log('💾 [updateExpenseConfig] Actualizare state local pentru:', expenseId, 'cu distributionType:', updatedConfigs[expenseId]?.distributionType);
       setConfigurations(updatedConfigs);
     } catch (error) {
       console.error('Error updating expense configuration in sheet:', error);

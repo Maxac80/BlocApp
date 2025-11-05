@@ -179,17 +179,15 @@ const useMaintenanceCalculation = ({
     };
 
     // Determină nivelul de introducere sume
-    let receptionMode = expense.receptionMode || 'total';
+    let receptionMode = expense.receptionMode || 'per_association';
 
-    // Mapează expenseEntryMode la receptionMode
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    } else if (receptionMode === 'per_blocuri') {
+    // Backward compatibility: mapează valorile vechi la cele noi
+    if (receptionMode === 'per_blocuri') {
       receptionMode = 'per_block';
     } else if (receptionMode === 'per_scari') {
       receptionMode = 'per_stair';
+    } else if (receptionMode === 'total') {
+      receptionMode = 'per_association';
     }
 
 
@@ -464,17 +462,15 @@ const useMaintenanceCalculation = ({
 
     // Prioritizează distributionType din config, apoi din expense
     const distributionType = config?.distributionType || expense.distributionType || expense.distributionMethod;
-    let receptionMode = expense.receptionMode || 'total';
+    let receptionMode = expense.receptionMode || 'per_association';
 
-    // Mapează expenseEntryMode/receptionMode
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    } else if (receptionMode === 'per_blocuri') {
+    // Backward compatibility: mapează valorile vechi la cele noi
+    if (receptionMode === 'per_blocuri') {
       receptionMode = 'per_block';
     } else if (receptionMode === 'per_scari') {
       receptionMode = 'per_stair';
+    } else if (receptionMode === 'total') {
+      receptionMode = 'per_association';
     }
 
     // PASUL 1: Inițializează apartamentele excluse cu 0
@@ -519,10 +515,18 @@ const useMaintenanceCalculation = ({
 
       if (groupKey.startsWith('block_')) {
         const blockId = groupKey.replace('block_', '');
-        groupTotalAmount = parseFloat(expense.amountsByBlock?.[blockId] || 0);
+        // Verifică dacă avem sume pe bloc (distribuție efectivă per bloc)
+        if (expense.amountsByBlock && Object.keys(expense.amountsByBlock).length > 0) {
+          groupTotalAmount = parseFloat(expense.amountsByBlock[blockId] || 0);
+        }
+        // Altfel, folosește suma totală (va fi distribuită proporțional între toate blocurile)
       } else if (groupKey.startsWith('stair_')) {
         const stairId = groupKey.replace('stair_', '');
-        groupTotalAmount = parseFloat(expense.amountsByStair?.[stairId] || 0);
+        // Verifică dacă avem sume pe scară (distribuție efectivă per scară)
+        if (expense.amountsByStair && Object.keys(expense.amountsByStair).length > 0) {
+          groupTotalAmount = parseFloat(expense.amountsByStair[stairId] || 0);
+        }
+        // Altfel, folosește suma totală (va fi distribuită proporțional între toate scările)
       }
 
       // Calculează sumele fixe pentru acest grup
@@ -687,18 +691,25 @@ const useMaintenanceCalculation = ({
           const participation = config?.apartmentParticipation?.[apartment.id];
           const baseAmount = distributionByApartment[apartment.id] || 0;
 
-          // Pentru cotaParte, folosește cota parte ca greutate, nu suma calculată
+          // Calculează greutatea de bază pentru reponderare (nu suma calculată!)
           let baseWeight = baseAmount;
-          if (distributionType === 'cotaParte') {
-            // Calculează ÎNTOTDEAUNA cotaParte din surface bazat pe TOATE apartamentele grupului
+
+          if (distributionType === 'apartment' || distributionType === 'perApartament') {
+            // Pentru distribuție pe apartament, greutatea este 1.0 (o unitate per apartament)
+            baseWeight = 1.0;
+          } else if (distributionType === 'person' || distributionType === 'perPerson') {
+            // Pentru distribuție pe persoană, greutatea este numărul de persoane
+            baseWeight = apartment.persons || 0;
+          } else if (distributionType === 'cotaParte') {
+            // Pentru cotaParte, folosește cota parte ca greutate, nu suma calculată
             const allGroupTotalSurf = groupApartments.reduce((s, a) => s + (parseFloat(a.surface) || 0), 0);
             let aptCotaParte = 0;
             if (apartment.surface && allGroupTotalSurf > 0) {
               aptCotaParte = parseFloat(((parseFloat(apartment.surface) / allGroupTotalSurf) * 100).toFixed(4));
             }
-            baseWeight = aptCotaParte; // Folosește cotaParte ca greutate
-            console.log(`🔧 [Prep Reponderare] Apt ${apartment.number}: cotaParte=${aptCotaParte}%, baseAmount=${baseAmount.toFixed(2)}, participation=${participation?.type || 'integral'}`);
+            baseWeight = aptCotaParte;
           }
+          // Pentru 'consumption' și 'individual', păstrăm suma calculată ca greutate
 
           if (participation?.type === 'percentage') {
             groupApartmentsWithPercentage.push({
@@ -735,12 +746,6 @@ const useMaintenanceCalculation = ({
             allGroupParticipating.forEach(apt => {
               const finalAmount = (weights[apt.id] / totalWeights) * groupAmountToRedistribute;
               distributionByApartment[apt.id] = finalAmount;
-
-              // Log pentru debugging
-              if (distributionType === 'cotaParte') {
-                const aptData = groupApartmentsForReweighting.find(a => a.id === apt.id);
-                console.log(`📊 [Reponderare CotaParte] Apt ${aptData?.number}: weight=${weights[apt.id].toFixed(4)}, totalWeights=${totalWeights.toFixed(4)}, final=${finalAmount.toFixed(2)} RON`);
-              }
             });
           }
         }

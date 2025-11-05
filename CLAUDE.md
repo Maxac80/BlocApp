@@ -102,6 +102,196 @@ The application's core functionality is divided across specialized hooks:
 - `useMonthManagement` - Monthly operations and status tracking
 - `useIncasari` - Payment collection management
 
+## Firebase Database Structure (Updated January 2025)
+
+### 🎯 CURRENT ARCHITECTURE: Nested Collections for Data Isolation
+
+BlocApp uses a **nested collection architecture** where user and association-specific data is properly isolated for security, multi-tenancy support, and clean data organization.
+
+### ✅ Active Collections Structure
+
+#### 1. **Users Collection (Global - Merged from users + user_profiles)**
+```javascript
+/users/{userId}
+{
+  // Auth fields (flat for performance)
+  email: string,
+  role: string,  // 'admin_asociatie', 'super_admin', etc.
+  subscriptionStatus: string,
+  isActive: boolean,
+  emailVerified: boolean,
+  needsOnboarding: boolean,
+  createdAt: timestamp,
+  updatedAt: timestamp,
+  onboardingCompletedAt: timestamp,
+
+  // Security fields
+  securityLevel: string,
+  registrationIP: string,
+  registrationDevice: string,
+  knownDevices: array,
+
+  // Extended Profile (nested object - merged from user_profiles)
+  profile: {
+    personalInfo: {
+      firstName, lastName, cnp, phone,
+      address: { street, number, city, county, zipCode },
+      birthDate, gender
+    },
+    professionalInfo: {
+      companyName, position, experience, certifications, licenseNumber
+    },
+    documents: {
+      idCard: { uploaded, fileName, url, uploadDate, verified },
+      adminContract: { ... },
+      certifications: { ... },
+      avatar: { ... }
+    },
+    settings: {
+      language, timezone, dateFormat, currency,
+      notifications: { email, sms, push },
+      privacy: { ... }
+    },
+    metadata: {
+      profileVersion, lastUpdated, createdAt, completionPercentage,
+      onboardingCompleted, emailVerified, documentsVerified
+    }
+  }
+}
+```
+- **Purpose**: Single source of truth for user data (auth + profile merged)
+- **Reads**: `AuthContext.loadUserProfile()`, `useUserProfile.loadUserProfile()`
+- **Writes**: `useUserProfile.updateUserProfile()`, auth operations
+- **Migration**: `user_profiles` collection eliminated - data now in nested `profile` field
+
+#### 2. **Associations with Nested Collections**
+```javascript
+/associations/{associationId}
+{
+  name, cui, address, contact, bankAccount,
+  adminId, createdAt, updatedAt, ...
+}
+
+/associations/{associationId}/audit_logs/{logId}
+{
+  userId, action, details, timestamp,
+  ip, deviceFingerprint, userAgent, sessionId
+}
+
+/associations/{associationId}/onboarding_progress/{userId}
+{
+  userId, startedAt, currentStep, stepsCompleted,
+  completed, skipped, lastUpdated
+}
+
+/associations/{associationId}/blocs/{blocId}
+/associations/{associationId}/apartments/{apartmentId}
+/associations/{associationId}/sheets/{sheetId}
+```
+- **Purpose**: Association-specific data with perfect isolation
+- **Audit Logs**: Association-scoped activity tracking
+- **Onboarding Progress**: Per-association onboarding for multi-association users
+
+#### 3. **Global Collections (Root Level)**
+```javascript
+/audit_logs/{logId}  // Global logs: USER_REGISTERED, LOGIN_SUCCESS, LOGOUT
+/onboarding_progress/{userId}  // Initial onboarding before association creation
+```
+- **Purpose**: Global events not tied to specific associations
+- **Fallback**: Hooks read from nested locations first, then fallback to root
+
+### 🔄 Data Access Patterns
+
+#### **User Profile Access**
+```javascript
+// Read (automatically includes nested profile)
+const userDoc = await getDoc(doc(db, 'users', userId));
+const userData = userDoc.data();
+const profile = userData.profile;  // Full profile object
+
+// Write (update nested profile)
+await updateDoc(doc(db, 'users', userId), {
+  profile: updatedProfile,
+  emailVerified: true  // Can update auth fields simultaneously
+});
+```
+
+#### **Audit Logs Access**
+```javascript
+// Write association-scoped log
+await logActivity(userId, 'EXPENSE_ADDED', { details }, associationId);
+// → writes to /associations/{associationId}/audit_logs/
+
+// Write global log
+await logActivity(userId, 'LOGIN_SUCCESS', { details });
+// → writes to /audit_logs/ (root)
+
+// Read with fallback
+const logs = await getUserActivityHistory(userId, associationId);
+// → tries nested first, falls back to root if not found
+```
+
+#### **Onboarding Progress Access**
+```javascript
+// Load with optional associationId
+await loadOnboardingProgress(userId, associationId);
+// → tries /associations/{id}/onboarding_progress/{userId}
+// → falls back to /onboarding_progress/{userId}
+
+// Save (uses stored associationId)
+await saveStepProgress(userId, stepId, data, isCompleted);
+// → writes to nested if associationId set, otherwise root
+```
+
+### ❌ ELIMINATED Collections
+
+#### 1. **user_profiles** (Merged into users.profile)
+- **Status**: ELIMINATED - Collection no longer exists
+- **Reason**: Data duplication, sync issues, unnecessary complexity
+- **Migration**: All data moved to nested `users/{userId}.profile` field
+- **Date**: January 2025
+
+#### 2. **Root audit_logs for association data**
+- **Status**: DEPRECATED - Association logs moved to nested
+- **Reason**: No data isolation between associations
+- **Migration**: Association-specific logs now in `/associations/{id}/audit_logs/`
+- **Fallback**: Root collection still used for global auth logs
+
+#### 3. **Root onboarding_progress for association members**
+- **Status**: PARTIALLY DEPRECATED - Used only for pre-association onboarding
+- **Reason**: Multi-association support requires per-association tracking
+- **Migration**: Association-specific progress in `/associations/{id}/onboarding_progress/{userId}`
+- **Fallback**: Root collection used when association doesn't exist yet
+
+### 🏗️ Benefits of Nested Architecture
+
+1. **Data Isolation**: Each association's data is completely separate
+2. **Security Rules**: Granular per-collection access control possible
+3. **Multi-tenancy Ready**: Users can belong to multiple associations
+4. **No Duplication**: Single source of truth for user data (users.profile)
+5. **Clean Structure**: Related data grouped logically
+6. **Scalable**: Easy to add new nested collections per association
+
+### 📋 Migration Notes (January 2025)
+
+**Completed Migrations:**
+- ✅ Merged `user_profiles` → `users.profile` (nested field)
+- ✅ Moved association audit logs → `/associations/{id}/audit_logs/`
+- ✅ Moved association onboarding → `/associations/{id}/onboarding_progress/{userId}`
+- ✅ Updated all hooks to use new paths with fallback logic
+- ✅ Removed migration scripts (fresh start approach)
+
+**Backward Compatibility:**
+- All read operations check nested locations first, then fallback to root
+- Global auth logs (login, register) remain in root `/audit_logs/`
+- Initial onboarding (pre-association) remains in root `/onboarding_progress/`
+
+**Code References:**
+- User profile management: `src/hooks/useUserProfile.js`
+- Audit logging: `src/hooks/useSecurity.js`
+- Onboarding progress: `src/hooks/useOnboarding.js`
+- Auth context: `src/context/AuthContext.js`
+
 ## Balance Storage Architecture
 
 ### 🎯 SOURCE OF TRUTH: Sheet-Based Storage ONLY

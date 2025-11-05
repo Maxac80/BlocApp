@@ -154,11 +154,6 @@ const ExpenseList = ({
 
     // Determină modul de recepție pentru a filtra apartamentele corect
     let receptionMode = expense.receptionMode || 'total';
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    }
 
     // CRUCIAL: Pentru cheltuieli "Pe scară" sau "Pe bloc", recalculează suma relevantă pentru grupul apartamentului
     let actualRelevantAmount = relevantAmount;
@@ -266,22 +261,27 @@ const ExpenseList = ({
 
     apartmentsForReweighting.forEach(apt => {
       const aptParticipation = config?.apartmentParticipation?.[apt.id];
-      let aptBaseAmount = 0;
+
+      // Pentru reponderare, folosește GREUTATEA nu suma calculată!
+      // Acest lucru previne aplicarea dublă a procentului.
+      let baseWeight = 0;
 
       switch (distributionType) {
         case 'apartment':
         case 'perApartament':
-          aptBaseAmount = amountToRedistribute / apartmentsForReweighting.length;
+          // Pentru distribuție pe apartament: greutatea este 1.0 (o unitate per apartament)
+          baseWeight = 1.0;
           break;
         case 'person':
         case 'perPerson':
-          aptBaseAmount = totalPersons > 0 ? (amountToRedistribute / totalPersons) * (apt.persons || 0) : 0;
+          // Pentru distribuție pe persoană: greutatea este numărul de persoane
+          baseWeight = apt.persons || 0;
           break;
       }
 
       const percent = aptParticipation?.type === 'percentage' ? aptParticipation.value : 100;
       const multiplier = percent < 1 ? percent : (percent / 100);
-      weights[apt.id] = aptBaseAmount * multiplier;
+      weights[apt.id] = baseWeight * multiplier;
       totalWeights += weights[apt.id];
     });
 
@@ -297,27 +297,22 @@ const ExpenseList = ({
   const getRelevantAmount = (expense) => {
     const filterInfo = getFilterInfo();
 
-    // Mapează receptionMode din diferite formate
+    // Determină receptionMode
     let receptionMode = expense.receptionMode || 'total';
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    }
 
     // Pentru filtrul "Toate"
     if (filterInfo.type === 'all') {
       const config = getExpenseConfig(expense.name);
 
       // Pentru cheltuieli pe scară (per_stair), calculează totalul din toate scările
-      if (receptionMode === 'per_stair' && expense.amountsByStair && stairs) {
+      if (receptionMode === 'per_stair' && expense.amountsByStair && Object.keys(expense.amountsByStair).length > 0 && stairs) {
         return stairs.reduce((sum, stair) =>
           sum + parseFloat(expense.amountsByStair[stair.id] || 0), 0
         );
       }
 
       // Pentru cheltuieli pe bloc (per_block), calculează totalul din toate blocurile
-      if (receptionMode === 'per_block' && expense.amountsByBlock && blocks) {
+      if (receptionMode === 'per_block' && expense.amountsByBlock && Object.keys(expense.amountsByBlock).length > 0 && blocks) {
         return blocks.reduce((sum, block) =>
           sum + parseFloat(expense.amountsByBlock[block.id] || 0), 0
         );
@@ -530,7 +525,7 @@ const ExpenseList = ({
 
         return stairTotalAmount;
       }
-      if (receptionMode === 'total') {
+      if (receptionMode === 'per_association') {
         // Pentru cheltuieli "Pe asociație" când filtrezi pe scară, calculează suma pentru acea scară
         const config = getExpenseConfig(expense.name);
         const allApts = getAssociationApartments();
@@ -672,14 +667,9 @@ const ExpenseList = ({
 
     // Verifică dacă cheltuiala e relevantă pentru scara/blocul selectat
     let receptionMode = expense.receptionMode || 'total';
-    if (expense.expenseEntryMode) {
-      if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-      else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-      else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-    }
 
     // Cheltuielile totale sunt relevante pentru toate tab-urile
-    if (receptionMode === 'total') return true;
+    if (receptionMode === 'per_association') return true;
 
     // Cheltuielile pe scări sunt relevante doar pentru scara respectivă
     if (receptionMode === 'per_stair') {
@@ -709,13 +699,8 @@ const ExpenseList = ({
     filteredExpenses.forEach(expense => {
       const config = getExpenseConfig(expense.name);
 
-      // Mapează receptionMode
+      // Determină receptionMode
       let receptionMode = expense.receptionMode || 'total';
-      if (expense.expenseEntryMode) {
-        if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
-        else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-        else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
-      }
 
       // Determină dacă știm suma așteptată pentru această cheltuială
       let knowsExpectedAmount = filterInfo.type === 'all';
@@ -1008,12 +993,16 @@ const ExpenseList = ({
             const isExpanded = expandedExpenses[expense.id];
             const participationInfo = getParticipationInfo(expense);
 
-            // Determină modul de recepție
-            let receptionMode = expense.receptionMode || 'total';
+            // IMPORTANT: Pentru afișaj, folosim receptionMode ORIGINAL (cum a fost efectiv distribuită)
+            // NU folosim expenseEntryMode din configurație pentru afișaj!
+            const actualReceptionMode = expense.receptionMode || 'total';
+
+            // Pentru calcule interne, folosim expenseEntryMode din configurație
+            let receptionMode = actualReceptionMode;
             if (expense.expenseEntryMode) {
               if (expense.expenseEntryMode === 'building') receptionMode = 'per_block';
               else if (expense.expenseEntryMode === 'staircase') receptionMode = 'per_stair';
-              else if (expense.expenseEntryMode === 'total') receptionMode = 'total';
+              else if (expense.expenseEntryMode === 'per_association') receptionMode = 'total';
             }
 
             return (
@@ -1066,12 +1055,12 @@ const ExpenseList = ({
                           </span>
                         </div>
 
-                        {/* Linia 2: Introducere sume */}
+                        {/* Linia 2: Introducere sume - folosește actualReceptionMode pentru afișaj corect */}
                         <div className="flex items-center gap-3 text-gray-600">
                           <span className="font-medium">Sume:</span>
-                          {receptionMode === 'total' && <span>Pe asociație</span>}
-                          {receptionMode === 'per_block' && <span>Pe bloc</span>}
-                          {receptionMode === 'per_stair' && <span>Pe scară</span>}
+                          {actualReceptionMode === 'per_association' && <span>Pe asociație</span>}
+                          {actualReceptionMode === 'per_block' && <span>Pe bloc</span>}
+                          {actualReceptionMode === 'per_stair' && <span>Pe scară</span>}
                         </div>
 
                         {/* Linia 3: Participare */}
@@ -1167,7 +1156,7 @@ const ExpenseList = ({
                                   // Pentru consumption/individual, știm suma doar dacă blocul are o singură scară
                                   knowsExpectedAmount = blockStairs.length === 1;
                                 }
-                              } else if (receptionMode === 'total') {
+                              } else if (receptionMode === 'per_association') {
                                 // Pentru cheltuieli pe asociație:
                                 // - apartment/person/cotaParte: ȘTIM suma (reponderare automată)
                                 // - consumption/individual: calculăm din introduceri
@@ -1356,7 +1345,7 @@ const ExpenseList = ({
                         const diferenta = totalIntrodus - relevantAmount;
                         // Fără TOLERANCE - badge verde doar când diferență = 0
                         const hasDifference = Math.abs(diferenta) >= 0.01;
-                        const diferentaMessage = receptionMode === 'total' ? 'Diferență pe asociație' : 'Diferență pe bloc';
+                        const diferentaMessage = receptionMode === 'per_association' ? 'Diferență pe asociație' : 'Diferență pe bloc';
 
                         // Badge verde DOAR când: știi suma așteptată, NU există diferență ȘI ai introdus ceva (nu 0)
                         const shouldBeGreen = knowsExpectedAmount && !hasDifference && totalIntrodus > 0;
@@ -1572,7 +1561,7 @@ const ExpenseList = ({
                             diferentaContext = 'pe asociație';
                           }
                         } else {
-                          // receptionMode === 'total' - știm suma pe asociație
+                          // receptionMode === 'per_association' - știm suma pe asociație
                           apartmentsForDifference = allApts;
                           relevantAmount = parseFloat(expense.amount || 0);
                           diferentaContext = 'pe asociație';
@@ -1628,7 +1617,7 @@ const ExpenseList = ({
 
                         if (filterInfo.type === 'all') {
                           // Tab "Toate"
-                          if (receptionMode === 'total') {
+                          if (receptionMode === 'per_association') {
                             badgeText = `✓ Total distribuit: ${totalAmount.toFixed(2)} RON`;
                           } else if (receptionMode === 'per_block') {
                             // Calculează totalul pe asociație
@@ -1643,7 +1632,7 @@ const ExpenseList = ({
                           }
                         } else if (filterInfo.type === 'stair') {
                           // Tab scară specifică
-                          if (receptionMode === 'total') {
+                          if (receptionMode === 'per_association') {
                             const totalAssoc = expense.isUnitBased ? expense.billAmount : expense.amount;
                             badgeText = `✓ Total distribuit: ${totalAmount.toFixed(2)} RON (din ${totalAssoc.toFixed(2)} RON pe asociație)`;
                           } else if (receptionMode === 'per_block' && filterInfo.blockId && expense.amountsByBlock) {
@@ -1794,8 +1783,8 @@ const ExpenseList = ({
                       );
                     })()}
 
-                    {/* Card detalii pentru cheltuieli pe asociație (receptionMode === 'total') */}
-                    {receptionMode === 'total' && getFilterInfo().type === 'all' && (
+                    {/* Card detalii pentru cheltuieli pe asociație (receptionMode === 'per_association') */}
+                    {receptionMode === 'per_association' && getFilterInfo().type === 'all' && (
                       <div>
                         <h5 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                           <BarChart className="w-5 h-5" />
@@ -1864,18 +1853,26 @@ const ExpenseList = ({
                                 if (config.distributionType === 'consumption' && expense.consumption) {
                                   // Pentru consum: consum × preț unitar
                                   amountInRon = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                  // Aplică participarea procentuală pentru consumption
+                                  if (p?.type === 'percentage' && p?.value !== undefined) {
+                                    const percent = p.value < 1 ? p.value : (p.value / 100);
+                                    amountInRon = amountInRon * percent;
+                                  }
                                 } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                                   // Pentru sume individuale: direct suma introdusă
                                   amountInRon = parseFloat(expense.individualAmounts[apt.id] || 0);
-                                } else {
-                                  // Pentru apartment/person: folosește funcția de calcul
-                                  amountInRon = calculateApartmentAmount(expense, apt, relevantAmount, allApts);
-                                }
 
-                                // Aplică participarea procentuală
-                                if (p?.type === 'percentage' && p?.value !== undefined) {
-                                  const percent = p.value < 1 ? p.value : (p.value / 100);
-                                  amountInRon = amountInRon * percent;
+                                  // Aplică participarea procentuală pentru individual
+                                  if (p?.type === 'percentage' && p?.value !== undefined) {
+                                    const percent = p.value < 1 ? p.value : (p.value / 100);
+                                    amountInRon = amountInRon * percent;
+                                  }
+                                } else {
+                                  // Pentru apartment/person/cotaParte: folosește funcția de calcul
+                                  // IMPORTANT: calculateApartmentAmount DEJA aplică reponderarea cu procente!
+                                  // NU mai aplicăm procentul aici pentru a evita aplicarea dublă.
+                                  amountInRon = calculateApartmentAmount(expense, apt, relevantAmount, allApts);
                                 }
                               }
 
@@ -2164,7 +2161,7 @@ const ExpenseList = ({
                     )}
 
                     {/* Card detalii pentru scară specifică când suma e pe asociație */}
-                    {receptionMode === 'total' && getFilterInfo().type === 'stair' && (
+                    {receptionMode === 'per_association' && getFilterInfo().type === 'stair' && (
                       <div>
                         <h5 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                           <BarChart className="w-5 h-5" />
@@ -2182,7 +2179,7 @@ const ExpenseList = ({
                             let stairAmount = 0;
 
                             if ((config.distributionType === 'apartment' || config.distributionType === 'person' || config.distributionType === 'cotaParte') &&
-                                (receptionMode === 'total' || receptionMode === 'per_block')) {
+                                (receptionMode === 'per_association' || receptionMode === 'per_block')) {
                               // Folosește getRelevantAmount() care calculează corect suma pentru scară
                               stairAmount = getRelevantAmount(expense);
                             } else {
@@ -2272,7 +2269,7 @@ const ExpenseList = ({
                                 totalAmountForCalculation = receptionMode === 'per_block' && expense.amountsByBlock
                                   ? parseFloat(expense.amountsByBlock[filterInfo.blockId] || 0)
                                   : stairAmount;
-                              } else if (receptionMode === 'total') {
+                              } else if (receptionMode === 'per_association') {
                                 // Pentru asociație, folosește TOATE apartamentele și suma pe asociație
                                 apartmentsForCalculation = allApts;
                                 totalAmountForCalculation = expense.isUnitBased ? expense.billAmount : expense.amount;
@@ -2296,7 +2293,7 @@ const ExpenseList = ({
                               totalAmountForPartialCalculation = receptionMode === 'per_block' && expense.amountsByBlock
                                 ? parseFloat(expense.amountsByBlock[filterInfo.blockId] || 0)
                                 : stairAmount;
-                            } else if (receptionMode === 'total') {
+                            } else if (receptionMode === 'per_association') {
                               // Pentru asociație, folosește TOATE apartamentele și suma pe asociație
                               apartmentsForPartialCalculation = allApts;
                               totalAmountForPartialCalculation = expense.isUnitBased ? expense.billAmount : expense.amount;
@@ -2321,18 +2318,26 @@ const ExpenseList = ({
                                 if (config.distributionType === 'consumption' && expense.consumption) {
                                   // Pentru consum: consum × preț unitar
                                   amountInRon = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+
+                                  // Aplică participarea procentuală pentru consumption
+                                  if (p?.type === 'percentage' && p?.value !== undefined) {
+                                    const percent = p.value < 1 ? p.value : (p.value / 100);
+                                    amountInRon = amountInRon * percent;
+                                  }
                                 } else if (config.distributionType === 'individual' && expense.individualAmounts) {
                                   // Pentru sume individuale: direct suma introdusă
                                   amountInRon = parseFloat(expense.individualAmounts[apt.id] || 0);
-                                } else {
-                                  // Pentru apartment/person: folosește funcția de calcul
-                                  amountInRon = calculateApartmentAmount(expense, apt, totalAmountForPartialCalculation, apartmentsForPartialCalculation);
-                                }
 
-                                // Aplică participarea procentuală
-                                if (p?.type === 'percentage' && p?.value !== undefined) {
-                                  const percent = p.value < 1 ? p.value : (p.value / 100);
-                                  amountInRon = amountInRon * percent;
+                                  // Aplică participarea procentuală pentru individual
+                                  if (p?.type === 'percentage' && p?.value !== undefined) {
+                                    const percent = p.value < 1 ? p.value : (p.value / 100);
+                                    amountInRon = amountInRon * percent;
+                                  }
+                                } else {
+                                  // Pentru apartment/person/cotaParte: folosește funcția de calcul
+                                  // IMPORTANT: calculateApartmentAmount DEJA aplică reponderarea cu procente!
+                                  // NU mai aplicăm procentul aici pentru a evita aplicarea dublă.
+                                  amountInRon = calculateApartmentAmount(expense, apt, totalAmountForPartialCalculation, apartmentsForPartialCalculation);
                                 }
                               }
 
@@ -2537,7 +2542,7 @@ const ExpenseList = ({
                                 })()}
 
                                 {/* Badge verde pentru cotaParte cu suma pe asociație */}
-                                {config.distributionType === 'cotaParte' && receptionMode === 'total' && (() => {
+                                {config.distributionType === 'cotaParte' && receptionMode === 'per_association' && (() => {
                                   // Calculează totalul pe asociație
                                   const totalAssociationAmount = expense.isUnitBased ? expense.billAmount : expense.amount;
 
@@ -2549,7 +2554,7 @@ const ExpenseList = ({
                                 })()}
 
                                 {/* Badge verde pentru apartment/person cu suma pe asociație */}
-                                {(config.distributionType === 'apartment' || config.distributionType === 'person') && receptionMode === 'total' && (() => {
+                                {(config.distributionType === 'apartment' || config.distributionType === 'person') && receptionMode === 'per_association' && (() => {
                                   // Calculează totalul pe asociație
                                   const totalAssociationAmount = expense.isUnitBased ? expense.billAmount : expense.amount;
 
@@ -2684,7 +2689,7 @@ const ExpenseList = ({
                     )}
 
                     {/* Defalcare pe blocuri/scări - afișează carduri în grid */}
-                    {receptionMode !== 'total' && (
+                    {receptionMode !== 'per_association' && (
                       <div>
                         <h5 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                           <BarChart className="w-5 h-5" />

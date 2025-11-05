@@ -27,6 +27,25 @@ const ExpenseEntryModal = ({
   setShowExpenseConfig,
   setSelectedExpenseForConfig
 }) => {
+  // Helper: Normalizează receptionMode pentru backward compatibility
+  const normalizeReceptionMode = (mode) => {
+    if (mode === 'total') return 'per_association';
+    if (mode === 'per_blocuri') return 'per_block';
+    if (mode === 'per_scari') return 'per_stair';
+    if (mode === 'building') return 'per_block';  // old expenseEntryMode
+    if (mode === 'staircase') return 'per_stair'; // old expenseEntryMode
+    return mode;
+  };
+
+  // Wrapper pentru getExpenseConfig care aplică backward compatibility
+  const getExpenseConfigNormalized = (expenseNameOrId) => {
+    const config = getExpenseConfig(expenseNameOrId);
+    if (config && config.receptionMode) {
+      config.receptionMode = normalizeReceptionMode(config.receptionMode);
+    }
+    return config;
+  };
+
   const [selectedExpense, setSelectedExpense] = useState('');
   const [amounts, setAmounts] = useState({}); // Pentru sume per bloc/scară
   const [totalAmount, setTotalAmount] = useState(''); // Pentru mod total
@@ -52,7 +71,7 @@ const ExpenseEntryModal = ({
   // Sincronizează invoiceMode cu config când se selectează cheltuială
   useEffect(() => {
     if (selectedExpense) {
-      const config = getExpenseConfig(selectedExpense);
+      const config = getExpenseConfigNormalized(selectedExpense);
       if (config) {
         setInvoiceMode(config.invoiceMode || 'single');
       }
@@ -66,7 +85,7 @@ const ExpenseEntryModal = ({
       console.log('✏️ editingExpense.amountsByBlock:', editingExpense.amountsByBlock);
       console.log('✏️ editingExpense.amountsByStair:', editingExpense.amountsByStair);
 
-      const expenseConfig = getExpenseConfig(editingExpense.name);
+      const expenseConfig = getExpenseConfigNormalized(editingExpense.name);
       console.log('✏️ Config receptionMode:', expenseConfig?.receptionMode);
       console.log('✏️ Full config:', expenseConfig);
 
@@ -202,7 +221,7 @@ const ExpenseEntryModal = ({
     // Funcție helper pentru creare factură nouă
     async function createNewInvoice(invoiceDetails) {
       try {
-        const config = getExpenseConfig(selectedExpense);
+        const config = getExpenseConfigNormalized(selectedExpense);
 
         const firebaseInvoiceData = {
           expenseType: selectedExpense,
@@ -246,7 +265,7 @@ const ExpenseEntryModal = ({
     console.log('🚀 handleSubmit START', {
       selectedExpense,
       editingExpense: !!editingExpense,
-      hasSingleInvoice: !!singleInvoice.invoiceNumber,
+      hasSingleInvoice: !!(singleInvoice?.invoiceNumber),
       singleInvoice
     });
 
@@ -255,7 +274,7 @@ const ExpenseEntryModal = ({
       return;
     }
 
-    const config = getExpenseConfig(selectedExpense);
+    const config = getExpenseConfigNormalized(selectedExpense);
 
     // Construiește obiectul newExpense bazat pe receptionMode și distributionType
     const newExpense = {
@@ -271,7 +290,7 @@ const ExpenseEntryModal = ({
       newExpense.unitPrice = unitPrice;
 
       // Verifică receptionMode pentru consumption
-      if (config.receptionMode === 'total') {
+      if (config.receptionMode === 'per_association') {
         if (!billAmount) {
           alert('Completează suma totală');
           return;
@@ -298,7 +317,7 @@ const ExpenseEntryModal = ({
       }
     } else if (config.distributionType === 'individual') {
       // Verifică receptionMode pentru individual
-      if (config.receptionMode === 'total') {
+      if (config.receptionMode === 'per_association') {
         if (!totalAmount) {
           alert('Completează suma totală');
           return;
@@ -321,7 +340,7 @@ const ExpenseEntryModal = ({
       }
     } else if (config.distributionType === 'cotaParte') {
       // cotaParte - verificăm dacă e total sau per_block/per_stair
-      if (config.receptionMode === 'total') {
+      if (config.receptionMode === 'per_association') {
         if (!totalAmount) {
           alert('Completează suma totală');
           return;
@@ -346,7 +365,7 @@ const ExpenseEntryModal = ({
       }
     } else {
       // apartment, person - verificăm dacă e total sau per_block/per_stair
-      if (config.receptionMode === 'total') {
+      if (config.receptionMode === 'per_association') {
         if (!totalAmount) {
           alert('Completează suma totală');
           return;
@@ -523,7 +542,7 @@ const ExpenseEntryModal = ({
                     </div>
                     <div className="text-sm text-blue-700">
                       💡 Sume: {
-                        config.receptionMode === 'total' ? 'Pe asociație' :
+                        config.receptionMode === 'per_association' ? 'Pe asociație' :
                         config.receptionMode === 'per_block' ? 'Per bloc' :
                         config.receptionMode === 'per_stair' ? 'Per scară' : config.receptionMode
                       }
@@ -569,7 +588,7 @@ const ExpenseEntryModal = ({
                 {config.distributionType === 'consumption' && (
                   <div className="space-y-3">
                     {/* Dacă e total, un singur câmp pentru sumă */}
-                    {config.receptionMode === 'total' && (
+                    {config.receptionMode === 'per_association' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Suma totală (RON) *
@@ -749,7 +768,7 @@ const ExpenseEntryModal = ({
                 {config.distributionType === 'individual' && (
                   <>
                     {/* MODE: TOTAL */}
-                    {config.receptionMode === 'total' && (
+                    {config.receptionMode === 'per_association' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Suma totală (RON) *
@@ -916,7 +935,7 @@ const ExpenseEntryModal = ({
                 {(config.distributionType === 'apartment' || config.distributionType === 'person') && (
                   <>
                     {/* MODE: TOTAL */}
-                    {config.receptionMode === 'total' && (
+                    {config.receptionMode === 'per_association' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Suma totală (RON) *
@@ -1129,7 +1148,7 @@ const ExpenseEntryModal = ({
                 {(config.distributionType === 'cotaParte') && (
                   <>
                     {/* MODE: TOTAL */}
-                    {config.receptionMode === 'total' && (
+                    {config.receptionMode === 'per_association' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Suma totală (RON) *
@@ -1341,7 +1360,7 @@ const ExpenseEntryModal = ({
             )}
 
             {/* Buton Factură pentru receptionMode = total */}
-            {selectedExpense && config && config.receptionMode === 'total' && config.supplierId && (
+            {selectedExpense && config && config.receptionMode === 'per_association' && config.supplierId && (
               <div className="border-t pt-4 mt-4">
                 <div className="flex items-center justify-between p-3 border border-blue-200 rounded-lg bg-blue-50">
                     <div className="flex-1">
@@ -1371,7 +1390,7 @@ const ExpenseEntryModal = ({
             )}
 
             {/* Mesaj când nu există furnizor pentru total */}
-            {selectedExpense && config && config.receptionMode === 'total' && !config.supplierId && (
+            {selectedExpense && config && config.receptionMode === 'per_association' && !config.supplierId && (
               <div className="border-t pt-4 mt-4">
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start gap-3">
