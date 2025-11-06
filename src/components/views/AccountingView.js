@@ -308,8 +308,6 @@ const AccountingView = ({
     );
   }
 
-  const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (

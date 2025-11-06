@@ -125,7 +125,7 @@ const MaintenanceTableSimple = ({
           )}
         </tr>
         {isMonthReadOnly && (
-          <tr>
+          <tr className="bg-blue-50">
             <td colSpan="3" className="px-3 py-3 font-semibold">TOTAL ÎNCASAT:</td>
             <td className="px-3 py-3 font-bold text-green-600">
               {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}

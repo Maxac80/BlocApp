@@ -306,10 +306,27 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
   };
 
   // Calculate expense breakdown - include ALL expenses (even excluded ones)
+  console.log('🔍 MaintenanceBreakdownModal Debug:', {
+    apartmentId,
+    expenseDetailsKeys: Object.keys(expenseDetails || {}),
+    expenseDetailsStructure: expenseDetails,
+    expensesListIds: expensesList?.map(e => e.expenseTypeId || e.id) || [],
+    expensesListNames: expensesList?.map(e => e.name) || [],
+    expensesListLength: expensesList?.length || 0
+  });
+
   const expenseBreakdown = expensesList?.map(expense => {
-    const amount = expenseDetails?.[expense.name] || 0;
-    const difference = expenseDifferenceDetails?.[expense.name] || 0;
+    // Folosește ID-ul cheltuielii pentru a găsi datele (expenseTypeId sau id)
+    const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+    const expenseData = expenseDetails?.[expenseKey];
+
+    // Compatibilitate: verifică și structura veche (doar amount ca număr)
+    const amount = typeof expenseData === 'object' ? expenseData.amount : (expenseData || 0);
+    // Folosește același ID pentru differences
+    const difference = expenseDifferenceDetails?.[expenseKey] || 0;
     const participation = apartmentParticipations?.[apartmentId]?.[expense.name];
+
+    console.log(`  Expense: ${expense.name} (ID: ${expenseKey}), amount: ${amount}, difference: ${difference}, found: ${!!expenseData}, shouldShow: ${amount > 0 || difference > 0 || participation?.excluded}`);
 
     // Get consumption or individual amount for this expense from the expense object
     const consumption = expense.consumption?.[apartmentId] || 0;

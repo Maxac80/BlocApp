@@ -6,7 +6,7 @@ import {
   DashboardHeader,
   DashboardMaintenanceTable
 } from '../dashboard';
-import { PaymentModal } from '../modals';
+import { PaymentModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
 
@@ -16,28 +16,31 @@ const DashboardView = ({
   blocks,
   stairs,
   getAssociationApartments,
-  
+
   // Month management
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
   isMonthReadOnly,
   getMonthType,
-  
-  
+
+
   // Navigation
   handleNavigation,
-  
+
   // Data
   expenses,
   maintenanceData,
   currentSheet,
 
   // User profile
-  userProfile
+  userProfile,
+
+  // Expense configuration
+  getExpenseConfig,
+  getApartmentParticipation,
+  calculateMaintenanceWithDetails
 }) => {
-  const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-  
   // Hook-uri pentru gestionarea încasărilor
   // 🆕 FAZA 4: Transmite currentSheet (care poate fi publishedSheet)
   const publishedSheet = currentSheet?.status === 'PUBLISHED' ? currentSheet : null;
@@ -55,6 +58,10 @@ const DashboardView = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
 
+  // State pentru modalul de breakdown întreținere
+  const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
+  const [selectedMaintenanceData, setSelectedMaintenanceData] = useState(null);
+
 
   // Calculează datele actualizate pentru afișare în tabel
   const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
@@ -63,6 +70,38 @@ const DashboardView = ({
   const handleOpenPaymentModal = (apartmentData) => {
     setSelectedApartment(apartmentData);
     setShowPaymentModal(true);
+  };
+
+  // Handler pentru deschiderea modalului de breakdown întreținere
+  const handleOpenMaintenanceBreakdown = (apartmentData) => {
+    // Pentru Dashboard, folosim datele din maintenanceData (publishedSheet.maintenanceTable)
+    // care CONȚINE expenseDetails salvat la publicare
+    const fullData = maintenanceData?.find(data => data.apartmentId === apartmentData.apartmentId) || apartmentData;
+
+    // Merge datele: păstrează expenseDetails din published sheet, dar actualizează sumele modificate de plăți
+    const mergedData = {
+      ...fullData,
+      // Actualizează sumele care pot fi modificate de plăți (din updatedMaintenanceData)
+      restante: apartmentData.restante,
+      currentMaintenance: apartmentData.currentMaintenance,
+      penalitati: apartmentData.penalitati,
+      totalDatorat: apartmentData.totalDatorat,
+      totalMaintenance: apartmentData.totalMaintenance,
+      isPaid: apartmentData.isPaid,
+      isPartiallyPaid: apartmentData.isPartiallyPaid,
+      paymentInfo: apartmentData.paymentInfo
+    };
+
+    console.log('📊 Opening maintenance breakdown in Dashboard:', {
+      apartmentId: apartmentData.apartmentId,
+      hasExpenseDetails: !!mergedData.expenseDetails,
+      expenseDetailsCount: Object.keys(mergedData.expenseDetails || {}).length,
+      expenseDetailsKeys: Object.keys(mergedData.expenseDetails || {}),
+      expenseDifferenceDetailsKeys: Object.keys(mergedData.expenseDifferenceDetails || {})
+    });
+
+    setSelectedMaintenanceData(mergedData);
+    setShowMaintenanceBreakdown(true);
   };
 
   // Handler pentru salvarea plății cu integrare Firestore
@@ -231,7 +270,7 @@ const DashboardView = ({
                   currentMonth={currentMonth}
                   isMonthReadOnly={isMonthReadOnly}
                   onOpenPaymentModal={handleOpenPaymentModal}
-                  exportPDFAvizier={exportPDFAvizier}
+                  onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                   handleNavigation={handleNavigation}
                   association={association}
                   blocks={blocks}
@@ -287,6 +326,49 @@ const DashboardView = ({
         selectedApartment={selectedApartment}
         onSavePayment={handleSavePayment}
       />
+
+      {/* Modal pentru breakdown întreținere */}
+      {showMaintenanceBreakdown && selectedMaintenanceData && (() => {
+        // Extrage lista de cheltuieli din expenseDetails
+        const expensesFromDetails = selectedMaintenanceData.expenseDetails
+          ? Object.values(selectedMaintenanceData.expenseDetails)
+              .map(detail => detail?.expense || detail)
+              .filter(Boolean)
+          : [];
+
+        // Folosește expenses din details dacă există, altfel fallback la expenses din props
+        const finalExpensesList = expensesFromDetails.length > 0 ? expensesFromDetails : (expenses || []);
+
+        console.log('📋 Modal expenses:', {
+          fromDetails: expensesFromDetails.length,
+          fromProps: (expenses || []).length,
+          using: finalExpensesList.length
+        });
+
+        return (
+          <MaintenanceBreakdownModal
+            isOpen={showMaintenanceBreakdown}
+            onClose={() => setShowMaintenanceBreakdown(false)}
+            apartmentData={selectedMaintenanceData}
+            expensesList={finalExpensesList}
+            apartmentParticipations={
+              (getAssociationApartments?.() || []).reduce((acc, apt) => {
+                acc[apt.id] = finalExpensesList.reduce((expAcc, expense) => {
+                  // Folosește expenseTypeId pentru a căuta participarea corect
+                  const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+                  expAcc[expense.name] = getApartmentParticipation?.(apt.id, expenseKey) || {};
+                  return expAcc;
+                }, {});
+                return acc;
+              }, {})
+            }
+            allApartments={getAssociationApartments?.() || []}
+            allMaintenanceData={updatedMaintenanceData || []}
+            getExpenseConfig={getExpenseConfig}
+            stairs={stairs || []}
+          />
+        );
+      })()}
 
     </div>
   );

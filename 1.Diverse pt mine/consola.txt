@@ -1,475 +1,194 @@
 react refresh:37 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-useMaintenanceCalculation.js:462 🧮 [CALC] Starting distribution calculation for: Întreținere lift
-useMaintenanceCalculation.js:463 🧮 [CALC] Expense data: {amount: 100, receptionMode: 'total', distributionType: 'apartment', distributionMethod: undefined}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: {name: 'Întreținere lift', expenseEntryMode: 'staircase', expenseTypeId: 'expense-type-elevator', invoiceNumber: '', supplier: '', …}
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: NOT FOUND
-useExpenseConfigurations.js:203 ✅ [getExpenseConfig] RETURN (default): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useMaintenanceCalculation.js:473 🧮 [CALC] Config found: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', invoiceEntryMode: 'single', expenseEntryMode: 'staircase', …}
-useMaintenanceCalculation.js:479 🧮 [CALC] Final distributionType: apartment receptionMode: total
-useMaintenanceCalculation.js:529 🧮 [CALC] Processing group: stair_1762331562877 with 4 apartments
-useMaintenanceCalculation.js:542 🧮 [CALC] Group total amount: 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 1 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 1 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 2 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 2 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 3 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 3 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 4 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 4 expense (per apartment): 0
-useMaintenanceCalculation.js:769 🧮 [CALC] Final distribution result: {1762347009150: 0, 1762347009559: 0, 1762347009673: 0, 1762347009788: 0}
-useMaintenanceCalculation.js:462 🧮 [CALC] Starting distribution calculation for: Întreținere lift
-useMaintenanceCalculation.js:463 🧮 [CALC] Expense data: {amount: 100, receptionMode: 'total', distributionType: 'apartment', distributionMethod: undefined}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: {name: 'Întreținere lift', expenseEntryMode: 'staircase', expenseTypeId: 'expense-type-elevator', invoiceNumber: '', supplier: '', …}
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: NOT FOUND
-useExpenseConfigurations.js:203 ✅ [getExpenseConfig] RETURN (default): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useMaintenanceCalculation.js:473 🧮 [CALC] Config found: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', invoiceEntryMode: 'single', expenseEntryMode: 'staircase', …}
-useMaintenanceCalculation.js:479 🧮 [CALC] Final distributionType: apartment receptionMode: total
-useMaintenanceCalculation.js:529 🧮 [CALC] Processing group: stair_1762331562877 with 4 apartments
-useMaintenanceCalculation.js:542 🧮 [CALC] Group total amount: 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 1 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 1 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 2 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 2 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 3 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 3 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 4 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 4 expense (per apartment): 0
-useMaintenanceCalculation.js:769 🧮 [CALC] Final distribution result: {1762347009150: 0, 1762347009559: 0, 1762347009673: 0, 1762347009788: 0}
-useExpenseConfigurations.js:28 📥 [useExpenseConfigurations] Loading configurations from sheet: 11 configs
-useExpenseConfigurations.js:28 📥 [useExpenseConfigurations] Loading configurations from sheet: 11 configs
-useMaintenanceCalculation.js:462 🧮 [CALC] Starting distribution calculation for: Întreținere lift
-useMaintenanceCalculation.js:463 🧮 [CALC] Expense data: {amount: 100, receptionMode: 'total', distributionType: 'apartment', distributionMethod: undefined}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: {name: 'Întreținere lift', expenseEntryMode: 'staircase', expenseTypeId: 'expense-type-elevator', invoiceNumber: '', supplier: '', …}
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useMaintenanceCalculation.js:473 🧮 [CALC] Config found: {updatedAt: '2025-11-05T13:06:50.070Z', invoiceMode: 'single', contractNumber: '', supplierId: '1762348008295', isEnabled: true, …}
-useMaintenanceCalculation.js:479 🧮 [CALC] Final distributionType: apartment receptionMode: total
-useMaintenanceCalculation.js:529 🧮 [CALC] Processing group: stair_1762331562877 with 4 apartments
-useMaintenanceCalculation.js:542 🧮 [CALC] Group total amount: 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 1 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 1 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 2 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 2 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 3 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 3 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 4 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 4 expense (per apartment): 0
-useMaintenanceCalculation.js:769 🧮 [CALC] Final distribution result: {1762347009150: 0, 1762347009559: 0, 1762347009673: 0, 1762347009788: 0}
-useMaintenanceCalculation.js:462 🧮 [CALC] Starting distribution calculation for: Întreținere lift
-useMaintenanceCalculation.js:463 🧮 [CALC] Expense data: {amount: 100, receptionMode: 'total', distributionType: 'apartment', distributionMethod: undefined}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: {name: 'Întreținere lift', expenseEntryMode: 'staircase', expenseTypeId: 'expense-type-elevator', invoiceNumber: '', supplier: '', …}
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useMaintenanceCalculation.js:473 🧮 [CALC] Config found: {updatedAt: '2025-11-05T13:06:50.070Z', invoiceMode: 'single', contractNumber: '', supplierId: '1762348008295', isEnabled: true, …}
-useMaintenanceCalculation.js:479 🧮 [CALC] Final distributionType: apartment receptionMode: total
-useMaintenanceCalculation.js:529 🧮 [CALC] Processing group: stair_1762331562877 with 4 apartments
-useMaintenanceCalculation.js:542 🧮 [CALC] Group total amount: 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 1 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 1 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 2 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 2 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 3 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 3 expense (per apartment): 0
-useMaintenanceCalculation.js:584 🧮 [CALC] Calculating for apartment 4 distributionType: apartment
-useMaintenanceCalculation.js:590 🧮 [CALC] Apartment 4 expense (per apartment): 0
-useMaintenanceCalculation.js:769 🧮 [CALC] Final distribution result: {1762347009150: 0, 1762347009559: 0, 1762347009673: 0, 1762347009788: 0}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-MaintenanceView.js:346 🔄 Pornesc migrarea automată a distributionHistory...
-useInvoices.js:830 🔄 Începe migrarea distributionHistory...
-useInvoices.js:897 ✅ Migrare completă: 0 din 1 facturi actualizate
-MaintenanceView.js:349 ✅ Migrare completă: {success: true, updated: 0, total: 1}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-ExpenseList.js:815 Cheltuială: Întreținere lift
-ExpenseList.js:816   Tip: apartment
-ExpenseList.js:817   Suma introdusă: 100.00
-ExpenseList.js:818   Suma așteptată: 100.00
-ExpenseList.js:819   Suma distribuită: 100.00
-ExpenseList.js:820   Knows expected: true
-ExpenseList.js:821   Is fully distributed: true
-ExpenseList.js:822   Should include: false
-ExpenseList.js:823   Diferență: 0.00
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
-useExpenseConfigurations.js:39 🔍 [getExpenseConfig] INPUT: Întreținere lift
-useExpenseConfigurations.js:59 🔍 [getExpenseConfig] EXTRACTED - ID: expense-type-elevator Name: Întreținere lift
-useExpenseConfigurations.js:68 🔍 [getExpenseConfig] FIRESTORE CONFIG: {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment', isCustom: false}
-useExpenseConfigurations.js:175 ✅ [getExpenseConfig] RETURN (from firestore): {id: 'expense-type-elevator', name: 'Întreținere lift', distributionType: 'apartment'}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
+useSheetManagement.js:103 📄 Sheet raw data: {id: '7NrDCXuCoscvxr23aEoE', monthYear: 'decembrie 2025', status: 'in_progress', statusType: 'string', statusMatch_IN_PROGRESS: true, …}
+useSheetManagement.js:116 🟢 Found IN_PROGRESS sheet: {id: '7NrDCXuCoscvxr23aEoE', monthYear: 'decembrie 2025', hasMaintenanceTable: true, status: 'in_progress'}
+useSheetManagement.js:103 📄 Sheet raw data: {id: 'UtMVd6CFLqhLb3uRsZAF', monthYear: 'noiembrie 2025', status: 'published', statusType: 'string', statusMatch_IN_PROGRESS: false, …}
+useSheetManagement.js:125 🔄 Found published sheet: {id: 'UtMVd6CFLqhLb3uRsZAF', monthYear: 'noiembrie 2025', hasMaintenanceTable: true, maintenanceTableLength: 4, hasExpenses: true, …}
+useSheetManagement.js:135 📦 Published sheet expenses: [
+  {
+    "addedToSheet": "2025-11-06T15:40:11.207Z",
+    "isUnitBased": true,
+    "receptionMode": "per_association",
+    "amountsByBlock": {},
+    "invoiceData": {
+      "notes": "",
+      "totalInvoiceAmount": "1000",
+      "invoiceNumber": "Fact1",
+      "invoiceDate": "2025-11-05",
+      "invoiceAmount": "1000",
+      "currentDistribution": "100",
+      "dueDate": "2025-11-21",
+      "isPartialDistribution": false
+    },
+    "updatedAt": "2025-11-06T15:42:09.255Z",
+    "name": "Apă caldă",
+    "amountsByStair": {},
+    "amount": 0,
+    "dueDate": "",
+    "supplier": "",
+    "unitPrice": 10,
+    "separateInvoicesData": null,
+    "consumptionData": [],
+    "invoiceNumber": "",
+    "individualAmounts": {},
+    "id": "1762443611207",
+    "category": "",
+    "expenseTypeId": "expense-type-hot-water",
+    "distributionType": "consumption",
+    "sheetId": "UtMVd6CFLqhLb3uRsZAF",
+    "consumption": {
+      "1762443575864": 2,
+      "1762443575970": 3,
+      "1762443576076": 3,
+      "1762443575757": 2
+    },
+    "isDistributed": true,
+    "billAmount": 100,
+    "month": "noiembrie 2025"
+  }
+]
+useSheetManagement.js:150 📊 Sheets loaded: {totalSheets: 2, inProgress: {…}, published: {…}, archived: 0}
+useSheetManagement.js:157 🔄 Updating React state: {settingCurrentSheet: '7NrDCXuCoscvxr23aEoE', settingPublishedSheet: 'UtMVd6CFLqhLb3uRsZAF'}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
+DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
+DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+MaintenanceView.js:219 📋 MaintenanceView distributedExpenses: {expensesLength: 0, expensesNames: Array(0), isMonthReadOnly: true}
+MaintenanceView.js:219 📋 MaintenanceView distributedExpenses: {expensesLength: 0, expensesNames: Array(0), isMonthReadOnly: true}
+MaintenanceView.js:393 📦 MaintenanceView - Sheet selection: {currentMonth: 'noiembrie 2025', currentSheetMonth: 'decembrie 2025', publishedSheetMonth: 'noiembrie 2025', activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', activeSheetMonth: 'noiembrie 2025', …}
+MaintenanceView.js:393 📦 MaintenanceView - Sheet selection: {currentMonth: 'noiembrie 2025', currentSheetMonth: 'decembrie 2025', publishedSheetMonth: 'noiembrie 2025', activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', activeSheetMonth: 'noiembrie 2025', …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
+BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+MaintenanceView.js:372 🔄 Pornesc migrarea automată a distributionHistory...
+useInvoices.js:822 🔄 Începe migrarea distributionHistory...
+useInvoices.js:889 ✅ Migrare completă: 0 din 1 facturi actualizate
+MaintenanceView.js:375 ✅ Migrare completă: {success: true, updated: 0, total: 1}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00
+ExpenseList.js:801 Cheltuială: Apă caldă
+ExpenseList.js:802   Tip: consumption
+ExpenseList.js:803   Suma introdusă: 100.00
+ExpenseList.js:804   Suma așteptată: 100.00
+ExpenseList.js:805   Suma distribuită: 100.00
+ExpenseList.js:806   Knows expected: true
+ExpenseList.js:807   Is fully distributed: true
+ExpenseList.js:808   Should include: false
+ExpenseList.js:809   Diferență: 0.00

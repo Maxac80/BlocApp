@@ -46,6 +46,7 @@ const ExpenseList = ({
   updatePendingIndexes,
   getDisabledExpenseTypes,
   getApartmentParticipation,
+  totalExpenseTypes = 0, // Total cheltuieli active configurate
   // Props pentru facturi
   invoices,
   getInvoiceForExpense
@@ -929,7 +930,7 @@ const ExpenseList = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">
-            {filteredExpenses.length} {filteredExpenses.length === 1 ? 'cheltuială distribuită' : 'cheltuieli distribuite'}
+            {filteredExpenses.length} din {totalExpenseTypes} cheltuieli distribuite
             {getFilterInfo().type !== 'all' && (
               <span className="text-sm font-normal text-gray-600 ml-2">
                 ({getFilterInfo().blockName} - {getFilterInfo().stairName})

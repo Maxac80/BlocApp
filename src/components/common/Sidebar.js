@@ -15,13 +15,9 @@ const Sidebar = ({
   activeUser,
   setCurrentMonth
 }) => {
-  // Funcția pentru a naviga la Dashboard cu luna curentă
+  // Funcția pentru a naviga la Dashboard
   const handleBlocAppClick = () => {
-    // Setez luna curentă calendaristică
-    const currentDate = new Date();
-    const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-    setCurrentMonth(currentMonthStr);
-    
+    // Nu mai resetăm luna - păstrăm luna selectată de utilizator
     // Navighează la Dashboard
     handleNavigation("dashboard");
   };

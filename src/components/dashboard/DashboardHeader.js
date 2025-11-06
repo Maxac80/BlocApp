@@ -89,13 +89,15 @@ const DashboardHeader = ({
               
               {(() => {
                 const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
-                if (monthType === 'historic' && isMonthReadOnly) {
+                // isMonthReadOnly vine acum ca boolean direct, nu ca funcție
+                const isReadOnly = isMonthReadOnly;
+                if (monthType === 'historic' && isReadOnly) {
                   return (
                     <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
                       📚 ARHIVATĂ
                     </span>
                   );
-                } else if (isMonthReadOnly) {
+                } else if (isReadOnly) {
                   return (
                     <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
                       📋 PUBLICATĂ

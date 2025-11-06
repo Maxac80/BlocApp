@@ -1,5 +1,333 @@
 ---
 
+## 📚 **DOCUMENTAȚIE TEHNICĂ DEDICATĂ**
+
+Pentru subiecte complexe care necesită documentație detaliată, am creat fișiere separate:
+
+- **[PUBLISHING_SYSTEM.md](./PUBLISHING_SYSTEM.md)** - Sistemul complet de publicare sheet-uri, transfer solduri între luni, și logica de calcul restanțe/penalități (creat 06 noiembrie 2025)
+
+---
+
+### 🎯 **FIX MODAL DETALII CHELTUIELI + ELIMINARE DEPENDENȚE LUNA CURENTĂ - 07 NOIEMBRIE 2025**
+
+#### **CONTEXT**
+Sesiune dedicată corectării afișării cheltuielilor în modalul "Detalii Întreținere" pentru lunile publicate și eliminarea folosirii greșite a datei curente din calendar în locul lunii selectate de utilizator.
+
+#### **PROBLEMA 1: Modal Detalii Întreținere nu afișa cheltuielile**
+
+**Simptome:**
+- În **Dashboard**: Modalul "Detalii Întreținere" afișa "Nu există detalii despre cheltuieli"
+- În **Calcul Întreținere**: Același comportament pentru lunile publicate
+- Totalurile erau corecte, dar lista de cheltuieli era goală
+
+**Cauza:**
+Pentru lunile publicate, `expenses` prop venea din sursa greșită:
+- Dashboard primea `expenses` din Firestore global (gol pentru luna publicată)
+- MaintenanceView primea `expenses={currentSheet?.expenses}` în loc de `activeSheet?.expenses`
+
+**Soluții implementate:**
+
+1. **BlocApp.js (linia 599):**
+```javascript
+// ❌ ÎNAINTE
+expenses={expenses} // Din Firestore global
+
+// ✅ DUPĂ
+expenses={currentSheet?.expenses || []} // Din sheet publicat
+```
+
+2. **BlocApp.js (linia 634):**
+```javascript
+// ❌ ÎNAINTE
+expenses={currentSheet?.expenses || []} // Mereu sheet IN_PROGRESS
+
+// ✅ DUPĂ
+expenses={activeSheet?.expenses || []} // Sheet activ (published SAU in-progress)
+```
+
+3. **DashboardView.js (linii 78-107):**
+```javascript
+// Simplificat handler să folosească direct maintenanceData din publishedSheet
+// care CONȚINE expenseDetails salvat la publicare
+const handleOpenMaintenanceBreakdown = (apartmentData) => {
+  const fullData = maintenanceData?.find(data => data.apartmentId === apartmentData.apartmentId);
+  // Merge cu sumele actualizate de plăți
+  const mergedData = { ...fullData, restante: apartmentData.restante, ... };
+  setSelectedMaintenanceData(mergedData);
+};
+```
+
+4. **MaintenanceView.js (linii 317-329):**
+```javascript
+// Similar cu Dashboard - folosește datele din maintenanceData direct
+const handleOpenMaintenanceBreakdown = (apartmentData) => {
+  // apartmentData vine din updatedMaintenanceData și conține expenseDetails
+  setSelectedMaintenanceData(apartmentData);
+};
+```
+
+5. **useSheetManagement.js (linii 611-612):**
+```javascript
+// Adăugat logging pentru debug
+firstRowHasExpenseDetails: !!cleanedMaintenanceData?.[0]?.expenseDetails,
+firstRowExpenseDetailsKeys: Object.keys(cleanedMaintenanceData?.[0]?.expenseDetails || {})
+```
+
+**Rezultat:** ✅ Modalul afișează corect cheltuielile atât în Dashboard cât și în Calcul Întreținere
+
+---
+
+#### **PROBLEMA 2: Folosire greșită a datei curente din calendar**
+
+**Context:**
+Utilizatorul a clarificat că `monthYear` din sheet **NU este data curentă calendaristică**, ci doar un **LABEL/NUME** pe care îl setează manual în Setări. Poate fi orice text: "Noiembrie 2025", "Luna 1", "Iarna 2025", etc.
+
+**Probleme găsite:**
+
+| Fișier | Linie | Problema | Impact |
+|--------|-------|----------|--------|
+| `Sidebar.js` | 21-23 | Resetare la data curentă la click pe logo | 🔴 CRITIC - Pierde luna selectată |
+| `useMonthManagement.js` | 49 | Inițializare cu `new Date()` | 🔴 CRITIC - Prima afișare greșită |
+| `useMonthManagement.js` | 352-358 | Verificare lună pentru primul sheet | 🔴 CRITIC - Blocare publicare |
+| `AccountingView.js` | 311 | Calcul `currentMonthStr` inutil | 🟡 MEDIU - Variabilă nefolosită |
+| `DashboardView.js` | 44 | Calcul `currentMonthStr` inutil | 🟡 MEDIU - Variabilă nefolosită |
+
+**Soluții implementate:**
+
+1. **Sidebar.js (linii 18-23):**
+```javascript
+// ❌ ÎNAINTE
+const handleBlocAppClick = () => {
+  const currentDate = new Date();
+  const currentMonthStr = currentDate.toLocaleDateString("ro-RO", {...});
+  setCurrentMonth(currentMonthStr); // Resetare la noiembrie 2025
+  handleNavigation("dashboard");
+};
+
+// ✅ DUPĂ
+const handleBlocAppClick = () => {
+  // Nu mai resetăm luna - păstrăm luna selectată de utilizator
+  handleNavigation("dashboard");
+};
+```
+
+2. **useMonthManagement.js (linii 48-54):**
+```javascript
+// ❌ ÎNAINTE
+const [currentMonth, setCurrentMonth] = useState(
+  new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
+);
+
+// ✅ DUPĂ
+const [currentMonth, setCurrentMonth] = useState(() => {
+  if (publishedSheet?.monthYear) return publishedSheet.monthYear;
+  if (currentSheet?.monthYear) return currentSheet.monthYear;
+  // Fallback doar dacă nu există sheet-uri
+  return new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+});
+```
+
+3. **useMonthManagement.js (linii 350-351):**
+```javascript
+// ❌ ÎNAINTE
+if (isFirstSheet) {
+  const currentDate = new Date();
+  const currentMonthStr = currentDate.toLocaleDateString(...);
+  if (month !== currentMonthStr) return false; // Blochează dacă nu e luna curentă
+}
+
+// ✅ DUPĂ
+// Pentru primul sheet, nu mai verificăm luna calendaristică
+// Sheet-ul poate avea orice label dorit de utilizator
+```
+
+4. **AccountingView.js (linia 311):** Șters `const currentMonthStr = new Date()...` (nefolosit)
+
+5. **DashboardView.js (linia 44):** Șters `const currentMonthStr = new Date()...` (nefolosit)
+
+**Arhitectura corectă clarificată:**
+
+```javascript
+// Sheet în Firebase
+{
+  monthYear: "noiembrie 2025",        // LABEL/IDENTIFICATOR (setabil manual în Setări)
+  customMonthName: "Luna 1",          // LABEL PERSONALIZAT OPȚIONAL (afișat în UI)
+  status: "PUBLISHED",                // Status: IN_PROGRESS / PUBLISHED / ARCHIVED
+  // ... alte câmpuri
+}
+
+// Dropdown afișează
+label: sheet.customMonthName || sheet.monthYear  // "Luna 1" SAU "noiembrie 2025"
+value: sheet.monthYear                            // Mereu "noiembrie 2025" (identificator)
+
+// Când utilizatorul selectează → setCurrentMonth(sheet.monthYear)
+// Aplicația găsește sheet-ul cu monthYear === currentMonth
+```
+
+**Rezultat:** ✅ Aplicația nu mai depinde de data curentă din calendar - folosește doar label-ul selectat
+
+---
+
+#### **FIȘIERE MODIFICATE**
+
+**Frontend (Views & Components):**
+- `src/components/common/Sidebar.js` - Eliminat resetare la data curentă
+- `src/components/views/DashboardView.js` - Fix expenses pentru modal + eliminat currentMonthStr
+- `src/components/views/MaintenanceView.js` - Simplificat handler modal + adăugat debug logging
+- `src/components/views/AccountingView.js` - Eliminat currentMonthStr inutil
+- `src/components/expenses/ExpenseList.js` - Fix gramatică "cheltuieli distribuite"
+
+**Hooks:**
+- `src/hooks/useMonthManagement.js` - Inițializare corectă currentMonth + eliminat verificări calendar
+- `src/hooks/useSheetManagement.js` - Adăugat logging pentru debug expenseDetails
+
+**Core:**
+- `src/BlocApp.js` - Fix props expenses pentru Dashboard și MaintenanceView
+
+#### **CE AM PĂSTRAT (Fallback-uri legitime)**
+
+- ✅ Timestamps de audit (`createdAt`, `updatedAt`, `publishedAt`) - folosesc timpul real
+- ✅ Numere chitanță - folosesc data emisiunii reale
+- ✅ Verificări facturi restante (`isOverdue`) - compară cu data reală
+- ✅ Crearea sheet-ului inițial la înregistrare - folosește data curentă ca label inițial
+- ✅ Fallback-uri în `availableMonths` când nu există sheet-uri în Firebase
+
+#### **IMPACT & BENEFICII**
+
+1. **UX îmbunătățit:** Modalul "Detalii Întreținere" afișează corect toate cheltuielile
+2. **Consistență:** Luna selectată se păstrează la navigare (click pe logo nu mai resetează)
+3. **Flexibilitate:** Utilizatorul poate seta orice label dorește pentru sheet-uri (nu e obligat la luni calendaristice)
+4. **Scalabilitate:** Suport implicit pentru luni arhivate (dropdown afișează toate sheet-urile)
+5. **Debugging:** Logging îmbunătățit pentru diagnosticare probleme
+
+#### **VERIFICĂRI NECESARE**
+
+- [ ] Testare modal "Detalii Întreținere" pe luni publicate cu plăți
+- [ ] Testare editare label-uri din Setări → Configurare Luni
+- [ ] Verificare navigare între luni (published → in-progress → archived)
+- [ ] Verificare că dropdown afișează corect `customMonthName` când este setat
+
+---
+
+### 🔄 **REFACTORING UI ȘI FIX TRANSFER SOLDURI - 06 NOIEMBRIE 2025**
+
+#### **CONTEXT**
+Sesiune dedicată îmbunătățirii UX și corectării logicii de transfer solduri între luni la publicare.
+
+#### **MODIFICĂRI UI/UX**
+
+**1. Simplificare Navigare Luni**
+- **Eliminat:** Tab-uri luni (noiembrie/decembrie) din `MaintenanceSummary.js`
+- **Păstrat:** Doar dropdown din `DashboardHeader.js` pentru navigare
+- **Motivație:** Interfață mai curată, single source of truth pentru navigare
+
+**2. Reorganizare Butoane Acțiuni**
+- **Mutat:** Butoane "Publică Luna" și "Depublică Luna" pe linia cu tab-urile scărilor
+- **Poziționare:** Dreapta (după "Toate", "Bloc B4 - Scara A")
+- **Styling:** Butoane mici (`px-4 py-2`, `text-sm`) pentru consistență
+- **Fișier:** `src/components/views/MaintenanceView.js` (liniile 1000-1063)
+
+**3. Eliminare Container "Distribuie Cheltuială"**
+- **Șters:** Container mare cu 💰 emoji și mesaj "X cheltuieli disponibile"
+- **Mutat:** Buton "Distribuie Cheltuială" (fără iconița +) pe linia cu scările
+- **Locație:** `src/components/views/MaintenanceView.js` (liniile 915-984 șterse, 1001-1016 adăugate)
+
+**4. Îmbunătățire Contor Cheltuieli**
+- **Înainte:** "0 cheltuieli distribuite"
+- **Acum:** "0 din 4 cheltuieli distribuite" (X din Y)
+- **Prop nou:** `totalExpenseTypes` în `ExpenseList.js`
+- **Fișier:** `src/components/expenses/ExpenseList.js` (linia 933)
+
+#### **CORECȚII CRITICE TRANSFER SOLDURI**
+
+**Problema 1: Câmp Greșit pentru Întreținere**
+```javascript
+// ❌ GREȘIT (linia 102 - înainte)
+const totalIntretinere = apartmentRow.totalIntretinere || 0; // Câmp inexistent!
+
+// ✅ CORECT (linia 102 - după)
+const currentMaintenance = apartmentRow.currentMaintenance || 0; // Câmpul corect
+```
+
+**Problema 2: Transfer Incorect Total Datorat**
+```javascript
+// ❌ GREȘIT (versiune veche)
+const totalDatorat = apartmentRow.totalDatorat || 0; // 42 RON (tot!)
+const restante = Math.max(0, totalDatorat - totalPaid); // Amestecă totul
+
+// ✅ CORECT (versiune nouă - liniile 101-119)
+const currentMaintenance = apartmentRow.currentMaintenance || 0; // 29 RON
+const restanteVechi = apartmentRow.restante || 0;               // 9 RON
+const penalitatiVechi = apartmentRow.penalitati || 0;           // 13 RON
+
+const restanteNoi = Math.max(0, currentMaintenance - totalPaid);
+const restanteTotale = restanteVechi + restanteNoi; // 9 + 29 = 38 RON
+
+return {
+  restante: restanteTotale,      // 38.00 RON (separat!)
+  penalitati: penalitatiVechi    // 13.00 RON (separat!)
+};
+```
+
+**Exemplu Concret - Ap. 1:**
+- **Noiembrie (publicat):**
+  - currentMaintenance: 29.00 RON
+  - restante (din septembrie): 9.00 RON
+  - penalitati: 13.00 RON
+  - totalDatorat: 51.00 RON
+  - plăți: 0.00 RON
+
+- **Decembrie (transfer - GREȘIT înainte):**
+  - Restanță: 42.00 RON ❌ (totalDatorat în loc de doar întreținere)
+
+- **Decembrie (transfer - CORECT acum):**
+  - Restanță: 38.00 RON ✅ (9 + 29)
+  - Penalități: 13.00 RON ✅ (transferate separat)
+
+#### **FIȘIERE MODIFICATE**
+
+| Fișier | Linii | Modificare |
+|--------|-------|------------|
+| `MaintenanceSummary.js` | 1-64 | Simplificat complet - elimină tab-uri luni, afișează doar `tabContent` |
+| `MaintenanceView.js` | 915-984 | Șters container "Distribuie Cheltuială" |
+| `MaintenanceView.js` | 1000-1063 | Adăugat butoane pe linia scărilor (Distribuie/Publică/Depublică) |
+| `ExpenseList.js` | 49, 933 | Adăugat `totalExpenseTypes` prop și afișare "X din Y" |
+| `useMaintenanceCalculation.js` | 92-134 | Corectat CAZ 2 - folosește `currentMaintenance` și separă componente |
+
+#### **PRINCIPII ÎNVĂȚATE**
+
+1. **Separare Componente Financiare**
+   - Restanțele și penalitățile sunt câmpuri SEPARATE
+   - Nu amesteca `currentMaintenance` cu `totalDatorat`
+   - Transferă fiecare componentă individual
+
+2. **Câmpuri în maintenanceTable**
+   - `currentMaintenance` = întreținerea lunii curente (ȘI LUNAR)
+   - `restante` = întrețineri neplătite din luni anterioare
+   - `penalitati` = penalități acumulate (rămân constante la transfer)
+   - `totalDatorat` = suma tuturor (doar pentru afișare)
+
+3. **Logica de Transfer**
+   ```
+   Restanță nouă = restanțe vechi + întreținere neplătită curent
+   Penalități = se transferă separat, nu se recalculează
+   ```
+
+#### **CHECKLIST VALIDARE TRANSFER**
+
+La publicare, verifică că:
+- [ ] Restanța = sum(restanțe vechi, întreținere neplătită)
+- [ ] Penalitățile se transferă separat
+- [ ] currentMaintenance (nu totalDatorat!) se folosește pentru calcul
+- [ ] Plățile scad doar din întreținerea curentă
+- [ ] Console.log afișează valorile corecte pentru debug
+
+#### **DOCUMENTAȚIE COMPLETĂ**
+
+Pentru detalii complete despre sistemul de publicare, vezi **[PUBLISHING_SYSTEM.md](./PUBLISHING_SYSTEM.md)**
+
+---
+
 ### 🗂️ **MIGRARE: COLECȚIA INVOICES LA STRUCTURĂ NESTED - 05 NOIEMBRIE 2025**
 
 #### **CONTEXT ȘI DECIZIE ARHITECTURALĂ**

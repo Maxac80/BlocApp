@@ -1,14 +1,14 @@
 // src/components/dashboard/DashboardMaintenanceTable.js
 import React, { useState } from 'react';
 import { Calculator, Search } from 'lucide-react';
-import { MaintenanceTableSimple, MaintenanceTableDetailed } from '../tables';
+import { MaintenanceTableSimple } from '../tables';
 
 const DashboardMaintenanceTable = ({
   maintenanceData,
   currentMonth,
   isMonthReadOnly,
   onOpenPaymentModal,
-  exportPDFAvizier,
+  onOpenMaintenanceBreakdown,
   handleNavigation,
   association,
   blocks,
@@ -17,7 +17,6 @@ const DashboardMaintenanceTable = ({
   expenses,
   isHistoricMonth = false
 }) => {
-  const [activeMaintenanceTab, setActiveMaintenanceTab] = useState("simple");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
   if (!maintenanceData || maintenanceData.length === 0) {
@@ -45,7 +44,21 @@ const DashboardMaintenanceTable = ({
   // 🆕 FAZA 6: Filtrează datele după scară selectată
   const stairFilteredData = selectedStairTab === 'all'
     ? maintenanceData
-    : maintenanceData.filter(data => data.stairId === selectedStairTab);
+    : maintenanceData.filter(data => {
+        console.log('🔍 Filtering data:', {
+          apartmentId: data.apartmentId,
+          dataStairId: data.stairId,
+          selectedStairTab,
+          match: data.stairId === selectedStairTab
+        });
+        return data.stairId === selectedStairTab;
+      });
+
+  console.log('📊 Stair filter results:', {
+    selectedStairTab,
+    totalData: maintenanceData?.length || 0,
+    filteredData: stairFilteredData?.length || 0
+  });
 
   // Filtrează datele în funcție de căutare
   const filteredData = stairFilteredData.filter(data => {
@@ -64,24 +77,23 @@ const DashboardMaintenanceTable = ({
   ) || [];
 
   return (
-    <div className={`rounded-xl shadow-lg overflow-hidden ${isMonthReadOnly ? 'bg-purple-50 border-2 border-purple-200' : 'bg-white'}`}>
-      <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-purple-100' : 'bg-indigo-50'}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-purple-800' : ''}`}>
-              📊 Tabel Întreținere - {currentMonth} 
-              {isMonthReadOnly && <span className="text-sm bg-purple-200 px-2 py-1 rounded-full ml-2">(PUBLICATĂ)</span>}
+    <div className="rounded-xl shadow-lg overflow-hidden bg-white border-2 border-gray-200">
+      <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-shrink-0">
+            <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
+              📊 Tabel Întreținere - {currentMonth}
             </h3>
             {association && getAssociationApartments().length > 0 && (
               <p className="text-sm text-gray-600 mt-1">
                 {(() => {
                   const associationBlocks = blocks?.filter(block => block.associationId === association.id) || [];
-                  const associationStairs = stairs?.filter(stair => 
+                  const associationStairs = stairs?.filter(stair =>
                     associationBlocks.some(block => block.id === stair.blockId)
                   ) || [];
                   const apartmentCount = getAssociationApartments().length;
                   const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
-                  
+
                   let structureText = "";
                   if (associationBlocks.length === 1 && associationStairs.length === 1) {
                     structureText = `${associationBlocks[0].name} - ${associationStairs[0].name}`;
@@ -90,103 +102,46 @@ const DashboardMaintenanceTable = ({
                   } else {
                     structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
                   }
-                  
+
                   return `${association.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
                 })()}
               </p>
             )}
-            <div className="flex items-center space-x-2 mt-1">
-              {isMonthReadOnly ? (
-                <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                  📋 PUBLICATĂ
-                </span>
-              ) : (
-                <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                  🔧 ÎN LUCRU
-                </span>
-              )}
-            </div>
           </div>
-          <div className="flex space-x-2">
-            {/* Buton Export PDF */}
-            {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && (
-              <button 
-                onClick={exportPDFAvizier}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
-                title="Exportă PDF pentru avizier"
-              >
-                📄 Export PDF
-              </button>
-            )}
-            {/* Buton către pagina completă */}
-            <button 
-              onClick={() => handleNavigation("maintenance")}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-            >
-              Detalii Complete
-            </button>
-          </div>
-        </div>
-        
-        {/* Căutare și tabs */}
-        <div className="flex items-center justify-between border-t border-indigo-100 pt-3">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setActiveMaintenanceTab("simple")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeMaintenanceTab === "simple" 
-                  ? "bg-indigo-600 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Tabel Simplificat
-            </button>
-            <button
-              onClick={() => setActiveMaintenanceTab("detailed")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeMaintenanceTab === "detailed" 
-                  ? "bg-indigo-600 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Tabel Detaliat
-            </button>
-          </div>
-          
-          {/* Bara de căutare */}
-          <div className="relative">
+
+          {/* Bara de căutare mutată în header */}
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Caută apartament, proprietar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-64"
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full"
             />
           </div>
         </div>
       </div>
 
-      {/* 🆕 FAZA 6: Tab-uri pentru scări */}
+      {/* Tab-uri pentru scări */}
       {associationStairs.length > 0 && (
         <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200" style={{ position: 'sticky' }}>
-          <div className="flex overflow-x-auto px-4">
+          <div className="flex overflow-x-auto">
             {/* Tab "Toate" */}
             <button
               onClick={() => setSelectedStairTab('all')}
               className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
                 selectedStairTab === 'all'
-                  ? 'bg-blue-50 text-blue-700 border-blue-700'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-purple-100 text-purple-700 border-purple-700'
+                  : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-purple-100'
               }`}
             >
-              Toate ({maintenanceData.length})
+              Toate
             </button>
 
             {/* Tab pentru fiecare scară */}
             {associationStairs.map(stair => {
               const block = associationBlocks.find(b => b.id === stair.blockId);
-              const stairDataCount = maintenanceData.filter(data => data.stairId === stair.id).length;
 
               return (
                 <button
@@ -194,11 +149,11 @@ const DashboardMaintenanceTable = ({
                   onClick={() => setSelectedStairTab(stair.id)}
                   className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
                     selectedStairTab === stair.id
-                      ? 'bg-blue-50 text-blue-700 border-blue-700'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-purple-100 text-purple-700 border-purple-700'
+                      : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-purple-100'
                   }`}
                 >
-                  {block?.name} - {stair.name} ({stairDataCount})
+                  {block?.name} - {stair.name}
                 </button>
               );
             })}
@@ -207,24 +162,14 @@ const DashboardMaintenanceTable = ({
       )}
 
       <div className="overflow-x-auto">
-        {activeMaintenanceTab === "simple" ? (
-          <MaintenanceTableSimple
-            maintenanceData={filteredData}
-            isMonthReadOnly={isMonthReadOnly}
-            togglePayment={() => {}} // Nu e disponibil în Dashboard
-            onOpenPaymentModal={onOpenPaymentModal}
-            isHistoricMonth={isHistoricMonth}
-          />
-        ) : (
-          <MaintenanceTableDetailed
-            maintenanceData={filteredData}
-            expenses={expenses || []}
-            association={association}
-            isMonthReadOnly={isMonthReadOnly}
-            onOpenPaymentModal={onOpenPaymentModal}
-            isHistoricMonth={isHistoricMonth}
-          />
-        )}
+        <MaintenanceTableSimple
+          maintenanceData={filteredData}
+          isMonthReadOnly={isMonthReadOnly}
+          togglePayment={() => {}} // Nu e disponibil în Dashboard
+          onOpenPaymentModal={onOpenPaymentModal}
+          onOpenMaintenanceBreakdown={onOpenMaintenanceBreakdown}
+          isHistoricMonth={isHistoricMonth}
+        />
       </div>
     </div>
   );

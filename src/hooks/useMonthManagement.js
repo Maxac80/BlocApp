@@ -45,9 +45,13 @@ export const useMonthManagement = (associationId) => {
   } = useSheetManagement(associationId);
 
   // State pentru compatibilitate cu vechea interfață
-  const [currentMonth, setCurrentMonth] = useState(
-    new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" })
-  );
+  // Inițializează cu luna activă din sheet-uri (published > current > fallback)
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (publishedSheet?.monthYear) return publishedSheet.monthYear;
+    if (currentSheet?.monthYear) return currentSheet.monthYear;
+    // Fallback doar dacă nu există sheet-uri
+    return new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+  });
 
   // Actualizează luna curentă când se schimbă sheet-ul - prioritizează published sheet
   useEffect(() => {
@@ -108,27 +112,7 @@ export const useMonthManagement = (associationId) => {
     return months;
   }, [currentSheet, publishedSheet, archivedSheets]);
 
-  // Construiește monthStatuses din sheet-uri
-  const monthStatuses = useMemo(() => {
-    const statuses = {};
-
-    sheets.forEach(sheet => {
-      let status = "in_lucru";
-      if (sheet.status === SHEET_STATUS.PUBLISHED) {
-        status = "afisata";
-      } else if (sheet.status === SHEET_STATUS.ARCHIVED) {
-        status = "arhivata";
-      }
-
-      statuses[sheet.monthYear] = {
-        status: status,
-        updatedAt: sheet.updatedAt,
-        publishedAt: sheet.publishedAt
-      };
-    });
-
-    return statuses;
-  }, [sheets, SHEET_STATUS]);
+  // 🗑️ ELIMINAT: monthStatuses - nu mai e necesar, folosim direct currentSheet/publishedSheet
 
   // Inițializarea - creează primul sheet
   const initializeMonths = useCallback(async (associationData, explicitAssociationId = null) => {
@@ -153,19 +137,7 @@ export const useMonthManagement = (associationId) => {
     }
   }, [createInitialSheet]); // Eliminăm associationId din dependențe pentru că folosim explicitAssociationId
 
-  // Get month status
-  const getMonthStatus = useCallback((month) => {
-    if (!monthStatuses || !monthStatuses[month]) {
-      return "in_lucru";
-    }
-    return monthStatuses[month].status || "in_lucru";
-  }, [monthStatuses]);
-
-  // Set month status - nu mai e necesar, se face automat prin publish
-  const setMonthStatus = useCallback((month, status) => {
-    console.log('setMonthStatus deprecated - status changes through publishing');
-    // Nu facem nimic - statusul se schimbă doar prin publicare
-  }, []);
+  // 🗑️ ELIMINAT: getMonthStatus și setMonthStatus - folosim direct sheet.status din currentSheet/publishedSheet
 
   // Get month type (current/next/historic)
   const getMonthType = useCallback((month) => {
@@ -323,11 +295,11 @@ export const useMonthManagement = (associationId) => {
     return currentSheet && currentSheet.monthYear === month;
   }, [currentSheet]);
 
-  // Check if month is read-only (published)
+  // Check if month is read-only (published) - verifică direct sheet-ul publicat
   const isMonthReadOnly = useCallback((month) => {
-    const status = getMonthStatus(month);
-    return status === "afisata";
-  }, [getMonthStatus]);
+    // O lună este read-only dacă există un sheet publicat pentru acea lună
+    return !!(publishedSheet && publishedSheet.monthYear === month);
+  }, [publishedSheet]);
 
   // Helper pentru a determina dacă butonul "Ajustări Solduri" trebuie să apară
   const shouldShowAdjustButton = useCallback((month) => {
@@ -364,30 +336,19 @@ export const useMonthManagement = (associationId) => {
   }, []);
 
   const shouldShowPublishButton = useCallback((month, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments) => {
-    // Log comentat pentru a reduce "zgomotul" în consolă
-    // console.log('\n🔍 shouldShowPublishButton called for month:', month);
-
     // Verifică mai întâi condițiile de bază pentru publicare
-    const canPublishBasic = currentSheet && currentSheet.monthYear === month && getMonthStatus(month) === "in_lucru";
+    // Butonul apare doar pentru sheet-ul curent (IN_PROGRESS)
+    const canPublishBasic = currentSheet && currentSheet.monthYear === month && currentSheet.status === SHEET_STATUS.IN_PROGRESS;
 
     // Pentru primul sheet (când nu există sheet-uri create încă)
-    const isFirstSheet = !currentSheet && !publishedSheet && sheets.length === 0 && getMonthStatus(month) === "in_lucru";
-    // console.log('   isFirstSheet:', isFirstSheet);
+    const isFirstSheet = !currentSheet && !publishedSheet && sheets.length === 0;
 
     if (!canPublishBasic && !isFirstSheet) {
       return false;
     }
 
-    // Pentru primul sheet, verifică și luna
-    if (isFirstSheet) {
-      const currentDate = new Date();
-      const currentMonthStr = currentDate.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-      // console.log('   Checking first sheet month:', { param: month, current: currentMonthStr });
-      if (month !== currentMonthStr) {
-        // console.log('   ❌ FAILED: Month mismatch for first sheet');
-        return false;
-      }
-    }
+    // Pentru primul sheet, nu mai verificăm luna calendaristică
+    // Sheet-ul poate avea orice label dorit de utilizator
 
     // CONDIȚIA 1: Toate cheltuielile active trebuie să fie adăugate
     if (typeof getAvailableExpenseTypes === 'function') {
@@ -415,9 +376,8 @@ export const useMonthManagement = (associationId) => {
     // Publicarea efectivă va verifica din nou toate condițiile
 
     // Toate condițiile sunt îndeplinite
-    // console.log('   ✅ SUCCESS: All conditions met - button should show!\n');
     return true;
-  }, [currentSheet, publishedSheet, sheets, getMonthStatus]);
+  }, [currentSheet, publishedSheet, sheets, SHEET_STATUS]);
 
   // Get available months (pentru compatibilitate cu componente)
   const getAvailableMonths = useCallback((expenses = []) => {
@@ -434,7 +394,7 @@ export const useMonthManagement = (associationId) => {
         value: publishedSheet.monthYear,
         label: publishedSheet.monthYear,
         type: "current",
-        status: "afisata"
+        status: SHEET_STATUS.PUBLISHED
       };
     }
     if (currentSheet) {
@@ -442,7 +402,7 @@ export const useMonthManagement = (associationId) => {
         value: currentSheet.monthYear,
         label: currentSheet.monthYear,
         type: "current",
-        status: "in_lucru"
+        status: SHEET_STATUS.IN_PROGRESS
       };
     }
     // Fallback la luna curentă
@@ -450,7 +410,7 @@ export const useMonthManagement = (associationId) => {
       value: currentMonth,
       label: currentMonth,
       type: "current",
-      status: "in_lucru"
+      status: SHEET_STATUS.IN_PROGRESS
     };
   }, [publishedSheet, currentSheet, currentMonth]);
 
@@ -527,7 +487,7 @@ export const useMonthManagement = (associationId) => {
         value: currentSheet.monthYear,
         label: currentSheet.monthYear,
         type: "next",
-        status: "in_lucru"
+        status: SHEET_STATUS.IN_PROGRESS
       };
     }
     // Dacă nu există sheet publicat, nu avem următoarea lună activă încă
@@ -579,15 +539,12 @@ export const useMonthManagement = (associationId) => {
 
   return {
     // State
-    monthStatuses,
     availableMonths,
     currentMonth,
     loadingStatus: loading,
 
     // Core methods
     initializeMonths,
-    getMonthStatus,
-    setMonthStatus,
     getMonthType,
     publishMonth,
     canPublishMonth,

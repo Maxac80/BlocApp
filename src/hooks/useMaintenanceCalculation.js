@@ -97,12 +97,37 @@ const useMaintenanceCalculation = ({
             const payments = publishedSheet.payments || [];
             const apartmentPayments = payments.filter(p => p.apartmentId === apartmentId);
             const totalPaid = apartmentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-            const totalDatorat = apartmentRow.totalDatorat || 0;
-            const restante = Math.max(0, totalDatorat - totalPaid);
+
+            // CORECȚIE: Separă întreținerea curentă de restanțe și penalități vechi
+            const currentMaintenance = apartmentRow.currentMaintenance || 0; // Doar întreținerea lunii
+            const restanteVechi = apartmentRow.restante || 0; // Restanțe din luni anterioare
+            const penalitatiVechi = apartmentRow.penalitati || 0; // Penalități din luni anterioare
+
+            console.log(`📊 CAZ 2 - Transfer solduri pentru ${apartmentRow.apartment}:`, {
+              apartmentId,
+              currentMaintenance,
+              restanteVechi,
+              penalitatiVechi,
+              totalPaid,
+              totalDatorat: apartmentRow.totalDatorat
+            });
+
+            // Calculează restanța nouă: întreținere neplătită
+            const restanteNoi = Math.max(0, currentMaintenance - totalPaid);
+
+            // Transferă restanțele: restanțe vechi + întreținere neplătită din luna curentă
+            const restanteTotale = restanteVechi + restanteNoi;
+
+            console.log(`💰 Calcul restanțe ${apartmentRow.apartment}:`, {
+              restanteVechi,
+              restanteNoi,
+              restanteTotale,
+              penalitatiVechi
+            });
 
             return {
-              restante: Math.round(restante * 100) / 100,
-              penalitati: 0
+              restante: Math.round(restanteTotale * 100) / 100,
+              penalitati: Math.round(penalitatiVechi * 100) / 100 // Penalitățile se transferă separat
             };
           }
         }
@@ -774,14 +799,18 @@ const useMaintenanceCalculation = ({
 
       if (expense.isUnitBased && hasExpectedAmount) {
         const expenseDiff = calculateExpenseDifferences(expense, associationApartments);
-        expenseDifferences[expense.name] = expenseDiff;
+        // Folosește ID-ul cheltuielii ca cheie
+        const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+        expenseDifferences[expenseKey] = expenseDiff;
       }
     });
 
     // PRE-CALCUL 2: Calculează distribuția cu reponderare pentru fiecare cheltuială
     const expenseDistributions = {};
     sheetExpenses.forEach(expense => {
-      expenseDistributions[expense.name] = calculateExpenseDistributionWithReweighting(
+      // Folosește ID-ul cheltuielii ca cheie
+      const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+      expenseDistributions[expenseKey] = calculateExpenseDistributionWithReweighting(
         expense,
         associationApartments
       );
@@ -795,20 +824,26 @@ const useMaintenanceCalculation = ({
 
         // Folosește distribuția pre-calculată cu reponderare
         sheetExpenses.forEach((expense) => {
-          const distribution = expenseDistributions[expense.name] || {};
+          // Folosește ID-ul cheltuielii pentru căutare
+          const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+          const distribution = expenseDistributions[expenseKey] || {};
           const apartmentExpense = distribution[apartment.id] || 0;
 
           currentMaintenance += apartmentExpense;
-          expenseDetails[expense.name] = apartmentExpense;
+          expenseDetails[expenseKey] = {
+            amount: apartmentExpense,
+            name: expense.name,
+            expense: expense // Include și obiectul complet pentru acces la toate datele
+          };
         });
 
         // 💧 ADAUGĂ DIFERENȚELE CALCULATE (pierderi/scurgeri) - SEPARAT
-        Object.keys(expenseDifferences).forEach(expenseName => {
-          const apartmentDifference = expenseDifferences[expenseName][apartment.id] || 0;
+        Object.keys(expenseDifferences).forEach(expenseKey => {
+          const apartmentDifference = expenseDifferences[expenseKey][apartment.id] || 0;
           if (apartmentDifference !== 0) {
             currentMaintenance += apartmentDifference;
-            // Salvează diferența separat pentru afișare în tabel
-            expenseDifferenceDetails[expenseName] = apartmentDifference;
+            // Salvează diferența separat pentru afișare în tabel (folosește același ID)
+            expenseDifferenceDetails[expenseKey] = apartmentDifference;
           }
         });
 
@@ -820,6 +855,7 @@ const useMaintenanceCalculation = ({
           apartment: apartment.number,
           owner: apartment.owner,
           building: apartment.buildingNumber,
+          stairId: apartment.stairId,
           persons: apartment.persons,
           currentMaintenance: Math.round(currentMaintenance * 100) / 100,
           restante,

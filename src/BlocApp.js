@@ -125,6 +125,7 @@ export default function BlocApp() {
     getMonthStatus,
     setMonthStatus,
     publishMonth,
+    unpublishSheet, // 🆕 Funcție pentru depublicare
     getMonthType,
     getAvailableMonths,
     shouldShowAdjustButton,
@@ -232,6 +233,27 @@ export default function BlocApp() {
     currentSheet: currentSheet
   });
 
+  // 🎯 SHEET SELECTION: Determină sheet-ul pentru luna selectată
+  // Logica: Dacă luna selectată = luna publicată → folosim publishedSheet (date salvate din Firebase)
+  //         Altfel → folosim currentSheet (date calculate live)
+  const activeSheet = (publishedSheet && currentMonth === publishedSheet.monthYear)
+    ? publishedSheet
+    : currentSheet;
+
+  const activeExpenses = activeSheet?.expenses || [];
+
+  console.log('🎯 Active sheet selection:', {
+    currentMonth,
+    currentSheetId: currentSheet?.id,
+    currentSheetMonth: currentSheet?.monthYear,
+    publishedSheetId: publishedSheet?.id,
+    publishedSheetMonth: publishedSheet?.monthYear,
+    selectedSheetId: activeSheet?.id,
+    selectedSheetMonth: activeSheet?.monthYear,
+    usingPublishedSheet: activeSheet === publishedSheet,
+    expensesCount: activeExpenses.length
+  });
+
   // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI (trebuie înainte de useMaintenanceCalculation și useExpenseManagement)
   const {
     configurations: expenseConfigurations,
@@ -248,7 +270,7 @@ export default function BlocApp() {
     getAssociationApartments,
     getApartmentBalance,
     setApartmentBalance,
-    maintenanceData,
+    maintenanceData: calculatedMaintenanceData,
     calculateMaintenanceWithDetails,
     calculateTotalExpenses,
     calculateTotalMaintenance,
@@ -260,7 +282,7 @@ export default function BlocApp() {
     blocks: blocks || [],
     stairs: stairs || [],
     apartments: apartments || [],
-    expenses: expenses || [],
+    expenses: activeExpenses, // 🎯 DYNAMIC: folosește expenses din sheet-ul activ
     currentMonth: currentMonth || null,
     calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
     // Pasăm soldurile din sheet-uri pentru corelația corectă
@@ -272,6 +294,22 @@ export default function BlocApp() {
     updateCurrentSheetMaintenanceTable,
     // Pasăm funcția pentru a obține configurația cheltuielii (inclusiv participarea)
     getExpenseConfig: getFirestoreExpenseConfig
+  });
+
+  // 🎯 MAINTENANCE DATA SELECTION: Pentru published sheet, folosim maintenanceTable salvat
+  // Pentru in-progress sheet, folosim calculul live
+  const maintenanceData = (activeSheet === publishedSheet && publishedSheet?.maintenanceTable)
+    ? publishedSheet.maintenanceTable
+    : calculatedMaintenanceData;
+
+  console.log('🎯 Maintenance data selection:', {
+    activeSheetId: activeSheet?.id,
+    usingPublishedSheet: activeSheet === publishedSheet,
+    hasPublishedMaintenanceTable: !!(publishedSheet?.maintenanceTable),
+    publishedTableLength: publishedSheet?.maintenanceTable?.length || 0,
+    calculatedDataLength: calculatedMaintenanceData?.length || 0,
+    finalDataLength: maintenanceData?.length || 0,
+    usingPublishedTable: maintenanceData === publishedSheet?.maintenanceTable
   });
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
@@ -302,7 +340,7 @@ export default function BlocApp() {
     expenseStats
   } = useExpenseManagement({
     association,
-    expenses: currentSheet?.expenses || [], // SHEET-BASED: folosește cheltuielile din sheet
+    expenses: activeExpenses, // 🎯 DYNAMIC: folosește expenses din sheet-ul activ
     customExpenses,
     currentMonth,
     currentSheet, // SHEET-BASED: adăugat pentru a folosi sheet.id în loc de monthYear
@@ -558,11 +596,14 @@ useEffect(() => {
               setNewAssociation={setNewAssociation}
               handleAddAssociation={handleAssociationSubmit}
               handleNavigation={handleNavigation}
-              expenses={expenses}
+              expenses={currentSheet?.expenses || []}
               maintenanceData={maintenanceData}
               userProfile={userProfile}
               getMonthType={getMonthType}
               currentSheet={currentSheet}
+              getExpenseConfig={getFirestoreExpenseConfig}
+              getApartmentParticipation={getApartmentParticipation}
+              calculateMaintenanceWithDetails={calculateMaintenanceWithDetails}
             />
           )}
 
@@ -578,7 +619,7 @@ useEffect(() => {
               })}
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
-              isMonthReadOnly={currentSheet?.status !== 'in_progress'}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
               shouldShowPublishButton={shouldShowPublishButton}
               shouldShowAdjustButton={shouldShowAdjustButton}
               getCurrentActiveMonth={getCurrentActiveMonth}
@@ -588,8 +629,9 @@ useEffect(() => {
                 // Apelăm publishMonth din hook care gestionează tot (inclusiv mesajele)
                 return await publishMonth(month, association, expenses, hasInitialBalances, getAssociationApartments || (() => []), calculateMaintenanceWithDetails());
               }}
+              unpublishSheet={unpublishSheet}
               getAvailableMonths={getAvailableMonths}
-              expenses={currentSheet?.expenses || []}
+              expenses={activeSheet?.expenses || []}
               newExpense={newExpense}
               setNewExpense={setNewExpense}
               getAvailableExpenseTypes={getAvailableExpenseTypes}
@@ -624,6 +666,7 @@ useEffect(() => {
               updateCurrentSheetMaintenanceTable={updateCurrentSheetMaintenanceTable}
               createInitialSheet={createInitialSheet}
               currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
               setMonthlyTables={() => {}}
               selectedExpenseForConfig={selectedExpenseForConfig}
               setSelectedExpenseForConfig={setSelectedExpenseForConfig}
