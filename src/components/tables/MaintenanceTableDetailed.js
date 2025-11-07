@@ -9,14 +9,16 @@ const MaintenanceTableDetailed = ({
   isMonthReadOnly,
   onOpenPaymentModal,
   onOpenMaintenanceBreakdown,
-  isHistoricMonth = false
+  isHistoricMonth = false,
+  isLoadingPayments = false,
+  disableSticky = false
 }) => {
   // Calculează lățimea minimă necesară pentru toate coloanele
   const minTableWidth = 100 + 150 + 90 + 120 + 100 + 120 + 100 + 120 + (expenses.length * 120) + (isMonthReadOnly ? 240 : 0);
 
   return (
     <table className="border-collapse" style={{ width: `${minTableWidth}px`, tableLayout: 'auto' }}>
-        <thead className={`sticky top-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+        <thead className={`${disableSticky ? '' : 'sticky top-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
           <tr>
             <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap" style={{ minWidth: '100px' }}>
               Apartament
@@ -103,7 +105,7 @@ const MaintenanceTableDetailed = ({
                 <span>{data.owner}</span>
               </div>
             </td>
-            <td className="px-3 py-3 text-center whitespace-nowrap">
+            <td className="px-3 py-3 whitespace-nowrap">
               {data.persons}
             </td>
             <td className="px-3 py-3 font-bold text-indigo-600 whitespace-nowrap">
@@ -169,10 +171,12 @@ const MaintenanceTableDetailed = ({
                         totalDatorat: data.totalDatorat
                       })}
                       disabled={!data.paymentInfo?.canReceivePayment}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
-                        data.paymentInfo?.canReceivePayment
-                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      className={`px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-none ${
+                        isLoadingPayments
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed invisible'
+                          : data.paymentInfo?.canReceivePayment
+                            ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                       title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
                     >
@@ -185,12 +189,12 @@ const MaintenanceTableDetailed = ({
           </tr>
         ))}
       </tbody>
-        <tfoot className={`sticky bottom-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+        <tfoot className={`${disableSticky ? '' : 'sticky bottom-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <td colSpan="2" className="px-3 py-3 font-semibold whitespace-nowrap">
             TOTAL:
           </td>
-          <td className="px-3 py-3 font-bold text-gray-800 text-center whitespace-nowrap">
+          <td className="px-3 py-3 font-bold text-gray-800 whitespace-nowrap">
             {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
           </td>
           <td className="px-3 py-3 font-bold text-indigo-600 whitespace-nowrap">

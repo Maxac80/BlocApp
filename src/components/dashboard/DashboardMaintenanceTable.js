@@ -15,7 +15,9 @@ const DashboardMaintenanceTable = ({
   stairs,
   getAssociationApartments,
   expenses,
-  isHistoricMonth = false
+  isHistoricMonth = false,
+  getPaymentStats,
+  isLoadingPayments = false
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
@@ -76,38 +78,67 @@ const DashboardMaintenanceTable = ({
     associationBlocks.some(block => block.id === stair.blockId)
   ) || [];
 
+  // Calculează statisticile pentru datele filtrate (respectă tab-ul de scară selectat)
+  const paymentStats = getPaymentStats ? getPaymentStats() : null;
+
+  console.log('🔍 DashboardMaintenanceTable scroll debug:', {
+    filteredDataLength: filteredData.length,
+    shouldHaveScroll: filteredData.length > 10,
+    disableSticky: filteredData.length <= 10,
+    hasOverflow: filteredData.length > 10 ? 'overflow-auto' : 'none'
+  });
+
+  // Calculăm totalul datorat INIȚIAL pentru scara selectată
+  // totalDatorat în maintenanceData este deja actualizat după plăți (reduced)
+  // Trebuie să calculăm: totalDatorat actual + totalPaid pentru fiecare apartament
+  const totalDatoratRamas = stairFilteredData.reduce((sum, d) => sum + (d.totalDatorat || 0), 0);
+
+  // Totalul încasat pentru apartamentele din scara selectată
+  // Folosim paymentStats global și filtrăm pentru apartamentele din scară
+  let totalIncasatFiltered = 0;
+  if (paymentStats && selectedStairTab === 'all') {
+    // Pentru "Toate", folosim direct totalul din paymentStats
+    totalIncasatFiltered = paymentStats.totalIncasat || 0;
+  } else if (paymentStats) {
+    // Pentru scară specifică, trebuie să calculăm manual pentru apartamentele din filtru
+    // Problema: nu avem access la paymentSummary per apartament aici
+    // Soluție: calculăm din diferența dintre initial și rămas
+    // Dar nu avem initial saved... trebuie alt approach
+    totalIncasatFiltered = paymentStats.totalIncasat || 0; // Fallback la total
+  }
+
+  const totalIncasat = totalIncasatFiltered;
+  const totalDatoratInitial = totalDatoratRamas + totalIncasat; // Inițial = ce a rămas + ce s-a plătit
+  const gradIncasare = totalDatoratInitial > 0 ? (totalIncasat / totalDatoratInitial) * 100 : 0;
+  const apartamenteTotal = stairFilteredData.length;
+  const apartamenteCuIncasari = stairFilteredData.filter(d => d.isPaid || d.isPartiallyPaid).length;
+
   return (
-    <div className="rounded-xl shadow-lg overflow-hidden bg-white border-2 border-gray-200">
+    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200">
       <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-shrink-0">
             <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
               📊 Tabel Întreținere - {currentMonth}
             </h3>
-            {association && getAssociationApartments().length > 0 && (
-              <p className="text-sm text-gray-600 mt-1">
-                {(() => {
-                  const associationBlocks = blocks?.filter(block => block.associationId === association.id) || [];
-                  const associationStairs = stairs?.filter(stair =>
-                    associationBlocks.some(block => block.id === stair.blockId)
-                  ) || [];
-                  const apartmentCount = getAssociationApartments().length;
-                  const personCount = getAssociationApartments().reduce((sum, apt) => sum + apt.persons, 0);
-
-                  let structureText = "";
-                  if (associationBlocks.length === 1 && associationStairs.length === 1) {
-                    structureText = `${associationBlocks[0].name} - ${associationStairs[0].name}`;
-                  } else if (associationBlocks.length === 1) {
-                    structureText = `${associationBlocks[0].name} - ${associationStairs.length} scări`;
-                  } else {
-                    structureText = `${associationBlocks.length} blocuri - ${associationStairs.length} scări`;
-                  }
-
-                  return `${association.name} • ${structureText} • ${apartmentCount} apartamente - ${personCount} persoane`;
-                })()}
-              </p>
-            )}
           </div>
+
+          {/* Statistici de încasare - discret în dreapta */}
+          {isMonthReadOnly && (
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Grad încasare:</span>
+                <span className="font-semibold text-green-600">{gradIncasare.toFixed(1)}%</span>
+                <span className="text-gray-400">({totalIncasat.toFixed(0)} / {totalDatoratInitial.toFixed(0)} RON)</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Încasări:</span>
+                <span className="font-semibold text-blue-600">{apartamenteCuIncasari} / {apartamenteTotal}</span>
+                <span className="text-gray-400">apartamente</span>
+              </div>
+            </div>
+          )}
 
           {/* Bara de căutare mutată în header */}
           <div className="relative flex-1 max-w-md">
@@ -161,7 +192,10 @@ const DashboardMaintenanceTable = ({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div
+        className={filteredData.length > 10 ? "overflow-auto" : ""}
+        style={filteredData.length > 10 ? { maxHeight: '70vh' } : {}}
+      >
         <MaintenanceTableSimple
           maintenanceData={filteredData}
           isMonthReadOnly={isMonthReadOnly}
@@ -169,6 +203,9 @@ const DashboardMaintenanceTable = ({
           onOpenPaymentModal={onOpenPaymentModal}
           onOpenMaintenanceBreakdown={onOpenMaintenanceBreakdown}
           isHistoricMonth={isHistoricMonth}
+          getPaymentStats={getPaymentStats}
+          isLoadingPayments={isLoadingPayments}
+          disableSticky={filteredData.length <= 10}
         />
       </div>
     </div>

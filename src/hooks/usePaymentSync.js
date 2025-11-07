@@ -21,9 +21,14 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
   const [paymentSummary, setPaymentSummary] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // 🆕 FAZA 5: Ascultă plățile din sheet-ul PUBLISHED curent
+  // 🆕 FAZA 5: Ascultă plățile din sheet-ul PUBLISHED/ARCHIVED curent
   useEffect(() => {
-    if (!currentSheet?.id || currentSheet.status !== 'PUBLISHED') {
+    // Verifică status pentru locked sheets (published sau archived)
+    const isLockedSheet = currentSheet?.status === 'PUBLISHED' ||
+                          currentSheet?.status === 'published' ||
+                          currentSheet?.status === 'archived';
+
+    if (!currentSheet?.id || !isLockedSheet) {
       setPaymentSummary({});
       return;
     }

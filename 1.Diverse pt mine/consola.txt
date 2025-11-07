@@ -1,111 +1,541 @@
-react refresh:37 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: undefined, currentSheetMonth: undefined, publishedSheetId: undefined, publishedSheetMonth: undefined, …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: undefined, usingPublishedSheet: true, hasPublishedMaintenanceTable: false, publishedTableLength: 0, calculatedDataLength: 0, …}
-useSheetManagement.js:103 📄 Sheet raw data: {id: '7NrDCXuCoscvxr23aEoE', monthYear: 'decembrie 2025', status: 'in_progress', statusType: 'string', statusMatch_IN_PROGRESS: true, …}
-useSheetManagement.js:116 🟢 Found IN_PROGRESS sheet: {id: '7NrDCXuCoscvxr23aEoE', monthYear: 'decembrie 2025', hasMaintenanceTable: true, status: 'in_progress'}
-useSheetManagement.js:103 📄 Sheet raw data: {id: 'UtMVd6CFLqhLb3uRsZAF', monthYear: 'noiembrie 2025', status: 'published', statusType: 'string', statusMatch_IN_PROGRESS: false, …}
-useSheetManagement.js:125 🔄 Found published sheet: {id: 'UtMVd6CFLqhLb3uRsZAF', monthYear: 'noiembrie 2025', hasMaintenanceTable: true, maintenanceTableLength: 4, hasExpenses: true, …}
-useSheetManagement.js:135 📦 Published sheet expenses: [
+ Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+ 🔄 Restaurare lună din localStorage: noiembrie 2025
+ 🔄 Restaurare lună din localStorage: noiembrie 2025
+ 💾 Salvare lună în localStorage: noiembrie 2025
+ 💾 Salvare lună în localStorage: noiembrie 2025
+ 🔄 Restaurare lună din localStorage: noiembrie 2025
+ 🔄 Restaurare lună din localStorage: noiembrie 2025
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 💾 Salvare lună în localStorage: noiembrie 2025
+ 💾 Salvare lună în localStorage: noiembrie 2025
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ⚠️ No apartments in sheet snapshots, falling back to Firestore collections
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ 🔄 Using currentSheet (in-progress) for: noiembrie 2025
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 📄 Sheet raw data: Object
+ 🟢 Found IN_PROGRESS sheet: Object
+ 📄 Sheet raw data: Object
+ 🔄 Found published sheet: Object
+ 📦 Published sheet expenses: [
   {
-    "addedToSheet": "2025-11-06T15:40:11.207Z",
-    "isUnitBased": true,
+    "consumption": {},
+    "isDistributed": true,
+    "category": "",
+    "supplier": "",
+    "billAmount": 0,
+    "month": "decembrie 2025",
+    "addedToSheet": "2025-11-07T21:34:13.344Z",
+    "id": "1762551253344",
+    "amountsByStair": {},
+    "invoiceNumber": "",
+    "separateInvoicesData": null,
+    "invoiceData": {
+      "isPartialDistribution": false,
+      "notes": "",
+      "invoiceAmount": "2000",
+      "invoiceNumber": "FactLift1",
+      "invoiceDate": "2025-11-04",
+      "dueDate": "2025-11-14",
+      "totalInvoiceAmount": "2000",
+      "currentDistribution": "1500"
+    },
+    "unitPrice": 0,
+    "name": "Întreținere lift",
+    "dueDate": "",
     "receptionMode": "per_association",
     "amountsByBlock": {},
-    "invoiceData": {
-      "notes": "",
-      "totalInvoiceAmount": "1000",
-      "invoiceNumber": "Fact1",
-      "invoiceDate": "2025-11-05",
-      "invoiceAmount": "1000",
-      "currentDistribution": "100",
-      "dueDate": "2025-11-21",
-      "isPartialDistribution": false
-    },
-    "updatedAt": "2025-11-06T15:42:09.255Z",
-    "name": "Apă caldă",
-    "amountsByStair": {},
-    "amount": 0,
-    "dueDate": "",
-    "supplier": "",
-    "unitPrice": 10,
-    "separateInvoicesData": null,
+    "expenseTypeId": "expense-type-elevator",
+    "distributionType": "person",
+    "amount": 1500,
+    "isUnitBased": false,
     "consumptionData": [],
-    "invoiceNumber": "",
     "individualAmounts": {},
-    "id": "1762443611207",
-    "category": "",
-    "expenseTypeId": "expense-type-hot-water",
-    "distributionType": "consumption",
-    "sheetId": "UtMVd6CFLqhLb3uRsZAF",
-    "consumption": {
-      "1762443575864": 2,
-      "1762443575970": 3,
-      "1762443576076": 3,
-      "1762443575757": 2
-    },
-    "isDistributed": true,
-    "billAmount": 100,
-    "month": "noiembrie 2025"
+    "sheetId": "QQP57UxU388aDVth7x8w"
   }
 ]
-useSheetManagement.js:150 📊 Sheets loaded: {totalSheets: 2, inProgress: {…}, published: {…}, archived: 0}
-useSheetManagement.js:157 🔄 Updating React state: {settingCurrentSheet: '7NrDCXuCoscvxr23aEoE', settingPublishedSheet: 'UtMVd6CFLqhLb3uRsZAF'}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
-DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
-DashboardMaintenanceTable.js:57 📊 Stair filter results: {selectedStairTab: 'all', totalData: 4, filteredData: 4}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-MaintenanceView.js:219 📋 MaintenanceView distributedExpenses: {expensesLength: 0, expensesNames: Array(0), isMonthReadOnly: true}
-MaintenanceView.js:219 📋 MaintenanceView distributedExpenses: {expensesLength: 0, expensesNames: Array(0), isMonthReadOnly: true}
-MaintenanceView.js:393 📦 MaintenanceView - Sheet selection: {currentMonth: 'noiembrie 2025', currentSheetMonth: 'decembrie 2025', publishedSheetMonth: 'noiembrie 2025', activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', activeSheetMonth: 'noiembrie 2025', …}
-MaintenanceView.js:393 📦 MaintenanceView - Sheet selection: {currentMonth: 'noiembrie 2025', currentSheetMonth: 'decembrie 2025', publishedSheetMonth: 'noiembrie 2025', activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', activeSheetMonth: 'noiembrie 2025', …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+ 📄 Sheet raw data: Object
+ 📊 Sheets loaded: Object
+ 🔄 Updating React state: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 📋 MaintenanceView distributedExpenses: Object
+ 📋 MaintenanceView distributedExpenses: Object
+ 📦 MaintenanceView - Using expenses from BlocApp: Object
+ 📦 MaintenanceView - Using expenses from BlocApp: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 useIncasari useEffect triggered: Object
+ 📡 useIncasari: Setting up listener for sheet: UtMVd6CFLqhLb3uRsZAF
+ 🔍 useIncasari useEffect triggered: Object
+ 📡 useIncasari: Setting up listener for sheet: UtMVd6CFLqhLb3uRsZAF
+ 📥 useIncasari onSnapshot received: Object
+ 💰 useIncasari: Payments found in sheet: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 Looking for sheet: Object
+ ✅ Found locked sheet for month: Object
+ 🎯 Active sheet selection: Object
+ 🎯 Maintenance data selection: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔄 Pornesc migrarea automată a distributionHistory...
+ 🔄 Începe migrarea distributionHistory...
+ ✅ Migrare completă: 0 din 2 facturi actualizate
+ ✅ Migrare completă: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 DEBUG Payment Sheet Selection: Object
+ 🔍 MaintenanceView data check: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 📋 getAssociationExpenseTypes - Reading from: Object
+ 📋 Using configs from: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ Cheltuială: Apă caldă
+   Tip: consumption
+   Suma introdusă: 100.00
+   Suma așteptată: 100.00
+   Suma distribuită: 100.00
+   Knows expected: true
+   Is fully distributed: true
+   Should include: false
+   Diferență: 0.00
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+ ✅ Using apartments from BlocApp activeSheet: Object
+ 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
 ExpenseList.js:801 Cheltuială: Apă caldă
 ExpenseList.js:802   Tip: consumption
 ExpenseList.js:803   Suma introdusă: 100.00
@@ -115,6 +545,66 @@ ExpenseList.js:806   Knows expected: true
 ExpenseList.js:807   Is fully distributed: true
 ExpenseList.js:808   Should include: false
 ExpenseList.js:809   Diferență: 0.00
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+MaintenanceView.js:149 🔍 DEBUG Payment Sheet Selection: Object
+MaintenanceView.js:209 🔍 MaintenanceView data check: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+MaintenanceView.js:262 📋 MaintenanceView distributedExpenses: Object
+MaintenanceView.js:262 📋 MaintenanceView distributedExpenses: Object
+MaintenanceView.js:431 📦 MaintenanceView - Using expenses from BlocApp: Object
+MaintenanceView.js:431 📦 MaintenanceView - Using expenses from BlocApp: Object
+useExpenseManagement.js:64 📋 getAssociationExpenseTypes - Reading from: Object
+useExpenseManagement.js:73 📋 Using configs from: Object
+useExpenseManagement.js:64 📋 getAssociationExpenseTypes - Reading from: Object
+useExpenseManagement.js:73 📋 Using configs from: Object
+MaintenanceView.js:149 🔍 DEBUG Payment Sheet Selection: Object
+MaintenanceView.js:209 🔍 MaintenanceView data check: Object
+useExpenseManagement.js:64 📋 getAssociationExpenseTypes - Reading from: Object
+useExpenseManagement.js:73 📋 Using configs from: Object
+useExpenseManagement.js:64 📋 getAssociationExpenseTypes - Reading from: Object
+useExpenseManagement.js:73 📋 Using configs from: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
 ExpenseList.js:801 Cheltuială: Apă caldă
 ExpenseList.js:802   Tip: consumption
 ExpenseList.js:803   Suma introdusă: 100.00
@@ -124,12 +614,30 @@ ExpenseList.js:806   Knows expected: true
 ExpenseList.js:807   Is fully distributed: true
 ExpenseList.js:808   Should include: false
 ExpenseList.js:809   Diferență: 0.00
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-BlocApp.js:245 🎯 Active sheet selection: {currentMonth: 'noiembrie 2025', currentSheetId: '7NrDCXuCoscvxr23aEoE', currentSheetMonth: 'decembrie 2025', publishedSheetId: 'UtMVd6CFLqhLb3uRsZAF', publishedSheetMonth: 'noiembrie 2025', …}
-BlocApp.js:305 🎯 Maintenance data selection: {activeSheetId: 'UtMVd6CFLqhLb3uRsZAF', usingPublishedSheet: true, hasPublishedMaintenanceTable: true, publishedTableLength: 4, calculatedDataLength: 4, …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
 ExpenseList.js:801 Cheltuială: Apă caldă
 ExpenseList.js:802   Tip: consumption
 ExpenseList.js:803   Suma introdusă: 100.00
@@ -139,56 +647,20 @@ ExpenseList.js:806   Knows expected: true
 ExpenseList.js:807   Is fully distributed: true
 ExpenseList.js:808   Should include: false
 ExpenseList.js:809   Diferență: 0.00
-ExpenseList.js:801 Cheltuială: Apă caldă
-ExpenseList.js:802   Tip: consumption
-ExpenseList.js:803   Suma introdusă: 100.00
-ExpenseList.js:804   Suma așteptată: 100.00
-ExpenseList.js:805   Suma distribuită: 100.00
-ExpenseList.js:806   Knows expected: true
-ExpenseList.js:807   Is fully distributed: true
-ExpenseList.js:808   Should include: false
-ExpenseList.js:809   Diferență: 0.00
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-ExpenseList.js:801 Cheltuială: Apă caldă
-ExpenseList.js:802   Tip: consumption
-ExpenseList.js:803   Suma introdusă: 100.00
-ExpenseList.js:804   Suma așteptată: 100.00
-ExpenseList.js:805   Suma distribuită: 100.00
-ExpenseList.js:806   Knows expected: true
-ExpenseList.js:807   Is fully distributed: true
-ExpenseList.js:808   Should include: false
-ExpenseList.js:809   Diferență: 0.00
-ExpenseList.js:801 Cheltuială: Apă caldă
-ExpenseList.js:802   Tip: consumption
-ExpenseList.js:803   Suma introdusă: 100.00
-ExpenseList.js:804   Suma așteptată: 100.00
-ExpenseList.js:805   Suma distribuită: 100.00
-ExpenseList.js:806   Knows expected: true
-ExpenseList.js:807   Is fully distributed: true
-ExpenseList.js:808   Should include: false
-ExpenseList.js:809   Diferență: 0.00
-MaintenanceView.js:372 🔄 Pornesc migrarea automată a distributionHistory...
-useInvoices.js:822 🔄 Începe migrarea distributionHistory...
-useInvoices.js:889 ✅ Migrare completă: 0 din 1 facturi actualizate
-MaintenanceView.js:375 ✅ Migrare completă: {success: true, updated: 0, total: 1}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-MaintenanceView.js:166 🔍 MaintenanceView data check: {isMonthReadOnly: true, maintenanceDataLength: 4, firstRowHasExpenseDetails: true, firstRowExpenseDetailsKeys: Array(1), updatedFirstRowHasExpenseDetails: true, …}
-ExpenseList.js:801 Cheltuială: Apă caldă
-ExpenseList.js:802   Tip: consumption
-ExpenseList.js:803   Suma introdusă: 100.00
-ExpenseList.js:804   Suma așteptată: 100.00
-ExpenseList.js:805   Suma distribuită: 100.00
-ExpenseList.js:806   Knows expected: true
-ExpenseList.js:807   Is fully distributed: true
-ExpenseList.js:808   Should include: false
-ExpenseList.js:809   Diferență: 0.00
-ExpenseList.js:801 Cheltuială: Apă caldă
-ExpenseList.js:802   Tip: consumption
-ExpenseList.js:803   Suma introdusă: 100.00
-ExpenseList.js:804   Suma așteptată: 100.00
-ExpenseList.js:805   Suma distribuită: 100.00
-ExpenseList.js:806   Knows expected: true
-ExpenseList.js:807   Is fully distributed: true
-ExpenseList.js:808   Should include: false
-ExpenseList.js:809   Diferență: 0.00
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+useMaintenanceCalculation.js:17 🔍 getAssociationApartments - Checking sheets: Object
+useMaintenanceCalculation.js:28 ✅ Using apartments from BlocApp activeSheet: Object
+MaintenanceView.js:1279 🔍 MaintenanceView table container debug: Object

@@ -24,7 +24,9 @@
       "Bash(python:*)",
       "Bash(update_log.txt)",
       "Bash(del \"C:\\blocapp\\src\\hooks\\useMaintenanceCalculation.js.backup\" \"C:\\blocapp\\src\\hooks\\useMaintenanceCalculation_OLD.js\")",
-      "Bash(del \"C:\\blocapp\\migrate_audit_logs.py\" \"C:\\blocapp\\migrate_onboarding.py\")"
+      "Bash(del \"C:\\blocapp\\migrate_audit_logs.py\" \"C:\\blocapp\\migrate_onboarding.py\")",
+      "Bash(del \"C:\\blocapp\\src\\components\\views\\ExpensesView.js\")",
+      "Bash(move:*)"
     ],
     "deny": [],
     "ask": [],

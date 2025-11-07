@@ -77,9 +77,28 @@ export const useExpenseManagement = ({
       return defaultExpenseTypes;
     }
 
-    // 🆕 UNIFIED STRUCTURE: Folosește expenseConfigurations din parametru (state actualizat instant)
-    // Fallback la currentSheet pentru backwards compatibility
-    const configs = expenseConfigurations || currentSheet?.configSnapshot?.expenseConfigurations || {};
+    console.log('📋 getAssociationExpenseTypes - Reading from:', {
+      currentSheetId: currentSheet?.id,
+      currentSheetMonth: currentSheet?.monthYear,
+      currentSheetStatus: currentSheet?.status,
+      hasExpenseConfigurations: !!expenseConfigurations,
+      expenseConfigurationsCount: Object.keys(expenseConfigurations || {}).length,
+      currentSheetConfigCount: Object.keys(currentSheet?.configSnapshot?.expenseConfigurations || {}).length
+    });
+
+    // 🆕 UNIFIED STRUCTURE: Pentru published/archived sheets, folosește DOAR currentSheet.configSnapshot (locked data)
+    // Pentru IN_PROGRESS sheets, folosește expenseConfigurations (live state) sau fallback la currentSheet
+    const isLockedSheet = currentSheet?.status === 'published' || currentSheet?.status === 'archived';
+    const configs = isLockedSheet
+      ? (currentSheet?.configSnapshot?.expenseConfigurations || {})
+      : (expenseConfigurations || currentSheet?.configSnapshot?.expenseConfigurations || {});
+
+    console.log('📋 Using configs from:', {
+      isLockedSheet,
+      currentSheetStatus: currentSheet?.status,
+      source: isLockedSheet ? 'currentSheet.configSnapshot (locked)' : 'expenseConfigurations (live state)',
+      configsCount: Object.keys(configs).length
+    });
 
     // Dacă nu există configurații (sheet vechi), folosește logica veche (backwards compatibility)
     if (Object.keys(configs).length === 0) {

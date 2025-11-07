@@ -8,11 +8,16 @@ const MaintenanceTableSimple = ({
   togglePayment,
   onOpenPaymentModal,
   onOpenMaintenanceBreakdown,
-  isHistoricMonth = false
+  isHistoricMonth = false,
+  getPaymentStats,
+  isLoadingPayments = false,
+  disableSticky = false
 }) => {
+  // Calculează statisticile de plată dacă funcția este disponibilă
+  const paymentStats = getPaymentStats ? getPaymentStats() : null;
   return (
     <table className="w-full">
-      <thead className={`sticky top-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+      <thead className={`${disableSticky ? '' : 'sticky top-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Apartament</th>
           <th className="px-3 py-3 text-left text-sm font-medium text-gray-700">Proprietar</th>
@@ -50,7 +55,7 @@ const MaintenanceTableSimple = ({
                 <span>{data.owner}</span>
               </div>
             </td>
-            <td className="px-3 py-3 text-center">{data.persons}</td>
+            <td className="px-3 py-3">{data.persons}</td>
             <td className="px-3 py-3 font-bold text-indigo-600">{data.currentMaintenance.toFixed(2)}</td>
             <td className="px-3 py-3 font-bold text-red-600">{data.restante.toFixed(2)}</td>
             <td className="px-3 py-3 font-bold text-purple-600">{data.totalMaintenance.toFixed(2)}</td>
@@ -69,7 +74,7 @@ const MaintenanceTableSimple = ({
                 </td>
                 {!isHistoricMonth && (
                   <td className="px-3 py-3">
-                    <button 
+                    <button
                       onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
                         apartmentId: data.apartmentId,
                         apartmentNumber: data.apartment,
@@ -80,10 +85,12 @@ const MaintenanceTableSimple = ({
                         totalDatorat: data.totalDatorat
                       })}
                       disabled={!data.paymentInfo?.canReceivePayment}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md ${
-                        data.paymentInfo?.canReceivePayment
-                          ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      className={`px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-none ${
+                        isLoadingPayments
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed invisible'
+                          : data.paymentInfo?.canReceivePayment
+                            ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                       title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
                     >
@@ -96,10 +103,10 @@ const MaintenanceTableSimple = ({
           </tr>
         ))}
       </tbody>
-      <tfoot className={`sticky bottom-0 z-10 ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+      <tfoot className={`${disableSticky ? '' : 'sticky bottom-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <td colSpan="2" className="px-3 py-3 font-semibold">TOTAL:</td>
-          <td className="px-3 py-3 font-bold text-gray-800 text-center">
+          <td className="px-3 py-3 font-bold text-gray-800">
             {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
           </td>
           <td className="px-3 py-3 font-bold text-indigo-600">
@@ -128,7 +135,7 @@ const MaintenanceTableSimple = ({
           <tr className="bg-blue-50">
             <td colSpan="3" className="px-3 py-3 font-semibold">TOTAL ÎNCASAT:</td>
             <td className="px-3 py-3 font-bold text-green-600">
-              {maintenanceData.filter(d => d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
+              {paymentStats ? paymentStats.totalIncasat.toFixed(2) : '0.00'}
             </td>
             <td colSpan="2" className="px-3 py-3 font-semibold text-right">TOTAL RESTANȚE:</td>
             <td colSpan={isHistoricMonth ? "3" : "4"} className="px-3 py-3 font-bold text-red-600">

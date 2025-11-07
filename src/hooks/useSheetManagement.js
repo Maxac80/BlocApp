@@ -640,12 +640,25 @@ export const useSheetManagement = (associationId) => {
         console.log('📋 Expenses înainte de curățare:', JSON.stringify(currentSheet.expenses, null, 2));
       }
 
+      // 🎯 SALVEAZĂ snapshot al apartamentelor la publicare
+      // Astfel, lunile publicate vor avea datele apartamentelor "înghețate" la momentul publicării
+      if (currentSheet.associationSnapshot?.apartments) {
+        updateData.associationSnapshot = {
+          ...currentSheet.associationSnapshot,
+          apartments: currentSheet.associationSnapshot.apartments.map(apt => ({...apt}))
+        };
+        console.log('🏢 Salvare snapshot apartamente la publicare:',
+          currentSheet.associationSnapshot.apartments.length, 'apartamente');
+      }
+
       // Curăță valorile undefined din updateData
       const cleanedUpdateData = removeUndefinedValues(updateData);
       console.log('🧹 UpdateData după curățare - are expenses?', {
         hasExpenses: !!cleanedUpdateData.expenses,
         expensesLength: cleanedUpdateData.expenses?.length,
-        expenses: cleanedUpdateData.expenses
+        expenses: cleanedUpdateData.expenses,
+        hasApartmentsSnapshot: !!cleanedUpdateData.associationSnapshot?.apartments,
+        apartmentsCount: cleanedUpdateData.associationSnapshot?.apartments?.length
       });
 
       batch.update(currentSheetRef, cleanedUpdateData);

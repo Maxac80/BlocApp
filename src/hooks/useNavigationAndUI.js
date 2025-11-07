@@ -2,8 +2,18 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useNavigationAndUI = () => {
-  // Navigation state
-  const [currentView, setCurrentView] = useState("dashboard");
+  // Navigation state - restaurează din localStorage la refresh
+  const [currentView, setCurrentView] = useState(() => {
+    const savedView = localStorage.getItem('currentView');
+    return savedView || "dashboard";
+  });
+
+  // Salvează view-ul curent în localStorage când se schimbă
+  useEffect(() => {
+    if (currentView) {
+      localStorage.setItem('currentView', currentView);
+    }
+  }, [currentView]);
   
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false);

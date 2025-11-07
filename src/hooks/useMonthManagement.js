@@ -2,7 +2,7 @@
 // VERSIUNE NOUĂ SIMPLIFICATĂ - Wrapper peste useSheetManagement
 // Păstrează interfața existentă pentru compatibilitate dar folosește sheet-uri
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import useSheetManagement from './useSheetManagement';
@@ -45,22 +45,48 @@ export const useMonthManagement = (associationId) => {
   } = useSheetManagement(associationId);
 
   // State pentru compatibilitate cu vechea interfață
-  // Inițializează cu luna activă din sheet-uri (published > current > fallback)
+  // Inițializează cu luna salvată în localStorage sau luna activă din sheet-uri
   const [currentMonth, setCurrentMonth] = useState(() => {
+    // 1. Încearcă să restaureze luna din localStorage (global, nu per asociație)
+    const savedMonth = localStorage.getItem('selectedMonth');
+    if (savedMonth) {
+      console.log('🔄 Restaurare lună din localStorage:', savedMonth);
+      return savedMonth;
+    }
+
+    // 2. Fallback la luna activă din sheet-uri
     if (publishedSheet?.monthYear) return publishedSheet.monthYear;
     if (currentSheet?.monthYear) return currentSheet.monthYear;
-    // Fallback doar dacă nu există sheet-uri
+
+    // 3. Fallback final
     return new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   });
 
-  // Actualizează luna curentă când se schimbă sheet-ul - prioritizează published sheet
+  // 🔧 FIX: Actualizează luna DOAR la inițializare (când sheet-urile se încarcă prima dată)
+  // ȘI doar dacă nu există o lună salvată în localStorage
+  const hasInitialized = useRef(false);
   useEffect(() => {
-    if (publishedSheet) {
-      setCurrentMonth(publishedSheet.monthYear); // Luna activă publicată
-    } else if (currentSheet) {
-      setCurrentMonth(currentSheet.monthYear);   // Luna activă în lucru
+    const savedMonth = localStorage.getItem('selectedMonth');
+
+    // Actualizează doar dacă nu s-a inițializat încă ȘI nu există lună salvată ȘI avem sheet-uri
+    if (!hasInitialized.current && !savedMonth && (publishedSheet || currentSheet)) {
+      console.log('📅 Setare lună inițială:', publishedSheet?.monthYear || currentSheet?.monthYear);
+      if (publishedSheet) {
+        setCurrentMonth(publishedSheet.monthYear);
+      } else if (currentSheet) {
+        setCurrentMonth(currentSheet.monthYear);
+      }
+      hasInitialized.current = true;
     }
   }, [publishedSheet, currentSheet]);
+
+  // Salvează luna curentă în localStorage când se schimbă
+  useEffect(() => {
+    if (currentMonth) {
+      console.log('💾 Salvare lună în localStorage:', currentMonth);
+      localStorage.setItem('selectedMonth', currentMonth);
+    }
+  }, [currentMonth]);
 
   // Construiește availableMonths - fallback simplu dacă sheet-urile nu se încarcă
   const availableMonths = useMemo(() => {
@@ -297,9 +323,14 @@ export const useMonthManagement = (associationId) => {
 
   // Check if month is read-only (published) - verifică direct sheet-ul publicat
   const isMonthReadOnly = useCallback((month) => {
-    // O lună este read-only dacă există un sheet publicat pentru acea lună
-    return !!(publishedSheet && publishedSheet.monthYear === month);
-  }, [publishedSheet]);
+    // O lună este read-only dacă există un sheet publicat SAU arhivat pentru acea lună
+    // Verificăm în toate sheet-urile disponibile
+    const lockedSheet = sheets?.find(sheet =>
+      sheet.monthYear === month &&
+      (sheet.status === 'published' || sheet.status === 'archived')
+    );
+    return !!lockedSheet;
+  }, [sheets]);
 
   // Helper pentru a determina dacă butonul "Ajustări Solduri" trebuie să apară
   const shouldShowAdjustButton = useCallback((month) => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Home, User, Users, Receipt, AlertCircle, Info } from 'lucide-react';
 
-const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesList, apartmentParticipations, apartmentSurface, allApartments, allMaintenanceData, getExpenseConfig, stairs }) => {
+const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesList, apartmentParticipations, apartmentSurface, allApartments, allMaintenanceData, getExpenseConfig, stairs, payments, currentMonth }) => {
   if (!isOpen || !apartmentData) return null;
 
   const {
@@ -17,6 +17,37 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     expenseDifferenceDetails,
     surface
   } = apartmentData;
+
+  // 🆕 Filtrează încasările pentru acest apartament
+  const apartmentPayments = payments?.filter(p => p.apartmentId === apartmentId) || [];
+
+  // Calculează totalurile pe categorii (ce s-a plătit)
+  const totalIncasatIntretinere = apartmentPayments.reduce((sum, p) => sum + (p.intretinere || 0), 0);
+  const totalIncasatRestante = apartmentPayments.reduce((sum, p) => sum + (p.restante || 0), 0);
+  const totalIncasatPenalitati = apartmentPayments.reduce((sum, p) => sum + (p.penalitati || 0), 0);
+  const totalIncasat = totalIncasatIntretinere + totalIncasatRestante + totalIncasatPenalitati;
+
+  // Calculează valorile INIȚIALE (înainte de plată)
+  // Valori actuale + ce s-a plătit = valori inițiale
+  const initialCurrentMaintenance = (currentMaintenance || 0) + totalIncasatIntretinere;
+  const initialRestante = (restante || 0) + totalIncasatRestante;
+  const initialPenalitati = (penalitati || 0) + totalIncasatPenalitati;
+  const initialTotalDatorat = (totalDatorat || 0) + totalIncasat;
+
+  console.log('💰 MaintenanceBreakdownModal - Încasări:', {
+    apartmentId,
+    apartmentNumber: apartment,
+    totalPayments: payments?.length || 0,
+    apartmentPaymentsCount: apartmentPayments.length,
+    apartmentPayments,
+    totalIncasat,
+    breakdown: {
+      intretinere: totalIncasatIntretinere,
+      restante: totalIncasatRestante,
+      penalitati: totalIncasatPenalitati
+    },
+    currentMonth
+  });
 
   // Get current apartment details
   const currentApartment = allApartments?.find(apt => apt.id === apartmentId);
@@ -456,46 +487,109 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-5 border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Totaluri</h3>
             <div className="space-y-3">
-              {/* Current Maintenance */}
+              {/* Current Maintenance - Initial Value */}
               <div className="flex justify-between items-center py-2 border-b border-gray-300">
                 <span className="font-medium text-gray-700">Întreținere Curentă</span>
                 <span className="text-xl font-bold text-blue-600">
-                  {currentMaintenance?.toFixed(2) || '0.00'} lei
+                  {initialCurrentMaintenance?.toFixed(2) || '0.00'} lei
                 </span>
               </div>
 
-              {/* Arrears */}
-              {restante > 0 && (
+              {/* Arrears - Initial Value */}
+              {initialRestante > 0 && (
                 <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                  <span className="font-medium text-gray-700 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1 text-red-500" />
-                    Restanțe
-                  </span>
+                  <span className="font-medium text-gray-700">Restanțe</span>
                   <span className="text-xl font-bold text-red-600">
-                    {restante?.toFixed(2) || '0.00'} lei
+                    {initialRestante?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
               )}
 
-              {/* Penalties */}
-              {penalitati > 0 && (
+              {/* Penalties - Initial Value */}
+              {initialPenalitati > 0 && (
                 <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                  <span className="font-medium text-gray-700 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1 text-orange-500" />
-                    Penalități
-                  </span>
+                  <span className="font-medium text-gray-700">Penalități</span>
                   <span className="text-xl font-bold text-orange-600">
-                    {penalitati?.toFixed(2) || '0.00'} lei
+                    {initialPenalitati?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
               )}
 
-              {/* Total Owed */}
-              <div className="flex justify-between items-center py-3 bg-gradient-to-r from-blue-100 to-indigo-100 -mx-5 px-5 mt-4 rounded-b-lg">
-                <span className="text-lg font-bold text-gray-800">Total Datorat</span>
-                <span className="text-2xl font-bold text-blue-700">
-                  {totalDatorat?.toFixed(2) || '0.00'} lei
-                </span>
+              {/* Total Datorat (Inițial - doar dacă sunt încasări) */}
+              {apartmentPayments.length > 0 && (
+                <div className="flex justify-between items-center py-3 bg-gradient-to-r from-gray-100 to-gray-200 -mx-5 px-5 border-b border-gray-300 mt-2">
+                  <span className="text-lg font-bold text-gray-800">Total Datorat</span>
+                  <span className="text-2xl font-bold text-gray-700">
+                    {initialTotalDatorat?.toFixed(2) || '0.00'} lei
+                  </span>
+                </div>
+              )}
+
+              {/* Payments Made */}
+              {apartmentPayments.length > 0 && (
+                <div className="bg-green-50 -mx-5 px-5 py-3 border-b border-gray-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-700 flex items-center">
+                      <Receipt className="w-4 h-4 mr-1 text-green-600" />
+                      Încasări ({apartmentPayments.length})
+                    </span>
+                    <span className="text-xl font-bold text-green-600">
+                      -{totalIncasat?.toFixed(2) || '0.00'} lei
+                    </span>
+                  </div>
+
+                  {/* Breakdown pe categorii - ORDINE: Întreținere, Restanță, Penalități */}
+                  <div className="ml-5 space-y-1 text-sm">
+                    {totalIncasatIntretinere > 0 && (
+                      <div className="flex justify-between items-center text-gray-700">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                          Întreținere
+                        </span>
+                        <span className="font-semibold text-green-600">-{totalIncasatIntretinere.toFixed(2)} lei</span>
+                      </div>
+                    )}
+                    {totalIncasatRestante > 0 && (
+                      <div className="flex justify-between items-center text-gray-700">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                          Restanță
+                        </span>
+                        <span className="font-semibold text-green-600">-{totalIncasatRestante.toFixed(2)} lei</span>
+                      </div>
+                    )}
+                    {totalIncasatPenalitati > 0 && (
+                      <div className="flex justify-between items-center text-gray-700">
+                        <span className="flex items-center">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                          Penalități
+                        </span>
+                        <span className="font-semibold text-green-600">-{totalIncasatPenalitati.toFixed(2)} lei</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lista de chitanțe */}
+                  <div className="mt-2 pt-2 border-t border-green-200">
+                    {apartmentPayments.map((payment, index) => (
+                      <div key={index} className="text-xs text-gray-600 ml-5 mt-1">
+                        {new Date(payment.timestamp || payment.createdAt).toLocaleDateString('ro-RO')} - Chitanță #{payment.receiptNumber}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Total Final - afișează fie "Total Datorat" (fără încasări) fie "Rest de Plată" (cu încasări) */}
+              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 -mx-5 px-5 py-3 mt-2 rounded-b-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-800">
+                    {apartmentPayments.length > 0 ? 'Rest de Plată' : 'Total Datorat'}
+                  </span>
+                  <span className="text-2xl font-bold text-blue-700">
+                    {totalDatorat?.toFixed(2) || '0.00'} lei
+                  </span>
+                </div>
               </div>
             </div>
           </div>

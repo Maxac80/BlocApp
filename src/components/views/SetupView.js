@@ -12,9 +12,7 @@ const SetupView = ({
   association,
   blocks,
   stairs,
-  apartments,
-  firestoreApartments,
-  getAssociationApartments,
+  getAssociationApartments, // 🎯 SURSĂ PRINCIPALĂ: citește din sheet-uri bazat pe luna selectată
   currentMonth,
   setCurrentMonth,
   getAvailableMonths,
@@ -24,6 +22,7 @@ const SetupView = ({
   setPendingMaintenanceApartmentId,
   maintenanceData,
   currentSheet,
+  publishedSheet, // 🆕 Necesar pentru a identifica sheet-ul corect bazat pe luna selectată
   getApartmentParticipation,
   getExpenseConfig,
   searchTerm,
@@ -103,74 +102,8 @@ const SetupView = ({
     };
   }, []);
 
-  // Effect pentru auto-expand la încărcarea paginii
-  useEffect(() => {
-    if (!association?.id || !blocks || !stairs || !apartments) return;
-
-    const associationBlocks = blocks.filter(block => block.associationId === association.id);
-    const associationStairs = stairs.filter(stair =>
-      associationBlocks.some(block => block.id === stair.blockId)
-    );
-    const associationApartments = apartments || [];
-
-    const newExpandedBlocks = {};
-    const newExpandedStairs = {};
-
-    associationBlocks.forEach(block => {
-      const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
-
-      // Logica de expandare pentru blocuri - SIMPLIFICATĂ
-      const shouldExpandBlock = () => {
-        // REGULA SIMPLĂ: Doar dacă e UN SINGUR bloc, expandează-l automat
-        return associationBlocks.length === 1;
-      };
-
-      if (shouldExpandBlock()) {
-        newExpandedBlocks[block.id] = true;
-      }
-
-      // Logica de expandare pentru scări - SIMPLIFICATĂ
-      // Nu mai expandăm automat scările, utilizatorul le deschide manual când vrea
-      // (Poți elimina complet acest forEach dacă nu vrei nicio logică automată pentru scări)
-    });
-
-    // NU suprascrie starea de expandare dacă utilizatorul a făcut deja alegeri
-    // Păstrează starea curentă și aplică doar pentru entități noi
-    setExpandedBlocks(prev => {
-      // Dacă există deja o stare de expandare (utilizatorul a interacționat), păstrează-o
-      if (Object.keys(prev).length > 0) {
-        // Adaugă doar entități noi care nu sunt în prev
-        const merged = { ...prev };
-        Object.keys(newExpandedBlocks).forEach(blockId => {
-          if (!(blockId in prev)) {
-            merged[blockId] = newExpandedBlocks[blockId];
-          }
-        });
-        return merged;
-      }
-      // Prima încărcare - folosește starea calculată
-      return newExpandedBlocks;
-    });
-
-    setExpandedStairs(prev => {
-      // Dacă există deja o stare de expandare (utilizatorul a interacționat), păstrează-o
-      if (Object.keys(prev).length > 0) {
-        // Adaugă doar entități noi care nu sunt în prev
-        const merged = { ...prev };
-        Object.keys(newExpandedStairs).forEach(stairId => {
-          if (!(stairId in prev)) {
-            merged[stairId] = newExpandedStairs[stairId];
-          }
-        });
-        return merged;
-      }
-      // Prima încărcare - folosește starea calculată
-      return newExpandedStairs;
-    });
-  }, [association?.id, blocks, stairs, apartments, setExpandedBlocks, setExpandedStairs]);
-
   // Verifică dacă toate props-urile necesare sunt disponibile
-  if (!association || !blocks || !stairs || !apartments) {
+  if (!association || !blocks || !stairs) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 flex items-center justify-center">
         <div className="text-center">
@@ -182,11 +115,17 @@ const SetupView = ({
   }
 
   const associationBlocks = blocks.filter(block => block.associationId === association?.id);
-  const associationStairs = stairs.filter(stair => 
+  const associationStairs = stairs.filter(stair =>
     associationBlocks.some(block => block.id === stair.blockId)
   );
-  // Folosim direct apartments care sunt deja filtrate pentru asociația curentă
-  const associationApartments = apartments || [];
+  // 🎯 FOLOSEȘTE getAssociationApartments() pentru a citi din sheet-ul corect
+  // Astfel, lunile publicate arată datele "înghețate", iar luna în lucru arată datele live
+  const associationApartments = getAssociationApartments ? getAssociationApartments() : [];
+
+  // 🎯 DETERMINĂ SHEET-UL ACTIV bazat pe luna selectată (similar cu logica pentru apartamente)
+  const activeSheet = (publishedSheet?.monthYear === currentMonth)
+    ? publishedSheet
+    : currentSheet;
 
   // Filtrez apartamentele pentru căutare
   const filteredApartments = searchTerm 
@@ -756,11 +695,22 @@ return (
                 </div>
               )}
               <button
-                onClick={openAddBlockModal}
-                className={`bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-all duration-200 hover:shadow-md hover:scale-105 ${
+                onClick={() => {
+                  if (isMonthReadOnly) {
+                    alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                    return;
+                  }
+                  openAddBlockModal();
+                }}
+                className={`rounded-lg flex items-center transition-all duration-200 ${
                   associationBlocks.length > 0 ? 'p-2' : 'px-4 py-2'
+                } ${
+                  isMonthReadOnly
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:scale-105'
                 }`}
-                title="Adaugă Bloc"
+                title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : 'Adaugă Bloc'}
+                disabled={isMonthReadOnly}
               >
                 {associationBlocks.length > 0 ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -951,10 +901,19 @@ return (
                                 <div className="py-1">
                                   <button
                                     onClick={() => {
+                                      if (isMonthReadOnly) {
+                                        alert('Nu poți edita blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                        return;
+                                      }
                                       openEditBlockModal(block);
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                    className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                      isMonthReadOnly
+                                        ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                    disabled={isMonthReadOnly}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -963,10 +922,19 @@ return (
                                   </button>
                                   <button
                                     onClick={() => {
+                                      if (isMonthReadOnly) {
+                                        alert('Nu poți adăuga scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                        return;
+                                      }
                                       openAddStairModal(block);
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                    className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                      isMonthReadOnly
+                                        ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                    disabled={isMonthReadOnly}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -976,12 +944,21 @@ return (
                                   <hr className="my-1" />
                                   <button
                                     onClick={() => {
+                                      if (isMonthReadOnly) {
+                                        alert('Nu poți șterge blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                        return;
+                                      }
                                       if (window.confirm(`Ești sigur că vrei să ștergi blocul "${block.name}"?\n\nAceasta va șterge și toate scările și apartamentele din bloc!`)) {
                                         deleteBlock(block.id);
                                       }
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                    className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                      isMonthReadOnly
+                                        ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                        : 'text-red-600 hover:bg-red-50'
+                                    }`}
+                                    disabled={isMonthReadOnly}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -996,9 +973,20 @@ return (
                           // Butoane individuale pentru blocuri fără scări
                           <>
                             <button
-                              onClick={() => openEditBlockModal(block)}
-                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                              title={`Editează blocul ${block.name}`}
+                              onClick={() => {
+                                if (isMonthReadOnly) {
+                                  alert('Nu poți edita blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                  return;
+                                }
+                                openEditBlockModal(block);
+                              }}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isMonthReadOnly
+                                  ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                  : 'text-blue-600 hover:bg-blue-100'
+                              }`}
+                              title={isMonthReadOnly ? 'Editare blocat - lună publicată' : `Editează blocul ${block.name}`}
+                              disabled={isMonthReadOnly}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1006,21 +994,41 @@ return (
                             </button>
                             <button
                               onClick={() => {
+                                if (isMonthReadOnly) {
+                                  alert('Nu poți șterge blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                  return;
+                                }
                                 if (window.confirm(`Ești sigur că vrei să ștergi blocul "${block.name}"?\n\nAceasta va șterge și toate scările și apartamentele din bloc!`)) {
                                   deleteBlock(block.id);
                                 }
                               }}
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                              title={`Șterge blocul ${block.name}`}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isMonthReadOnly
+                                  ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                  : 'text-red-600 hover:bg-red-100'
+                              }`}
+                              title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : `Șterge blocul ${block.name}`}
+                              disabled={isMonthReadOnly}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
                             <button
-                              onClick={() => openAddStairModal(block)}
-                              className="px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors flex items-center text-sm"
-                              title={`Adaugă scară în ${block.name}`}
+                              onClick={() => {
+                                if (isMonthReadOnly) {
+                                  alert('Nu poți adăuga scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                  return;
+                                }
+                                openAddStairModal(block);
+                              }}
+                              className={`px-3 py-2 rounded-lg transition-colors flex items-center text-sm ${
+                                isMonthReadOnly
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-green-600 text-white hover:bg-green-700'
+                              }`}
+                              title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : `Adaugă scară în ${block.name}`}
+                              disabled={isMonthReadOnly}
                             >
                               Adaugă Scară
                             </button>
@@ -1218,10 +1226,19 @@ return (
                                               <div className="py-1">
                                                 <button
                                                   onClick={() => {
+                                                    if (isMonthReadOnly) {
+                                                      alert('Nu poți edita scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                      return;
+                                                    }
                                                     openEditStairModal(currentStair);
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
-                                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                  className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                                    isMonthReadOnly
+                                                      ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                      : 'text-gray-700 hover:bg-gray-100'
+                                                  }`}
+                                                  disabled={isMonthReadOnly}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1230,10 +1247,19 @@ return (
                                                 </button>
                                                 <button
                                                   onClick={() => {
+                                                    if (isMonthReadOnly) {
+                                                      alert('Nu poți adăuga apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                      return;
+                                                    }
                                                     openAddApartmentModal(currentStair);
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
-                                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                  className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                                    isMonthReadOnly
+                                                      ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                      : 'text-gray-700 hover:bg-gray-100'
+                                                  }`}
+                                                  disabled={isMonthReadOnly}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1243,12 +1269,21 @@ return (
                                                 <hr className="my-1" />
                                                 <button
                                                   onClick={() => {
+                                                    if (isMonthReadOnly) {
+                                                      alert('Nu poți șterge scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                      return;
+                                                    }
                                                     if (window.confirm(`Ești sigur că vrei să ștergi scara "${currentStair.name}"?\n\nAceasta va șterge și toate apartamentele din scară!`)) {
                                                       deleteStair(currentStair.id);
                                                     }
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
-                                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                                  className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                                                    isMonthReadOnly
+                                                      ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                      : 'text-red-600 hover:bg-red-50'
+                                                  }`}
+                                                  disabled={isMonthReadOnly}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1263,9 +1298,20 @@ return (
                                         // Butoane individuale pentru scări fără apartamente
                                         <>
                                           <button
-                                            onClick={() => openEditStairModal(currentStair)}
-                                            className="p-2 text-green-600 hover:bg-green-200 hover:text-green-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
-                                            title={`Editează ${currentStair.name}`}
+                                            onClick={() => {
+                                              if (isMonthReadOnly) {
+                                                alert('Nu poți edita scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                return;
+                                              }
+                                              openEditStairModal(currentStair);
+                                            }}
+                                            className={`p-2 rounded-lg transition-all duration-200 ${
+                                              isMonthReadOnly
+                                                ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                : 'text-green-600 hover:bg-green-200 hover:text-green-800 hover:shadow-md hover:scale-105'
+                                            }`}
+                                            title={isMonthReadOnly ? 'Editare blocată - lună publicată' : `Editează ${currentStair.name}`}
+                                            disabled={isMonthReadOnly}
                                           >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1273,12 +1319,21 @@ return (
                                           </button>
                                           <button
                                             onClick={() => {
+                                              if (isMonthReadOnly) {
+                                                alert('Nu poți șterge scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                return;
+                                              }
                                               if (window.confirm(`Ești sigur că vrei să ștergi scara "${currentStair.name}"?\n\nAceasta va șterge și toate apartamentele din scară!`)) {
                                                 deleteStair(currentStair.id);
                                               }
                                             }}
-                                            className="p-2 text-red-600 hover:bg-red-200 hover:text-red-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
-                                            title={`Șterge ${currentStair.name}`}
+                                            className={`p-2 rounded-lg transition-all duration-200 ${
+                                              isMonthReadOnly
+                                                ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                : 'text-red-600 hover:bg-red-200 hover:text-red-800 hover:shadow-md hover:scale-105'
+                                            }`}
+                                            title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : `Șterge ${currentStair.name}`}
+                                            disabled={isMonthReadOnly}
                                           >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1286,10 +1341,19 @@ return (
                                           </button>
                                           <button
                                             onClick={() => {
+                                              if (isMonthReadOnly) {
+                                                alert('Nu poți adăuga apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                return;
+                                              }
                                               openAddApartmentModal(currentStair);
                                             }}
-                                            className="px-3 py-2 bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md rounded-lg transition-all duration-200 hover:scale-105 flex items-center text-sm"
-                                            title={`Adaugă apartament în ${currentStair.name}`}
+                                            className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center text-sm ${
+                                              isMonthReadOnly
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                : 'bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md hover:scale-105'
+                                            }`}
+                                            title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : `Adaugă apartament în ${currentStair.name}`}
+                                            disabled={isMonthReadOnly}
                                           >
                                             Adaugă Apartament
                                           </button>
@@ -1750,13 +1814,22 @@ return (
                                                           </button>
                                                           <button
                                                             onClick={() => {
+                                                              if (isMonthReadOnly) {
+                                                                alert('Nu poți edita apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                                return;
+                                                              }
                                                               openEditApartmentModal(apartment);
                                                               setOpenApartmentMenus(prev => ({
                                                                 ...prev,
                                                                 [apartment.id]: false
                                                               }));
                                                             }}
-                                                            className="w-full text-left px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 flex items-center gap-2"
+                                                            className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                                                              isMonthReadOnly
+                                                                ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
+                                                                : 'text-orange-700 hover:bg-orange-50 cursor-pointer'
+                                                            }`}
+                                                            disabled={isMonthReadOnly}
                                                           >
                                                             ✏️ Editează Apartament
                                                           </button>
@@ -1771,10 +1844,15 @@ return (
                                                               return a.id.localeCompare(b.id);
                                                             });
                                                             const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
+                                                            const canDelete = isLastApartment && !isMonthReadOnly;
 
                                                             return (
                                                               <button
                                                                 onClick={() => {
+                                                                  if (isMonthReadOnly) {
+                                                                    alert('Nu poți șterge apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                                                                    return;
+                                                                  }
                                                                   if (isLastApartment) {
                                                                     if (window.confirm(`Ești sigur că vrei să ștergi apartamentul ${apartment.number} (${apartment.owner})?\n\nAcest lucru este ireversibil!`)) {
                                                                       deleteApartment(apartment.id);
@@ -1788,11 +1866,11 @@ return (
                                                                   }));
                                                                 }}
                                                                 className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                                                                  isLastApartment
+                                                                  canDelete
                                                                     ? 'text-red-700 hover:bg-red-50 cursor-pointer'
                                                                     : 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                                 }`}
-                                                                disabled={!isLastApartment}
+                                                                disabled={!canDelete}
                                                               >
                                                                 🗑️ Șterge Apartament
                                                               </button>
@@ -1886,7 +1964,7 @@ return (
         stair={apartmentModalStair}
         blocks={blocks}
         stairs={stairs}
-        apartments={apartments}
+        apartments={associationApartments}
         onSave={handleSaveApartment}
       />
 
@@ -1895,21 +1973,23 @@ return (
         isOpen={showMaintenanceBreakdown}
         onClose={() => setShowMaintenanceBreakdown(false)}
         apartmentData={selectedApartmentForBreakdown}
-        expensesList={currentSheet?.expenses || []}
+        expensesList={activeSheet?.expenses || []}
         apartmentParticipations={
           // Build participations for ALL apartments, not just the selected one
-          apartments.reduce((acc, apt) => {
-            acc[apt.id] = (currentSheet?.expenses || []).reduce((expAcc, expense) => {
+          associationApartments.reduce((acc, apt) => {
+            acc[apt.id] = (activeSheet?.expenses || []).reduce((expAcc, expense) => {
               expAcc[expense.name] = getApartmentParticipation?.(apt.id, expense.name) || {};
               return expAcc;
             }, {});
             return acc;
           }, {})
         }
-        allApartments={apartments}
+        allApartments={associationApartments}
         allMaintenanceData={maintenanceData}
         getExpenseConfig={getExpenseConfig}
         stairs={stairs}
+        payments={activeSheet?.payments || []} // 🆕 Trimite plățile din sheet-ul activ
+        currentMonth={currentMonth}
       />
     </div>
   );

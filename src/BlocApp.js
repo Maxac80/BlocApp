@@ -234,11 +234,47 @@ export default function BlocApp() {
   });
 
   // 🎯 SHEET SELECTION: Determină sheet-ul pentru luna selectată
-  // Logica: Dacă luna selectată = luna publicată → folosim publishedSheet (date salvate din Firebase)
-  //         Altfel → folosim currentSheet (date calculate live)
-  const activeSheet = (publishedSheet && currentMonth === publishedSheet.monthYear)
-    ? publishedSheet
-    : currentSheet;
+  // Logica:
+  // 1. Caută în toate sheet-urile un sheet PUBLISHED sau ARCHIVED pentru luna selectată
+  // 2. Dacă nu există, verifică dacă publishedSheet corespunde lunii selectate
+  // 3. Altfel, folosește currentSheet (date calculate live pentru luna in-progress)
+  const activeSheet = (() => {
+    console.log('🔍 Looking for sheet:', {
+      currentMonth,
+      totalSheets: sheets?.length || 0,
+      availableSheets: sheets?.map(s => ({
+        month: s.monthYear,
+        status: s.status,
+        id: s.id
+      })) || []
+    });
+
+    // Caută un sheet publicat SAU arhivat pentru luna selectată (important pentru luni istorice)
+    const lockedSheetForMonth = sheets?.find(
+      sheet => sheet.monthYear === currentMonth &&
+               (sheet.status === 'published' || sheet.status === 'archived')
+    );
+
+    if (lockedSheetForMonth) {
+      console.log('✅ Found locked sheet for month:', {
+        month: currentMonth,
+        status: lockedSheetForMonth.status,
+        sheetId: lockedSheetForMonth.id,
+        hasExpenses: !!lockedSheetForMonth.expenses,
+        expensesCount: lockedSheetForMonth.expenses?.length || 0
+      });
+      return lockedSheetForMonth;
+    }
+
+    // Fallback la logica veche pentru compatibilitate
+    if (publishedSheet && currentMonth === publishedSheet.monthYear) {
+      console.log('⚠️ Using publishedSheet fallback for:', currentMonth);
+      return publishedSheet;
+    }
+
+    console.log('🔄 Using currentSheet (in-progress) for:', currentMonth);
+    return currentSheet;
+  })();
 
   const activeExpenses = activeSheet?.expenses || [];
 
@@ -250,7 +286,10 @@ export default function BlocApp() {
     publishedSheetMonth: publishedSheet?.monthYear,
     selectedSheetId: activeSheet?.id,
     selectedSheetMonth: activeSheet?.monthYear,
+    selectedSheetStatus: activeSheet?.status,
     usingPublishedSheet: activeSheet === publishedSheet,
+    foundInSheetsArray: sheets?.some(s => s.id === activeSheet?.id),
+    totalSheets: sheets?.length || 0,
     expensesCount: activeExpenses.length
   });
 
@@ -263,7 +302,7 @@ export default function BlocApp() {
     deleteExpenseConfig: deleteFirestoreExpenseConfig,
     saveApartmentParticipations,
     fixFirestoreConfigurations
-  } = useExpenseConfigurations(currentSheet);
+  } = useExpenseConfigurations(activeSheet); // 🎯 DYNAMIC: folosește activeSheet pentru a citi configurațiile lunii selectate
 
   // 🔥 HOOK PENTRU CALCULUL ÎNTREȚINERII
   const {
@@ -286,6 +325,7 @@ export default function BlocApp() {
     currentMonth: currentMonth || null,
     calculateNextMonthBalances, // Pasăm funcția din useBalanceManagement
     // Pasăm soldurile din sheet-uri pentru corelația corectă
+    activeSheet, // 🆕 CRITICAL: Pasăm activeSheet calculat de BlocApp pentru logică corectă
     currentSheet,
     publishedSheet,
     getSheetBalances: getSheetBalances || (() => null),
@@ -296,20 +336,22 @@ export default function BlocApp() {
     getExpenseConfig: getFirestoreExpenseConfig
   });
 
-  // 🎯 MAINTENANCE DATA SELECTION: Pentru published sheet, folosim maintenanceTable salvat
+  // 🎯 MAINTENANCE DATA SELECTION: Pentru locked sheets (published/archived), folosim maintenanceTable salvat
   // Pentru in-progress sheet, folosim calculul live
-  const maintenanceData = (activeSheet === publishedSheet && publishedSheet?.maintenanceTable)
-    ? publishedSheet.maintenanceTable
+  const isLockedSheet = activeSheet?.status === 'published' || activeSheet?.status === 'archived';
+  const maintenanceData = (isLockedSheet && activeSheet?.maintenanceTable)
+    ? activeSheet.maintenanceTable
     : calculatedMaintenanceData;
 
   console.log('🎯 Maintenance data selection:', {
     activeSheetId: activeSheet?.id,
-    usingPublishedSheet: activeSheet === publishedSheet,
-    hasPublishedMaintenanceTable: !!(publishedSheet?.maintenanceTable),
-    publishedTableLength: publishedSheet?.maintenanceTable?.length || 0,
+    activeSheetStatus: activeSheet?.status,
+    isLockedSheet,
+    hasActiveSheetMaintenanceTable: !!(activeSheet?.maintenanceTable),
+    activeSheetTableLength: activeSheet?.maintenanceTable?.length || 0,
     calculatedDataLength: calculatedMaintenanceData?.length || 0,
     finalDataLength: maintenanceData?.length || 0,
-    usingPublishedTable: maintenanceData === publishedSheet?.maintenanceTable
+    usingLockedTable: maintenanceData === activeSheet?.maintenanceTable
   });
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
@@ -343,7 +385,7 @@ export default function BlocApp() {
     expenses: activeExpenses, // 🎯 DYNAMIC: folosește expenses din sheet-ul activ
     customExpenses,
     currentMonth,
-    currentSheet, // SHEET-BASED: adăugat pentru a folosi sheet.id în loc de monthYear
+    currentSheet: activeSheet, // 🎯 DYNAMIC: folosește activeSheet bazat pe luna selectată
     disabledExpenses,
     addMonthlyExpense: addExpenseToSheet, // SHEET-BASED: folosește addExpenseToSheet
     updateMonthlyExpense,
@@ -600,7 +642,7 @@ useEffect(() => {
               maintenanceData={maintenanceData}
               userProfile={userProfile}
               getMonthType={getMonthType}
-              currentSheet={currentSheet}
+              currentSheet={activeSheet}
               getExpenseConfig={getFirestoreExpenseConfig}
               getApartmentParticipation={getApartmentParticipation}
               calculateMaintenanceWithDetails={calculateMaintenanceWithDetails}
@@ -631,6 +673,7 @@ useEffect(() => {
               }}
               unpublishSheet={unpublishSheet}
               getAvailableMonths={getAvailableMonths}
+              activeSheet={activeSheet} // 🆕 CRITICAL: Sheet activ calculat de BlocApp (include archived/published/in_progress)
               expenses={activeSheet?.expenses || []}
               newExpense={newExpense}
               setNewExpense={setNewExpense}
@@ -692,8 +735,6 @@ useEffect(() => {
               association={association}
               blocks={blocks}
               stairs={stairs}
-              apartments={apartments}
-              firestoreApartments={firestoreApartments}
               getAssociationApartments={getAssociationApartments || (() => {
                 console.error('⚠️ getAssociationApartments is not available');
                 return [];
@@ -707,6 +748,7 @@ useEffect(() => {
               setPendingMaintenanceApartmentId={setPendingMaintenanceApartmentId}
               maintenanceData={maintenanceData}
               currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
               getApartmentParticipation={getApartmentParticipation}
               getExpenseConfig={getFirestoreExpenseConfig}
               searchTerm={searchTerm}
@@ -769,6 +811,8 @@ useEffect(() => {
               deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               getMonthType={getMonthType}
               currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
+              sheets={sheets}
               blocks={blocks}
               stairs={stairs}
             />
@@ -847,6 +891,8 @@ useEffect(() => {
               })}
               handleNavigation={handleNavigation}
               getMonthType={getMonthType}
+              publishedSheet={publishedSheet}
+              sheets={sheets || []}
               // Props pentru facturi
               invoices={invoices}
               getInvoicesByMonth={getInvoicesByMonth}

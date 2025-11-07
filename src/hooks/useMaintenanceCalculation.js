@@ -13,6 +13,7 @@ const useMaintenanceCalculation = ({
   expenses,
   association,
   currentMonth,
+  activeSheet, // 🆕 CRITICAL: Sheet-ul activ calculat de BlocApp (poate fi archived, published sau in_progress)
   currentSheet,
   publishedSheet,
   blocks,
@@ -29,12 +30,47 @@ const useMaintenanceCalculation = ({
   // 🔍 FILTRARE APARTAMENTE PENTRU ASOCIAȚIA CURENTĂ
   // SHEET-BASED: Prioritizează apartamentele din sheet-ul curent, cu fallback către colecții
   const getAssociationApartments = useCallback(() => {
-    // 1. PRIORITATE: Dacă există currentSheet cu associationSnapshot, folosește apartamentele din sheet
+    console.log('🔍 getAssociationApartments - Checking sheets:', {
+      currentMonth,
+      activeSheetFromBlocApp: activeSheet?.monthYear,
+      activeSheetStatus: activeSheet?.status,
+      publishedSheetMonth: publishedSheet?.monthYear,
+      currentSheetMonth: currentSheet?.monthYear,
+      publishedSheetId: publishedSheet?.id,
+      currentSheetId: currentSheet?.id
+    });
+
+    // 1. PRIORITATE MAXIMĂ: activeSheet pasat de BlocApp (include logică completă pentru archived/published/in_progress)
+    if (activeSheet?.associationSnapshot?.apartments && activeSheet.associationSnapshot.apartments.length > 0) {
+      console.log('✅ Using apartments from BlocApp activeSheet:', {
+        sheetMonth: activeSheet.monthYear,
+        sheetStatus: activeSheet.status,
+        apartmentsCount: activeSheet.associationSnapshot.apartments.length,
+        firstApartment: activeSheet.associationSnapshot.apartments[0]
+      });
+      return activeSheet.associationSnapshot.apartments;
+    }
+
+    // 2. FALLBACK pentru published sheet (când activeSheet nu e disponibil încă)
+    if (publishedSheet?.monthYear === currentMonth && publishedSheet?.associationSnapshot?.apartments) {
+      console.log('🏢 Using apartments from publishedSheet:', {
+        sheetMonth: publishedSheet.monthYear,
+        apartmentsCount: publishedSheet.associationSnapshot.apartments.length
+      });
+      return publishedSheet.associationSnapshot.apartments;
+    }
+
+    // 3. FALLBACK pentru current sheet (sheet-ul in-progress)
     if (currentSheet?.associationSnapshot?.apartments && currentSheet.associationSnapshot.apartments.length > 0) {
+      console.log('🏢 Using apartments from currentSheet:', {
+        sheetMonth: currentSheet.monthYear,
+        apartmentsCount: currentSheet.associationSnapshot.apartments.length
+      });
       return currentSheet.associationSnapshot.apartments;
     }
 
-    // 2. FALLBACK: Folosește colecțiile tradiționale pentru compatibilitate
+    // 4. FALLBACK FINAL: Folosește colecțiile tradiționale pentru compatibilitate
+    console.log('⚠️ No apartments in sheet snapshots, falling back to Firestore collections');
 
     if (!apartments || !association?.id) {
       return [];
@@ -58,7 +94,7 @@ const useMaintenanceCalculation = ({
     const filtered = apartments.filter(apt => stairIds.includes(apt.stairId));
 
     return filtered;
-  }, [currentSheet, apartments, association?.id, blocks, stairs]);
+  }, [activeSheet, currentSheet, publishedSheet, currentMonth, apartments, association?.id, blocks, stairs]);
 
   // 📊 CALCULUL SUMELOR TOTALE
   const calculateTotalExpenses = useCallback(() => {
@@ -76,10 +112,11 @@ const useMaintenanceCalculation = ({
   // 💰 GESTIONAREA SOLDURILOR - LOGICĂ SIMPLĂ ȘI CLARĂ
   const getApartmentBalance = useCallback(
     (apartmentId) => {
-      // CAZ 1: Vizualizăm sheet-ul publicat → Date LOCKED din maintenanceTable
-      if (publishedSheet && publishedSheet.monthYear === currentMonth) {
-        if (publishedSheet.maintenanceTable && publishedSheet.maintenanceTable.length > 0) {
-          const apartmentRow = publishedSheet.maintenanceTable.find(row => row.apartmentId === apartmentId);
+      // CAZ 1: Vizualizăm un locked sheet (published SAU archived) → Date LOCKED din maintenanceTable
+      const viewingLockedSheet = activeSheet?.status === 'published' || activeSheet?.status === 'archived';
+      if (viewingLockedSheet && activeSheet?.monthYear === currentMonth) {
+        if (activeSheet.maintenanceTable && activeSheet.maintenanceTable.length > 0) {
+          const apartmentRow = activeSheet.maintenanceTable.find(row => row.apartmentId === apartmentId);
           if (apartmentRow) {
             return {
               restante: apartmentRow.restante || 0,
@@ -96,12 +133,41 @@ const useMaintenanceCalculation = ({
           if (apartmentRow) {
             const payments = publishedSheet.payments || [];
             const apartmentPayments = payments.filter(p => p.apartmentId === apartmentId);
-            const totalPaid = apartmentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+            console.log(`🔍 DEBUG CAZ 2 - Plăți pentru Ap. ${apartmentRow.apartment} (${apartmentRow.owner}):`, {
+              apartmentId,
+              apartmentNumber: apartmentRow.apartment,
+              owner: apartmentRow.owner,
+              totalPaymentsInSheet: payments.length,
+              apartmentPaymentsCount: apartmentPayments.length,
+              apartmentPayments: apartmentPayments.map(p => ({
+                id: p.id,
+                apartmentId: p.apartmentId,
+                apartmentNumber: p.apartmentNumber,
+                amount: p.amount,
+                total: p.total
+              })),
+              allPaymentsApartmentIds: payments.map(p => ({ aptId: p.apartmentId, aptNum: p.apartmentNumber }))
+            });
 
             // CORECȚIE: Separă întreținerea curentă de restanțe și penalități vechi
-            const currentMaintenance = apartmentRow.currentMaintenance || 0; // Doar întreținerea lunii
-            const restanteVechi = apartmentRow.restante || 0; // Restanțe din luni anterioare
-            const penalitatiVechi = apartmentRow.penalitati || 0; // Penalități din luni anterioare
+            const currentMaintenance = apartmentRow.currentMaintenance || 0;
+            const restanteVechi = apartmentRow.restante || 0;
+            const penalitatiVechi = apartmentRow.penalitati || 0;
+
+            // LOGICA CORECTĂ: Folosește detaliile plăților (ce sumă merge la fiecare categorie)
+            // Sumează plățile pe categorii
+            let totalPaidRestante = 0;
+            let totalPaidIntretinere = 0;
+            let totalPaidPenalitati = 0;
+
+            apartmentPayments.forEach(p => {
+              totalPaidRestante += (p.restante || 0);
+              totalPaidIntretinere += (p.intretinere || 0);
+              totalPaidPenalitati += (p.penalitati || 0);
+            });
+
+            const totalPaid = totalPaidRestante + totalPaidIntretinere + totalPaidPenalitati;
 
             console.log(`📊 CAZ 2 - Transfer solduri pentru ${apartmentRow.apartment}:`, {
               apartmentId,
@@ -109,25 +175,47 @@ const useMaintenanceCalculation = ({
               restanteVechi,
               penalitatiVechi,
               totalPaid,
+              platiDetaliate: {
+                restante: totalPaidRestante,
+                intretinere: totalPaidIntretinere,
+                penalitati: totalPaidPenalitati
+              },
               totalDatorat: apartmentRow.totalDatorat
             });
 
-            // Calculează restanța nouă: întreținere neplătită
-            const restanteNoi = Math.max(0, currentMaintenance - totalPaid);
+            // Calculează ce a rămas de plătit pentru fiecare categorie
+            const restanteRamase = Math.max(0, restanteVechi - totalPaidRestante);
+            const intretinereRamasa = Math.max(0, currentMaintenance - totalPaidIntretinere);
+            const penalitatiRamase = Math.max(0, penalitatiVechi - totalPaidPenalitati);
 
-            // Transferă restanțele: restanțe vechi + întreținere neplătită din luna curentă
-            const restanteTotale = restanteVechi + restanteNoi;
+            // Restanțele pentru luna următoare = restanțe vechi neplătite + întreținere neplătită din luna curentă
+            const restanteTotale = restanteRamase + intretinereRamasa;
 
-            console.log(`💰 Calcul restanțe ${apartmentRow.apartment}:`, {
+            console.log(`💰 Calcul restanțe FINAL pentru Ap. ${apartmentRow.apartment} (${apartmentRow.owner}):`, {
               restanteVechi,
-              restanteNoi,
-              restanteTotale,
-              penalitatiVechi
+              currentMaintenance,
+              penalitatiVechi,
+              totalPaid,
+              platiPeCategorie: {
+                restante: totalPaidRestante,
+                intretinere: totalPaidIntretinere,
+                penalitati: totalPaidPenalitati
+              },
+              rezultatCalcul: {
+                restanteRamase,
+                intretinereRamasa,
+                restanteTotale,
+                penalitatiRamase
+              },
+              RETURN_VALUE: {
+                restante: Math.round(restanteTotale * 100) / 100,
+                penalitati: Math.round(penalitatiRamase * 100) / 100
+              }
             });
 
             return {
               restante: Math.round(restanteTotale * 100) / 100,
-              penalitati: Math.round(penalitatiVechi * 100) / 100 // Penalitățile se transferă separat
+              penalitati: Math.round(penalitatiRamase * 100) / 100
             };
           }
         }
@@ -144,16 +232,8 @@ const useMaintenanceCalculation = ({
         }
       }
 
-      // CAZ 4: Ajustări manuale → Citește din currentSheet.maintenanceTable
-      if (currentSheet && currentSheet.maintenanceTable && currentSheet.maintenanceTable.length > 0) {
-        const apartmentRow = currentSheet.maintenanceTable.find(row => row.apartmentId === apartmentId);
-        if (apartmentRow && (apartmentRow.restante > 0 || apartmentRow.penalitati > 0)) {
-          return {
-            restante: apartmentRow.restante || 0,
-            penalitati: apartmentRow.penalitati || 0
-          };
-        }
-      }
+      // CAZ 4: ELIMINAT - currentSheet.maintenanceTable conține date stale care nu țin cont de plățile noi
+      // Calculul corect se face în CAZ 2 pe baza publishedSheet.maintenanceTable + payments
 
       // CAZ 5: Fallback la soldurile inițiale
       const apartment = apartments.find(apt => apt.id === apartmentId);
@@ -167,7 +247,7 @@ const useMaintenanceCalculation = ({
       // CAZ 6: Fallback final
       return { restante: 0, penalitati: 0 };
     },
-    [currentSheet, publishedSheet, currentMonth, apartments]
+    [activeSheet, currentSheet, publishedSheet, currentMonth, apartments]
   );
 
   const setApartmentBalance = useCallback(

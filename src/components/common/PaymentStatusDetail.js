@@ -96,8 +96,8 @@ const PaymentStatusDetail = ({
     const Icon = config.icon;
 
     return (
-      <div 
-        className={`inline-flex items-center px-2 py-1 rounded-md ${config.color} mr-1 mb-1`}
+      <div
+        className={`inline-flex items-center px-1.5 py-0.5 rounded-md ${config.color}`}
       >
         <Icon className="w-3 h-3 mr-1" />
         <span className="text-xs font-medium">{amount.toFixed(0)}</span>
@@ -108,11 +108,11 @@ const PaymentStatusDetail = ({
   // Component principal pentru status
   const StatusContent = () => (
     <div className="relative">
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-0.5">
         {/* Status principal */}
-        <div className={`flex items-center font-medium mb-1 ${
-          isPaid ? 'text-green-600' : 
-          isPartiallyPaid ? 'text-orange-600' : 
+        <div className={`flex items-center font-medium ${
+          isPaid ? 'text-green-600' :
+          isPartiallyPaid ? 'text-orange-600' :
           'text-red-600'
         }`}>
           {isPaid && <CheckCircle className="w-4 h-4 mr-1" />}
@@ -123,24 +123,24 @@ const PaymentStatusDetail = ({
 
         {/* Detalii plată cu iconițe */}
         {paymentBreakdown && (isPaid || isPartiallyPaid) && (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {/* Total plătit */}
-            <div className="flex items-center text-xs text-gray-600 mb-1">
+            <div className="flex items-center text-xs text-gray-600">
               Total: {paymentBreakdown.total.toFixed(2)} RON
             </div>
-            
+
             {/* Breakdown pe categorii cu iconițe */}
-            <div className="flex flex-wrap">
-              <PaymentIcon 
-                type="intretinere" 
+            <div className="flex flex-wrap gap-0.5">
+              <PaymentIcon
+                type="intretinere"
                 amount={paymentBreakdown.intretinere}
               />
-              <PaymentIcon 
-                type="restante" 
+              <PaymentIcon
+                type="restante"
                 amount={paymentBreakdown.restante}
               />
-              <PaymentIcon 
-                type="penalitati" 
+              <PaymentIcon
+                type="penalitati"
                 amount={paymentBreakdown.penalitati}
               />
             </div>

@@ -33,7 +33,10 @@ const MaintenanceView = ({
   // Pending apartment for maintenance breakdown
   pendingMaintenanceApartmentId,
   setPendingMaintenanceApartmentId,
-  
+
+  // Sheets
+  activeSheet, // 🆕 Sheet activ calculat de BlocApp (poate fi archived, published sau in_progress)
+
   // Expenses
   expenses,
   newExpense,
@@ -136,8 +139,23 @@ const MaintenanceView = ({
     setExpandedExpenses({});
   }, [currentMonth]);
 
-  // Hook pentru gestionarea încasărilor
-  const { addIncasare } = useIncasari(association || null, currentMonth);
+  // 🆕 Hook pentru gestionarea încasărilor - folosește activeSheet pasat de BlocApp (include locked sheets: published + archived)
+  // Pentru locked sheets (published/archived), permitem citirea plăților (read-only pentru archived)
+  // Pentru in_progress sheets, nu există încă plăți (sheet-ul nu e finalizat)
+  const publishedSheetForPayments = (activeSheet?.status === 'published' || activeSheet?.status === 'archived')
+    ? activeSheet
+    : null;
+
+  console.log('🔍 DEBUG Payment Sheet Selection:', {
+    currentMonth,
+    activeSheetMonth: activeSheet?.monthYear,
+    activeSheetStatus: activeSheet?.status,
+    isLockedSheet: activeSheet?.status === 'published' || activeSheet?.status === 'archived',
+    publishedSheetForPayments: publishedSheetForPayments ? 'FOUND' : 'NULL',
+    paymentsCount: activeSheet?.payments?.length || 0
+  });
+
+  const { addIncasare, incasari, loading: incasariLoading } = useIncasari(association || null, currentMonth, publishedSheetForPayments);
 
   // Hook pentru gestionarea facturilor cu suport complet pentru distribuție parțială
   const {
@@ -153,15 +171,40 @@ const MaintenanceView = ({
   } = useInvoices(association?.id);
 
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
+  // Folosim același sheet ca pentru payments (publishedSheetForPayments)
   const {
     getUpdatedMaintenanceData,
     getApartmentPayments,
-    getPaymentStats
-  } = usePaymentSync(association || null, currentMonth);
+    getPaymentStats,
+    loading: paymentSyncLoading
+  } = usePaymentSync(association || null, currentMonth, publishedSheetForPayments);
+
+  // State pentru a urmări dacă datele inițiale au fost încărcate complet
+  const [isDataReady, setIsDataReady] = useState(false);
+
+  // Monitorizează când toate datele sunt gata
+  useEffect(() => {
+    if (!incasariLoading && !paymentSyncLoading) {
+      const timer = setTimeout(() => {
+        setIsDataReady(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsDataReady(false);
+    }
+  }, [incasariLoading, paymentSyncLoading]);
+
+  // Reset isDataReady când se schimbă luna
+  useEffect(() => {
+    setIsDataReady(false);
+  }, [currentMonth]);
 
   // Calculează datele actualizate pentru afișare în tabel (înainte de early return)
   // Acestea vor reflecta datoriile reale după încasări
-  const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+  // IMPORTANT: Calculăm întotdeauna datele, NU le schimbăm condiționat
+  const updatedMaintenanceData = useMemo(() => {
+    return getUpdatedMaintenanceData(maintenanceData);
+  }, [maintenanceData, getUpdatedMaintenanceData]);
 
   console.log('🔍 MaintenanceView data check:', {
     isMonthReadOnly,
@@ -382,26 +425,17 @@ const MaintenanceView = ({
     }
   }, [invoices, migrationRun, migrateDistributionHistoryToExpenseTypeId]);
 
-  // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul activ bazat pe tab-ul selectat
-  // Dacă currentMonth corespunde cu publishedSheet.monthYear → folosim publishedSheet.expenses
-  // Dacă currentMonth corespunde cu currentSheet.monthYear → folosim currentSheet.expenses
+  // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul activ pasat de BlocApp (include logică pentru archived/published/in_progress)
+  // BlocApp calculează deja activeSheet corect și pasează expenses={activeSheet?.expenses || []}
   const associationExpenses = useMemo(() => {
-    const activeSheet = (publishedSheet && currentMonth === publishedSheet.monthYear)
-      ? publishedSheet
-      : currentSheet;
-
-    console.log('📦 MaintenanceView - Sheet selection:', {
+    console.log('📦 MaintenanceView - Using expenses from BlocApp:', {
       currentMonth,
-      currentSheetMonth: currentSheet?.monthYear,
-      publishedSheetMonth: publishedSheet?.monthYear,
-      activeSheetId: activeSheet?.id,
-      activeSheetMonth: activeSheet?.monthYear,
-      usingPublishedSheet: activeSheet === publishedSheet,
-      expensesLength: activeSheet?.expenses?.length || 0
+      expensesLength: expenses?.length || 0,
+      expensesNames: expenses?.map(e => e.name) || []
     });
 
-    return activeSheet?.expenses || [];
-  }, [currentSheet, publishedSheet, currentMonth]);
+    return expenses || [];
+  }, [expenses, currentMonth]);
 
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -906,7 +940,7 @@ const MaintenanceView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-        <div className={`h-screen flex flex-col overflow-hidden ${
+        <div className={`min-h-screen ${
           monthType === 'current'
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
             : monthType === 'next'
@@ -915,7 +949,7 @@ const MaintenanceView = ({
             ? "bg-gradient-to-br from-gray-50 to-gray-100"
             : "bg-gradient-to-br from-indigo-50 to-blue-100"
         }`}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-2 px-6 pb-6">
+      <div className="w-full pt-2 px-6 pb-6">
         <DashboardHeader
           key={`header-${publishedSheet?.id || 'no-published'}`}
           association={association}
@@ -1052,8 +1086,8 @@ const MaintenanceView = ({
                       </button>
                     )}
 
-                    {/* Buton Depublică Luna */}
-                    {isMonthReadOnly && getMonthType(currentMonth) === 'current' && unpublishSheet && (
+                    {/* Buton Depublică Luna - ascuns dacă există încasări sau datele nu sunt gata */}
+                    {isMonthReadOnly && getMonthType(currentMonth) === 'current' && unpublishSheet && isDataReady && incasari.length === 0 && (
                       <button
                         onClick={async () => {
                           if (!window.confirm(
@@ -1146,7 +1180,7 @@ const MaintenanceView = ({
               {/* Tabelul de întreținere - card separat */}
               <div className="mx-2 mb-2">
                 {filteredMaintenanceData.length > 0 ? (
-                  <div className="rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden bg-white">
+                  <div className="rounded-xl shadow-lg border-2 border-gray-200 bg-white">
                     <div className={`p-4 border-b ${
                       monthType === 'historic'
                         ? 'bg-gray-100'
@@ -1236,12 +1270,16 @@ const MaintenanceView = ({
                       </div>
                     </div>
 
-                    {/* Container cu scroll izolat pentru tabel */}
+                    {/* Container cu scroll orizontal pentru tabel */}
                     <div
-                      className="overflow-x-auto overflow-y-auto"
-                      style={{
-                        maxHeight: '70vh'
-                      }}
+                      className={
+                        filteredMaintenanceData.length > 10
+                          ? "overflow-x-auto overflow-y-auto"
+                          : activeMaintenanceTab === "detailed"
+                          ? "overflow-x-auto"
+                          : ""
+                      }
+                      style={filteredMaintenanceData.length > 10 ? { maxHeight: '70vh' } : {}}
                     >
                       {activeMaintenanceTab === "simple" ? (
                         <MaintenanceTableSimple
@@ -1251,6 +1289,9 @@ const MaintenanceView = ({
                           onOpenPaymentModal={handleOpenPaymentModal}
                           onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                           isHistoricMonth={monthType === 'historic'}
+                          getPaymentStats={getPaymentStats}
+                          isLoadingPayments={!isDataReady}
+                          disableSticky={filteredMaintenanceData.length <= 10}
                         />
                       ) : (
                         <MaintenanceTableDetailed
@@ -1261,6 +1302,8 @@ const MaintenanceView = ({
                           onOpenPaymentModal={handleOpenPaymentModal}
                           onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                           isHistoricMonth={monthType === 'historic'}
+                          isLoadingPayments={!isDataReady}
+                          disableSticky={filteredMaintenanceData.length <= 10}
                         />
                       )}
                     </div>
@@ -1411,6 +1454,8 @@ const MaintenanceView = ({
           allMaintenanceData={updatedMaintenanceData}
           getExpenseConfig={getExpenseConfig}
           stairs={stairs}
+          payments={activeSheet?.payments || []}
+          currentMonth={currentMonth}
         />
 
         {/* Modal pentru cheltuieli disponibile */}

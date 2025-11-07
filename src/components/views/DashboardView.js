@@ -1,8 +1,6 @@
 // src/components/views/DashboardView.js
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  StatisticsCards,
-  RecentActivity,
   DashboardHeader,
   DashboardMaintenanceTable
 } from '../dashboard';
@@ -32,6 +30,7 @@ const DashboardView = ({
   expenses,
   maintenanceData,
   currentSheet,
+  publishedSheet, // 🆕 Necesar pentru încasări
 
   // User profile
   userProfile,
@@ -41,19 +40,45 @@ const DashboardView = ({
   getApartmentParticipation,
   calculateMaintenanceWithDetails
 }) => {
+  // 🎯 DETERMINĂ SHEET-UL ACTIV bazat pe luna selectată
+  const activeSheet = (publishedSheet?.monthYear === currentMonth)
+    ? publishedSheet
+    : currentSheet;
+
   // Hook-uri pentru gestionarea încasărilor
-  // 🆕 FAZA 4: Transmite currentSheet (care poate fi publishedSheet)
-  const publishedSheet = currentSheet?.status === 'PUBLISHED' ? currentSheet : null;
-  const { addIncasare } = useIncasari(association, currentMonth, publishedSheet);
-  
+  // 🆕 Folosește activeSheet pentru a funcționa corect pe orice lună selectată (include archived sheets)
+  const activePublishedSheet = (activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived') ? activeSheet : null;
+  const { addIncasare, loading: incasariLoading } = useIncasari(association, currentMonth, activePublishedSheet);
+
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
-  // 🆕 FAZA 5: Transmite currentSheet pentru sincronizare cross-sheet
+  // 🆕 Folosește activePublishedSheet pentru a citi plățile corecte din luna selectată (include archived sheets)
   const {
     getUpdatedMaintenanceData,
     getApartmentPayments,
-    getPaymentStats
-  } = usePaymentSync(association, currentMonth, currentSheet);
-  
+    getPaymentStats,
+    loading: paymentSyncLoading
+  } = usePaymentSync(association, currentMonth, activePublishedSheet);
+
+  // State pentru a urmări dacă datele inițiale au fost încărcate complet
+  const [isDataReady, setIsDataReady] = useState(false);
+
+  // Monitorizează când toate datele sunt gata
+  useEffect(() => {
+    if (!incasariLoading && !paymentSyncLoading) {
+      const timer = setTimeout(() => {
+        setIsDataReady(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsDataReady(false);
+    }
+  }, [incasariLoading, paymentSyncLoading]);
+
+  // Reset isDataReady când se schimbă luna
+  useEffect(() => {
+    setIsDataReady(false);
+  }, [currentMonth]);
+
   // State pentru modalul de plăți
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
@@ -62,9 +87,11 @@ const DashboardView = ({
   const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
   const [selectedMaintenanceData, setSelectedMaintenanceData] = useState(null);
 
-
   // Calculează datele actualizate pentru afișare în tabel
-  const updatedMaintenanceData = getUpdatedMaintenanceData(maintenanceData);
+  // IMPORTANT: Calculăm întotdeauna datele, NU le schimbăm condiționat
+  const updatedMaintenanceData = useMemo(() => {
+    return getUpdatedMaintenanceData(maintenanceData);
+  }, [maintenanceData, getUpdatedMaintenanceData]);
 
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
@@ -218,21 +245,10 @@ const DashboardView = ({
         {/* Dacă există asociație cu apartamente - dashboard normal */}
         {association && getAssociationApartments().length > 0 && (
           <>
-            <StatisticsCards
-              association={association}
-              blocks={blocks}
-              stairs={stairs}
-              getAssociationApartments={getAssociationApartments}
-              expenses={expenses}
-              currentMonth={currentMonth}
-              maintenanceData={updatedMaintenanceData}
-              currentSheet={currentSheet}
-            />
-
-            {/* Verifică dacă luna curentă este publicată */}
+            {/* Verifică dacă luna curentă este publicată sau arhivată */}
             {(() => {
-              const isCurrentMonthPublished = isMonthReadOnly;
-              
+              const isCurrentMonthPublished = isMonthReadOnly || activeSheet?.status === 'archived';
+
               if (!isCurrentMonthPublished) {
                 return (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
@@ -268,7 +284,7 @@ const DashboardView = ({
                 <DashboardMaintenanceTable
                   maintenanceData={updatedMaintenanceData}
                   currentMonth={currentMonth}
-                  isMonthReadOnly={isMonthReadOnly}
+                  isMonthReadOnly={isMonthReadOnly || activeSheet?.status === 'archived'}
                   onOpenPaymentModal={handleOpenPaymentModal}
                   onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
                   handleNavigation={handleNavigation}
@@ -277,43 +293,12 @@ const DashboardView = ({
                   stairs={stairs}
                   getAssociationApartments={getAssociationApartments}
                   expenses={expenses}
-                  isHistoricMonth={monthType === 'historic'}
+                  isHistoricMonth={monthType === 'historic' || activeSheet?.status === 'archived'}
+                  getPaymentStats={getPaymentStats}
+                  isLoadingPayments={!isDataReady}
                 />
               );
             })()}
-
-            {/* Activitate Recentă - doar pentru luna publicată */}
-            <div className="mt-8">
-              {(() => {
-                const isCurrentMonthPublished = isMonthReadOnly;
-                
-                if (!isCurrentMonthPublished) {
-                  return (
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h3 className="text-lg font-semibold mb-4">📝 Activitate Recentă - {currentMonth}</h3>
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <span className="text-3xl">📝</span>
-                        </div>
-                        <p className="text-gray-600 mb-2">Nu există încă activitate pentru această lună</p>
-                        <p className="text-sm text-gray-500">
-                          Activitatea va fi disponibilă după publicarea lunii {currentMonth}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <RecentActivity 
-                    maintenanceData={updatedMaintenanceData} 
-                    association={association}
-                    currentMonth={currentMonth}
-                    getAssociationApartments={getAssociationApartments}
-                  />
-                );
-              })()}
-            </div>
           </>
         )}
       </div>
@@ -366,6 +351,8 @@ const DashboardView = ({
             allMaintenanceData={updatedMaintenanceData || []}
             getExpenseConfig={getExpenseConfig}
             stairs={stairs || []}
+            payments={activeSheet?.payments || []} // 🆕 Trimite plățile din sheet-ul activ
+            currentMonth={currentMonth}
           />
         );
       })()}

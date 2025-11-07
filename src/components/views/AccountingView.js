@@ -19,6 +19,8 @@ const AccountingView = ({
   getAssociationApartments,
   handleNavigation,
   getMonthType,
+  publishedSheet,
+  sheets = [],
   // Props pentru facturi
   invoices,
   getInvoicesByMonth,
@@ -28,6 +30,25 @@ const AccountingView = ({
   updateMissingSuppliersForExistingInvoices
 }) => {
   const apartments = getAssociationApartments();
+
+  // Găsește sheet-ul pentru luna selectată în currentMonth
+  // Încasările pot fi înregistrate doar pe luni publicate, deci căutăm sheet publicat
+  const currentMonthSheet = sheets.find(
+    sheet => sheet.monthYear === currentMonth &&
+             (sheet.status === 'PUBLISHED' || sheet.status === 'published')
+  ) || null;
+
+  console.log('📊 AccountingView - Sheet Detection:', {
+    currentMonth,
+    totalSheets: sheets.length,
+    publishedSheetMonth: publishedSheet?.monthYear,
+    allSheets: sheets.map(s => ({ month: s.monthYear, status: s.status, payments: s.payments?.length || 0 })),
+    foundSheetForCurrentMonth: currentMonthSheet ? {
+      month: currentMonthSheet.monthYear,
+      paymentsCount: currentMonthSheet.payments?.length || 0
+    } : null
+  });
+
   const {
     incasari,
     loading,
@@ -35,7 +56,15 @@ const AccountingView = ({
     getIncasariStats,
     generateReceiptNumber,
     deleteIncasare
-  } = useIncasari(association, currentMonth);
+  } = useIncasari(association, currentMonth, currentMonthSheet);
+
+  console.log('💰 useIncasari result:', {
+    incasariCount: incasari.length,
+    loading,
+    error,
+    currentMonth,
+    hasSheet: !!currentMonthSheet
+  });
 
   // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
   const { getExpenseConfig } = useExpenseConfigurations(association?.id);
@@ -51,14 +80,16 @@ const AccountingView = ({
   
   // Statistici facturi pentru luna curentă
   const monthlyInvoices = getInvoicesByMonth ? getInvoicesByMonth(currentMonth) : [];
-  const invoiceStats = getInvoiceStats ? getInvoiceStats() : {
-    total: 0,
-    paid: 0,
-    unpaid: 0,
-    overdue: 0,
-    totalAmount: 0,
-    paidAmount: 0,
-    unpaidAmount: 0
+
+  // Calculează statisticile local pe baza facturilor lunii curente
+  const invoiceStats = {
+    total: monthlyInvoices.length,
+    paid: monthlyInvoices.filter(inv => inv.isPaid).length,
+    unpaid: monthlyInvoices.filter(inv => !inv.isPaid).length,
+    overdue: monthlyInvoices.filter(inv => !inv.isPaid && new Date(inv.dueDate) < new Date()).length,
+    totalAmount: monthlyInvoices.reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0),
+    paidAmount: monthlyInvoices.filter(inv => inv.isPaid).reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0),
+    unpaidAmount: monthlyInvoices.filter(inv => !inv.isPaid).reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0)
   };
 
   // DEBUG: Log pentru facturile din luna curentă
@@ -74,7 +105,10 @@ const AccountingView = ({
   //     month: inv.month,
   //     invoiceNumber: inv.invoiceNumber,
   //     supplierName: inv.supplierName,
-  //     supplierId: inv.supplierId
+  //     supplierId: inv.supplierId,
+  //     totalAmount: inv.totalAmount,
+  //     totalInvoiceAmount: inv.totalInvoiceAmount,
+  //     isPaid: inv.isPaid
   //   })),
   //   invoiceStats
   // });
@@ -105,15 +139,16 @@ const AccountingView = ({
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  // Filtrează facturile 
+  // Filtrează facturile
   const filteredInvoices = monthlyInvoices.filter(invoice => {
-    const matchesSearch = 
+    const matchesSearch =
       invoice.supplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.expenseName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.expenseType?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = 
-      filterStatus === 'all' || 
+    const matchesStatus =
+      filterStatus === 'all' ||
       (filterStatus === 'paid' && invoice.isPaid) ||
       (filterStatus === 'unpaid' && !invoice.isPaid);
 
@@ -568,24 +603,6 @@ const AccountingView = ({
                   </div>
                 </div>
 
-                {/* Lista apartamente neplătite pentru încasări */}
-                {unpaidApartments.length > 0 && (
-                  <div className="mt-6 bg-red-50 rounded-lg p-4 border">
-                    <h3 className="text-lg font-semibold text-red-800 mb-3">
-                      Apartamente care nu au plătit ({unpaidApartments.length})
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                      {unpaidApartments.map(apt => (
-                        <div key={apt.id} className="bg-white px-3 py-2 rounded border border-red-200">
-                          <span className="font-medium">Ap. {apt.number}</span>
-                          {apt.owner && (
-                            <div className="text-xs text-gray-600 truncate">{apt.owner}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -697,6 +714,9 @@ const AccountingView = ({
                             Distribuție
                           </th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Detalii Distribuții
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Data Factură
                           </th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -713,7 +733,7 @@ const AccountingView = ({
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredInvoices.length === 0 ? (
                           <tr>
-                            <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
+                            <td colSpan="10" className="px-6 py-12 text-center text-gray-500">
                               Nu există facturi înregistrate pentru {currentMonth}
                             </td>
                           </tr>
@@ -735,7 +755,7 @@ const AccountingView = ({
                                   {invoice.invoiceNumber}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {invoice.expenseType}
+                                  {invoice.expenseName || invoice.expenseType || '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
                                   <div>
@@ -745,7 +765,8 @@ const AccountingView = ({
                                     Total factură
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                {/* Coloană Distribuție - Compactă */}
+                                <td className="px-6 py-4 text-sm text-center">
                                   {(() => {
                                     // Calculează valorile pentru distribuție
                                     const totalInvoice = invoice.totalInvoiceAmount || invoice.totalAmount;
@@ -753,9 +774,9 @@ const AccountingView = ({
                                     const remaining = invoice.remainingAmount || 0;
                                     const isPartial = remaining > 0 || (invoice.totalInvoiceAmount && invoice.totalInvoiceAmount > invoice.totalAmount);
                                     const percentage = totalInvoice > 0 ? Math.round((distributed / totalInvoice) * 100) : 100;
-                                    
+
                                     if (isPartial && remaining > 0) {
-                                      // Distribuție parțială cu detalii
+                                      // Distribuție parțială
                                       return (
                                         <div className="space-y-1">
                                           <div className="text-xs">
@@ -769,70 +790,77 @@ const AccountingView = ({
                                           <div className="text-xs text-orange-600 font-medium">
                                             Rămas: {remaining.toFixed(2)} lei
                                           </div>
-                                          {/* Detalii distribuții */}
-                                          {(() => {
-                                            // Debug logging pentru distribuții
-                                            if (invoice.invoiceNumber === 'Factura 4') {
-                                              // console.log('🔍 DEBUG Factura 4 distributionHistory:', {
-                                              //   invoiceId: invoice.id,
-                                              //   invoiceNumber: invoice.invoiceNumber,
-                                              //   distributionHistory: invoice.distributionHistory,
-                                              //   distributionHistoryLength: invoice.distributionHistory?.length || 0,
-                                              //   distributedAmount: invoice.distributedAmount,
-                                              //   remainingAmount: invoice.remainingAmount
-                                              // });
-                                            }
-                                            
-                                            return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (
-                                              <div className="mt-2 p-2 bg-gray-50 rounded border text-xs">
-                                                <div className="font-medium text-gray-700 mb-1">Distribuții ({invoice.distributionHistory.length}):</div>
-                                                {invoice.distributionHistory.map((dist, idx) => (
-                                                  <div key={idx} className="flex justify-between items-center py-1">
-                                                    <span className="text-gray-600">{dist.expenseType || dist.notes}</span>
-                                                    <span className="font-medium text-blue-600">{dist.amount} lei</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            );
-                                          })()}
                                         </div>
                                       );
                                     } else {
-                                      // Distribuție completă cu detalii
+                                      // Distribuție completă
                                       return (
                                         <div className="space-y-1">
                                           <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
                                             ✅ 100% distribuit
                                           </span>
-                                          {/* Detalii distribuții */}
-                                          {(() => {
-                                            // Debug logging pentru distribuții
-                                            if (invoice.invoiceNumber === 'Factura 4') {
-                                              // console.log('🔍 DEBUG Factura 4 distributionHistory:', {
-                                              //   invoiceId: invoice.id,
-                                              //   invoiceNumber: invoice.invoiceNumber,
-                                              //   distributionHistory: invoice.distributionHistory,
-                                              //   distributionHistoryLength: invoice.distributionHistory?.length || 0,
-                                              //   distributedAmount: invoice.distributedAmount,
-                                              //   remainingAmount: invoice.remainingAmount
-                                              // });
-                                            }
-                                            
-                                            return invoice.distributionHistory && invoice.distributionHistory.length > 0 && (
-                                              <div className="mt-2 p-2 bg-gray-50 rounded border text-xs">
-                                                <div className="font-medium text-gray-700 mb-1">Distribuții ({invoice.distributionHistory.length}):</div>
-                                                {invoice.distributionHistory.map((dist, idx) => (
-                                                  <div key={idx} className="flex justify-between items-center py-1">
-                                                    <span className="text-gray-600">{dist.expenseType || dist.notes}</span>
-                                                    <span className="font-medium text-blue-600">{dist.amount} lei</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            );
-                                          })()}
+                                          <div className="text-xs text-gray-600 mt-1">
+                                            {distributed.toFixed(0)} / {totalInvoice.toFixed(0)} lei
+                                          </div>
                                         </div>
                                       );
                                     }
+                                  })()}
+                                </td>
+
+                                {/* Coloană Detalii Distribuții - Nouă */}
+                                <td className="px-4 py-4 text-sm text-center">
+                                  {(() => {
+                                    const distributionHistory = invoice.distributionHistory || [];
+
+                                    if (distributionHistory.length === 0) {
+                                      return <span className="text-gray-400 text-xs">-</span>;
+                                    }
+
+                                    // Determină targetul distribuției (asociație/scară)
+                                    const expenseConfig = getExpenseConfig(invoice.expenseName || invoice.expenseType);
+                                    let distributionTarget = 'Toată asociația';
+
+                                    if (expenseConfig?.appliesTo) {
+                                      const appliesTo = expenseConfig.appliesTo;
+                                      if (appliesTo.scope === 'stairs' && appliesTo.stairs?.length > 0) {
+                                        const stairNumbers = appliesTo.stairs.map(stairId => {
+                                          const stair = stairs.find(s => s.id === stairId);
+                                          return stair ? stair.name : stairId;
+                                        });
+                                        if (stairNumbers.length === 1) {
+                                          distributionTarget = `Scara ${stairNumbers[0]}`;
+                                        } else {
+                                          distributionTarget = `${stairNumbers.length} scări`;
+                                        }
+                                      } else if (appliesTo.scope === 'bloc' && appliesTo.bloc) {
+                                        const bloc = blocks.find(b => b.id === appliesTo.bloc);
+                                        distributionTarget = bloc ? `Bloc ${bloc.name}` : 'Bloc';
+                                      }
+                                    }
+
+                                    if (distributionHistory.length === 1) {
+                                      const dist = distributionHistory[0];
+                                      return (
+                                        <div className="text-xs">
+                                          <div className="text-blue-600 font-semibold">{dist.amount} lei</div>
+                                          <div className="text-gray-700 font-medium mt-1">{distributionTarget}</div>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Multiple distribuții
+                                    return (
+                                      <div className="p-2 bg-gray-50 rounded border text-xs">
+                                        <div className="font-medium text-gray-700 mb-1">{distributionHistory.length} distribuții:</div>
+                                        {distributionHistory.map((dist, idx) => (
+                                          <div key={idx} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-0">
+                                            <span className="text-gray-600">{dist.expenseName || dist.expenseType || dist.notes}</span>
+                                            <span className="font-medium text-blue-600 ml-2">{dist.amount} lei</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    );
                                   })()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">

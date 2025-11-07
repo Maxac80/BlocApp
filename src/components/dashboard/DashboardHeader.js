@@ -61,51 +61,51 @@ const DashboardHeader = ({
                 const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
                 if (monthType === 'current') {
                   return (
-                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded min-w-[150px] text-center inline-block">
                       LUNA ACTIVĂ
                     </span>
                   );
                 } else if (monthType === 'next') {
                   return (
-                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded min-w-[150px] text-center inline-block">
                       LUNA URMĂTOARE
                     </span>
                   );
                 } else if (monthType === 'historic') {
                   return (
-                    <span className="bg-gray-600 text-white text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                    <span className="bg-gray-600 text-white text-sm font-medium px-3 py-1 rounded min-w-[150px] text-center inline-block">
                       LUNĂ ISTORICĂ
                     </span>
                   );
                 } else {
                   // Pentru orice alt tip, afișăm implicit ca luna activă
                   return (
-                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full min-w-[150px] text-center inline-block">
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded min-w-[150px] text-center inline-block">
                       LUNA ACTIVĂ
                     </span>
                   );
                 }
               })()}
-              
+
               {(() => {
                 const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
                 // isMonthReadOnly vine acum ca boolean direct, nu ca funcție
                 const isReadOnly = isMonthReadOnly;
                 if (monthType === 'historic' && isReadOnly) {
                   return (
-                    <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                    <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded min-w-[120px] text-center inline-block">
                       📚 ARHIVATĂ
                     </span>
                   );
                 } else if (isReadOnly) {
                   return (
-                    <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                    <span className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded min-w-[120px] text-center inline-block">
                       📋 PUBLICATĂ
                     </span>
                   );
                 } else {
                   return (
-                    <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full min-w-[120px] text-center inline-block">
+                    <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded min-w-[120px] text-center inline-block">
                       🔧 ÎN LUCRU
                     </span>
                   );

@@ -279,12 +279,37 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
   }, []);
 
   // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE - UNIFIED STRUCTURE: Folosește isEnabled flag
-  const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true) => {
-    if (!association?.id || !sheetOperations?.currentSheet?.id) return;
+  const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true, targetSheetId = null) => {
+    console.log('🔧 toggleExpenseStatus called:', {
+      expenseName,
+      currentMonth,
+      disable,
+      targetSheetId,
+      currentSheetId: sheetOperations?.currentSheet?.id,
+      currentSheetMonth: sheetOperations?.currentSheet?.monthYear,
+      publishedSheetId: sheetOperations?.publishedSheet?.id,
+      publishedSheetMonth: sheetOperations?.publishedSheet?.monthYear
+    });
 
-    const sheetId = sheetOperations.currentSheet.id;
-    const currentSheet = sheetOperations.currentSheet;
-    const expenseConfigurations = currentSheet.configSnapshot?.expenseConfigurations || {};
+    // 🎯 SCRIERE: Folosește targetSheetId dacă e furnizat, altfel currentSheet
+    // Acest parametru permite specificarea exactă a sheet-ului în care se scrie
+    const workingSheetId = targetSheetId || sheetOperations?.currentSheet?.id;
+
+    // Găsește sheet-ul complet pentru a accesa configurațiile
+    const workingSheet = targetSheetId
+      ? (sheetOperations?.currentSheet?.id === targetSheetId ? sheetOperations.currentSheet : sheetOperations?.publishedSheet)
+      : sheetOperations?.currentSheet;
+
+    console.log('🎯 Working sheet determined:', {
+      workingSheetId,
+      workingSheetMonth: workingSheet?.monthYear,
+      usingCurrentSheet: workingSheet === sheetOperations?.currentSheet,
+      usingPublishedSheet: workingSheet === sheetOperations?.publishedSheet
+    });
+
+    if (!association?.id || !workingSheetId || !workingSheet) return;
+
+    const expenseConfigurations = workingSheet.configSnapshot?.expenseConfigurations || {};
 
     try {
       // 🆕 UNIFIED STRUCTURE: Găsește ID-ul cheltuielii din expenseName
@@ -325,13 +350,21 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         [expenseId]: updatedConfig
       };
 
+      console.log('💾 Saving to Firebase:', {
+        associationId: association.id,
+        sheetId: workingSheetId,
+        expenseId,
+        expenseName,
+        newIsEnabled: !disable
+      });
+
       // Salvează în Firebase
-      await updateDoc(getSheetRef(association.id, sheetId), {
+      await updateDoc(getSheetRef(association.id, workingSheetId), {
         'configSnapshot.expenseConfigurations': updatedConfigurations,
         'configSnapshot.updatedAt': serverTimestamp()
       });
 
-      console.log(`✅ Expense status toggled successfully: "${expenseName}" - isEnabled: ${!disable}`);
+      console.log(`✅ Expense status toggled successfully in sheet ${workingSheetId}: "${expenseName}" - isEnabled: ${!disable}`);
 
     } catch (error) {
       console.error('❌ Eroare la actualizarea statusului cheltuielii:', error);
