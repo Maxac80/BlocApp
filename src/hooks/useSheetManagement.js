@@ -805,6 +805,7 @@ export const useSheetManagement = (associationId) => {
           // Copiază configurările din sheet-ul publicat
           expenseConfigurations: currentSheet.configSnapshot?.expenseConfigurations || {},
           balanceAdjustments: currentSheet.configSnapshot?.balanceAdjustments || {},
+          suppliers: currentSheet.configSnapshot?.suppliers || [], // 🆕 Copiază furnizorii din sheet-ul publicat
           // Orice alte configurări care trebuie păstrate
           createdFromSheet: currentSheet.id,
           createdFromMonth: currentSheet.monthYear
@@ -1623,6 +1624,46 @@ export const useSheetManagement = (associationId) => {
         const nextSheetRef = getSheetRef(associationId, nextSheetId);
         console.log('🗑️ Ștergere sheet următor:', nextSheetId);
         batch.delete(nextSheetRef);
+      }
+
+      // 7. RESTAUREAZĂ sheet-ul anterior arhivat la PUBLISHED (UNDO publish operation)
+      // Găsește cel mai recent sheet ARCHIVED care a fost arhivat ÎNAINTEA sheet-ului curent
+      const archivedSheetsQuery = query(
+        getSheetsCollection(associationId),
+        where('status', '==', SHEET_STATUS.ARCHIVED)
+      );
+
+      const archivedSheetsSnapshot = await getDocs(archivedSheetsQuery);
+
+      if (!archivedSheetsSnapshot.empty) {
+        // Găsește sheet-ul arhivat cel mai recent (cel care a fost publicat înainte de sheet-ul curent)
+        const archivedSheets = archivedSheetsSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(sheet => sheet.archivedAt) // Doar sheet-uri cu archivedAt
+          .sort((a, b) => {
+            // Sortează descrescător după archivedAt (cel mai recent primul)
+            const dateA = a.archivedAt?.toDate?.() || new Date(a.archivedAt);
+            const dateB = b.archivedAt?.toDate?.() || new Date(b.archivedAt);
+            return dateB - dateA;
+          });
+
+        if (archivedSheets.length > 0) {
+          const previousSheet = archivedSheets[0]; // Cel mai recent arhivat
+          const previousSheetRef = getSheetRef(associationId, previousSheet.id);
+
+          console.log('🔄 Restaurare sheet anterior la PUBLISHED:', {
+            sheetId: previousSheet.id,
+            month: previousSheet.monthYear,
+            archivedAt: previousSheet.archivedAt
+          });
+
+          batch.update(previousSheetRef, {
+            status: SHEET_STATUS.PUBLISHED,
+            archivedAt: null, // Șterge timestamp-ul de arhivare
+            restoredAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        }
       }
 
       console.log('💾 Se execută batch.commit()...');

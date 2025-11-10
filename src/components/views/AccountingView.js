@@ -32,10 +32,10 @@ const AccountingView = ({
   const apartments = getAssociationApartments();
 
   // Găsește sheet-ul pentru luna selectată în currentMonth
-  // Încasările pot fi înregistrate doar pe luni publicate, deci căutăm sheet publicat
+  // Încasările pot fi înregistrate doar pe luni publicate, dar putem VIZUALIZA și pe luni arhivate
   const currentMonthSheet = sheets.find(
     sheet => sheet.monthYear === currentMonth &&
-             (sheet.status === 'PUBLISHED' || sheet.status === 'published')
+             (sheet.status === 'PUBLISHED' || sheet.status === 'published' || sheet.status === 'archived')
   ) || null;
 
   console.log('📊 AccountingView - Sheet Detection:', {
@@ -811,7 +811,9 @@ const AccountingView = ({
                                 {/* Coloană Detalii Distribuții - Nouă */}
                                 <td className="px-4 py-4 text-sm text-center">
                                   {(() => {
-                                    const distributionHistory = invoice.distributionHistory || [];
+                                    // Filtrează distribuțiile cu amount === 0 (nu ar trebui să apară)
+                                    const distributionHistory = (invoice.distributionHistory || [])
+                                      .filter(dist => dist.amount && dist.amount > 0);
 
                                     if (distributionHistory.length === 0) {
                                       return <span className="text-gray-400 text-xs">-</span>;

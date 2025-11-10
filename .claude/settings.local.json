@@ -26,7 +26,11 @@
       "Bash(del \"C:\\blocapp\\src\\hooks\\useMaintenanceCalculation.js.backup\" \"C:\\blocapp\\src\\hooks\\useMaintenanceCalculation_OLD.js\")",
       "Bash(del \"C:\\blocapp\\migrate_audit_logs.py\" \"C:\\blocapp\\migrate_onboarding.py\")",
       "Bash(del \"C:\\blocapp\\src\\components\\views\\ExpensesView.js\")",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "WebFetch(domain:www.xisoft.net)",
+      "WebFetch(domain:aviziero.ro)",
+      "Bash(dir /b \"C:\\blocapp\\src\\components\\views\")"
     ],
     "deny": [],
     "ask": [],

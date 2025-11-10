@@ -45,32 +45,23 @@ export const useMonthManagement = (associationId) => {
   } = useSheetManagement(associationId);
 
   // State pentru compatibilitate cu vechea interfață
-  // Inițializează cu luna salvată în localStorage sau luna activă din sheet-uri
+  // Inițializează ÎNTOTDEAUNA cu luna publicată (luna activă/curentă)
   const [currentMonth, setCurrentMonth] = useState(() => {
-    // 1. Încearcă să restaureze luna din localStorage (global, nu per asociație)
-    const savedMonth = localStorage.getItem('selectedMonth');
-    if (savedMonth) {
-      console.log('🔄 Restaurare lună din localStorage:', savedMonth);
-      return savedMonth;
-    }
-
-    // 2. Fallback la luna activă din sheet-uri
+    // 1. PRIORITATE: Luna publicată (luna activă/curentă)
     if (publishedSheet?.monthYear) return publishedSheet.monthYear;
     if (currentSheet?.monthYear) return currentSheet.monthYear;
 
-    // 3. Fallback final
+    // 2. Fallback final
     return new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   });
 
-  // 🔧 FIX: Actualizează luna DOAR la inițializare (când sheet-urile se încarcă prima dată)
-  // ȘI doar dacă nu există o lună salvată în localStorage
+  // 🔧 FIX: Actualizează luna la luna publicată când sheet-urile se încarcă
+  // PRIORITATE: Luna publicată = luna activă/curentă
   const hasInitialized = useRef(false);
   useEffect(() => {
-    const savedMonth = localStorage.getItem('selectedMonth');
-
-    // Actualizează doar dacă nu s-a inițializat încă ȘI nu există lună salvată ȘI avem sheet-uri
-    if (!hasInitialized.current && !savedMonth && (publishedSheet || currentSheet)) {
-      console.log('📅 Setare lună inițială:', publishedSheet?.monthYear || currentSheet?.monthYear);
+    // La încărcarea sheet-urilor, setează ÎNTOTDEAUNA luna publicată
+    if (!hasInitialized.current && (publishedSheet || currentSheet)) {
+      console.log('📅 Setare lună la sheet publicat (activ):', publishedSheet?.monthYear || currentSheet?.monthYear);
       if (publishedSheet) {
         setCurrentMonth(publishedSheet.monthYear);
       } else if (currentSheet) {

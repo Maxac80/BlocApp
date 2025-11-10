@@ -1,10 +1,10 @@
 import React from 'react';
-import { Building2, Home, Calculator, Settings, ClipboardList, X, User, FileText, Wallet, Users, Building, BookOpen, Coins } from 'lucide-react';
+import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins } from 'lucide-react';
 
-const Sidebar = ({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  sidebarExpanded, 
+const Sidebar = ({
+  sidebarOpen,
+  setSidebarOpen,
+  sidebarExpanded,
   setSidebarExpanded,
   currentView,
   handleNavigation,
@@ -13,11 +13,20 @@ const Sidebar = ({
   deleteAllBlocAppData,
   userProfile,
   activeUser,
-  setCurrentMonth
+  setCurrentMonth,
+  publishedSheet,
+  currentSheet
 }) => {
-  // Funcția pentru a naviga la Dashboard
+  // Funcția pentru a naviga la Dashboard și la luna publicată activă
   const handleBlocAppClick = () => {
-    // Nu mai resetăm luna - păstrăm luna selectată de utilizator
+    // Navighează la luna publicată activă (prioritate: publishedSheet, apoi currentSheet)
+    if (publishedSheet?.monthYear) {
+      console.log('📅 Navigare la luna publicată:', publishedSheet.monthYear);
+      setCurrentMonth(publishedSheet.monthYear);
+    } else if (currentSheet?.monthYear) {
+      console.log('📅 Navigare la sheet-ul curent:', currentSheet.monthYear);
+      setCurrentMonth(currentSheet.monthYear);
+    }
     // Navighează la Dashboard
     handleNavigation("dashboard");
   };
@@ -30,10 +39,10 @@ const Sidebar = ({
     {/* Header Sidebar cu buton expand/collapse */}
     <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
       {sidebarExpanded ? (
-        <button 
+        <button
           onClick={handleBlocAppClick}
           className="flex items-center hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
-          title="Mergi la Dashboard - luna curentă"
+          title="Mergi la Dashboard - luna publicată activă"
         >
           <Building2 className="w-8 h-8 mr-2 text-white" />
           <div>
@@ -41,10 +50,10 @@ const Sidebar = ({
           </div>
         </button>
       ) : (
-        <button 
+        <button
           onClick={handleBlocAppClick}
           className="flex items-center justify-center w-full hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
-          title="Mergi la Dashboard - luna curentă"
+          title="Mergi la Dashboard - luna publicată activă"
         >
           <Building2 className="w-8 h-8 text-white" />
         </button>

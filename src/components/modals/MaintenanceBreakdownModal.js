@@ -90,7 +90,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
   };
 
   // Helper function to calculate standard amount per apartment after reweighting
-  const calculateStandardAmountPerApartment = (expense) => {
+  const calculateStandardAmountPerApartment = (expense, currentAptAmount) => {
     if (!allApartments || !Array.isArray(allApartments) || !allMaintenanceData) {
       return expense.amount || 0; // Fallback
     }
@@ -152,6 +152,12 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
       }
     }
 
+    // FALLBACK: Dacă nu găsim apartament integral sau cu procentaj, folosește apartamentul curent
+    if (standardAmount === 0 && currentAptAmount > 0) {
+      standardAmount = currentAptAmount;
+      console.log(`[PerApartment Fallback] ${expense.name}: Used current apartment - ${currentAptAmount}`);
+    }
+
     return standardAmount;
   };
 
@@ -205,7 +211,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
       case 'apartment':
       case 'pe_apartament':
         // Get the standard amount after reweighting (from an integral apartment)
-        const standardPerApartment = calculateStandardAmountPerApartment(expense);
+        const standardPerApartment = calculateStandardAmountPerApartment(expense, calculatedAmount);
 
         return {
           type: 'perApartment',
@@ -264,6 +270,12 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
 
               break;
             }
+          }
+
+          // FALLBACK: Dacă nu găsim apartament integral, folosește apartamentul curent
+          if (standardPricePerPerson === 0 && persons > 0 && calculatedAmount > 0) {
+            standardPricePerPerson = calculatedAmount / persons;
+            console.log(`[PerPerson Fallback] ${expense.name}: Used current apartment - ${calculatedAmount} / ${persons} = ${standardPricePerPerson}`);
           }
         }
 

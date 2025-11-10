@@ -47,11 +47,20 @@ const ExpensesViewNew = ({
   const [selectedSupplierId, setSelectedSupplierId] = useState(null);
 
   // Determină sheet-ul corect pentru luna selectată
-  // Dacă suntem pe luna publicată, folosește publishedSheet
-  // Altfel, folosește currentSheet (luna în lucru)
-  const activeSheet = (publishedSheet?.monthYear === currentMonth)
-    ? publishedSheet
-    : currentSheet;
+  // 1. Dacă suntem pe luna publicată, folosește publishedSheet
+  // 2. Dacă suntem pe luna în lucru, folosește currentSheet
+  // 3. Dacă suntem pe o lună arhivată, caută în sheets array
+  const activeSheet = React.useMemo(() => {
+    if (publishedSheet?.monthYear === currentMonth) {
+      return publishedSheet;
+    }
+    if (currentSheet?.monthYear === currentMonth) {
+      return currentSheet;
+    }
+    // Caută în sheets array pentru luni arhivate
+    const archivedSheet = sheets?.find(sheet => sheet.monthYear === currentMonth);
+    return archivedSheet || currentSheet;
+  }, [publishedSheet, currentSheet, currentMonth, sheets]);
 
   const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(activeSheet);
 
@@ -542,8 +551,20 @@ const ExpensesViewNew = ({
               <div className="space-y-6">
                 <div className="flex justify-end mb-4">
                   <button
-                    onClick={handleAddSupplier}
-                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                    onClick={() => {
+                      if (isMonthReadOnly) {
+                        alert('Nu poți adăuga furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
+                        return;
+                      }
+                      handleAddSupplier();
+                    }}
+                    className={`px-6 py-3 rounded-lg transition-colors shadow-lg ${
+                      isMonthReadOnly
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                    disabled={isMonthReadOnly}
+                    title={isMonthReadOnly ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor nou'}
                   >
                     Adaugă furnizor
                   </button>
@@ -606,10 +627,20 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isMonthReadOnly) {
+                                          alert('Nu poți edita furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
+                                          setOpenDropdown(null);
+                                          return;
+                                        }
                                         handleEditSupplier(supplier);
                                         setOpenDropdown(null);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                                      className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
+                                        isMonthReadOnly
+                                          ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                      }`}
+                                      disabled={isMonthReadOnly}
                                     >
                                       <Settings className="w-4 h-4" />
                                       Editează
@@ -617,10 +648,20 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isMonthReadOnly) {
+                                          alert('Nu poți șterge furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
+                                          setOpenDropdown(null);
+                                          return;
+                                        }
                                         handleDeleteSupplier(supplier.id);
                                         setOpenDropdown(null);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-red-700 hover:bg-red-50 flex items-center gap-2"
+                                      className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
+                                        isMonthReadOnly
+                                          ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                                          : 'text-red-700 hover:bg-red-50'
+                                      }`}
+                                      disabled={isMonthReadOnly}
                                     >
                                       <Trash2 className="w-4 h-4" />
                                       Șterge furnizor

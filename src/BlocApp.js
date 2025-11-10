@@ -585,7 +585,7 @@ useEffect(() => {
     <ErrorBoundary>
       <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar 
+      <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         sidebarExpanded={sidebarExpanded}
@@ -598,6 +598,8 @@ useEffect(() => {
         userProfile={userProfile}
         activeUser={activeUser}
         setCurrentMonth={setCurrentMonth}
+        publishedSheet={publishedSheet}
+        currentSheet={currentSheet}
       />
       
       {/* Overlay pentru mobile */}
