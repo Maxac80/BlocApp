@@ -274,14 +274,35 @@ const useMaintenanceCalculation = ({
     }
 
     const config = getExpenseConfig ? getExpenseConfig(expense) : null;  // Trimite obiectul complet pentru expenseTypeId
+    console.log('🟡 calculateExpenseDifferences - EXPENSE INFO:', {
+      expenseName: expense.name,
+      expenseTypeId: expense.expenseTypeId,
+      expenseType: expense.expenseType,
+      expenseId: expense.id
+    });
+    console.log('🟡 calculateExpenseDifferences - CONFIG LOADED:', {
+      configInputMode: config?.indexConfiguration?.inputMode,
+      configFullIndexConfiguration: config?.indexConfiguration,
+      fullConfig: config
+    });
 
     // Configurație default pentru diferență dacă nu există
     const differenceConfig = config?.differenceDistribution || {
-      method: 'apartment', // Egal pe apartament (cel mai simplu și corect)
+      method: 'apartment', // Default: egal pe apartament
       adjustmentMode: 'none', // Fără ajustări
       includeExcludedInDifference: false,
       includeFixedAmountInDifference: false
     };
+
+    console.log('🔍 calculateExpenseDifferences START:', {
+      expenseName: expense.name,
+      unitPrice: expense.unitPrice,
+      billAmount: expense.billAmount,
+      differenceMethod: differenceConfig.method,
+      expenseId: expense.id,
+      expenseTypeId: expense.expenseTypeId,
+      configApartmentParticipation: config?.apartmentParticipation
+    });
 
     // Determină nivelul de introducere sume
     let receptionMode = expense.receptionMode || 'per_association';
@@ -300,24 +321,68 @@ const useMaintenanceCalculation = ({
     const apartmentConsumptions = {};
 
     apartments.forEach(apt => {
+      // Verifică dacă apartamentul este exclus - dacă da, consum = 0
+      const participation = config?.apartmentParticipation?.[apt.id];
+      if (participation?.type === 'excluded') {
+        apartmentConsumptions[apt.id] = 0;
+        console.log(`🔵 Apt ${apt.id} este EXCLUS - consum forțat la 0`);
+        return;
+      }
+
       let aptConsumption = 0;
 
-      // Verifică dacă are indecși
+      // Verifică modul de introducere date din configurație
+      const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+
+      // Verifică dacă are indecși VALIDI (cu valori completate)
       const indexes = expense.indexes?.[apt.id];
-      if (indexes) {
-        // Calculează consum din indecși
+      let hasValidIndexes = false;
+      if (indexes && Object.keys(indexes).length > 0) {
+        // Verifică dacă există cel puțin un index valid
+        hasValidIndexes = Object.values(indexes).some(indexData =>
+          indexData.newIndex && indexData.oldIndex
+        );
+      }
+
+      console.log(`🔵 Apt ${apt.id}:`, {
+        inputMode,
+        hasIndexesObject: !!indexes,
+        indexesKeys: indexes ? Object.keys(indexes) : [],
+        hasValidIndexes,
+        manualConsumption: expense.consumption?.[apt.id]
+      });
+
+      if (inputMode === 'indexes') {
+        // Pentru indexes mode, folosește DOAR indecșii, ignoră consumption
+        if (hasValidIndexes) {
+          Object.values(indexes).forEach(indexData => {
+            if (indexData.newIndex && indexData.oldIndex) {
+              aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+            }
+          });
+        }
+        // Altfel rămâne 0
+        console.log(`🔵 Apt ${apt.id} folosește INDECȘI (indexes mode): ${aptConsumption}`);
+      } else if (hasValidIndexes) {
+        // Pentru manual/mixed mode cu indecși valizi, folosește indecșii
         Object.values(indexes).forEach(indexData => {
           if (indexData.newIndex && indexData.oldIndex) {
             aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
           }
         });
+        console.log(`🔵 Apt ${apt.id} folosește INDECȘI: ${aptConsumption}`);
       } else {
-        // Folosește consumul declarat manual
+        // Pentru manual/mixed mode fără indecși valizi, folosește consumption
         aptConsumption = parseFloat(expense.consumption?.[apt.id] || 0);
+        console.log(`🔵 Apt ${apt.id} folosește MANUAL: ${aptConsumption}`);
       }
 
       apartmentConsumptions[apt.id] = aptConsumption;
     });
+
+    console.log('🔍 Consumuri calculate:', apartmentConsumptions);
+    const totalConsumption = Object.values(apartmentConsumptions).reduce((sum, c) => sum + c, 0);
+    console.log('🔍 Total consum:', totalConsumption);
 
     // 2. Grupează apartamentele pe nivelul de introducere (scară/bloc/total)
     const apartmentGroups = {};
@@ -410,13 +475,31 @@ const useMaintenanceCalculation = ({
       // 3.3 Calculează diferența pentru acest grup
       const groupDifference = expectedAmount - totalAfterParticipation;
 
+      console.log('🔍 Calcul diferență grup:', {
+        groupKey,
+        expectedAmount,
+        totalAfterParticipation,
+        groupDifference
+      });
+
       if (Math.abs(groupDifference) < 1) {
+        console.log('⚠️ Diferență neglijabilă, skip');
         return; // Diferența e neglijabilă pentru acest grup
       }
 
       // 3.4 Filtrează apartamentele din grup care participă la diferență
       const participatingApartments = groupApartments.filter(apt => {
         const participation = config?.apartmentParticipation?.[apt.id];
+
+        console.log(`🔍 Apt ${apt.id} (${apt.number}) participation check:`, {
+          apartmentId: apt.id,
+          participation,
+          participationType: participation?.type,
+          includeExcluded: differenceConfig.includeExcludedInDifference,
+          includeFixed: differenceConfig.includeFixedAmountInDifference,
+          willParticipate: !(participation?.type === 'excluded' && !differenceConfig.includeExcludedInDifference) &&
+                          !(participation?.type === 'fixed' && !differenceConfig.includeFixedAmountInDifference)
+        });
 
         // Exclude apartamentele excluse dacă nu e bifat includeExcludedInDifference
         if (participation?.type === 'excluded' && !differenceConfig.includeExcludedInDifference) {
@@ -461,6 +544,9 @@ const useMaintenanceCalculation = ({
             );
             if (totalParticipatingConsumption > 0) {
               apartmentShare = (groupDifference / totalParticipatingConsumption) * apartmentConsumptions[apt.id];
+            } else {
+              // Fallback: când consumption total = 0, distribuie egal pe apartament
+              apartmentShare = groupDifference / participatingApartments.length;
             }
             break;
 
@@ -494,6 +580,8 @@ const useMaintenanceCalculation = ({
 
         groupDifferenceByApartment[apt.id] = apartmentShare;
       });
+
+      console.log('🔍 Diferență distribuită (before adjustment):', groupDifferenceByApartment);
 
       // PASUL 2: Aplică ajustările (participation sau apartmentType) cu REPONDERARE
       if (differenceConfig.adjustmentMode === 'participation') {
@@ -705,17 +793,37 @@ const useMaintenanceCalculation = ({
             // Pe consum - calculează consumul de bază pentru apartament
             let apartmentConsumption = 0;
 
-            // Verifică dacă are indecși
+            // Verifică modul de introducere date din configurație
+            const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+
+            // Verifică dacă are indecși VALIDI (cu valori completate)
             const indexes = expense.indexes?.[apartment.id];
-            if (indexes) {
-              // Calculează consum din indecși
+            let hasValidIndexes = false;
+            if (indexes && Object.keys(indexes).length > 0) {
+              hasValidIndexes = Object.values(indexes).some(indexData =>
+                indexData.newIndex && indexData.oldIndex
+              );
+            }
+
+            if (inputMode === 'indexes') {
+              // Pentru indexes mode, folosește DOAR indecșii, ignoră consumption
+              if (hasValidIndexes) {
+                Object.values(indexes).forEach(indexData => {
+                  if (indexData.newIndex && indexData.oldIndex) {
+                    apartmentConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                  }
+                });
+              }
+              // Altfel rămâne 0
+            } else if (hasValidIndexes) {
+              // Pentru manual/mixed mode cu indecși valizi, folosește indecșii
               Object.values(indexes).forEach(indexData => {
                 if (indexData.newIndex && indexData.oldIndex) {
                   apartmentConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                 }
               });
             } else {
-              // Folosește consumul declarat manual
+              // Pentru manual/mixed mode fără indecși valizi, folosește consumption
               apartmentConsumption = parseFloat(expense.consumption?.[apartment.id] || 0);
             }
 
@@ -920,6 +1028,8 @@ const useMaintenanceCalculation = ({
         // 💧 ADAUGĂ DIFERENȚELE CALCULATE (pierderi/scurgeri) - SEPARAT
         Object.keys(expenseDifferences).forEach(expenseKey => {
           const apartmentDifference = expenseDifferences[expenseKey][apartment.id] || 0;
+          // IMPORTANT: Doar dacă există diferență calculată pentru acest apartament
+          // (calculateExpenseDifferences deja exclude apartamentele excluded/fixed dacă nu e bifat în config)
           if (apartmentDifference !== 0) {
             currentMaintenance += apartmentDifference;
             // Salvează diferența separat pentru afișare în tabel (folosește același ID)
@@ -938,6 +1048,7 @@ const useMaintenanceCalculation = ({
           stairId: apartment.stairId,
           persons: apartment.persons,
           currentMaintenance: Math.round(currentMaintenance * 100) / 100,
+          currentMaintenanceBeforeRounding: currentMaintenance, // Salvează valoarea înainte de rotunjire
           restante,
           penalitati,
           totalDatorat: Math.round(totalDatorat * 100) / 100,
@@ -945,13 +1056,45 @@ const useMaintenanceCalculation = ({
           expenseDetails,
           expenseDifferenceDetails // Adaugă câmpul nou
         };
-      })
-      .sort((a, b) => {
-        if (a.building !== b.building) {
-          return a.building - b.building;
-        }
-        return String(a.apartment).localeCompare(String(b.apartment), undefined, { numeric: true });
       });
+
+    // 🔧 AJUSTARE ROTUNJIRE: Corectează diferențele de rotunjire pentru ca totalul să bată
+    // Calculează totalul așteptat (suma nerotunjită)
+    const totalBeforeRounding = tableData.reduce((sum, row) => sum + row.currentMaintenanceBeforeRounding, 0);
+    const totalAfterRounding = tableData.reduce((sum, row) => sum + row.currentMaintenance, 0);
+    const roundingDifference = Math.round((totalBeforeRounding - totalAfterRounding) * 100) / 100;
+
+    // Dacă există diferență de rotunjire, adaugă-o la apartamentul cu cel mai mare rest
+    if (Math.abs(roundingDifference) >= 0.01) {
+      let maxRemainder = 0;
+      let maxIndex = 0;
+
+      tableData.forEach((row, index) => {
+        const remainder = Math.abs(row.currentMaintenanceBeforeRounding - row.currentMaintenance);
+        if (remainder > maxRemainder) {
+          maxRemainder = remainder;
+          maxIndex = index;
+        }
+      });
+
+      // Ajustează apartamentul cu cel mai mare rest
+      tableData[maxIndex].currentMaintenance = Math.round((tableData[maxIndex].currentMaintenance + roundingDifference) * 100) / 100;
+      tableData[maxIndex].totalDatorat = Math.round((tableData[maxIndex].currentMaintenance + tableData[maxIndex].restante + tableData[maxIndex].penalitati) * 100) / 100;
+      tableData[maxIndex].totalMaintenance = tableData[maxIndex].totalDatorat;
+    }
+
+    // Șterge câmpul temporar
+    tableData.forEach(row => {
+      delete row.currentMaintenanceBeforeRounding;
+    });
+
+    // Sortează după bloc și apartament
+    tableData.sort((a, b) => {
+      if (a.building !== b.building) {
+        return a.building - b.building;
+      }
+      return String(a.apartment).localeCompare(String(b.apartment), undefined, { numeric: true });
+    });
 
     return tableData;
   }, [

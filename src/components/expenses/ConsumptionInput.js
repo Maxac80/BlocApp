@@ -266,8 +266,23 @@ const ConsumptionInput = ({
 
       let sumaIntrodusa = 0;
       if (isConsumption && expense.consumption) {
+        // Verifică modul de introducere
+        const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+        const isIndexMode = inputMode === 'indexes';
+
         nonExcludedApartments.forEach(apt => {
-          sumaIntrodusa += parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
+          let aptConsumption = 0;
+          if (isIndexMode && expense.indexes?.[apt.id]) {
+            const indexes = expense.indexes[apt.id];
+            Object.values(indexes).forEach(indexData => {
+              if (indexData.newIndex && indexData.oldIndex) {
+                aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+              }
+            });
+          } else if (!isIndexMode) {
+            aptConsumption = parseFloat(expense.consumption[apt.id] || 0);
+          }
+          sumaIntrodusa += aptConsumption * (expense.unitPrice || 0);
         });
       } else if (!isConsumption && expense.individualAmounts) {
         nonExcludedApartments.forEach(apt => {
@@ -516,11 +531,6 @@ const ConsumptionInput = ({
                             <>
                               <span className="text-gray-400">•</span>
                               <span className="font-medium">Mod introducere:</span>
-                              {config.indexConfiguration.inputMode === 'mixed' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                                  🔧 Mixt
-                                </span>
-                              )}
                               {config.indexConfiguration.inputMode === 'indexes' && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                                   📊 Indecși
@@ -701,15 +711,21 @@ const ConsumptionInput = ({
                                       let aptAmount = 0;
 
                                       if (isConsumption) {
+                                        // Verifică modul de introducere
+                                        const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                        const isIndexMode = inputMode === 'indexes';
+
                                         let aptConsumption = 0;
                                         const indexes = expense?.indexes?.[apt.id];
-                                        if (indexes) {
+
+                                        // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                        if (isIndexMode && indexes) {
                                           Object.values(indexes).forEach(indexData => {
                                             if (indexData.newIndex && indexData.oldIndex) {
                                               aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                             }
                                           });
-                                        } else {
+                                        } else if (!isIndexMode) {
                                           aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                         }
                                         aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -909,15 +925,21 @@ const ConsumptionInput = ({
                                   let aptAmount = 0;
 
                                   if (isConsumption) {
+                                    // Verifică modul de introducere
+                                    const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                    const isIndexMode = inputMode === 'indexes';
+
                                     let aptConsumption = 0;
                                     const indexes = expense?.indexes?.[apt.id];
-                                    if (indexes) {
+
+                                    // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                    if (isIndexMode && indexes) {
                                       Object.values(indexes).forEach(indexData => {
                                         if (indexData.newIndex && indexData.oldIndex) {
                                           aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                         }
                                       });
-                                    } else {
+                                    } else if (!isIndexMode) {
                                       aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                     }
                                     aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -1235,17 +1257,13 @@ const ConsumptionInput = ({
                                 // ZERO este o valoare validă de completare
                                 const hasManualValue = effectiveManualValue !== '' && effectiveManualValue !== null && effectiveManualValue !== undefined && !isNaN(parseFloat(effectiveManualValue));
 
-                                // Pentru MIXED: auto-fill consum din indecși dacă există
-                                const displayedConsumption = String((inputMode === 'mixed' && hasIndexData && !hasManualValue)
-                                  ? totalIndexConsumption.toFixed(2)
-                                  : manualValue);
+                                const displayedConsumption = String(manualValue);
 
                                 // Verifică dacă e complet
                                 const isComplete = (!isConsumption && hasManualValue) ||
                                                    (isConsumption && (
                                                      (inputMode === 'manual' && hasManualValue) ||
-                                                     (inputMode === 'indexes' && hasIndexData) ||
-                                                     (inputMode === 'mixed' && (hasIndexData || hasManualValue))
+                                                     (inputMode === 'indexes' && hasIndexData)
                                                    ));
 
                                 // Verifică dacă apartamentul este exclus din această cheltuială
@@ -1263,10 +1281,8 @@ const ConsumptionInput = ({
                                 if (isConsumption) {
                                   if (inputMode === 'indexes') {
                                     finalConsumption = totalIndexConsumption;
-                                  } else if (inputMode === 'mixed') {
-                                    finalConsumption = hasManualValue ? parseFloat(manualValue) : totalIndexConsumption;
                                   } else {
-                                    finalConsumption = parseFloat(manualValue) || 0;
+                                    finalConsumption = parseFloat(effectiveManualValue) || 0;
                                   }
                                 }
 
@@ -1360,18 +1376,6 @@ const ConsumptionInput = ({
                                                     } else {
                                                       updatePendingIndexes(expenseType.name, apartment.id, updatedIndexes);
                                                     }
-
-                                                    // MIXED: Auto-update consum când schimbi indecșii
-                                                    if (inputMode === 'mixed' && indexData.newIndex && normalizedValue) {
-                                                      const autoConsumption = parseFloat(indexData.newIndex) - parseFloat(normalizedValue);
-                                                      if (autoConsumption > 0) {
-                                                        if (expense) {
-                                                          updateExpenseConsumption(expense.id, apartment.id, autoConsumption);
-                                                        } else {
-                                                          updatePendingConsumption(expenseType.name, apartment.id, autoConsumption);
-                                                        }
-                                                      }
-                                                    }
                                                   }
                                                 }}
                                                 className="w-16 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -1409,18 +1413,6 @@ const ConsumptionInput = ({
                                                     } else {
                                                       updatePendingIndexes(expenseType.name, apartment.id, updatedIndexes);
                                                     }
-
-                                                    // MIXED: Auto-update consum când schimbi indecșii
-                                                    if (inputMode === 'mixed' && indexData.oldIndex && normalizedValue) {
-                                                      const autoConsumption = parseFloat(normalizedValue) - parseFloat(indexData.oldIndex);
-                                                      if (autoConsumption > 0) {
-                                                        if (expense) {
-                                                          updateExpenseConsumption(expense.id, apartment.id, autoConsumption);
-                                                        } else {
-                                                          updatePendingConsumption(expenseType.name, apartment.id, autoConsumption);
-                                                        }
-                                                      }
-                                                    }
                                                   }
                                                 }}
                                                 className="w-16 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -1442,7 +1434,7 @@ const ConsumptionInput = ({
                                             {hasIndexData ? totalIndexConsumption.toFixed(2) : '-'}
                                           </span>
                                         ) : (
-                                          // MANUAL sau MIXED: editabil
+                                          // MANUAL: editabil
                                           <input
                                             type="text"
                                             inputMode="decimal"
@@ -1617,15 +1609,21 @@ const ConsumptionInput = ({
                                   <td className="px-2 py-2 text-center text-blue-700 border-r">
                                     {(() => {
                                       const totalConsumption = apartments.reduce((sum, apt) => {
+                                        // Verifică modul de introducere
+                                        const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                        const isIndexMode = inputMode === 'indexes';
+
                                         let aptConsumption = 0;
                                         const indexes = expense?.indexes?.[apt.id];
-                                        if (indexes) {
+
+                                        // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                        if (isIndexMode && indexes) {
                                           Object.values(indexes).forEach(indexData => {
                                             if (indexData.newIndex && indexData.oldIndex) {
                                               aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                             }
                                           });
-                                        } else {
+                                        } else if (!isIndexMode) {
                                           aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                         }
                                         return sum + aptConsumption;
@@ -1699,15 +1697,21 @@ const ConsumptionInput = ({
                                       const totalBeforeParticipation = apartmentsForDiff.reduce((sum, apt) => {
                                         let aptAmount = 0;
                                         if (isConsumption) {
+                                          // Verifică modul de introducere
+                                          const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                          const isIndexMode = inputMode === 'indexes';
+
                                           let aptConsumption = 0;
                                           const indexes = expense?.indexes?.[apt.id];
-                                          if (indexes) {
+
+                                          // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                          if (isIndexMode && indexes) {
                                             Object.values(indexes).forEach(indexData => {
                                               if (indexData.newIndex && indexData.oldIndex) {
                                                 aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                               }
                                             });
-                                          } else {
+                                          } else if (!isIndexMode) {
                                             aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                           }
                                           aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -1754,21 +1758,28 @@ const ConsumptionInput = ({
                                       const expense = getDistributedExpense(expenseType.name);
                                       const config = getExpenseConfig(expense || expenseType.name);
                                       const apartmentParticipations = config?.apartmentParticipation || {};
+                                      const isConsumption = config?.distributionType === 'consumption';
 
                                       const totalAfterParticipation = apartments.reduce((sum, apt) => {
                                         const participation = apartmentParticipations[apt.id];
 
                                         let aptAmount = 0;
                                         if (isConsumption) {
+                                          // Verifică modul de introducere
+                                          const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                          const isIndexMode = inputMode === 'indexes';
+
                                           let aptConsumption = 0;
                                           const indexes = expense?.indexes?.[apt.id];
-                                          if (indexes) {
+
+                                          // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                          if (isIndexMode && indexes) {
                                             Object.values(indexes).forEach(indexData => {
                                               if (indexData.newIndex && indexData.oldIndex) {
                                                 aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                               }
                                             });
-                                          } else {
+                                          } else if (!isIndexMode) {
                                             aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                           }
                                           aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -1829,21 +1840,28 @@ const ConsumptionInput = ({
 
                                     const config = getExpenseConfig(expense || expenseType.name);
                                     const apartmentParticipations = config?.apartmentParticipation || {};
+                                    const isConsumption = config?.distributionType === 'consumption';
 
                                     const totalAfterParticipation = apartmentsForDiff.reduce((sum, apt) => {
                                       const participation = apartmentParticipations[apt.id];
 
                                       let aptAmount = 0;
                                       if (isConsumption) {
+                                        // Verifică modul de introducere
+                                        const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                        const isIndexMode = inputMode === 'indexes';
+
                                         let aptConsumption = 0;
                                         const indexes = expense?.indexes?.[apt.id];
-                                        if (indexes) {
+
+                                        // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                        if (isIndexMode && indexes) {
                                           Object.values(indexes).forEach(indexData => {
                                             if (indexData.newIndex && indexData.oldIndex) {
                                               aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                             }
                                           });
-                                        } else {
+                                        } else if (!isIndexMode) {
                                           aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                         }
                                         aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -1949,6 +1967,7 @@ const ConsumptionInput = ({
 
                                       const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
                                       const apartmentParticipations = config?.apartmentParticipation || {};
+                                      const isConsumption = config?.distributionType === 'consumption';
 
                                       // Calculează total după participare pentru apartamentele corecte
                                       const totalAfterParticipation = apartmentsForCalculation.reduce((sum, apt) => {
@@ -1956,15 +1975,22 @@ const ConsumptionInput = ({
                                         let aptAmount = 0;
 
                                         if (isConsumption) {
+                                          // Verifică modul de introducere
+                                          const inputMode = config?.indexConfiguration?.inputMode || 'manual';
+                                          const isIndexMode = inputMode === 'indexes';
+                                          console.log('🟣 FOOTER VERIFICARE - inputMode:', inputMode, 'isIndexMode:', isIndexMode, 'apt:', apt.id);
+
                                           let aptConsumption = 0;
                                           const indexes = expense?.indexes?.[apt.id];
-                                          if (indexes) {
+
+                                          // Folosește indexes DOAR dacă inputMode este 'indexes'
+                                          if (isIndexMode && indexes) {
                                             Object.values(indexes).forEach(indexData => {
                                               if (indexData.newIndex && indexData.oldIndex) {
                                                 aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
                                               }
                                             });
-                                          } else {
+                                          } else if (!isIndexMode) {
                                             aptConsumption = parseFloat(expense?.consumption?.[apt.id] || 0);
                                           }
                                           aptAmount = aptConsumption * (expense?.unitPrice || 0);
@@ -1990,9 +2016,29 @@ const ConsumptionInput = ({
                                       // Adaugă diferențele pentru apartamentele corecte
                                       const allApartments = getAssociationApartments();
                                       const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
+
+                                      console.log('🔴 DEBUG totalDifference:', {
+                                        apartmentsForCalculationIds: apartmentsForCalculation.map(a => a.id),
+                                        expenseDifferencesKeys: Object.keys(expenseDifferences),
+                                        expenseDifferencesValues: expenseDifferences,
+                                        apartmentsForCalculationCount: apartmentsForCalculation.length
+                                      });
+
                                       const totalDifference = apartmentsForCalculation.reduce((sum, apt) => {
-                                        return sum + (expenseDifferences[apt.id] || 0);
+                                        const diff = expenseDifferences[apt.id] || 0;
+                                        console.log(`🔴 Apt ${apt.id}: diff = ${diff}`);
+                                        return sum + diff;
                                       }, 0);
+
+                                      console.log('🔴 totalDifference FINAL:', totalDifference);
+
+                                      console.log('🟢 FOOTER FINAL:', {
+                                        totalAfterParticipation,
+                                        totalDifference,
+                                        expectedAmount,
+                                        apartmentsForCalculationCount: apartmentsForCalculation.length,
+                                        filterType: filterInfo.type
+                                      });
 
                                       const finalTotal = totalAfterParticipation + totalDifference;
                                       // Diferență rămasă = calculat - așteptat
