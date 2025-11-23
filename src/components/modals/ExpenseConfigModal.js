@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Settings, Users, Building2, Info, Activity, Plus, Trash2 } from 'lucide-react';
+import { X, Settings, Users, Building2, Info, Activity, Plus, Trash2, MoreVertical, Edit } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import SupplierModal from './SupplierModal';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
@@ -29,7 +29,9 @@ const ExpenseConfigModal = ({
   blocks = [],
   stairs = [],
   initialTab = 'general',
-  getAssociationExpenseTypes // For duplicate name checking in 'add' mode
+  getAssociationExpenseTypes, // For duplicate name checking in 'add' mode
+  updateExpenseConsumption, // For clearing consumption when excluding apartments
+  updatePendingConsumption // For clearing consumption in pending expenses
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedStairTab, setSelectedStairTab] = useState('all');
@@ -70,6 +72,14 @@ const ExpenseConfigModal = ({
 
   // State pentru adăugare apometru nou
   const [newIndexName, setNewIndexName] = useState('');
+  const [showAddIndexForm, setShowAddIndexForm] = useState(false);
+
+  // State pentru editare contor
+  const [editingIndexId, setEditingIndexId] = useState(null);
+  const [editingIndexName, setEditingIndexName] = useState('');
+
+  // State pentru dropdown menu (3 puncte)
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // 🏠 State local pentru participările apartamentelor (se salvează în Firebase)
   const [localParticipations, setLocalParticipations] = useState({});
@@ -161,7 +171,7 @@ const ExpenseConfigModal = ({
         // 📊 Configurare indecși
         indexConfiguration: expenseConfig.indexConfiguration || {
           enabled: false,
-          inputMode: 'mixed', // Default: Mixt (flexibil)
+          inputMode: 'indexes', // Default: Indecși
           indexTypes: []
         },
         // 💰 Distribuție diferență - citire directă
@@ -182,28 +192,52 @@ const ExpenseConfigModal = ({
   }, [isOpen, mode, expenseConfig]);
 
   // 🔄 Încarcă participările din Firebase la deschiderea modalului
+  // IMPORTANT: Folosim un ref pentru a evita re-încărcarea când user-ul modifică participările local
+  const hasLoadedParticipations = React.useRef(false);
+
   useEffect(() => {
     if (isOpen && expenseKey && getApartmentParticipation && getAssociationApartments) {
-      const apartments = getAssociationApartments();
-      const expenseParticipations = {};
+      // Încarcă participările DOAR la prima deschidere a modalului
+      if (!hasLoadedParticipations.current) {
+        const apartments = getAssociationApartments();
+        const expenseParticipations = {};
 
-      // Încarcă participările pentru fiecare apartament folosind expenseKey (ID sau name)
-      apartments.forEach(apartment => {
-        const participationKey = `${apartment.id}-${expenseKey}`;
-        const participation = getApartmentParticipation(apartment.id, expenseKey);
+        // Încarcă participările pentru fiecare apartament folosind expenseKey (ID sau name)
+        apartments.forEach(apartment => {
+          const participationKey = `${apartment.id}-${expenseKey}`;
+          const participation = getApartmentParticipation(apartment.id, expenseKey);
 
-        // Doar dacă există o participare non-default, o adăugăm
-        if (participation && participation.type !== 'integral') {
-          expenseParticipations[participationKey] = participation;
-        }
-      });
+          // Doar dacă există o participare non-default, o adăugăm
+          if (participation && participation.type !== 'integral') {
+            expenseParticipations[participationKey] = participation;
+          }
+        });
 
-      setLocalParticipations(expenseParticipations);
+        setLocalParticipations(expenseParticipations);
+        hasLoadedParticipations.current = true;
+      }
     } else if (!isOpen) {
       // Resetează participările când modalul se închide
       setLocalParticipations({});
+      hasLoadedParticipations.current = false;
     }
   }, [isOpen, expenseKey, getApartmentParticipation, getAssociationApartments]);
+
+  // Închide dropdown-ul când se dă click în afara lui
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdownId && !event.target.closest('.relative')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    if (openDropdownId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [openDropdownId]);
 
   const handleAddNewSupplier = async (supplierData) => {
     try {
@@ -345,9 +379,6 @@ const ExpenseConfigModal = ({
         }
       }
 
-      // Închide modalul IMEDIAT pentru a preveni afișarea valorilor vechi
-      onClose();
-
       // ADD MODE: Call onAddExpense
       if (mode === 'add') {
         await onAddExpense({
@@ -361,13 +392,41 @@ const ExpenseConfigModal = ({
         await updateExpenseConfig(expenseKey, localConfig);
       }
 
-      // Save apartment participations to Firebase
+      // Save apartment participations to Firebase FIRST
       if (saveApartmentParticipations) {
         // Merge cu participările existente pentru alte cheltuieli
         const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
         const mergedParticipations = { ...allParticipations, ...localParticipations };
         await saveApartmentParticipations(mergedParticipations);
       }
+
+      // Șterge consumurile pentru apartamentele excluse AFTER participations are saved
+      if (updateExpenseConsumption || updatePendingConsumption) {
+        const apartments = getAssociationApartments();
+        const distributedExpenses = currentSheet?.expenses || [];
+        const distributedExpense = distributedExpenses.find(exp =>
+          exp.name === expenseKey || exp.id === expenseKey
+        );
+
+        apartments.forEach(apartment => {
+          const participationKey = `${apartment.id}-${expenseKey}`;
+          const participation = localParticipations[participationKey] || { type: 'integral', value: null };
+
+          // Dacă apartamentul este exclus, șterge consumul
+          if (participation.type === 'excluded') {
+            if (distributedExpense && distributedExpense.id && updateExpenseConsumption) {
+              // Cheltuială distribuită - șterge consumul
+              updateExpenseConsumption(distributedExpense.id, apartment.id, null);
+            } else if (updatePendingConsumption) {
+              // Cheltuială pending - șterge consumul pending
+              updatePendingConsumption(expenseKey, apartment.id, null);
+            }
+          }
+        });
+      }
+
+      // Închide modalul DUPĂ ce toate operațiunile sunt complete
+      onClose();
     } catch (error) {
       console.error('Eroare la salvarea configurației:', error);
       alert('Eroare la salvarea configurației. Verificați consola.');
@@ -493,6 +552,12 @@ const ExpenseConfigModal = ({
     });
 
     setNewIndexName('');
+    setShowAddIndexForm(false);
+  };
+
+  const handleCancelAddIndexType = () => {
+    setNewIndexName('');
+    setShowAddIndexForm(false);
   };
 
   const handleDeleteIndexType = (indexId) => {
@@ -503,6 +568,40 @@ const ExpenseConfigModal = ({
         indexTypes: localConfig.indexConfiguration.indexTypes.filter(idx => idx.id !== indexId)
       }
     });
+    setOpenDropdownId(null);
+  };
+
+  const handleStartEditIndexType = (indexType) => {
+    setEditingIndexId(indexType.id);
+    setEditingIndexName(indexType.name);
+    setOpenDropdownId(null);
+  };
+
+  const handleSaveEditIndexType = () => {
+    if (!editingIndexName.trim()) {
+      alert('Introduceți numele contorului');
+      return;
+    }
+
+    setLocalConfig({
+      ...localConfig,
+      indexConfiguration: {
+        ...localConfig.indexConfiguration,
+        indexTypes: localConfig.indexConfiguration.indexTypes.map(idx =>
+          idx.id === editingIndexId
+            ? { ...idx, name: editingIndexName.trim() }
+            : idx
+        )
+      }
+    });
+
+    setEditingIndexId(null);
+    setEditingIndexName('');
+  };
+
+  const handleCancelEditIndexType = () => {
+    setEditingIndexId(null);
+    setEditingIndexName('');
   };
 
   const handleInputModeChange = (mode) => {
@@ -953,6 +1052,43 @@ const ExpenseConfigModal = ({
                                 value: newValue
                               }
                             });
+
+                            // Când se exclude un apartament, șterge consumul său IMEDIAT
+                            if (type === "excluded") {
+                              // Determină dacă cheltuiala este salvată sau pending
+                              const expenseKeyForConsumption = mode === 'add' ? inputExpenseName : expenseName;
+
+                              console.log('🗑️ Excluding apartment, deleting consumption:', {
+                                apartmentId: apartment.id,
+                                apartmentNumber: apartment.number,
+                                expenseKey: expenseKeyForConsumption,
+                                mode
+                              });
+
+                              // Găsește cheltuiala pentru a obține ID-ul (pentru cheltuieli distribuite)
+                              const distributedExpenses = currentSheet?.expenses || [];
+                              const distributedExpense = distributedExpenses.find(exp =>
+                                exp.name === expenseKeyForConsumption || exp.id === expenseKeyForConsumption
+                              );
+
+                              console.log('🔍 Looking for distributed expense:', {
+                                expenseKeyForConsumption,
+                                foundExpense: distributedExpense ? { id: distributedExpense.id, name: distributedExpense.name } : null,
+                                totalDistributedExpenses: distributedExpenses.length,
+                                hasUpdateExpenseConsumption: !!updateExpenseConsumption,
+                                hasUpdatePendingConsumption: !!updatePendingConsumption
+                              });
+
+                              if (distributedExpense && distributedExpense.id && updateExpenseConsumption) {
+                                // Cheltuială distribuită - șterge consumul
+                                console.log('✅ Calling updateExpenseConsumption:', distributedExpense.id, apartment.id, null);
+                                updateExpenseConsumption(distributedExpense.id, apartment.id, null);
+                              } else if (updatePendingConsumption) {
+                                // Cheltuială pending - șterge consumul pending
+                                console.log('✅ Calling updatePendingConsumption:', expenseKeyForConsumption, apartment.id, null);
+                                updatePendingConsumption(expenseKeyForConsumption, apartment.id, null);
+                              }
+                            }
                           }}
                           disabled={!isApartmentActive}
                           className={`p-2 border rounded-lg text-sm ${
@@ -1087,21 +1223,6 @@ const ExpenseConfigModal = ({
                     <input
                       type="radio"
                       name="inputMode"
-                      value="mixed"
-                      checked={localConfig.indexConfiguration.inputMode === 'mixed'}
-                      onChange={(e) => handleInputModeChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">Mixt (flexibil)</div>
-                      <div className="text-sm text-gray-600">Permite atât indecși cât și introducere consumuri</div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
-                    <input
-                      type="radio"
-                      name="inputMode"
                       value="indexes"
                       checked={localConfig.indexConfiguration.inputMode === 'indexes'}
                       onChange={(e) => handleInputModeChange(e.target.value)}
@@ -1127,58 +1248,160 @@ const ExpenseConfigModal = ({
                       <div className="text-sm text-gray-600">Introduci direct consumul (ex: 8.5 mc)</div>
                     </div>
                   </label>
+
+                  <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                    <input
+                      type="radio"
+                      name="inputMode"
+                      value="mixed"
+                      checked={localConfig.indexConfiguration.inputMode === 'mixed'}
+                      onChange={(e) => handleInputModeChange(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">Mixt</div>
+                      <div className="text-sm text-gray-600">Indecși pentru unele apartamente, consumuri pentru altele</div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
-              {/* 2️⃣ Configurare Contoare - apare doar pentru indexes sau mixed */}
+              {/* 2️⃣ Configurare Contoare - apare pentru indexes și mixed */}
               {(localConfig.indexConfiguration.inputMode === 'indexes' || localConfig.indexConfiguration.inputMode === 'mixed') && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-green-900 mb-3">
                     2️⃣ Configurare Contoare
                   </h3>
 
-                  {/* Listă contoare configurate */}
-                  {localConfig.indexConfiguration.indexTypes.length > 0 && (
-                    <div className="space-y-2 mb-4">
-                      <div className="text-xs font-medium text-gray-600 mb-2">Contoare configurate:</div>
-                      {localConfig.indexConfiguration.indexTypes.map(indexType => (
+                  {/* Listă contoare configurate + buton adăugare */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-medium text-gray-600">
+                        {localConfig.indexConfiguration.indexTypes.length > 0
+                          ? 'Contoare configurate:'
+                          : 'Niciun contor configurat'}
+                      </div>
+                      {!showAddIndexForm && (
+                        <button
+                          onClick={() => setShowAddIndexForm(true)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded transition-colors"
+                          title="Adaugă contor nou"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Adaugă contor
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Listă contoare */}
+                    {localConfig.indexConfiguration.indexTypes.length > 0 && (
+                      <div className="space-y-2">
+                        {localConfig.indexConfiguration.indexTypes.map(indexType => (
                         <div key={indexType.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-green-600" />
-                            <span className="font-medium">{indexType.name}</span>
-                            <span className="text-sm text-gray-500">({indexType.unit})</span>
-                          </div>
+                          {editingIndexId === indexType.id ? (
+                            // Mod editare
+                            <div className="flex items-center gap-2 flex-1">
+                              <Activity className="w-4 h-4 text-green-600" />
+                              <input
+                                type="text"
+                                value={editingIndexName}
+                                onChange={(e) => setEditingIndexName(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') handleSaveEditIndexType();
+                                  if (e.key === 'Escape') handleCancelEditIndexType();
+                                }}
+                                className="flex-1 p-1 border border-green-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                autoFocus
+                              />
+                              <span className="text-sm text-gray-500">({indexType.unit})</span>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={handleSaveEditIndexType}
+                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                                >
+                                  Salvează
+                                </button>
+                                <button
+                                  onClick={handleCancelEditIndexType}
+                                  className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 transition-colors"
+                                >
+                                  Anulează
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            // Mod vizualizare
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-green-600" />
+                                <span className="font-medium">{indexType.name}</span>
+                                <span className="text-sm text-gray-500">({indexType.unit})</span>
+                              </div>
+                              <div className="relative">
+                                <button
+                                  onClick={() => setOpenDropdownId(openDropdownId === indexType.id ? null : indexType.id)}
+                                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Opțiuni"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {openDropdownId === indexType.id && (
+                                  <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                    <button
+                                      onClick={() => handleStartEditIndexType(indexType)}
+                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                      Editează
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteIndexType(indexType.id)}
+                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Șterge
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Formular adăugare contor nou - apare doar când dai click pe buton */}
+                    {showAddIndexForm && (
+                      <div className="bg-white border-2 border-green-300 rounded-lg p-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Nume contor (ex: Contor baie, Contor bucătărie, Contor hol)"
+                            value={newIndexName}
+                            onChange={(e) => setNewIndexName(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') handleAddIndexType();
+                              if (e.key === 'Escape') handleCancelAddIndexType();
+                            }}
+                            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            autoFocus
+                          />
                           <button
-                            onClick={() => handleDeleteIndexType(indexType.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Șterge contor"
+                            onClick={handleAddIndexType}
+                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            Adaugă
+                          </button>
+                          <button
+                            onClick={handleCancelAddIndexType}
+                            className="px-3 py-2 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400 transition-colors"
+                          >
+                            Anulează
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Adăugare contor nou */}
-                  <div className="bg-white border-2 border-dashed border-green-300 rounded-lg p-3">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Nume contor (ex: Contor baie, Contor bucătărie, Contor hol)"
-                        value={newIndexName}
-                        onChange={(e) => setNewIndexName(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddIndexType()}
-                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
-                      <button
-                        onClick={handleAddIndexType}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Adaugă
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

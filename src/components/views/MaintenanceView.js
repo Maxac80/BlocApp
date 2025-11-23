@@ -1019,9 +1019,10 @@ const MaintenanceView = ({
           tabContent={
             <div className="pb-2">
               {/* Tab-uri pentru scări */}
-              <div className="sticky top-0 z-10 bg-white rounded-t-xl shadow-md border-b border-gray-200 mb-6" style={{ position: 'sticky' }}>
-                <div className="flex items-center justify-between">
-                  {/* Tab-uri scări - stânga */}
+              <div className={`sticky top-0 z-10 bg-white rounded-t-xl mb-3 ${(blocks?.length > 1 || stairs?.length > 1) ? 'shadow-md border-b border-gray-200' : ''}`} style={{ position: 'sticky' }}>
+                <div className={`flex items-center ${(blocks?.length > 1 || stairs?.length > 1) ? 'justify-between' : 'justify-end'}`}>
+                  {/* Tab-uri scări - stânga - ascunse când avem 1 bloc + 1 scară */}
+                  {(blocks?.length > 1 || stairs?.length > 1) && (
                   <div className="flex overflow-x-auto">
                     {/* Tab "Toate" */}
                     <button
@@ -1053,9 +1054,10 @@ const MaintenanceView = ({
                       );
                     })}
                   </div>
+                  )}
 
                   {/* Butoane acțiuni - dreapta */}
-                  <div className="flex items-center gap-3 px-6">
+                  <div className="flex items-center gap-3 px-6 pt-4 pb-2">
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
                     {!isMonthReadOnly && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
@@ -1173,6 +1175,7 @@ const MaintenanceView = ({
                         )
                       );
                     }}
+                    maintenanceData={maintenanceData}
                   />
                 </div>
               </div>
@@ -1359,6 +1362,8 @@ const MaintenanceView = ({
           blocks={blocks}
           stairs={stairs}
           initialTab={configModalInitialTab}
+          updateExpenseConsumption={updateExpenseConsumption}
+          updatePendingConsumption={updatePendingConsumption}
         />
 
         <PaymentModal
