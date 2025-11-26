@@ -23,6 +23,7 @@ const ExpenseList = ({
   currentMonth,
   currentSheet,
   getExpenseConfig,
+  updateExpenseConfig,
   getAssociationApartments,
   handleDeleteMonthlyExpense,
   isMonthReadOnly,
@@ -4163,10 +4164,49 @@ const ExpenseList = ({
 
                         return (
                           <div className="mt-6">
-                            <h5 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                              <Calculator className="w-5 h-5" />
-                              Tabel consumuri:
-                            </h5>
+                            {/* Header cu titlu și buton test (doar în development) */}
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-semibold text-gray-700 flex items-center gap-2">
+                                <Calculator className="w-5 h-5" />
+                                Tabel consumuri:
+                              </h5>
+
+                              {/* 🧪 Buton Test InputMode - doar în development */}
+                              {process.env.NODE_ENV === 'development' && updateExpenseConfig && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500 font-medium">🧪 Test Mode:</span>
+                                  <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                                    {['manual', 'indexes', 'mixed'].map((mode) => (
+                                      <button
+                                        key={mode}
+                                        onClick={async () => {
+                                          try {
+                                            const expenseKey = expense.expenseTypeId || expense.name;
+                                            await updateExpenseConfig(expenseKey, {
+                                              ...config,
+                                              indexConfiguration: {
+                                                ...config.indexConfiguration,
+                                                inputMode: mode
+                                              }
+                                            });
+                                          } catch (error) {
+                                            console.error('Error updating inputMode:', error);
+                                          }
+                                        }}
+                                        className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                                          inputMode === mode
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {mode === 'manual' ? 'Manual' : mode === 'indexes' ? 'Indecși' : 'Mixt'}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
                             <ConsumptionTable
                               apartments={filteredApartments}
                               config={config}

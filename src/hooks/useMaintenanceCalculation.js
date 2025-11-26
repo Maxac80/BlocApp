@@ -1042,11 +1042,14 @@ const useMaintenanceCalculation = ({
 
         return {
           apartmentId: apartment.id,
+          apartmentNumber: apartment.number,
           apartment: apartment.number,
           owner: apartment.owner,
           building: apartment.buildingNumber,
           stairId: apartment.stairId,
           persons: apartment.persons,
+          apartmentType: apartment.type || apartment.apartmentType,
+          surface: apartment.surface,
           currentMaintenance: Math.round(currentMaintenance * 100) / 100,
           currentMaintenanceBeforeRounding: currentMaintenance, // Salvează valoarea înainte de rotunjire
           restante,

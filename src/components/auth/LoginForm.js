@@ -13,7 +13,7 @@ import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
  * - Device nou detection
  * - Block timer pentru prea multe încercări
  */
-export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToReset }) {
+export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToReset, onDevOwnerMode }) {
   const { loginEnhanced, authError, setAuthError, security } = useAuthEnhanced();
   
   const [formData, setFormData] = useState({
@@ -364,6 +364,22 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
               Conexiune securizată SSL • Device tracking • Audit logging
             </div>
           </div>
+        </div>
+
+        {/* 🔧 DEV MODE: Portal Proprietari */}
+        <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p className="text-sm text-emerald-700 text-center mb-3">
+            Mod dezvoltare - Testare Portal Proprietari
+          </p>
+          <button
+            onClick={() => {
+              // Redirect la Owner Portal mode - va cere login dacă nu e autentificat
+              window.location.href = window.location.pathname + '?mode=owner';
+            }}
+            className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+          >
+            Deschide Portal Proprietari (Dev)
+          </button>
         </div>
       </div>
     </div>

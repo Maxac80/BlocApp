@@ -722,8 +722,73 @@ export const useSheetManagement = (associationId) => {
       // IMPORTANT: Nu transferăm cheltuielile distribuite - luna nouă începe fără distribuiri
       const transferIndexesToNewSheet = (expenses) => {
         // Luna nouă începe FĂRĂ cheltuieli distribuite
-        // Utilizatorul va distribui cheltuieli noi în luna următoare
-        return [];
+        // DAR transferăm indexurile: newIndex → oldIndex pentru luna următoare
+        if (!expenses || expenses.length === 0) return [];
+
+        // Helper local pentru a obține configurația cheltuielii din snapshot-ul sheet-ului
+        const getConfigFromSnapshot = (expenseId) => {
+          const configs = currentSheet.configSnapshot?.expenseConfigurations || {};
+          return configs[expenseId] || null;
+        };
+
+        const expensesWithTransferredIndexes = [];
+
+        expenses.forEach(expense => {
+          // Verifică dacă cheltuiala are configurare de indexuri activată
+          const config = getConfigFromSnapshot(expense.expenseTypeId || expense.name);
+          if (!config?.indexConfiguration?.enabled) return; // Skip dacă nu are indexuri
+
+          // Verifică dacă are indexuri de transferat
+          if (!expense.indexes || Object.keys(expense.indexes).length === 0) return;
+
+          // Construiește indexurile transferate
+          const transferredIndexes = {};
+          Object.keys(expense.indexes).forEach(apartmentId => {
+            const apartmentIndexes = expense.indexes[apartmentId];
+            const transferredApartmentIndexes = {};
+
+            Object.keys(apartmentIndexes).forEach(indexTypeId => {
+              const indexData = apartmentIndexes[indexTypeId];
+              // Transfer: newIndex → oldIndex, newIndex devine gol
+              if (indexData.newIndex) {
+                transferredApartmentIndexes[indexTypeId] = {
+                  oldIndex: indexData.newIndex,
+                  oldIndexSource: 'transferred', // 🎯 FLAG: marchez ca transferat automat
+                  newIndex: '',
+                  meterName: indexData.meterName || ''
+                };
+              }
+            });
+
+            if (Object.keys(transferredApartmentIndexes).length > 0) {
+              transferredIndexes[apartmentId] = transferredApartmentIndexes;
+            }
+          });
+
+          // Dacă am indexuri de transferat, creează o cheltuială cu doar aceste indexuri
+          if (Object.keys(transferredIndexes).length > 0) {
+            expensesWithTransferredIndexes.push({
+              id: expense.id,
+              name: expense.name,
+              expenseTypeId: expense.expenseTypeId,
+              distributionType: expense.distributionType,
+              indexes: transferredIndexes,
+              // NU transferăm: consumption, individualAmounts, billAmount, etc.
+              // Luna nouă începe fără date de distribuție
+            });
+          }
+        });
+
+        console.log('🔄 Transferred indexes to new sheet:', {
+          originalExpenses: expenses.length,
+          expensesWithIndexes: expensesWithTransferredIndexes.length,
+          details: expensesWithTransferredIndexes.map(e => ({
+            name: e.name,
+            apartmentCount: Object.keys(e.indexes).length
+          }))
+        });
+
+        return expensesWithTransferredIndexes;
       };
 
       // Validare associationId înainte de creare sheet nou

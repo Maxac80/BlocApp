@@ -13,7 +13,7 @@ import ErrorBoundary from '../common/ErrorBoundary';
  * - Onboarding wizard pentru utilizatori noi
  * - Redirect către aplicația principală la final
  */
-export default function AuthManager({ onAuthComplete }) {
+export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
   const { 
     currentUser, 
     userProfile, 
@@ -186,6 +186,7 @@ export default function AuthManager({ onAuthComplete }) {
         onSuccess={handleAuthSuccess}
         onSwitchToRegister={switchToRegister}
         onSwitchToReset={switchToReset}
+        onDevOwnerMode={onDevOwnerMode}
       />
     );
   }

@@ -1,21 +1,48 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProviderEnhanced, useAuthEnhanced } from "./context/AuthContextEnhanced";
 import AuthManager from "./components/auth/AuthManager";
 import BlocApp from "./BlocApp";
+import OwnerPortalWrapper from "./components/owner/OwnerPortalWrapper";
 import { AlertCircle } from "lucide-react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
 
+/**
+ * Detectează modul aplicației din URL parameter
+ * ?mode=owner → Owner Portal (pentru development/testing)
+ */
+function useAppMode() {
+  const [mode, setMode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') || 'admin';
+  });
+
+  useEffect(() => {
+    // Ascultă schimbări în URL (pentru navigare browser back/forward)
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setMode(params.get('mode') || 'admin');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  return mode;
+}
+
 // Componenta principală care decide ce să afișeze
 function AppContent() {
-  const { 
-    currentUser, 
-    userProfile, 
+  const {
+    currentUser,
+    userProfile,
     loading,
     isEmailVerified,
     needsOnboarding,
     logoutEnhanced
   } = useAuthEnhanced();
+
+  // Detectează modul din URL (?mode=owner)
+  const appMode = useAppMode();
 
   // 🔄 HANDLE AUTH COMPLETE
   const handleAuthComplete = async (result) => {
@@ -46,7 +73,17 @@ function AppContent() {
 
   // 🔐 NU E LOGAT - SHOW AUTH MANAGER
   if (!currentUser) {
-    return <AuthManager onAuthComplete={handleAuthComplete} />;
+    return (
+      <AuthManager
+        onAuthComplete={handleAuthComplete}
+      />
+    );
+  }
+
+  // 🏠 OWNER MODE: Afișează Owner Portal (folosește sesiunea Firebase curentă)
+  // Acces: http://localhost:3000?mode=owner
+  if (appMode === 'owner') {
+    return <OwnerPortalWrapper currentUser={currentUser} />;
   }
 
   // 📧 EMAIL NECONFIRMAT SAU ONBOARDING NECESAR
@@ -66,9 +103,9 @@ function AppContent() {
     );
   }
 
-  // 👥 DACĂ E PROPRIETAR - DASHBOARD DEDICAT
+  // 👥 DACĂ E PROPRIETAR - PORTAL PROPRIETARI
   if (userProfile.role === 'proprietar') {
-    return <ProprietarDashboard />;
+    return <OwnerApp />;
   }
 
   // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (FĂRĂ HEADER!)
@@ -94,70 +131,6 @@ function AppContent() {
         >
           Deconectează-te
         </button>
-      </div>
-    </div>
-  );
-}
-
-// Dashboard pentru proprietari
-function ProprietarDashboard() {
-  const { userProfile, logoutEnhanced } = useAuthEnhanced();
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* HEADER */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Bine ai venit, {userProfile.name}! 👋
-              </h1>
-              <p className="text-gray-600">Dashboard proprietar - dezvoltat în FAZA 5</p>
-            </div>
-            <button
-              onClick={logoutEnhanced}
-              className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Ieșire
-            </button>
-          </div>
-        </div>
-
-        {/* CONȚINUT */}
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Portal Proprietari
-          </h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Aici vei vedea apartamentul tău, facturile de întreținere, istoricul plăților, 
-            și vei putea plăti online direct din aplicație.
-          </p>
-          <div className="bg-green-50 rounded-lg p-4 mb-6">
-            <p className="text-green-800 font-medium">
-              🚧 În dezvoltare activă - FAZA 5 din roadmap
-            </p>
-            <p className="text-green-700 text-sm mt-1">
-              Disponibil în aproximativ 8-10 săptămâni
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <strong>Plăți online</strong><br/>
-              Card, transfer bancar
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <strong>Istoric complet</strong><br/>
-              Toate facturile tale
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <strong>Notificări</strong><br/>
-              Email, SMS alerts
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

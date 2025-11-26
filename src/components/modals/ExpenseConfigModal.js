@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Settings, Users, Building2, Info, Activity, Plus, Trash2, MoreVertical, Edit } from 'lucide-react';
+import { X, Settings, Users, Building2, Activity, Plus, Trash2, MoreVertical, Edit, Gauge } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import SupplierModal from './SupplierModal';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
@@ -83,6 +83,9 @@ const ExpenseConfigModal = ({
 
   // 🏠 State local pentru participările apartamentelor (se salvează în Firebase)
   const [localParticipations, setLocalParticipations] = useState({});
+
+  // 🔧 State local pentru configurarea contoarelor per apartament
+  const [localApartmentMeters, setLocalApartmentMeters] = useState({});
 
   const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -171,7 +174,7 @@ const ExpenseConfigModal = ({
         // 📊 Configurare indecși
         indexConfiguration: expenseConfig.indexConfiguration || {
           enabled: false,
-          inputMode: 'indexes', // Default: Indecși
+          inputMode: 'mixed', // Default: Mixt (flexibil)
           indexTypes: []
         },
         // 💰 Distribuție diferență - citire directă
@@ -222,6 +225,16 @@ const ExpenseConfigModal = ({
       hasLoadedParticipations.current = false;
     }
   }, [isOpen, expenseKey, getApartmentParticipation, getAssociationApartments]);
+
+  // 🔧 Încarcă configurația contoarelor per apartament la deschiderea modalului
+  useEffect(() => {
+    if (isOpen && expenseConfig?.indexConfiguration?.apartmentMeters) {
+      setLocalApartmentMeters(expenseConfig.indexConfiguration.apartmentMeters);
+    } else if (!isOpen) {
+      // Resetează când modalul se închide
+      setLocalApartmentMeters({});
+    }
+  }, [isOpen, expenseConfig]);
 
   // Închide dropdown-ul când se dă click în afara lui
   useEffect(() => {
@@ -379,17 +392,26 @@ const ExpenseConfigModal = ({
         }
       }
 
+      // 🔧 Pregătește configurația finală cu apartmentMeters inclus
+      const finalConfig = {
+        ...localConfig,
+        indexConfiguration: {
+          ...localConfig.indexConfiguration,
+          apartmentMeters: localApartmentMeters
+        }
+      };
+
       // ADD MODE: Call onAddExpense
       if (mode === 'add') {
         await onAddExpense({
           name: inputExpenseName.trim(),
-          defaultDistribution: localConfig.distributionType,
-          receptionMode: localConfig.receptionMode,
-          appliesTo: localConfig.appliesTo
-        }, localConfig);
+          defaultDistribution: finalConfig.distributionType,
+          receptionMode: finalConfig.receptionMode,
+          appliesTo: finalConfig.appliesTo
+        }, finalConfig);
       } else {
         // EDIT MODE: Call updateExpenseConfig
-        await updateExpenseConfig(expenseKey, localConfig);
+        await updateExpenseConfig(expenseKey, finalConfig);
       }
 
       // Save apartment participations to Firebase FIRST
@@ -617,6 +639,34 @@ const ExpenseConfigModal = ({
     });
   };
 
+  // 🔧 HANDLERS PENTRU CONFIGURARE CONTOARE PER APARTAMENT
+  const handleMeterToggle = (apartmentId, meterId, enabled) => {
+    setLocalApartmentMeters(prev => ({
+      ...prev,
+      [apartmentId]: {
+        ...prev[apartmentId],
+        [meterId]: {
+          enabled: enabled,
+          serialNumber: prev[apartmentId]?.[meterId]?.serialNumber || ''
+        }
+      }
+    }));
+  };
+
+  const handleSerialChange = (apartmentId, meterId, serialNumber) => {
+    setLocalApartmentMeters(prev => ({
+      ...prev,
+      [apartmentId]: {
+        ...prev[apartmentId],
+        [meterId]: {
+          ...prev[apartmentId]?.[meterId],
+          enabled: prev[apartmentId]?.[meterId]?.enabled ?? false,
+          serialNumber: serialNumber
+        }
+      }
+    }));
+  };
+
   // Creează tab-uri pentru scări (pentru tab-ul Participare) - ÎNAINTE de return
   const stairTabs = useMemo(() => {
     if (!blocks || !stairs) return [];
@@ -715,6 +765,21 @@ const ExpenseConfigModal = ({
               >
                 <Activity className="w-4 h-4" />
                 Consum
+              </button>
+            )}
+            {/* Tab Contoare - vizibil doar când există contoare configurate */}
+            {localConfig.distributionType === 'consumption' &&
+             localConfig.indexConfiguration?.indexTypes?.length > 0 && (
+              <button
+                onClick={() => setActiveTab('meters')}
+                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                  activeTab === 'meters'
+                    ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Gauge className="w-4 h-4" />
+                Contoare
               </button>
             )}
           </div>
@@ -1814,6 +1879,139 @@ const ExpenseConfigModal = ({
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* 🔧 TAB CONTOARE - Configurare contoare per apartament */}
+          {activeTab === 'meters' && localConfig.indexConfiguration?.indexTypes?.length > 0 && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 mb-4">
+                Configurează contoarele instalate pentru fiecare apartament
+              </div>
+
+              {/* Tab-uri pentru scări */}
+              {stairs.length > 0 && (
+                <div className="border-b overflow-x-auto">
+                  <div className="flex">
+                    <button
+                      onClick={() => setSelectedStairTab('all')}
+                      className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                        selectedStairTab === 'all'
+                          ? 'bg-purple-50 text-purple-700 border-purple-700'
+                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      Toate
+                    </button>
+                    {stairTabs.map(stair => (
+                      <button
+                        key={stair.id}
+                        onClick={() => setSelectedStairTab(stair.id)}
+                        className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          selectedStairTab === stair.id
+                            ? 'bg-purple-50 text-purple-700 border-purple-700'
+                            : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                      >
+                        {stair.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tabelul cu contoare per apartament */}
+              {filteredApartments.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-purple-50">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 sticky left-0 bg-purple-50 z-10">
+                          Apartament
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200">
+                          Proprietar
+                        </th>
+                        {localConfig.indexConfiguration.indexTypes.map(meter => (
+                          <th key={meter.id} className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 min-w-[180px]">
+                            <div>{meter.name}</div>
+                            <div className="text-xs font-normal text-gray-500">({meter.unit})</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredApartments.map((apartment, index) => (
+                        <tr key={apartment.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          {/* Coloana Apartament */}
+                          <td className="px-4 py-3 border-b border-r border-gray-200 sticky left-0 bg-inherit z-10">
+                            <div className="font-medium text-gray-900">Apt {apartment.number}</div>
+                          </td>
+
+                          {/* Coloana Proprietar */}
+                          <td className="px-4 py-3 border-b border-r border-gray-200">
+                            <div className="text-sm text-gray-600">{apartment.owner || '-'}</div>
+                          </td>
+
+                          {/* Coloane pentru fiecare contor */}
+                          {localConfig.indexConfiguration.indexTypes.map(meter => {
+                            const meterConfig = localApartmentMeters[apartment.id]?.[meter.id] || {
+                              enabled: false,
+                              serialNumber: ''
+                            };
+
+                            return (
+                              <td key={meter.id} className="px-4 py-3 border-b border-r border-gray-200">
+                                <div className="flex items-center gap-3">
+                                  {/* Checkbox activare */}
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={meterConfig.enabled}
+                                      onChange={(e) => handleMeterToggle(apartment.id, meter.id, e.target.checked)}
+                                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                    />
+                                    <span className={`text-xs ${meterConfig.enabled ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                                      {meterConfig.enabled ? '✓' : ''}
+                                    </span>
+                                  </label>
+
+                                  {/* Input serie contor */}
+                                  <input
+                                    type="text"
+                                    placeholder="Serie contor"
+                                    value={meterConfig.serialNumber}
+                                    disabled={!meterConfig.enabled}
+                                    onChange={(e) => handleSerialChange(apartment.id, meter.id, e.target.value)}
+                                    className={`flex-1 text-sm border rounded px-2 py-1 min-w-[100px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                                      !meterConfig.enabled
+                                        ? 'bg-gray-100 cursor-not-allowed text-gray-400 border-gray-200'
+                                        : 'bg-white border-gray-300'
+                                    }`}
+                                    maxLength={20}
+                                  />
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">
+                  Nu există apartamente configurate în asociație
+                </p>
+              )}
+
+              {/* Info text */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Sfat:</strong> Bifează contoarele instalate pentru fiecare apartament și introdu seria contorului.
+                  Doar apartamentele cu contoare bifate vor avea coloane pentru introducerea indexurilor în tabelul de consumuri.
+                </p>
               </div>
             </div>
           )}

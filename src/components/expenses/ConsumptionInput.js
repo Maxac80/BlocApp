@@ -1340,8 +1340,11 @@ const ConsumptionInput = ({
                                       const indexData = {
                                         oldIndex: String(rawIndexData.oldIndex || ''),
                                         newIndex: String(rawIndexData.newIndex || ''),
-                                        meterName: rawIndexData.meterName
+                                        meterName: rawIndexData.meterName,
+                                        source: rawIndexData.source,
+                                        submittedAt: rawIndexData.submittedAt
                                       };
+                                      const isOnlineSubmission = indexData.source === 'owner_portal';
 
                                       return (
                                         <React.Fragment key={indexType.id}>
@@ -1385,39 +1388,52 @@ const ConsumptionInput = ({
 
                                           {/* Index Nou */}
                                           <td className="px-2 py-1 text-center">
-                                            {isDisabled ? (
-                                              <span className="text-gray-600 text-xs">{isExcluded ? '-' : (indexData.newIndex || '-')}</span>
-                                            ) : (
-                                              <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                placeholder="-"
-                                                value={localValues[`${expenseType.name}-${apartment.id}-index-${indexType.id}-new`] ?? indexData.newIndex}
-                                                onChange={(e) => {
-                                                  const inputValue = e.target.value;
-                                                  if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
-                                                    const normalizedValue = inputValue.replace(',', '.');
+                                            <div className="flex items-center justify-center gap-1">
+                                              {isDisabled ? (
+                                                <span className="text-gray-600 text-xs">{isExcluded ? '-' : (indexData.newIndex || '-')}</span>
+                                              ) : (
+                                                <input
+                                                  type="text"
+                                                  inputMode="decimal"
+                                                  placeholder="-"
+                                                  value={localValues[`${expenseType.name}-${apartment.id}-index-${indexType.id}-new`] ?? indexData.newIndex}
+                                                  onChange={(e) => {
+                                                    const inputValue = e.target.value;
+                                                    if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
+                                                      const normalizedValue = inputValue.replace(',', '.');
 
-                                                    // Optimistic UI update
-                                                    setLocalValues(prev => ({
-                                                      ...prev,
-                                                      [`${expenseType.name}-${apartment.id}-index-${indexType.id}-new`]: normalizedValue
-                                                    }));
+                                                      // Optimistic UI update
+                                                      setLocalValues(prev => ({
+                                                        ...prev,
+                                                        [`${expenseType.name}-${apartment.id}-index-${indexType.id}-new`]: normalizedValue
+                                                      }));
 
-                                                    const updatedIndexes = {
-                                                      ...indexesData,
-                                                      [indexType.id]: { ...indexData, newIndex: normalizedValue, meterName: indexType.name }
-                                                    };
-                                                    if (expense) {
-                                                      updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
-                                                    } else {
-                                                      updatePendingIndexes(expenseType.name, apartment.id, updatedIndexes);
+                                                      const updatedIndexes = {
+                                                        ...indexesData,
+                                                        [indexType.id]: { ...indexData, newIndex: normalizedValue, meterName: indexType.name }
+                                                      };
+                                                      if (expense) {
+                                                        updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
+                                                      } else {
+                                                        updatePendingIndexes(expenseType.name, apartment.id, updatedIndexes);
+                                                      }
                                                     }
-                                                  }
-                                                }}
-                                                className="w-16 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                              />
-                                            )}
+                                                  }}
+                                                  className={`w-16 px-2 py-1.5 border rounded text-sm text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${
+                                                    isOnlineSubmission ? 'border-emerald-400 bg-emerald-50' : 'border-gray-300'
+                                                  }`}
+                                                />
+                                              )}
+                                              {/* Marcaj pentru index transmis online */}
+                                              {isOnlineSubmission && indexData.newIndex && (
+                                                <span
+                                                  className="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 text-white rounded-full text-[8px] font-bold cursor-help"
+                                                  title={`Transmis online de proprietar${indexData.submittedAt ? ` la ${new Date(indexData.submittedAt).toLocaleString('ro-RO')}` : ''}`}
+                                                >
+                                                  O
+                                                </span>
+                                              )}
+                                            </div>
                                           </td>
                                         </React.Fragment>
                                       );

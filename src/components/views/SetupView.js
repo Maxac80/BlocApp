@@ -335,6 +335,17 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
     setApartmentModalOpen(true);
   };
 
+  const openViewApartmentModal = (apartment) => {
+    // Folosește getAssociationApartments() pentru a obține datele complete
+    const allApartments = getAssociationApartments();
+    const fullApartmentData = allApartments.find(apt => apt.id === apartment.id) || apartment;
+
+    setApartmentModalMode('view');
+    setApartmentModalData(fullApartmentData);
+    setApartmentModalStair(null);
+    setApartmentModalOpen(true);
+  };
+
   const closeApartmentModal = () => {
     setApartmentModalOpen(false);
     setApartmentModalMode('add');
@@ -1812,27 +1823,33 @@ return (
                                                             <Receipt className="w-4 h-4" />
                                                             Vezi Detalii Întreținere
                                                           </button>
-                                                          <button
-                                                            onClick={() => {
-                                                              if (isMonthReadOnly) {
-                                                                alert('Nu poți edita apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
-                                                                return;
-                                                              }
-                                                              openEditApartmentModal(apartment);
-                                                              setOpenApartmentMenus(prev => ({
-                                                                ...prev,
-                                                                [apartment.id]: false
-                                                              }));
-                                                            }}
-                                                            className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
-                                                              isMonthReadOnly
-                                                                ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
-                                                                : 'text-orange-700 hover:bg-orange-50 cursor-pointer'
-                                                            }`}
-                                                            disabled={isMonthReadOnly}
-                                                          >
-                                                            ✏️ Editează Apartament
-                                                          </button>
+                                                          {isMonthReadOnly ? (
+                                                            <button
+                                                              onClick={() => {
+                                                                openViewApartmentModal(apartment);
+                                                                setOpenApartmentMenus(prev => ({
+                                                                  ...prev,
+                                                                  [apartment.id]: false
+                                                                }));
+                                                              }}
+                                                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-blue-700 hover:bg-blue-50 cursor-pointer"
+                                                            >
+                                                              👁️ Vizualizează Apartament
+                                                            </button>
+                                                          ) : (
+                                                            <button
+                                                              onClick={() => {
+                                                                openEditApartmentModal(apartment);
+                                                                setOpenApartmentMenus(prev => ({
+                                                                  ...prev,
+                                                                  [apartment.id]: false
+                                                                }));
+                                                              }}
+                                                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-orange-700 hover:bg-orange-50 cursor-pointer"
+                                                            >
+                                                              ✏️ Editează Apartament
+                                                            </button>
+                                                          )}
 
                                                           {(() => {
                                                             const stairApts = stairApartments.sort((a, b) => {

@@ -25,7 +25,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "start:owner": "set REACT_APP_MODE=owner&& set PORT=3001&& react-scripts start",
     "build": "react-scripts build",
+    "build:owner": "set REACT_APP_MODE=owner&& react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

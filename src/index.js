@@ -2,12 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import OwnerPortalApp from './OwnerPortalApp';
 import reportWebVitals from './reportWebVitals';
+
+// Detectează modul: admin (default) sau owner
+// Setează REACT_APP_MODE=owner pentru portal proprietari
+const isOwnerMode = process.env.REACT_APP_MODE === 'owner';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    {isOwnerMode ? <OwnerPortalApp /> : <App />}
   </React.StrictMode>
 );
 

@@ -56,24 +56,79 @@ export const getExpenseStatus = (
     return participation?.type !== 'excluded';
   });
 
-  // Obține datele din expense SAU din pending
-  let dataObject = {};
-  if (expense) {
-    dataObject = isConsumption ? (expense.consumption || {}) : (expense.individualAmounts || {});
-  } else {
-    // Cheltuială nedistribuită - verifică pending data
-    if (isConsumption) {
-      dataObject = currentSheet?.pendingConsumptions?.[expenseTypeName] || {};
-    } else {
-      dataObject = currentSheet?.pendingIndividualAmounts?.[expenseTypeName] || {};
-    }
-  }
+  // Verifică inputMode pentru cheltuieli de tip consumption
+  const inputMode = config.indexConfiguration?.inputMode || 'manual';
+  const indexTypes = config.indexConfiguration?.indexTypes || [];
+  const hasIndexConfig = config.indexConfiguration?.enabled && indexTypes.length > 0;
 
   // Calculează doar pentru apartamentele NON-EXCLUSE
-  const completed = nonExcludedApartments.filter(apt => {
-    const value = dataObject?.[apt.id];
-    return value && parseFloat(value) >= 0;
-  }).length;
+  let completed = 0;
+
+  if (isConsumption && hasIndexConfig && inputMode !== 'manual') {
+    // Modul INDECȘI sau MIXT: verifică indexurile
+    let indexesData = {};
+    if (expense) {
+      indexesData = expense.indexes || {};
+    } else {
+      indexesData = currentSheet?.pendingIndexes?.[expenseTypeName] || {};
+    }
+
+    completed = nonExcludedApartments.filter(apt => {
+      const apartmentIndexes = indexesData[apt.id] || {};
+
+      if (inputMode === 'indexes') {
+        // Modul INDECȘI STRICT: trebuie să existe indexuri completate (non-empty)
+        return indexTypes.some(indexType => {
+          const indexData = apartmentIndexes[indexType.id];
+          const oldVal = indexData?.oldIndex;
+          const newVal = indexData?.newIndex;
+          // Verifică că sunt string-uri non-empty sau numere valide
+          return oldVal && newVal && String(oldVal).trim() !== '' && String(newVal).trim() !== '';
+        });
+      } else if (inputMode === 'mixed') {
+        // Modul MIXT: acceptă fie indexuri, fie consum manual
+        const hasIndexes = indexTypes.some(indexType => {
+          const indexData = apartmentIndexes[indexType.id];
+          const oldVal = indexData?.oldIndex;
+          const newVal = indexData?.newIndex;
+          // Verifică că sunt string-uri non-empty sau numere valide
+          return oldVal && newVal && String(oldVal).trim() !== '' && String(newVal).trim() !== '';
+        });
+
+        if (hasIndexes) return true;
+
+        // Verifică consum manual ca fallback
+        let dataObject = {};
+        if (expense) {
+          dataObject = expense.consumption || {};
+        } else {
+          dataObject = currentSheet?.pendingConsumptions?.[expenseTypeName] || {};
+        }
+        const value = dataObject[apt.id];
+        return value && parseFloat(value) >= 0;
+      }
+
+      return false;
+    }).length;
+  } else {
+    // Modul MANUAL sau cheltuială fără indexuri: verifică consumption/individualAmounts
+    let dataObject = {};
+    if (expense) {
+      dataObject = isConsumption ? (expense.consumption || {}) : (expense.individualAmounts || {});
+    } else {
+      // Cheltuială nedistribuită - verifică pending data
+      if (isConsumption) {
+        dataObject = currentSheet?.pendingConsumptions?.[expenseTypeName] || {};
+      } else {
+        dataObject = currentSheet?.pendingIndividualAmounts?.[expenseTypeName] || {};
+      }
+    }
+
+    completed = nonExcludedApartments.filter(apt => {
+      const value = dataObject?.[apt.id];
+      return value && parseFloat(value) >= 0;
+    }).length;
+  }
 
   return {
     status: expense
@@ -270,6 +325,12 @@ export const ConsumptionTable = ({
   const indexTypes = config.indexConfiguration?.indexTypes || [];
   const inputMode = config.indexConfiguration?.inputMode || 'manual';
 
+  // 🔧 Configurare contoare per apartament
+  const apartmentMeters = config.indexConfiguration?.apartmentMeters || {};
+
+  // 🔐 State pentru controlul editării indexurilor vechi
+  const [allowOldIndexEdit, setAllowOldIndexEdit] = React.useState(false);
+
   // Cheia pentru localValues - folosește expense.id pentru cheltuieli distribute, expenseTypeName pentru pending
   const localValuesKey = expense?.id || expenseTypeName;
 
@@ -314,10 +375,26 @@ export const ConsumptionTable = ({
 
             {/* Coloane pentru contoare (INDEXES sau MIXED) */}
             {inputMode !== 'manual' && indexTypes.length > 0 && (
-              indexTypes.map(indexType => (
+              indexTypes.map((indexType, idx) => (
                 <React.Fragment key={indexType.id}>
-                  <th className="px-2 py-2 text-center font-semibold text-gray-700 border-l bg-blue-50" colSpan="2">
-                    {indexType.name}
+                  <th className="px-2 py-2 text-center font-semibold text-gray-700 border-l bg-blue-50 align-top" colSpan="2">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{indexType.name}</span>
+                      {/* Buton editare index vechi - doar pentru primul contor */}
+                      {idx === 0 && !isMonthReadOnly && (
+                        <button
+                          onClick={() => setAllowOldIndexEdit(!allowOldIndexEdit)}
+                          className={`text-sm px-1.5 py-0.5 rounded transition-all ${
+                            allowOldIndexEdit
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                          }`}
+                          title={allowOldIndexEdit ? 'Blochează editare index vechi' : 'Permite editare index vechi'}
+                        >
+                          {allowOldIndexEdit ? '🔓' : '🔒'}
+                        </button>
+                      )}
+                    </div>
                   </th>
                 </React.Fragment>
               ))
@@ -427,9 +504,11 @@ export const ConsumptionTable = ({
               <th className="border-b"></th>
               {showPersonsColumn && <th className="border-b border-l"></th>}
               {showParticipationColumns && <th className="border-b border-l"></th>}
-              {indexTypes.map(indexType => (
+              {indexTypes.map((indexType, idx) => (
                 <React.Fragment key={indexType.id}>
-                  <th className="px-2 py-1 text-center text-gray-600 border-b border-l">Vechi</th>
+                  <th className="px-2 py-1 text-center text-gray-600 border-b border-l">
+                    Vechi
+                  </th>
                   <th className="px-2 py-1 text-center text-gray-600 border-b">Nou</th>
                 </React.Fragment>
               ))}
@@ -454,8 +533,30 @@ export const ConsumptionTable = ({
             // Obține consum manual/total
             const manualValue = String(dataObject[apartment.id] || '');
 
+            // 🔧 Verifică care contoare sunt enabled pentru acest apartament
+            const aptMeters = apartmentMeters[apartment.id] || {};
+
+            // Funcție helper pentru a verifica dacă un contor este enabled
+            // Backward compatibility: dacă apartmentMeters nu e configurat deloc, toate contoarele sunt enabled
+            const isMeterEnabled = (meterId) => {
+              // Dacă nu există configurare apartmentMeters deloc, toate contoarele sunt enabled (backward compat)
+              if (Object.keys(apartmentMeters).length === 0) return true;
+              // 🔧 Dacă există configurare dar apartamentul nu e în ea → toate dezactivate
+              // (forțează configurare explicită în tab Contoare)
+              if (!apartmentMeters[apartment.id]) return false;
+              // Altfel, verifică dacă contorul specific e enabled
+              return aptMeters[meterId]?.enabled === true;
+            };
+
+            // 🔧 Verifică dacă apartamentul are cel puțin un contor enabled
+            const hasAnyEnabledMeters = indexTypes.some(indexType => isMeterEnabled(indexType.id));
+
             // Calculează consum total din indecși - verifică OPTIMISTIC values first
+            // 🔧 DOAR pentru contoarele enabled
             const totalIndexConsumption = indexTypes.reduce((sum, indexType) => {
+              // Skip contoarele care nu sunt enabled pentru acest apartament
+              if (!isMeterEnabled(indexType.id)) return sum;
+
               const indexData = indexesData[indexType.id];
 
               // Verifică local values first, apoi Firebase
@@ -559,7 +660,14 @@ export const ConsumptionTable = ({
                 )}
 
                 {/* Contoare: Vechi | Nou (INDEXES sau MIXED) */}
+                {/* În modul MIXT: ascunde indexurile dacă există consum manual */}
+                {/* 🔧 Afișează celule pentru toate contoarele, dar inputuri doar pentru cele enabled */}
                 {inputMode !== 'manual' && indexTypes.length > 0 && indexTypes.map(indexType => {
+                  // 🔧 Verifică dacă contorul este enabled pentru acest apartament
+                  const meterEnabled = isMeterEnabled(indexType.id);
+
+                  // În modul MIXT: ascunde conținutul celulelor dacă există consum manual
+                  const hideCellsInMixedMode = inputMode === 'mixed' && hasManualValue;
                   const rawIndexData = indexesData[indexType.id] || {};
                   const indexData = {
                     oldIndex: String(rawIndexData.oldIndex || ''),
@@ -570,46 +678,73 @@ export const ConsumptionTable = ({
                   return (
                     <React.Fragment key={indexType.id}>
                       {/* Index Vechi */}
-                      <td className="px-2 py-1 text-center border-l">
-                        {isDisabled ? (
+                      <td className={`px-2 py-1 text-center border-l ${!meterEnabled ? 'bg-gray-100' : ''}`}>
+                        {/* 🔧 Dacă contorul nu e enabled pentru acest apartament, afișează "-" */}
+                        {!meterEnabled ? (
+                          <span className="text-gray-400 text-xs" title="Contor neinstalat">-</span>
+                        ) : hideCellsInMixedMode ? (
+                          <span className="text-gray-400 text-xs italic" title="Folosește consum manual">-</span>
+                        ) : isDisabled ? (
                           <span className="text-gray-600 text-xs">{isExcluded ? '-' : (indexData.oldIndex || '-')}</span>
                         ) : (
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="-"
-                            value={localValues[`${localValuesKey}-${apartment.id}-index-${indexType.id}-old`] ?? indexData.oldIndex}
-                            onChange={(e) => {
-                              const inputValue = e.target.value;
-                              if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
-                                const normalizedValue = inputValue.replace(',', '.');
+                          <div className="flex flex-col items-center gap-0.5">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="-"
+                              disabled={!allowOldIndexEdit || isExcluded}
+                              value={localValues[`${localValuesKey}-${apartment.id}-index-${indexType.id}-old`] ?? indexData.oldIndex}
+                              onChange={(e) => {
+                                const inputValue = e.target.value;
+                                if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
+                                  const normalizedValue = inputValue.replace(',', '.');
 
-                                // Optimistic UI update
-                                setLocalValues(prev => ({
-                                  ...prev,
-                                  [`${localValuesKey}-${apartment.id}-index-${indexType.id}-old`]: normalizedValue
-                                }));
+                                  // Optimistic UI update
+                                  setLocalValues(prev => ({
+                                    ...prev,
+                                    [`${localValuesKey}-${apartment.id}-index-${indexType.id}-old`]: normalizedValue
+                                  }));
 
-                                const updatedIndexes = {
-                                  ...indexesData,
-                                  [indexType.id]: { ...indexData, oldIndex: normalizedValue, meterName: indexType.name }
-                                };
+                                  // Determină oldIndexSource bazat pe modificare
+                                  let oldIndexSource = rawIndexData.oldIndexSource || 'initial';
+                                  // Dacă modifici un index transferat automat → devine manual
+                                  if (rawIndexData.oldIndexSource === 'transferred' && normalizedValue !== indexData.oldIndex) {
+                                    oldIndexSource = 'manual';
+                                  }
 
-                                if (expense) {
-                                  updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
-                                } else {
-                                  updatePendingIndexes(expenseTypeName, apartment.id, updatedIndexes);
+                                  const updatedIndexes = {
+                                    ...indexesData,
+                                    [indexType.id]: {
+                                      ...indexData,
+                                      oldIndex: normalizedValue,
+                                      oldIndexSource,
+                                      meterName: indexType.name
+                                    }
+                                  };
+
+                                  if (expense) {
+                                    updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
+                                  } else {
+                                    updatePendingIndexes(expenseTypeName, apartment.id, updatedIndexes);
+                                  }
                                 }
-                              }
-                            }}
-                            className="w-16 px-2 py-0.5 border border-gray-300 rounded text-xs text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
+                              }}
+                              className={`w-16 px-2 py-0.5 border border-gray-300 rounded text-xs text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                                rawIndexData.oldIndexSource === 'manual' ? 'bg-yellow-50' : ''
+                              }`}
+                            />
+                          </div>
                         )}
                       </td>
 
                       {/* Index Nou */}
-                      <td className="px-2 py-1 text-center">
-                        {isDisabled ? (
+                      <td className={`px-2 py-1 text-center ${!meterEnabled ? 'bg-gray-100' : ''}`}>
+                        {/* 🔧 Dacă contorul nu e enabled pentru acest apartament, afișează "-" */}
+                        {!meterEnabled ? (
+                          <span className="text-gray-400 text-xs" title="Contor neinstalat">-</span>
+                        ) : hideCellsInMixedMode ? (
+                          <span className="text-gray-400 text-xs italic" title="Folosește consum manual">-</span>
+                        ) : isDisabled ? (
                           <span className="text-gray-600 text-xs">{isExcluded ? '-' : (indexData.newIndex || '-')}</span>
                         ) : (
                           <input
@@ -628,18 +763,34 @@ export const ConsumptionTable = ({
                                   [`${localValuesKey}-${apartment.id}-index-${indexType.id}-new`]: normalizedValue
                                 }));
 
-                                const updatedIndexes = {
-                                  ...indexesData,
-                                  [indexType.id]: { ...indexData, newIndex: normalizedValue, meterName: indexType.name }
-                                };
-                                if (expense) {
-                                  updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
-                                } else {
-                                  updatePendingIndexes(expenseTypeName, apartment.id, updatedIndexes);
+                                // Validare: newIndex >= oldIndex
+                                const oldIndexValue = parseFloat(indexData.oldIndex) || 0;
+                                const newIndexValue = parseFloat(normalizedValue) || 0;
+
+                                // Salvează doar dacă e valid (newIndex >= oldIndex) SAU dacă e gol
+                                if (normalizedValue === '' || newIndexValue >= oldIndexValue) {
+                                  const updatedIndexes = {
+                                    ...indexesData,
+                                    [indexType.id]: { ...indexData, newIndex: normalizedValue, meterName: indexType.name }
+                                  };
+                                  if (expense) {
+                                    updateExpenseIndexes(expense.id, apartment.id, updatedIndexes);
+                                  } else {
+                                    updatePendingIndexes(expenseTypeName, apartment.id, updatedIndexes);
+                                  }
                                 }
                               }
                             }}
-                            className="w-16 px-2 py-0.5 border border-gray-300 rounded text-xs text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className={`w-16 px-2 py-0.5 border rounded text-xs text-gray-900 text-center focus:ring-1 ${
+                              (() => {
+                                const newVal = localValues[`${localValuesKey}-${apartment.id}-index-${indexType.id}-new`] ?? indexData.newIndex;
+                                const oldVal = indexData.oldIndex;
+                                const isInvalid = newVal && oldVal && parseFloat(newVal) < parseFloat(oldVal);
+                                return isInvalid
+                                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                  : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
+                              })()
+                            }`}
                           />
                         )}
                       </td>
@@ -651,13 +802,13 @@ export const ConsumptionTable = ({
                 <td className="px-3 py-0.5 text-center border-l bg-green-50" style={{ minWidth: '100px', maxWidth: '100px', width: '100px' }}>
                   {isDisabled ? (
                     <span className="text-gray-700 font-medium">{isExcluded ? '-' : (displayedConsumption || '-')}</span>
-                  ) : inputMode === 'indexes' ? (
-                    // INDEXES: read-only (calculat automat)
+                  ) : ((inputMode === 'indexes' && hasAnyEnabledMeters) || (inputMode === 'mixed' && hasIndexData)) ? (
+                    // INDEXES (cu contoare active) sau MIXT cu indexuri: read-only (calculat automat)
                     <span className={`font-medium ${hasIndexData ? 'text-blue-700' : 'text-gray-400'}`}>
                       {hasIndexData ? totalIndexConsumption.toFixed(2) : '-'}
                     </span>
                   ) : (
-                    // MANUAL: editabil
+                    // MANUAL sau MIXT fără indexuri: editabil
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1421,14 +1572,30 @@ const ConsumptionTableFooter = ({
                   );
                 }
 
-                if (hasValidIndexes) {
-                  Object.values(indexes).forEach(indexData => {
-                    if (indexData.newIndex && indexData.oldIndex) {
-                      aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
-                    }
-                  });
+                // Determină inputMode (default 'manual' dacă nu există)
+                const currentInputMode = config.indexConfiguration?.inputMode || 'manual';
+
+                if (currentInputMode === 'indexes') {
+                  // Modul INDECȘI: Folosește DOAR indexuri, ignoră consumption manual
+                  if (hasValidIndexes) {
+                    Object.values(indexes).forEach(indexData => {
+                      if (indexData.newIndex && indexData.oldIndex) {
+                        aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                      }
+                    });
+                  }
+                  // Altfel aptConsumption rămâne 0 (nu folosește effectiveManualValue)
                 } else {
-                  aptConsumption = parseFloat(effectiveManualValue) || 0;
+                  // Modul MANUAL sau MIXT: prioritate indexuri, apoi manual
+                  if (hasValidIndexes) {
+                    Object.values(indexes).forEach(indexData => {
+                      if (indexData.newIndex && indexData.oldIndex) {
+                        aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                      }
+                    });
+                  } else {
+                    aptConsumption = parseFloat(effectiveManualValue) || 0;
+                  }
                 }
 
                 // Suma înainte de participare
@@ -1501,6 +1668,7 @@ const ConsumptionTableFooter = ({
                   const effectiveManualValue = localConsumption !== undefined ? localConsumption : manualValue;
 
                   if (inputMode === 'indexes') {
+                    // Modul INDECȘI: Folosește DOAR indexuri
                     const indexes = expense?.indexes?.[apt.id];
                     if (indexes) {
                       Object.values(indexes).forEach(indexData => {
@@ -1509,8 +1677,28 @@ const ConsumptionTableFooter = ({
                         }
                       });
                     }
+                    // Nu folosește effectiveManualValue în modul 'indexes'
                   } else {
-                    aptConsumption = parseFloat(effectiveManualValue) || 0;
+                    // Modul MANUAL sau MIXT: prioritate indexuri, apoi manual
+                    const indexes = expense?.indexes?.[apt.id];
+                    let hasValidIndexes = false;
+                    if (indexes && Object.keys(indexes).length > 0) {
+                      hasValidIndexes = Object.values(indexes).some(indexData =>
+                        indexData.newIndex && indexData.oldIndex
+                      );
+                    }
+
+                    if (hasValidIndexes) {
+                      // Folosește indexuri dacă există
+                      Object.values(indexes).forEach(indexData => {
+                        if (indexData.newIndex && indexData.oldIndex) {
+                          aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
+                        }
+                      });
+                    } else {
+                      // Altfel folosește consumption manual
+                      aptConsumption = parseFloat(effectiveManualValue) || 0;
+                    }
                   }
 
                   let aptAmount = aptConsumption * (expense?.unitPrice || 0);

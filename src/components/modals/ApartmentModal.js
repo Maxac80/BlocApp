@@ -5,14 +5,15 @@ import { XCircle } from 'lucide-react';
 const ApartmentModal = ({
   isOpen,
   onClose,
-  mode, // 'add' sau 'edit'
-  apartment, // pentru edit
+  mode, // 'add', 'edit' sau 'view'
+  apartment, // pentru edit sau view
   stair, // pentru add
   blocks, // pentru a găsi blocul
   stairs, // toate scările pentru a găsi scara apartamentului în editare
   apartments, // ADĂUGAT: pentru calcul cotă parte
   onSave
 }) => {
+  const isViewMode = mode === 'view';
   const [formData, setFormData] = useState({
     number: '',
     owner: '',
@@ -28,7 +29,7 @@ const ApartmentModal = ({
   // Resetează sau populează datele când se deschide modalul
   useEffect(() => {
     if (isOpen) {
-      if (mode === 'edit' && apartment) {
+      if ((mode === 'edit' || mode === 'view') && apartment) {
         setFormData({
           number: apartment.number || '',
           owner: apartment.owner || '',
@@ -143,18 +144,26 @@ const ApartmentModal = ({
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header cu gradient orange */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 flex items-center justify-between text-white flex-shrink-0">
+        {/* Header cu gradient - albastru pentru view, orange pentru edit/add */}
+        <div className={`p-4 flex items-center justify-between text-white flex-shrink-0 ${
+          isViewMode
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+            : 'bg-gradient-to-r from-orange-500 to-orange-600'
+        }`}>
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 rounded-lg p-2">
-              <span className="text-2xl">🏠</span>
+              <span className="text-2xl">{isViewMode ? '👁️' : '🏠'}</span>
             </div>
             <div>
               <h3 className="text-xl font-semibold">
-                {mode === 'edit' ? `Editează apartament ${apartment?.number}` : 'Configurare: Apartament nou'}
+                {isViewMode
+                  ? `Vizualizare apartament ${apartment?.number}`
+                  : mode === 'edit'
+                    ? `Editează apartament ${apartment?.number}`
+                    : 'Configurare: Apartament nou'}
               </h3>
-              <p className="text-orange-100 text-sm">
-                {mode === 'edit'
+              <p className={`text-sm ${isViewMode ? 'text-blue-100' : 'text-orange-100'}`}>
+                {(mode === 'edit' || isViewMode)
                   ? `${currentBlock?.name || ''} - ${currentStair?.name || ''}`
                   : `Apartament nou la ${currentBlock?.name || ''} - ${stair?.name || ''}`}
               </p>
@@ -162,7 +171,7 @@ const ApartmentModal = ({
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-orange-200 transition-colors"
+            className={`text-white transition-colors ${isViewMode ? 'hover:text-blue-200' : 'hover:text-orange-200'}`}
           >
             <XCircle className="w-6 h-6" />
           </button>
@@ -177,7 +186,7 @@ const ApartmentModal = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Numărul apartamentului *
+                      Numărul apartamentului {!isViewMode && '*'}
                     </label>
                     <input
                       type="text"
@@ -186,22 +195,32 @@ const ApartmentModal = ({
                         const value = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({...formData, number: value});
                       }}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: 15"
-                      required
+                      required={!isViewMode}
+                      disabled={isViewMode}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Proprietar *
+                      Proprietar {!isViewMode && '*'}
                     </label>
                     <input
                       type="text"
                       value={formData.owner}
                       onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: Ion Popescu"
-                      required
+                      required={!isViewMode}
+                      disabled={isViewMode}
                     />
                   </div>
                 </div>
@@ -210,7 +229,7 @@ const ApartmentModal = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Numărul de persoane *
+                      Numărul de persoane {!isViewMode && '*'}
                     </label>
                     <input
                       type="text"
@@ -219,9 +238,14 @@ const ApartmentModal = ({
                         const value = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({...formData, persons: value});
                       }}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: 3"
-                      required
+                      required={!isViewMode}
+                      disabled={isViewMode}
                     />
                   </div>
                   <div>
@@ -231,7 +255,12 @@ const ApartmentModal = ({
                     <select
                       value={formData.apartmentType}
                       onChange={(e) => setFormData({...formData, apartmentType: e.target.value})}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
+                      disabled={isViewMode}
                     >
                       <option value="">Selectează tipul</option>
                       <option value="Garsoniera">Garsoniera</option>
@@ -260,8 +289,13 @@ const ApartmentModal = ({
                         const cleanValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
                         setFormData({...formData, surface: cleanValue});
                       }}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: 65.5"
+                      disabled={isViewMode}
                     />
                   </div>
                   <div>
@@ -271,7 +305,12 @@ const ApartmentModal = ({
                     <select
                       value={formData.heatingSource}
                       onChange={(e) => setFormData({...formData, heatingSource: e.target.value})}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
+                      disabled={isViewMode}
                     >
                       <option value="">Selectează sursa</option>
                       <option value="Termoficare">Termoficare</option>
@@ -317,10 +356,15 @@ const ApartmentModal = ({
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: ion.popescu@email.com"
+                      disabled={isViewMode}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Pentru acces la aplicația BlocApp pentru proprietari</p>
+                    {!isViewMode && <p className="text-xs text-gray-500 mt-1">Pentru acces la aplicația BlocApp pentru proprietari</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -330,10 +374,15 @@ const ApartmentModal = ({
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                        isViewMode
+                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                      }`}
                       placeholder="ex: 0721234567"
+                      disabled={isViewMode}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Opțional - pentru urgențe sau notificări</p>
+                    {!isViewMode && <p className="text-xs text-gray-500 mt-1">Opțional - pentru urgențe sau notificări</p>}
                   </div>
                 </div>
               </div>
@@ -341,21 +390,31 @@ const ApartmentModal = ({
 
         {/* Butoane fixe */}
         <div className="p-4 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
-          <form onSubmit={handleSubmit} className="contents">
+          {isViewMode ? (
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Anulează
+              Închide
             </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
-              {mode === 'edit' ? 'Salvează' : 'Adaugă'}
-            </button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="contents">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Anulează
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              >
+                {mode === 'edit' ? 'Salvează' : 'Adaugă'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>,

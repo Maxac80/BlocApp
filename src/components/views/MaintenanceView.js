@@ -1132,6 +1132,7 @@ const MaintenanceView = ({
                     currentMonth={currentMonth}
                     currentSheet={currentSheet}
                     getExpenseConfig={getExpenseConfig}
+                    updateExpenseConfig={updateExpenseConfig}
                     getAssociationApartments={getAssociationApartments}
                     handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
                     isMonthReadOnly={isMonthReadOnly}
