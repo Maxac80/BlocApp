@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   TrendingUp, Users, Home, FileText, Download,
-  AlertCircle, CheckCircle, Clock, X, ChevronDown
+  AlertCircle, CheckCircle, Clock, X, ChevronDown, Flame
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
@@ -288,7 +288,7 @@ export default function OwnerDashboardView({ onNavigate }) {
           La o privire
         </h3>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Persoane */}
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <Users className="w-6 h-6 text-gray-400 mx-auto mb-2" />
@@ -310,21 +310,36 @@ export default function OwnerDashboardView({ onNavigate }) {
           {/* Cotă parte */}
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <TrendingUp className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-gray-900">
               {apartmentData?.cotaParte
-                ? `${(apartmentData.cotaParte * 100).toFixed(2)}%`
+                ? `${apartmentData.cotaParte.toFixed(4)}%`
                 : '-'}
             </p>
-            <p className="text-sm text-gray-500">Cotă parte</p>
+            {apartmentData?.surface && apartmentData?.totalStairSurface ? (
+              <p className="text-xs text-gray-500">
+                ({apartmentData.surface} / {apartmentData.totalStairSurface.toFixed(2)} mp)
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">Cotă parte</p>
+            )}
           </div>
 
           {/* Tip apartament */}
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <Home className="w-6 h-6 text-gray-400 mx-auto mb-2" />
             <p className="text-lg font-bold text-gray-900">
-              {maintenanceData?.apartmentType || apartmentData?.type || '-'}
+              {maintenanceData?.apartmentType || apartmentData?.apartmentType || '-'}
             </p>
             <p className="text-sm text-gray-500">Tip</p>
+          </div>
+
+          {/* Sursa încălzire */}
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <Flame className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-gray-900">
+              {apartmentData?.heatingSource || '-'}
+            </p>
+            <p className="text-sm text-gray-500">Încălzire</p>
           </div>
         </div>
       </div>

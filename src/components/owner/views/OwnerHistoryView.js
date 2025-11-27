@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Calendar, CheckCircle, AlertCircle, Clock, ChevronRight,
-  Filter, TrendingUp, TrendingDown
+  Filter, TrendingUp, TrendingDown, X, FileText
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
@@ -10,18 +10,36 @@ import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hoo
  * View pentru istoricul lunilor
  */
 export default function OwnerHistoryView({ onNavigate }) {
-  const { apartmentId, associationId } = useOwnerContext();
+  const { apartmentId, apartmentNumber, apartmentData, associationId } = useOwnerContext();
 
   const {
     loading,
     error,
     monthlyHistory,
     selectedMonth,
-    switchMonth
+    switchMonth,
+    getExpenseDetailsForMonth
   } = useOwnerData(associationId, apartmentId);
 
   // State pentru filtrare
   const [filterStatus, setFilterStatus] = useState('all'); // all | paid | partial | unpaid
+
+  // State pentru modal detalii
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedMonthDetails, setSelectedMonthDetails] = useState(null);
+  const [monthExpenseDetails, setMonthExpenseDetails] = useState([]);
+
+  // Handler pentru deschiderea modalului cu detalii
+  const handleShowDetails = async (month) => {
+    setSelectedMonthDetails(month);
+    setShowDetailsModal(true);
+
+    // Încarcă detaliile cheltuielilor pentru luna selectată
+    if (getExpenseDetailsForMonth) {
+      const details = await getExpenseDetailsForMonth(month.monthYear);
+      setMonthExpenseDetails(details || []);
+    }
+  };
 
   // Filtrare istoric
   const filteredHistory = monthlyHistory.filter(month => {
@@ -238,18 +256,271 @@ export default function OwnerHistoryView({ onNavigate }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // Previne declanșarea onClick pe card
-                      switchMonth(month.monthYear);
-                      onNavigate && onNavigate('dashboard');
+                      handleShowDetails(month);
                     }}
                     className="w-full flex items-center justify-center py-2 text-sm text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                   >
-                    Vezi detalii în Dashboard
+                    Vezi detalii
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Detalii Cheltuieli */}
+      {showDetailsModal && selectedMonthDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header Modal */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">Detalii Cheltuieli</h3>
+                  <p className="text-emerald-100 text-sm mt-1 capitalize">
+                    {selectedMonthDetails.monthYear} • Ap. {apartmentNumber}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Modal - Scrollabil */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Totaluri */}
+              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                Totaluri
+              </h4>
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
+                {/* Întreținere curentă */}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Întreținere Curentă</span>
+                  <span className="font-semibold text-emerald-600">
+                    {formatCurrency(selectedMonthDetails.maintenance?.currentMaintenance || 0)}
+                  </span>
+                </div>
+
+                {/* Restanțe */}
+                {(selectedMonthDetails.maintenance?.restante || 0) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Restanțe</span>
+                    <span className="font-semibold text-red-600">
+                      {formatCurrency(selectedMonthDetails.maintenance?.restante || 0)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Penalități */}
+                {(selectedMonthDetails.maintenance?.penalitati || 0) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Penalități</span>
+                    <span className="font-semibold text-orange-600">
+                      {formatCurrency(selectedMonthDetails.maintenance?.penalitati || 0)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Total Datorat */}
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className="text-gray-900 font-medium">Total Datorat</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatCurrency(selectedMonthDetails.totalDatorat)}
+                  </span>
+                </div>
+
+                {/* Încasări cu breakdown */}
+                {selectedMonthDetails.totalPaid > 0 && (
+                  <>
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                        <span className="text-gray-600">Încasări</span>
+                      </div>
+                      <span className="font-semibold text-emerald-600">
+                        -{formatCurrency(selectedMonthDetails.totalPaid)}
+                      </span>
+                    </div>
+                    {/* Breakdown plăți - afișăm detalii dacă există payments */}
+                    {selectedMonthDetails.sheet?.payments && (() => {
+                      const aptPayments = selectedMonthDetails.sheet.payments.filter(p =>
+                        p.apartmentId === apartmentId ||
+                        String(p.apartmentNumber) === String(apartmentNumber)
+                      );
+                      if (aptPayments.length > 0) {
+                        return aptPayments.map((payment, idx) => (
+                          <div key={idx} className="ml-4 text-sm space-y-1">
+                            {payment.intretinere > 0 && (
+                              <div className="flex justify-between text-gray-500">
+                                <span>• Întreținere</span>
+                                <span>-{formatCurrency(payment.intretinere)}</span>
+                              </div>
+                            )}
+                            {payment.restante > 0 && (
+                              <div className="flex justify-between text-gray-500">
+                                <span>• Restanță</span>
+                                <span>-{formatCurrency(payment.restante)}</span>
+                              </div>
+                            )}
+                            {payment.penalitati > 0 && (
+                              <div className="flex justify-between text-gray-500">
+                                <span>• Penalități</span>
+                                <span>-{formatCurrency(payment.penalitati)}</span>
+                              </div>
+                            )}
+                            {(payment.date || payment.timestamp) && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(
+                                  payment.date?.seconds ? payment.date.seconds * 1000 :
+                                  payment.timestamp ? payment.timestamp :
+                                  payment.date
+                                ).toLocaleDateString('ro-RO')}
+                                {(payment.chitanta || payment.receiptNumber) && ` - Chitanța #${payment.chitanta || payment.receiptNumber}`}
+                              </div>
+                            )}
+                          </div>
+                        ));
+                      }
+                      return null;
+                    })()}
+                  </>
+                )}
+
+                {/* Rest de Plată */}
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className="text-gray-900 font-medium">Rest de Plată</span>
+                  <span className={`text-lg font-bold ${selectedMonthDetails.remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {formatCurrency(selectedMonthDetails.remaining)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Lista cheltuieli detaliate */}
+              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                Detalii Cheltuieli
+              </h4>
+              <div className="space-y-3">
+                {monthExpenseDetails.length > 0 ? (
+                  monthExpenseDetails.map((expense, index) => {
+                    // Verifică dacă e cheltuială pe consum
+                    const isConsumptionBased =
+                      expense.distributionType === 'byConsumption' ||
+                      expense.distributionType === 'consumption' ||
+                      expense.label?.toLowerCase().includes('consum');
+
+                    // Verifică dacă are consum valid
+                    const hasConsumption = expense.consumption !== null &&
+                      expense.consumption !== undefined &&
+                      expense.consumption > 0;
+
+                    // Verifică dacă are diferență (pierderi/scurgeri)
+                    const hasDifference = expense.difference && expense.difference !== 0;
+
+                    // Generează badge-ul pentru tipul de distribuție
+                    const getDistributionBadge = () => {
+                      const dt = expense.distributionType;
+                      const label = expense.label?.toLowerCase() || '';
+                      const amount = expense.amount;
+
+                      // Pentru consum cu date complete: afișează detalii consum
+                      if (isConsumptionBased && hasConsumption && expense.unitPrice) {
+                        return {
+                          icon: '📊',
+                          text: `${expense.consumption.toFixed(2)} ${expense.consumptionUnit || 'mc'} × ${expense.unitPrice.toFixed(2)} lei/${expense.consumptionUnit || 'mc'}`,
+                          className: 'text-orange-600'
+                        };
+                      }
+
+                      // Verifică pe consum (fără date complete)
+                      if (dt === 'byConsumption' || dt === 'consumption' || label.includes('consum')) {
+                        return {
+                          icon: '💧',
+                          text: `Pe consum`,
+                          className: 'text-orange-600'
+                        };
+                      }
+
+                      // Verifică pe număr persoane
+                      if (dt === 'byPersons' || dt === 'perPerson' || label.includes('persoan')) {
+                        return {
+                          icon: '👥',
+                          text: `Pe număr persoane`,
+                          className: 'text-purple-600'
+                        };
+                      }
+
+                      // Verifică pe cotă parte / suprafață
+                      if (dt === 'byArea' || dt === 'cotaParte' || label.includes('cotă') || label.includes('suprafață')) {
+                        return {
+                          icon: '📐',
+                          text: `Pe cotă parte`,
+                          className: 'text-indigo-600'
+                        };
+                      }
+
+                      // Default: pe apartament (include 'equal', 'perApartment', 'standard', undefined, etc.)
+                      return {
+                        icon: '⏱',
+                        text: `${formatCurrency(amount)}/apartament`,
+                        className: 'text-blue-600'
+                      };
+                    };
+
+                    const badge = getDistributionBadge();
+
+                    return (
+                      <div
+                        key={expense.id || index}
+                        className="p-3 bg-white border border-gray-100 rounded-lg"
+                      >
+                        {/* Header: Nume și Sumă */}
+                        <div className="flex items-center justify-between">
+                          <p className="text-gray-900 font-medium">{expense.name}</p>
+                          <span className="font-semibold text-gray-900">{formatCurrency(expense.amount)}</span>
+                        </div>
+
+                        {/* Badge distribuție sub numele cheltuielii */}
+                        {badge && (
+                          <div className={`mt-1 flex items-center text-sm ${badge.className}`}>
+                            <span className="mr-1">{badge.icon}</span>
+                            <span>{badge.text}</span>
+                          </div>
+                        )}
+
+                        {/* Diferență (pierderi/scurgeri) - doar pentru consum */}
+                        {hasDifference && (
+                          <div className="mt-1 text-sm text-orange-600">
+                            <span>Diferență: {formatCurrency(expense.difference)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                    <p>Nu sunt cheltuieli detaliate disponibile.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="p-6 border-t border-gray-100">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+              >
+                Închide
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

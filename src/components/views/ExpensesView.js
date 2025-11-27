@@ -35,7 +35,8 @@ const ExpensesViewNew = ({
   publishedSheet,
   sheets,
   blocks,
-  stairs
+  stairs,
+  togglePortalSubmission
 }) => {
   const [activeTab, setActiveTab] = useState('expenses');
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -295,6 +296,33 @@ const ExpensesViewNew = ({
                                 )}
                                 {isDistributed && (
                                   <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Distribuită</span>
+                                )}
+                                {/* Buton toggle Portal pentru cheltuieli cu perioadă manuală */}
+                                {config.distributionType === 'consumption' &&
+                                 config.indexConfiguration?.portalSubmission?.periodType === 'manual' &&
+                                 togglePortalSubmission && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isMonthReadOnly) {
+                                        alert('Nu poți modifica setările într-o lună publicată.');
+                                        return;
+                                      }
+                                      togglePortalSubmission(expenseType.id || expenseType.name);
+                                    }}
+                                    className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                      config.indexConfiguration?.portalSubmission?.isOpen
+                                        ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                    } ${isMonthReadOnly ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    title={config.indexConfiguration?.portalSubmission?.isOpen
+                                      ? 'Portal deschis - Click pentru a închide'
+                                      : 'Portal închis - Click pentru a deschide'}
+                                  >
+                                    {config.indexConfiguration?.portalSubmission?.isOpen
+                                      ? '🟢 Portal deschis'
+                                      : '⚪ Portal închis'}
+                                  </button>
                                 )}
                               </div>
                               <div className="mt-1 text-sm text-gray-600 flex items-center gap-2">

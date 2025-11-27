@@ -379,6 +379,7 @@ export default function BlocApp() {
     updatePendingIndividualAmount,
     updateExpenseIndexes,
     updatePendingIndexes,
+    togglePortalSubmission,
     expenseStats
   } = useExpenseManagement({
     association,
@@ -817,6 +818,7 @@ useEffect(() => {
               sheets={sheets}
               blocks={blocks}
               stairs={stairs}
+              togglePortalSubmission={togglePortalSubmission}
             />
           )}
 

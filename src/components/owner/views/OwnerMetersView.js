@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Gauge, Droplets, Flame, Zap, Calendar, CheckCircle,
-  AlertCircle, Clock, Send, History, Camera, Info, Wifi
+  AlertCircle, Clock, Send, History, Camera, Wifi
 } from 'lucide-react';
 // Note: Flame, Zap sunt folosite în getMeterStyle pentru gaz și electricitate
 import { useOwnerContext } from '../OwnerApp';
@@ -38,9 +38,11 @@ export default function OwnerMetersView() {
   const {
     loading,
     selectedMonth,
+    currentSheet,
     meterReadings: meterHistory,      // Istoricul citirilor din Firebase
     availableMeters: metersFromHook,  // Contoarele disponibile din Firebase
-    submitMeterReading                // Funcția de salvare în Firebase
+    submitMeterReading,               // Funcția de salvare în Firebase
+    submissionConfig                  // 📱 Configurația pentru transmitere
   } = useOwnerData(associationId, apartmentId);
 
   // State pentru valorile input de la utilizator
@@ -99,7 +101,7 @@ export default function OwnerMetersView() {
           continue;
         }
 
-        const result = await submitMeterReading(meterId, value, meter.expenseId);
+        const result = await submitMeterReading(meterId, value, meter.expenseId, meter.name);
         results.push({ meterId, ...result });
       }
 
@@ -127,12 +129,10 @@ export default function OwnerMetersView() {
     }
   };
 
-  // Calculează perioada de transmitere
-  const today = new Date();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const endOfSubmission = new Date(today.getFullYear(), today.getMonth(), 25);
-  const isSubmissionOpen = today >= startOfMonth && today <= endOfSubmission;
-  const daysLeft = Math.max(0, Math.ceil((endOfSubmission - today) / (1000 * 60 * 60 * 24)));
+  // 📱 Folosește submissionConfig din hook pentru status transmitere
+  const isSubmissionOpen = submissionConfig?.isOpen ?? false;
+  const daysLeft = submissionConfig?.daysLeft ?? 0;
+  const workingMonth = currentSheet?.monthYear || selectedMonth || 'Luna curentă';
 
   // Loading state
   if (loading) {
@@ -179,8 +179,8 @@ export default function OwnerMetersView() {
               </div>
               <div>
                 <p className="text-sm opacity-80">Perioada de transmitere</p>
-                <p className="text-xl font-bold">
-                  {selectedMonth || 'Luna curentă'}
+                <p className="text-xl font-bold capitalize">
+                  {workingMonth}
                 </p>
               </div>
             </div>
@@ -201,16 +201,23 @@ export default function OwnerMetersView() {
             </div>
           </div>
 
-          {isSubmissionOpen && (
+          {isSubmissionOpen && daysLeft !== null && (
             <div className="bg-white bg-opacity-10 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Calendar className="w-5 h-5 mr-2 opacity-80" />
-                  <span className="opacity-90">Termen: 25 {selectedMonth?.split(' ')[0]}</span>
+                  <span className="opacity-90">
+                    {submissionConfig?.periodType === 'manual'
+                      ? submissionConfig?.deadline
+                      : `Termen: ${submissionConfig?.endDay || 25} ${workingMonth?.split(' ')[0] || ''}`
+                    }
+                  </span>
                 </div>
-                <span className="font-bold">
-                  {daysLeft === 0 ? 'Ultima zi!' : `${daysLeft} zile rămase`}
-                </span>
+                {submissionConfig?.periodType !== 'manual' && (
+                  <span className="font-bold">
+                    {daysLeft === 0 ? 'Ultima zi!' : `${daysLeft} zile rămase`}
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -345,28 +352,13 @@ export default function OwnerMetersView() {
                   </p>
                 </div>
 
-                <div className="p-6 space-y-6">
-                  {/* Info Box */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <div className="flex items-start">
-                      <Info className="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Cum citești contorul:</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
-                          <li>Notează toate cifrele negre (nu cele roșii)</li>
-                          <li>Include virgula dacă există zecimale</li>
-                          <li>Verifică să fie mai mare decât indexul precedent</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Meter Inputs */}
-                  <div className="space-y-4">
+                <div className="p-6">
+                  {/* Meter Inputs - Grid 2 coloane */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {availableMeters.map((meter) => {
                       const Icon = meter.icon;
                       const reading = inputReadings[meter.id] || '';
-                      const isValid = reading === '' || parseFloat(reading) >= meter.lastReading;
+                      const isValid = reading === '' || parseFloat(reading) >= (parseFloat(meter.lastReading) || 0);
 
                       return (
                         <div
@@ -379,6 +371,7 @@ export default function OwnerMetersView() {
                               : 'border-gray-200 bg-gray-50'
                           }`}
                         >
+                          {/* Header cu icon și index anterior */}
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center">
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${meter.bgColor}`}>
@@ -387,23 +380,24 @@ export default function OwnerMetersView() {
                               <div>
                                 <p className="font-medium text-gray-900">{meter.name}</p>
                                 <p className="text-xs text-gray-500">
-                                  ID: {meter.id}
+                                  ID: {meter.id?.substring(0, 20)}...
                                 </p>
                               </div>
                             </div>
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Index anterior</p>
-                              <p className="font-medium text-gray-700">{meter.lastReading} {meter.unit}</p>
+                              <p className="font-medium text-gray-700">{meter.lastReading ?? 0} {meter.unit}</p>
                             </div>
                           </div>
 
-                          <div className="relative">
+                          {/* Input pentru index nou */}
+                          <div className="relative mb-3">
                             <input
                               type="text"
                               inputMode="decimal"
                               value={reading}
                               onChange={(e) => handleReadingChange(meter.id, e.target.value)}
-                              placeholder={`Ex: ${(meter.lastReading + 3.5).toFixed(1)}`}
+                              placeholder={`Ex: ${((parseFloat(meter.lastReading) || 0) + 3.5).toFixed(1)}`}
                               disabled={!isSubmissionOpen || submitting}
                               className={`w-full px-4 py-3 border-2 rounded-lg text-lg font-medium text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                                 !isSubmissionOpen || submitting ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
@@ -416,31 +410,27 @@ export default function OwnerMetersView() {
                             </span>
                           </div>
 
+                          {/* Eroare validare */}
                           {reading && !isValid && (
-                            <p className="mt-2 text-sm text-red-600 flex items-center">
+                            <p className="mb-3 text-sm text-red-600 flex items-center">
                               <AlertCircle className="w-4 h-4 mr-1" />
-                              Indexul trebuie să fie mai mare decât {meter.lastReading}
+                              Index prea mic
                             </p>
                           )}
+
+                          {/* Photo Upload Placeholder - per contor */}
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:bg-gray-50 cursor-not-allowed"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Adaugă poză</span>
+                            <span className="text-xs text-gray-400">(în curând)</span>
+                          </button>
                         </div>
                       );
                     })}
-                  </div>
-
-                  {/* Photo Upload Placeholder */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-                    <Camera className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                    <p className="font-medium text-gray-700">Adaugă poză contor</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Opțional - ajută la verificare
-                    </p>
-                    <button
-                      type="button"
-                      disabled
-                      className="mt-3 px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm cursor-not-allowed"
-                    >
-                      În curând disponibil
-                    </button>
                   </div>
                 </div>
 
@@ -466,7 +456,10 @@ export default function OwnerMetersView() {
 
                   {!isSubmissionOpen && (
                     <p className="text-center text-sm text-gray-500 mt-3">
-                      Perioada de transmitere este închisă. Poți transmite indexurile între 1-25 ale lunii.
+                      {submissionConfig?.reason
+                        ? submissionConfig.reason
+                        : `Perioada de transmitere este închisă. Interval: ${submissionConfig?.deadline || '1-25 ale lunii'}`
+                      }
                     </p>
                   )}
                 </div>

@@ -737,6 +737,58 @@ export const useExpenseManagement = ({
     }
   }, [currentSheet]);
 
+  // 📱 TOGGLE PORTAL SUBMISSION - pentru deschidere/închidere rapidă din ExpensesView
+  const togglePortalSubmission = useCallback(async (expenseId) => {
+    try {
+      if (!currentSheet?.id || !association?.id) {
+        console.error('❌ No current sheet or association');
+        return false;
+      }
+
+      // Găsește configurația cheltuielii
+      const expenseConfigs = currentSheet.configSnapshot?.expenseConfigurations || {};
+      const expenseConfig = expenseConfigs[expenseId];
+
+      if (!expenseConfig) {
+        console.error('❌ Expense config not found for:', expenseId);
+        return false;
+      }
+
+      // Toggle isOpen
+      const currentIsOpen = expenseConfig.indexConfiguration?.portalSubmission?.isOpen ?? true;
+      const newIsOpen = !currentIsOpen;
+
+      console.log('📱 Toggling portal submission:', { expenseId, from: currentIsOpen, to: newIsOpen });
+
+      // Actualizează în Firebase
+      const { updateDoc } = await import('firebase/firestore');
+
+      const updatedExpenseConfigs = {
+        ...expenseConfigs,
+        [expenseId]: {
+          ...expenseConfig,
+          indexConfiguration: {
+            ...expenseConfig.indexConfiguration,
+            portalSubmission: {
+              ...expenseConfig.indexConfiguration?.portalSubmission,
+              isOpen: newIsOpen
+            }
+          }
+        }
+      };
+
+      await updateDoc(getSheetRef(association.id, currentSheet.id), {
+        'configSnapshot.expenseConfigurations': updatedExpenseConfigs
+      });
+
+      console.log('✅ Portal submission toggled successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error toggling portal submission:', error);
+      return false;
+    }
+  }, [currentSheet, association?.id]);
+
   // 🗑️ ȘTERGEREA CHELTUIELILOR PERSONALIZATE - OPTIMIZAT
   const handleDeleteCustomExpense = useCallback(async (expenseName) => {
     try {
@@ -1064,6 +1116,7 @@ export const useExpenseManagement = ({
     updatePendingIndividualAmount,
     updateExpenseIndexes,
     updatePendingIndexes,
+    togglePortalSubmission,
 
     // 📊 Statistici și date
     expenseStats

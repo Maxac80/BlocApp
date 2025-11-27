@@ -56,7 +56,15 @@ const ExpenseConfigModal = ({
     indexConfiguration: {
       enabled: false,
       inputMode: 'mixed', // 'manual' | 'indexes' | 'mixed' - Default: Mixt (flexibil)
-      indexTypes: []
+      indexTypes: [],
+      // 📱 Setări Portal Proprietari
+      portalSubmission: {
+        enabled: true,           // Permite transmitere din portal
+        periodType: 'auto',      // 'auto' | 'manual' | 'custom'
+        isOpen: true,            // Pentru periodType: 'manual'
+        startDay: 1,             // Pentru periodType: 'custom'
+        endDay: 25               // Pentru periodType: 'custom'
+      }
     },
     // 💰 Distribuție diferență - SIMPLIFICAT
     differenceDistribution: {
@@ -128,7 +136,14 @@ const ExpenseConfigModal = ({
         indexConfiguration: {
           enabled: false,
           inputMode: 'mixed',
-          indexTypes: []
+          indexTypes: [],
+          portalSubmission: {
+            enabled: true,
+            periodType: 'auto',
+            isOpen: true,
+            startDay: 1,
+            endDay: 25
+          }
         },
         differenceDistribution: {
           method: 'apartment',
@@ -172,10 +187,19 @@ const ExpenseConfigModal = ({
         // Default: 'person' dacă distributionType e 'person', altfel 'apartment'
         fixedAmountMode: expenseConfig.fixedAmountMode || defaultFixedAmountMode,
         // 📊 Configurare indecși
-        indexConfiguration: expenseConfig.indexConfiguration || {
-          enabled: false,
-          inputMode: 'mixed', // Default: Mixt (flexibil)
-          indexTypes: []
+        indexConfiguration: {
+          enabled: expenseConfig.indexConfiguration?.enabled || false,
+          inputMode: expenseConfig.indexConfiguration?.inputMode || 'mixed',
+          indexTypes: expenseConfig.indexConfiguration?.indexTypes || [],
+          apartmentMeters: expenseConfig.indexConfiguration?.apartmentMeters || {},
+          // 📱 Setări Portal Proprietari - merge cu defaults
+          portalSubmission: {
+            enabled: expenseConfig.indexConfiguration?.portalSubmission?.enabled ?? true,
+            periodType: expenseConfig.indexConfiguration?.portalSubmission?.periodType || 'auto',
+            isOpen: expenseConfig.indexConfiguration?.portalSubmission?.isOpen ?? true,
+            startDay: expenseConfig.indexConfiguration?.portalSubmission?.startDay || 1,
+            endDay: expenseConfig.indexConfiguration?.portalSubmission?.endDay || 25
+          }
         },
         // 💰 Distribuție diferență - citire directă
         differenceDistribution: expenseConfig.differenceDistribution || {
@@ -2012,6 +2036,179 @@ const ExpenseConfigModal = ({
                   <strong>💡 Sfat:</strong> Bifează contoarele instalate pentru fiecare apartament și introdu seria contorului.
                   Doar apartamentele cu contoare bifate vor avea coloane pentru introducerea indexurilor în tabelul de consumuri.
                 </p>
+              </div>
+
+              {/* 📱 Transmitere din Portal Proprietari */}
+              <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                  📱 Transmitere din Portal Proprietari
+                </h4>
+
+                {/* Toggle principal */}
+                <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localConfig.indexConfiguration?.portalSubmission?.enabled ?? true}
+                    onChange={(e) => setLocalConfig({
+                      ...localConfig,
+                      indexConfiguration: {
+                        ...localConfig.indexConfiguration,
+                        portalSubmission: {
+                          ...localConfig.indexConfiguration.portalSubmission,
+                          enabled: e.target.checked
+                        }
+                      }
+                    })}
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700">
+                    Permite proprietarilor să transmită indexuri online
+                  </span>
+                </label>
+
+                {/* Opțiuni perioadă - afișate doar când e enabled */}
+                {localConfig.indexConfiguration?.portalSubmission?.enabled && (
+                  <div className="ml-7 space-y-3">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Perioadă de transmitere:</p>
+
+                    {/* Auto (1-25) */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="portalPeriodType"
+                        value="auto"
+                        checked={localConfig.indexConfiguration?.portalSubmission?.periodType === 'auto'}
+                        onChange={() => setLocalConfig({
+                          ...localConfig,
+                          indexConfiguration: {
+                            ...localConfig.indexConfiguration,
+                            portalSubmission: {
+                              ...localConfig.indexConfiguration.portalSubmission,
+                              periodType: 'auto'
+                            }
+                          }
+                        })}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <div>
+                        <span className="text-sm text-gray-700">Automată</span>
+                        <span className="text-xs text-gray-500 ml-1">(1-25 ale lunii)</span>
+                      </div>
+                    </label>
+
+                    {/* Manual */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="portalPeriodType"
+                        value="manual"
+                        checked={localConfig.indexConfiguration?.portalSubmission?.periodType === 'manual'}
+                        onChange={() => setLocalConfig({
+                          ...localConfig,
+                          indexConfiguration: {
+                            ...localConfig.indexConfiguration,
+                            portalSubmission: {
+                              ...localConfig.indexConfiguration.portalSubmission,
+                              periodType: 'manual'
+                            }
+                          }
+                        })}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <div>
+                        <span className="text-sm text-gray-700">Manuală</span>
+                        <span className="text-xs text-gray-500 ml-1">(deschid/închid când vreau)</span>
+                      </div>
+                    </label>
+
+                    {/* Toggle Deschis/Închis - pentru manual */}
+                    {localConfig.indexConfiguration?.portalSubmission?.periodType === 'manual' && (
+                      <div className="ml-7 mt-2">
+                        <select
+                          value={localConfig.indexConfiguration?.portalSubmission?.isOpen ? 'open' : 'closed'}
+                          onChange={(e) => setLocalConfig({
+                            ...localConfig,
+                            indexConfiguration: {
+                              ...localConfig.indexConfiguration,
+                              portalSubmission: {
+                                ...localConfig.indexConfiguration.portalSubmission,
+                                isOpen: e.target.value === 'open'
+                              }
+                            }
+                          })}
+                          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                          <option value="open">🟢 Deschisă</option>
+                          <option value="closed">🔴 Închisă</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Custom */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="portalPeriodType"
+                        value="custom"
+                        checked={localConfig.indexConfiguration?.portalSubmission?.periodType === 'custom'}
+                        onChange={() => setLocalConfig({
+                          ...localConfig,
+                          indexConfiguration: {
+                            ...localConfig.indexConfiguration,
+                            portalSubmission: {
+                              ...localConfig.indexConfiguration.portalSubmission,
+                              periodType: 'custom'
+                            }
+                          }
+                        })}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm text-gray-700">Personalizată</span>
+                    </label>
+
+                    {/* Inputs pentru custom period */}
+                    {localConfig.indexConfiguration?.portalSubmission?.periodType === 'custom' && (
+                      <div className="ml-7 mt-2 flex items-center gap-2">
+                        <span className="text-sm text-gray-600">De la ziua</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={localConfig.indexConfiguration?.portalSubmission?.startDay || 1}
+                          onChange={(e) => setLocalConfig({
+                            ...localConfig,
+                            indexConfiguration: {
+                              ...localConfig.indexConfiguration,
+                              portalSubmission: {
+                                ...localConfig.indexConfiguration.portalSubmission,
+                                startDay: parseInt(e.target.value) || 1
+                              }
+                            }
+                          })}
+                          className="w-16 text-sm text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                        <span className="text-sm text-gray-600">până la ziua</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={localConfig.indexConfiguration?.portalSubmission?.endDay || 25}
+                          onChange={(e) => setLocalConfig({
+                            ...localConfig,
+                            indexConfiguration: {
+                              ...localConfig.indexConfiguration,
+                              portalSubmission: {
+                                ...localConfig.indexConfiguration.portalSubmission,
+                                endDay: parseInt(e.target.value) || 25
+                              }
+                            }
+                          })}
+                          className="w-16 text-sm text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

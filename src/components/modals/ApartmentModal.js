@@ -62,21 +62,32 @@ const ApartmentModal = ({
       return;
     }
 
-    // Determină scara curentă
+    // Determină scara curentă (ID sau nume pentru fallback)
     let currentStairId = null;
-    if (mode === 'edit' && apartment) {
+    let currentStairName = null;
+
+    if ((mode === 'edit' || mode === 'view') && apartment) {
       currentStairId = apartment.stairId;
+      currentStairName = apartment.stair; // Numele scării din snapshot
     } else if (mode === 'add' && stair) {
       currentStairId = stair.id;
+      currentStairName = stair.name;
     }
 
-    if (!currentStairId) {
+    if (!currentStairId && !currentStairName) {
       setTotalSurface(0);
       return;
     }
 
     // Calculează suprafața totală a apartamentelor din aceeași scară
-    const relevantApartments = apartments.filter(apt => apt.stairId === currentStairId);
+    // Încearcă mai întâi după stairId, apoi fallback la stair name
+    let relevantApartments = apartments.filter(apt => apt.stairId === currentStairId);
+
+    // Fallback: dacă nu găsim după stairId, încercăm după numele scării
+    if (relevantApartments.length === 0 && currentStairName) {
+      relevantApartments = apartments.filter(apt => apt.stair === currentStairName);
+    }
+
     let total = relevantApartments.reduce((sum, apt) => sum + (parseFloat(apt.surface) || 0), 0);
 
     // Dacă suntem în modul edit, exclude suprafața veche a apartamentului curent și adaugă cea nouă
@@ -86,6 +97,7 @@ const ApartmentModal = ({
       // Dacă suntem în modul add, adaugă suprafața nouă
       total = total + (parseFloat(formData.surface) || 0);
     }
+    // Pentru modul view, totalul rămâne neschimbat (toate suprafețele din scară)
 
     setTotalSurface(total);
   }, [isOpen, mode, apartment, stair, apartments, formData.surface]);
@@ -93,17 +105,21 @@ const ApartmentModal = ({
 
   if (!isOpen) return null;
 
-  // Găsește scara pentru apartamentul în editare
-  const currentStair = mode === 'edit' && apartment && stairs
+  // Găsește scara pentru apartamentul în editare sau vizualizare
+  const currentStair = (mode === 'edit' || mode === 'view') && apartment && stairs
     ? stairs.find(s => s.id === apartment.stairId)
     : stair;
 
   // Găsește blocul pentru scara curentă
   const currentBlock = mode === 'add' && stair && blocks
     ? blocks.find(block => block.id === stair.blockId)
-    : mode === 'edit' && currentStair && blocks
+    : (mode === 'edit' || mode === 'view') && currentStair && blocks
     ? blocks.find(block => block.id === currentStair.blockId)
     : null;
+
+  // Pentru modul view, folosim direct numele salvate în snapshot (dacă nu găsim în structura curentă)
+  const displayBlockName = currentBlock?.name || apartment?.block || '';
+  const displayStairName = currentStair?.name || apartment?.stair || '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,7 +180,7 @@ const ApartmentModal = ({
               </h3>
               <p className={`text-sm ${isViewMode ? 'text-blue-100' : 'text-orange-100'}`}>
                 {(mode === 'edit' || isViewMode)
-                  ? `${currentBlock?.name || ''} - ${currentStair?.name || ''}`
+                  ? `${displayBlockName} - ${displayStairName}`
                   : `Apartament nou la ${currentBlock?.name || ''} - ${stair?.name || ''}`}
               </p>
             </div>
@@ -252,24 +268,29 @@ const ApartmentModal = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tipul apartamentului
                     </label>
-                    <select
-                      value={formData.apartmentType}
-                      onChange={(e) => setFormData({...formData, apartmentType: e.target.value})}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
-                        isViewMode
-                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
-                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
-                      }`}
-                      disabled={isViewMode}
-                    >
-                      <option value="">Selectează tipul</option>
-                      <option value="Garsoniera">Garsoniera</option>
-                      <option value="2 camere">2 camere</option>
-                      <option value="3 camere">3 camere</option>
-                      <option value="4 camere">4 camere</option>
-                      <option value="5 camere">5 camere</option>
-                      <option value="Penthouse">Penthouse</option>
-                    </select>
+                    {isViewMode ? (
+                      // În modul view, afișăm textul direct
+                      <input
+                        type="text"
+                        value={formData.apartmentType || '-'}
+                        className="w-full px-3 py-2 border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
+                        disabled
+                      />
+                    ) : (
+                      <select
+                        value={formData.apartmentType}
+                        onChange={(e) => setFormData({...formData, apartmentType: e.target.value})}
+                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      >
+                        <option value="">Selectează tipul</option>
+                        <option value="Garsoniera">Garsoniera</option>
+                        <option value="2 camere">2 camere</option>
+                        <option value="3 camere">3 camere</option>
+                        <option value="4 camere">4 camere</option>
+                        <option value="5 camere">5 camere</option>
+                        <option value="Penthouse">Penthouse</option>
+                      </select>
+                    )}
                   </div>
                 </div>
 
@@ -302,22 +323,27 @@ const ApartmentModal = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Sursa de încălzire
                     </label>
-                    <select
-                      value={formData.heatingSource}
-                      onChange={(e) => setFormData({...formData, heatingSource: e.target.value})}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
-                        isViewMode
-                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
-                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
-                      }`}
-                      disabled={isViewMode}
-                    >
-                      <option value="">Selectează sursa</option>
-                      <option value="Termoficare">Termoficare</option>
-                      <option value="Centrala proprie">Centrală proprie</option>
-                      <option value="Centrala bloc">Centrală bloc</option>
-                      <option value="Debransat">Debranșat</option>
-                    </select>
+                    {isViewMode ? (
+                      // În modul view, afișăm textul direct pentru a evita probleme cu valori non-standard
+                      <input
+                        type="text"
+                        value={formData.heatingSource || '-'}
+                        className="w-full px-3 py-2 border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
+                        disabled
+                      />
+                    ) : (
+                      <select
+                        value={formData.heatingSource}
+                        onChange={(e) => setFormData({...formData, heatingSource: e.target.value})}
+                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                      >
+                        <option value="">Selectează sursa</option>
+                        <option value="Termoficare">Termoficare</option>
+                        <option value="Centrala proprie">Centrală proprie</option>
+                        <option value="Centrala bloc">Centrală bloc</option>
+                        <option value="Debransat">Debranșat</option>
+                      </select>
+                    )}
                   </div>
                 </div>
 
@@ -325,10 +351,18 @@ const ApartmentModal = ({
                 {formData.surface && (
                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                     <label className="block text-sm font-medium text-blue-900 mb-1">
-                      📊 Cotă parte indiviză (calculată automat)
+                      📊 Cotă parte indiviză {isViewMode ? '' : '(calculată automat)'}
                     </label>
                     <div className="text-lg font-semibold text-blue-700">
-                      {totalSurface > 0 ? (
+                      {/* În modul view, folosim cotaParte salvată în snapshot dacă există */}
+                      {isViewMode && apartment?.cotaParte ? (
+                        <>
+                          {apartment.cotaParte.toFixed(4)}%
+                          <span className="text-sm font-normal text-blue-600 ml-2">
+                            ({formData.surface} mp - calculat la momentul salvării)
+                          </span>
+                        </>
+                      ) : totalSurface > 0 ? (
                         <>
                           {((parseFloat(formData.surface) / totalSurface) * 100).toFixed(4)}%
                           <span className="text-sm font-normal text-blue-600 ml-2">
@@ -337,7 +371,9 @@ const ApartmentModal = ({
                         </>
                       ) : (
                         <span className="text-sm text-blue-600">
-                          Completați suprafețele celorlalte apartamente pentru calcul complet
+                          {isViewMode
+                            ? 'Nu sunt disponibile date de suprafață pentru calculul cotei parte'
+                            : 'Completați suprafețele celorlalte apartamente pentru calcul complet'}
                         </span>
                       )}
                     </div>

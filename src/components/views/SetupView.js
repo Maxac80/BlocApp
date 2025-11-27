@@ -336,12 +336,12 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
   };
 
   const openViewApartmentModal = (apartment) => {
-    // Folosește getAssociationApartments() pentru a obține datele complete
-    const allApartments = getAssociationApartments();
-    const fullApartmentData = allApartments.find(apt => apt.id === apartment.id) || apartment;
-
+    // Pentru modul view, folosim direct apartamentul primit ca parametru
+    // deoarece acesta conține deja toate datele complete (inclusiv heatingSource, cotaParte)
+    // Nu mai căutăm în getAssociationApartments() pentru că snapshot-ul arhivat
+    // poate să nu aibă toate câmpurile actualizate
     setApartmentModalMode('view');
-    setApartmentModalData(fullApartmentData);
+    setApartmentModalData(apartment);
     setApartmentModalStair(null);
     setApartmentModalOpen(true);
   };

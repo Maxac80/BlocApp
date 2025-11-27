@@ -61,10 +61,22 @@ export default function OwnerPortalWrapper({ currentUser }) {
         sheetApartments.forEach(aptData => {
           // Match pe email (case insensitive)
           if (aptData.email?.toLowerCase() === email.toLowerCase()) {
+            // Calculează totalStairSurface pentru apartamentele din aceeași scară
+            const sameStairApartments = sheetApartments.filter(apt =>
+              (aptData.stairId && apt.stairId === aptData.stairId) ||
+              (aptData.stair && apt.stair === aptData.stair)
+            );
+            const totalStairSurface = sameStairApartments.reduce(
+              (sum, apt) => sum + (parseFloat(apt.surface) || 0), 0
+            );
+
             foundApartments.push({
               apartmentId: aptData.id,
               apartmentNumber: aptData.number,
-              apartmentData: aptData,
+              apartmentData: {
+                ...aptData,
+                totalStairSurface // Adaugă suprafața totală a scării
+              },
               associationId: assocDoc.id,
               associationName: associationData.name,
               associationData: associationData,
