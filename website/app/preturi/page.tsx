@@ -166,7 +166,7 @@ export default function PreturiPage() {
                       <li
                         key={featureIndex}
                         className={`flex items-start gap-3 ${
-                          feature.highlight ? 'font-semibold' : ''
+                          'highlight' in feature && feature.highlight ? 'font-semibold' : ''
                         }`}
                       >
                         {feature.included ? (

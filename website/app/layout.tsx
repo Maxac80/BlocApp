@@ -31,15 +31,13 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
   },
+  // TEMPORARY: noindex pentru perioada de testare - schimba la lansare!
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
     googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      index: false,
+      follow: false,
     },
   },
 };

@@ -105,7 +105,7 @@ function AppContent() {
 
   // 👥 DACĂ E PROPRIETAR - PORTAL PROPRIETARI
   if (userProfile.role === 'proprietar') {
-    return <OwnerApp />;
+    return <OwnerPortalWrapper currentUser={currentUser} />;
   }
 
   // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (FĂRĂ HEADER!)

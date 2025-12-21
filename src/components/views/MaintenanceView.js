@@ -269,6 +269,60 @@ const MaintenanceView = ({
     return expenses;
   }, [expenses, isMonthReadOnly]);
 
+  // 🔄 MIGRARE AUTOMATĂ - Rulează o singură dată când se încarcă facturile
+  // MUTAT AICI pentru a respecta Rules of Hooks (trebuie să fie înainte de early return)
+  const [migrationRun, setMigrationRun] = useState(false);
+  useEffect(() => {
+    if (invoices && invoices.length > 0 && !migrationRun && migrateDistributionHistoryToExpenseTypeId) {
+      console.log('🔄 Pornesc migrarea automată a distributionHistory...');
+      migrateDistributionHistoryToExpenseTypeId()
+        .then(result => {
+          console.log('✅ Migrare completă:', result);
+          setMigrationRun(true);
+        })
+        .catch(error => {
+          console.error('❌ Eroare la migrare:', error);
+          setMigrationRun(true); // Marchează ca rulat chiar și în caz de eroare pentru a nu reîncerca continuu
+        });
+    }
+  }, [invoices, migrationRun, migrateDistributionHistoryToExpenseTypeId]);
+
+  // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul activ pasat de BlocApp
+  // MUTAT AICI pentru a respecta Rules of Hooks
+  const associationExpenses = useMemo(() => {
+    console.log('📦 MaintenanceView - Using expenses from BlocApp:', {
+      currentMonth,
+      expensesLength: expenses?.length || 0,
+      expensesNames: expenses?.map(e => e.name) || []
+    });
+
+    return expenses || [];
+  }, [expenses, currentMonth]);
+
+  // Detectează și deschide modalul pentru apartamentul selectat din SetupView
+  // MUTAT AICI pentru a respecta Rules of Hooks (trebuie să fie înainte de early return)
+  useEffect(() => {
+    if (pendingMaintenanceApartmentId && maintenanceData && maintenanceData.length > 0) {
+      // Folosim maintenanceData direct (care vine din props) și calculăm versiunea updatată
+      const currentUpdatedData = getUpdatedMaintenanceData(maintenanceData);
+
+      // Găsește datele de întreținere pentru apartamentul selectat
+      const apartmentMaintenanceData = currentUpdatedData.find(
+        data => data.apartmentId === pendingMaintenanceApartmentId
+      );
+
+      if (apartmentMaintenanceData) {
+        // Deschide modalul cu datele găsite (setăm direct stările)
+        setSelectedMaintenanceData(apartmentMaintenanceData);
+        setShowMaintenanceBreakdown(true);
+        // Resetează pending ID-ul
+        if (setPendingMaintenanceApartmentId) {
+          setPendingMaintenanceApartmentId(null);
+        }
+      }
+    }
+  }, [pendingMaintenanceApartmentId, maintenanceData, getUpdatedMaintenanceData, setPendingMaintenanceApartmentId]);
+
   // Early return if critical dependencies are missing - DUPĂ HOOK-URI
   if (!getAssociationApartments || typeof getAssociationApartments !== 'function') {
     console.error('⚠️ MaintenanceView: getAssociationApartments is not available');
@@ -385,57 +439,6 @@ const MaintenanceView = ({
     setSelectedMaintenanceData(apartmentData);
     setShowMaintenanceBreakdown(true);
   };
-
-  // Detectează și deschide modalul pentru apartamentul selectat din SetupView
-  useEffect(() => {
-    if (pendingMaintenanceApartmentId && maintenanceData && maintenanceData.length > 0) {
-      // Folosim maintenanceData direct (care vine din props) și calculăm versiunea updatată
-      const currentUpdatedData = getUpdatedMaintenanceData(maintenanceData);
-
-      // Găsește datele de întreținere pentru apartamentul selectat
-      const apartmentMaintenanceData = currentUpdatedData.find(
-        data => data.apartmentId === pendingMaintenanceApartmentId
-      );
-
-      if (apartmentMaintenanceData) {
-        // Deschide modalul cu datele găsite
-        handleOpenMaintenanceBreakdown(apartmentMaintenanceData);
-        // Resetează pending ID-ul
-        if (setPendingMaintenanceApartmentId) {
-          setPendingMaintenanceApartmentId(null);
-        }
-      }
-    }
-  }, [pendingMaintenanceApartmentId, maintenanceData, getUpdatedMaintenanceData, setPendingMaintenanceApartmentId]);
-
-  // 🔄 MIGRARE AUTOMATĂ - Rulează o singură dată când se încarcă facturile
-  const [migrationRun, setMigrationRun] = useState(false);
-  useEffect(() => {
-    if (invoices && invoices.length > 0 && !migrationRun && migrateDistributionHistoryToExpenseTypeId) {
-      console.log('🔄 Pornesc migrarea automată a distributionHistory...');
-      migrateDistributionHistoryToExpenseTypeId()
-        .then(result => {
-          console.log('✅ Migrare completă:', result);
-          setMigrationRun(true);
-        })
-        .catch(error => {
-          console.error('❌ Eroare la migrare:', error);
-          setMigrationRun(true); // Marchează ca rulat chiar și în caz de eroare pentru a nu reîncerca continuu
-        });
-    }
-  }, [invoices, migrationRun, migrateDistributionHistoryToExpenseTypeId]);
-
-  // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul activ pasat de BlocApp (include logică pentru archived/published/in_progress)
-  // BlocApp calculează deja activeSheet corect și pasează expenses={activeSheet?.expenses || []}
-  const associationExpenses = useMemo(() => {
-    console.log('📦 MaintenanceView - Using expenses from BlocApp:', {
-      currentMonth,
-      expensesLength: expenses?.length || 0,
-      expensesNames: expenses?.map(e => e.name) || []
-    });
-
-    return expenses || [];
-  }, [expenses, currentMonth]);
 
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {

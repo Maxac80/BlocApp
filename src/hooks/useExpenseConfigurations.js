@@ -128,8 +128,16 @@ const useExpenseConfigurations = (currentSheet) => {
 
     // Obține configurația pentru distribuția diferenței din sheet
     // Prioritate: 1) din expenseConfigurations (NOU) 2) din differenceDistributions (VECHI)
-    let differenceDistribution = firestoreConfig?.differenceDistribution ||
-                                  currentSheet?.configSnapshot?.differenceDistributions?.[searchKey];
+    // Caută cu toate cheile posibile (ID și name)
+    let differenceDistribution = firestoreConfig?.differenceDistribution;
+    if (!differenceDistribution && currentSheet?.configSnapshot?.differenceDistributions) {
+      for (const key of searchKeys) {
+        if (currentSheet.configSnapshot.differenceDistributions[key]) {
+          differenceDistribution = currentSheet.configSnapshot.differenceDistributions[key];
+          break;
+        }
+      }
+    }
 
     // MIGRAȚIE: Curăță câmpurile vechi și convertește în noua structură
     let needsMigration = false;

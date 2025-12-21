@@ -1,0 +1,10 @@
+# TEMPORARY - Remove when ready for public launch
+# BlocApp - Perioada de testare
+
+User-agent: *
+Disallow: /
+
+# La lansare, inlocuieste cu:
+# User-agent: *
+# Allow: /
+# Sitemap: https://blocapp.ro/sitemap.xml

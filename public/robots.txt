@@ -1,3 +1,5 @@
-# https://www.robotstxt.org/robotstxt.html
+# TEMPORARY - Remove when ready for public launch
+# BlocApp Admin - Perioada de testare
+
 User-agent: *
-Disallow:
+Disallow: /
