@@ -51,8 +51,20 @@ export default function Header() {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden lg:block">
+          {/* CTA Buttons */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-3">
+            <a
+              href="https://portal.blocapp.ro"
+              className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+            >
+              Portal Proprietari
+            </a>
+            <a
+              href="https://app.blocapp.ro"
+              className="text-sm font-medium text-gray-700 hover:text-primary-600 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-300 transition-colors"
+            >
+              Login Admin
+            </a>
             <Button href="/trial" size="md">
               Încearcă Gratuit
             </Button>
@@ -97,7 +109,21 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
+                <a
+                  href="https://portal.blocapp.ro"
+                  className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 border border-gray-200 rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Portal Proprietari
+                </a>
+                <a
+                  href="https://app.blocapp.ro"
+                  className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:border-primary-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login Admin
+                </a>
                 <Button href="/trial" size="md" className="w-full">
                   Încearcă Gratuit
                 </Button>
