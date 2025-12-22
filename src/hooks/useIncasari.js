@@ -20,23 +20,13 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
   
   // 🆕 FAZA 4: Ascultă încasările din sheet publicat
   useEffect(() => {
-    console.log('🔍 useIncasari useEffect triggered:', {
-      hasPublishedSheet: !!publishedSheet,
-      publishedSheetId: publishedSheet?.id,
-      publishedSheetMonth: publishedSheet?.monthYear,
-      publishedSheetPayments: publishedSheet?.payments?.length || 0,
-      associationId: association?.id
-    });
-
     if (!publishedSheet?.id) {
-      console.log('⚠️ useIncasari: No sheet ID, returning empty array');
       setIncasari([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    console.log('📡 useIncasari: Setting up listener for sheet:', publishedSheet.id);
 
     // Listener pe document-ul sheet-ului publicat
     const sheetRef = getSheetRef(association.id, publishedSheet.id);
@@ -44,25 +34,9 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
     const unsubscribe = onSnapshot(
       sheetRef,
       (docSnapshot) => {
-        console.log('📥 useIncasari onSnapshot received:', {
-          exists: docSnapshot.exists(),
-          docId: docSnapshot.id,
-          hasData: !!docSnapshot.data()
-        });
-
         if (docSnapshot.exists()) {
           const sheetData = docSnapshot.data();
           const payments = sheetData.payments || [];
-
-          console.log('💰 useIncasari: Payments found in sheet:', {
-            paymentsCount: payments.length,
-            payments: payments.map(p => ({
-              id: p.id,
-              apartmentNumber: p.apartmentNumber,
-              total: p.total,
-              timestamp: p.timestamp
-            }))
-          });
 
           // Sortăm după timestamp descendent (cele mai recente primele)
           const sortedPayments = [...payments].sort((a, b) => {
@@ -73,7 +47,6 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
 
           setIncasari(sortedPayments);
         } else {
-          console.log('⚠️ useIncasari: Sheet document does not exist');
           setIncasari([]);
         }
         setLoading(false);

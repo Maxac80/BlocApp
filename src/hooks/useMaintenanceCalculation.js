@@ -30,47 +30,22 @@ const useMaintenanceCalculation = ({
   // 🔍 FILTRARE APARTAMENTE PENTRU ASOCIAȚIA CURENTĂ
   // SHEET-BASED: Prioritizează apartamentele din sheet-ul curent, cu fallback către colecții
   const getAssociationApartments = useCallback(() => {
-    console.log('🔍 getAssociationApartments - Checking sheets:', {
-      currentMonth,
-      activeSheetFromBlocApp: activeSheet?.monthYear,
-      activeSheetStatus: activeSheet?.status,
-      publishedSheetMonth: publishedSheet?.monthYear,
-      currentSheetMonth: currentSheet?.monthYear,
-      publishedSheetId: publishedSheet?.id,
-      currentSheetId: currentSheet?.id
-    });
-
     // 1. PRIORITATE MAXIMĂ: activeSheet pasat de BlocApp (include logică completă pentru archived/published/in_progress)
     if (activeSheet?.associationSnapshot?.apartments && activeSheet.associationSnapshot.apartments.length > 0) {
-      console.log('✅ Using apartments from BlocApp activeSheet:', {
-        sheetMonth: activeSheet.monthYear,
-        sheetStatus: activeSheet.status,
-        apartmentsCount: activeSheet.associationSnapshot.apartments.length,
-        firstApartment: activeSheet.associationSnapshot.apartments[0]
-      });
       return activeSheet.associationSnapshot.apartments;
     }
 
     // 2. FALLBACK pentru published sheet (când activeSheet nu e disponibil încă)
     if (publishedSheet?.monthYear === currentMonth && publishedSheet?.associationSnapshot?.apartments) {
-      console.log('🏢 Using apartments from publishedSheet:', {
-        sheetMonth: publishedSheet.monthYear,
-        apartmentsCount: publishedSheet.associationSnapshot.apartments.length
-      });
       return publishedSheet.associationSnapshot.apartments;
     }
 
     // 3. FALLBACK pentru current sheet (sheet-ul in-progress)
     if (currentSheet?.associationSnapshot?.apartments && currentSheet.associationSnapshot.apartments.length > 0) {
-      console.log('🏢 Using apartments from currentSheet:', {
-        sheetMonth: currentSheet.monthYear,
-        apartmentsCount: currentSheet.associationSnapshot.apartments.length
-      });
       return currentSheet.associationSnapshot.apartments;
     }
 
     // 4. FALLBACK FINAL: Folosește colecțiile tradiționale pentru compatibilitate
-    console.log('⚠️ No apartments in sheet snapshots, falling back to Firestore collections');
 
     if (!apartments || !association?.id) {
       return [];

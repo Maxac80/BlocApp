@@ -239,16 +239,6 @@ export default function BlocApp() {
   // 2. Dacă nu există, verifică dacă publishedSheet corespunde lunii selectate
   // 3. Altfel, folosește currentSheet (date calculate live pentru luna in-progress)
   const activeSheet = (() => {
-    console.log('🔍 Looking for sheet:', {
-      currentMonth,
-      totalSheets: sheets?.length || 0,
-      availableSheets: sheets?.map(s => ({
-        month: s.monthYear,
-        status: s.status,
-        id: s.id
-      })) || []
-    });
-
     // Caută un sheet publicat SAU arhivat pentru luna selectată (important pentru luni istorice)
     const lockedSheetForMonth = sheets?.find(
       sheet => sheet.monthYear === currentMonth &&
@@ -256,42 +246,18 @@ export default function BlocApp() {
     );
 
     if (lockedSheetForMonth) {
-      console.log('✅ Found locked sheet for month:', {
-        month: currentMonth,
-        status: lockedSheetForMonth.status,
-        sheetId: lockedSheetForMonth.id,
-        hasExpenses: !!lockedSheetForMonth.expenses,
-        expensesCount: lockedSheetForMonth.expenses?.length || 0
-      });
       return lockedSheetForMonth;
     }
 
     // Fallback la logica veche pentru compatibilitate
     if (publishedSheet && currentMonth === publishedSheet.monthYear) {
-      console.log('⚠️ Using publishedSheet fallback for:', currentMonth);
       return publishedSheet;
     }
 
-    console.log('🔄 Using currentSheet (in-progress) for:', currentMonth);
     return currentSheet;
   })();
 
   const activeExpenses = activeSheet?.expenses || [];
-
-  console.log('🎯 Active sheet selection:', {
-    currentMonth,
-    currentSheetId: currentSheet?.id,
-    currentSheetMonth: currentSheet?.monthYear,
-    publishedSheetId: publishedSheet?.id,
-    publishedSheetMonth: publishedSheet?.monthYear,
-    selectedSheetId: activeSheet?.id,
-    selectedSheetMonth: activeSheet?.monthYear,
-    selectedSheetStatus: activeSheet?.status,
-    usingPublishedSheet: activeSheet === publishedSheet,
-    foundInSheetsArray: sheets?.some(s => s.id === activeSheet?.id),
-    totalSheets: sheets?.length || 0,
-    expensesCount: activeExpenses.length
-  });
 
   // 📝 HOOK PENTRU CONFIGURAȚII CHELTUIELI (trebuie înainte de useMaintenanceCalculation și useExpenseManagement)
   const {
@@ -342,17 +308,6 @@ export default function BlocApp() {
   const maintenanceData = (isLockedSheet && activeSheet?.maintenanceTable)
     ? activeSheet.maintenanceTable
     : calculatedMaintenanceData;
-
-  console.log('🎯 Maintenance data selection:', {
-    activeSheetId: activeSheet?.id,
-    activeSheetStatus: activeSheet?.status,
-    isLockedSheet,
-    hasActiveSheetMaintenanceTable: !!(activeSheet?.maintenanceTable),
-    activeSheetTableLength: activeSheet?.maintenanceTable?.length || 0,
-    calculatedDataLength: calculatedMaintenanceData?.length || 0,
-    finalDataLength: maintenanceData?.length || 0,
-    usingLockedTable: maintenanceData === activeSheet?.maintenanceTable
-  });
 
   // 🔥 HOOK PENTRU GESTIONAREA CHELTUIELILOR
   const {
