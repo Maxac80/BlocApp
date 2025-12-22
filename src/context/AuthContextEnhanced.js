@@ -235,32 +235,43 @@ export function AuthProviderEnhanced({ children }) {
   async function logoutEnhanced() {
     try {
       const user = auth.currentUser;
-      
+
       if (user) {
         // Log logout
-        await security.logActivity(user.uid, 'LOGOUT', {
-          sessionDuration: calculateSessionDuration(),
-          deviceFingerprint: security.deviceFingerprint
-        });
+        try {
+          await security.logActivity(user.uid, 'LOGOUT', {
+            sessionDuration: calculateSessionDuration(),
+            deviceFingerprint: security.deviceFingerprint
+          });
+        } catch (logError) {
+          console.warn('⚠️ Could not log logout activity:', logError);
+        }
       }
-      
+
       // Cleanup session data
       localStorage.removeItem('blocapp_session');
       sessionStorage.removeItem('blocapp_session');
-      
+
       // Firebase logout
       await signOut(auth);
-      
+
       // Reset state
+      setCurrentUser(null);
       setUserProfile(null);
       setSessionInfo(null);
       setIsEmailVerified(false);
       setNeedsOnboarding(false);
       setAuthError(null);
-      
+
+      // Forțează reload pentru a asigura un state curat
+      window.location.reload();
+
     } catch (error) {
       console.error('❌ Error during logout:', error);
-      throw error;
+      // Chiar dacă avem eroare, încearcă să facă cleanup și reload
+      localStorage.removeItem('blocapp_session');
+      sessionStorage.removeItem('blocapp_session');
+      window.location.reload();
     }
   }
 
@@ -288,46 +299,62 @@ export function AuthProviderEnhanced({ children }) {
     try {
       const user = auth.currentUser;
       if (!user) return false;
-      
+
       // În development, verifică dacă emailul a fost simulat ca verificat
       if (process.env.NODE_ENV === 'development') {
         const simulatedVerification = localStorage.getItem(`email_verified_simulated_${user.uid}`);
         if (simulatedVerification === 'true') {
           setIsEmailVerified(true);
-          
+
           // Update profil că emailul e verificat
           await updateDoc(doc(db, 'users', user.uid), {
             emailVerified: true,
             emailVerifiedAt: new Date().toISOString(),
             verificationSimulated: true
           });
-          
+
           return true;
         }
       }
-      
-      await reload(user);
+
+      // Forțează reload-ul datelor utilizatorului din Firebase
+      try {
+        await reload(user);
+      } catch (reloadError) {
+        console.warn('⚠️ Reload failed, trying to get fresh token:', reloadError);
+        // Dacă reload eșuează, încearcă să obținem un token nou
+        try {
+          await user.getIdToken(true); // forceRefresh = true
+          await reload(user);
+        } catch (tokenError) {
+          console.error('❌ Token refresh also failed:', tokenError);
+        }
+      }
+
+      // Verifică statusul după reload
       const isVerified = user.emailVerified;
+      console.log('📧 Email verification status after reload:', isVerified, 'for user:', user.email);
+
       setIsEmailVerified(isVerified);
-      
+
       if (isVerified && !userProfile?.emailVerified) {
         // Update profil că emailul e verificat
         await updateDoc(doc(db, 'users', user.uid), {
           emailVerified: true,
           emailVerifiedAt: new Date().toISOString()
         });
-        
+
         // Update local state
         setUserProfile(prev => ({
           ...prev,
           emailVerified: true
         }));
-        
+
         await security.logActivity(user.uid, 'EMAIL_VERIFIED', {
           email: user.email
         });
       }
-      
+
       return isVerified;
     } catch (error) {
       console.error('❌ Error checking email verification:', error);
