@@ -32,34 +32,48 @@ export const useAssociationData = (sheetOperationsRef = null) => {
   const [currentSheetId, setCurrentSheetId] = useState(null);
 
   // 🔄 SINCRONIZARE AUTOMATĂ customExpenses DIN currentSheet
+  // Folosim un interval pentru a verifica periodic schimbările în ref (refs nu declanșează re-renders)
   useEffect(() => {
-    if (sheetOperationsRef?.current?.currentSheet) {
-      const currentSheet = sheetOperationsRef.current.currentSheet;
-      const sheetCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
+    const syncCustomExpenses = () => {
+      if (sheetOperationsRef?.current?.currentSheet) {
+        const currentSheet = sheetOperationsRef.current.currentSheet;
+        const sheetCustomExpenses = currentSheet.configSnapshot?.customExpenses || [];
 
-      // Verifică dacă datele s-au schimbat (nu doar sheet-ul)
-      setCustomExpenses(prev => {
-        // Compară array-urile pentru a vedea dacă sunt diferite
-        const hasChanged =
-          prev.length !== sheetCustomExpenses.length ||
-          !prev.every((exp, idx) => {
-            const sheetExp = sheetCustomExpenses[idx];
-            return sheetExp && exp.id === sheetExp.id && exp.name === sheetExp.name;
-          });
+        // Verifică dacă datele s-au schimbat (nu doar sheet-ul)
+        setCustomExpenses(prev => {
+          // Compară array-urile pentru a vedea dacă sunt diferite
+          const hasChanged =
+            prev.length !== sheetCustomExpenses.length ||
+            !prev.every((exp, idx) => {
+              const sheetExp = sheetCustomExpenses[idx];
+              return sheetExp && exp.id === sheetExp.id && exp.name === sheetExp.name;
+            });
 
-        if (hasChanged) {
-          return sheetCustomExpenses;
-        }
+          if (hasChanged) {
+            return sheetCustomExpenses;
+          }
 
-        return prev; // Nu actualiza dacă nu s-a schimbat nimic
-      });
+          return prev; // Nu actualiza dacă nu s-a schimbat nimic
+        });
 
-      // Actualizează currentSheetId pentru tracking
-      if (currentSheet.id !== currentSheetId) {
-        setCurrentSheetId(currentSheet.id);
+        // Actualizează currentSheetId pentru tracking
+        setCurrentSheetId(prevId => {
+          if (currentSheet.id !== prevId) {
+            return currentSheet.id;
+          }
+          return prevId;
+        });
       }
-    }
-  });
+    };
+
+    // Sincronizare inițială
+    syncCustomExpenses();
+
+    // Verifică periodic pentru schimbări (la fiecare 2 secunde)
+    const intervalId = setInterval(syncCustomExpenses, 2000);
+
+    return () => clearInterval(intervalId);
+  }, []); // Array gol - rulează doar la mount și cleanup la unmount
 
   // Funcții pentru încărcarea datelor - CORECTATE
   const loadBlocks = async (associationId) => {
