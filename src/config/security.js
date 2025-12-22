@@ -3,12 +3,20 @@
 
 // Allowed domains for the application
 const ALLOWED_DOMAINS = [
+  // Development
   'localhost:3000',
   'localhost:3001',
   '127.0.0.1:3000',
   '127.0.0.1:3001',
-  // Add your production domain when you have it
-  // 'your-domain.com',
+  // Production - blocapp.ro
+  'blocapp.ro',
+  'www.blocapp.ro',
+  'app.blocapp.ro',
+  'portal.blocapp.ro',
+  // Vercel preview domains
+  'blocapp-admin.vercel.app',
+  'blocapp-portal.vercel.app',
+  'blocapp-website.vercel.app',
 ];
 
 // Check if current domain is allowed

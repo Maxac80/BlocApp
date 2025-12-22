@@ -8,17 +8,38 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
 
 /**
- * Detectează modul aplicației din URL parameter
- * ?mode=owner → Owner Portal (pentru development/testing)
+ * Detectează modul aplicației:
+ * 1. Din variabila de mediu REACT_APP_MODE (pentru producție Vercel)
+ * 2. Din URL parameter ?mode=owner (pentru development local)
+ *
+ * Production:
+ *   - app.blocapp.ro → REACT_APP_MODE=admin
+ *   - portal.blocapp.ro → REACT_APP_MODE=owner
+ *
+ * Development:
+ *   - localhost:3000 → admin (default)
+ *   - localhost:3000?mode=owner → owner portal
  */
 function useAppMode() {
   const [mode, setMode] = useState(() => {
+    // 1. Prima prioritate: variabila de mediu (setată în Vercel)
+    const envMode = process.env.REACT_APP_MODE;
+    if (envMode) {
+      return envMode;
+    }
+
+    // 2. A doua prioritate: URL parameter (pentru development)
     const params = new URLSearchParams(window.location.search);
     return params.get('mode') || 'admin';
   });
 
   useEffect(() => {
-    // Ascultă schimbări în URL (pentru navigare browser back/forward)
+    // În producție cu REACT_APP_MODE setat, nu schimba modul
+    if (process.env.REACT_APP_MODE) {
+      return;
+    }
+
+    // Ascultă schimbări în URL (pentru navigare browser back/forward) - doar în development
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       setMode(params.get('mode') || 'admin');
@@ -81,7 +102,8 @@ function AppContent() {
   }
 
   // 🏠 OWNER MODE: Afișează Owner Portal (folosește sesiunea Firebase curentă)
-  // Acces: http://localhost:3000?mode=owner
+  // Production: https://portal.blocapp.ro (REACT_APP_MODE=owner)
+  // Development: http://localhost:3000?mode=owner
   if (appMode === 'owner') {
     return <OwnerPortalWrapper currentUser={currentUser} />;
   }
