@@ -333,7 +333,6 @@ export function AuthProviderEnhanced({ children }) {
 
       // Verifică statusul după reload
       const isVerified = user.emailVerified;
-      console.log('📧 Email verification status after reload:', isVerified, 'for user:', user.email);
 
       setIsEmailVerified(isVerified);
 
@@ -501,24 +500,14 @@ export function AuthProviderEnhanced({ children }) {
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      // console.log('🔄 Enhanced auth state changed:', user ? user.uid : 'No user');
       setCurrentUser(user);
-      
+
       if (user) {
         // Încarcă profilul cu un mic delay pentru Firestore
         setTimeout(async () => {
           await loadUserProfileEnhanced(user);
           setLoading(false);
         }, 500);
-        
-        // Verifică email verification periodic
-        const emailCheckInterval = setInterval(async () => {
-          if (user.emailVerified !== isEmailVerified) {
-            await checkEmailVerification();
-          }
-        }, 30000); // la fiecare 30 secunde
-        
-        return () => clearInterval(emailCheckInterval);
       } else {
         setUserProfile(null);
         setIsEmailVerified(false);
