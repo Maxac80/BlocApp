@@ -109,7 +109,10 @@ function AppContent() {
   }
 
   // 📧 EMAIL NECONFIRMAT SAU ONBOARDING NECESAR
-  if (!isEmailVerified || needsOnboarding) {
+  // NOTĂ: Verificarea email este temporar opțională pentru perioada de testare
+  // După lansare, decomentează linia de mai jos pentru a reactiva verificarea obligatorie
+  // if (!isEmailVerified || needsOnboarding) {
+  if (needsOnboarding) {
     return <AuthManager onAuthComplete={handleAuthComplete} />;
   }
 
