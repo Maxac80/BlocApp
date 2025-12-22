@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, RefreshCw, CheckCircle, AlertCircle, Clock, Send, Zap } from 'lucide-react';
+import { Mail, RefreshCw, CheckCircle, AlertCircle, Clock, Send, Zap, LogOut } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import { EmailSimulator } from '../../utils/emailSimulator';
 
@@ -14,11 +14,12 @@ import { EmailSimulator } from '../../utils/emailSimulator';
  * - Skip option pentru accesul de urgență
  */
 export default function EmailVerification({ onVerified, onSkip, user }) {
-  const { 
-    resendEmailVerification, 
-    checkEmailVerification, 
-    authError, 
-    setAuthError 
+  const {
+    resendEmailVerification,
+    checkEmailVerification,
+    authError,
+    setAuthError,
+    logoutEnhanced
   } = useAuthEnhanced();
   
   const [isChecking, setIsChecking] = useState(false);
@@ -364,16 +365,25 @@ export default function EmailVerification({ onVerified, onSkip, user }) {
 
           {/* 🛠️ SUPORT */}
           <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="text-center">
+            <div className="text-center space-y-3">
               <p className="text-sm text-gray-600">
                 Probleme cu verificarea?{' '}
-                <a 
-                  href="mailto:support@blocapp.ro" 
+                <a
+                  href="mailto:support@blocapp.ro"
                   className="text-blue-600 hover:text-blue-800 font-medium"
                 >
                   Contactează suportul
                 </a>
               </p>
+
+              {/* 🚪 LOGOUT - pentru utilizatorii care au greșit emailul */}
+              <button
+                onClick={logoutEnhanced}
+                className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Folosește alt cont
+              </button>
             </div>
           </div>
 
