@@ -304,17 +304,30 @@ export const useSecurity = () => {
   // ✉️ TRIMITERE EMAIL VERIFICARE CU LOGGING
   const sendEmailVerificationWithLogging = async (user) => {
     try {
-      await sendEmailVerification(user);
-      await logActivity(user.uid, 'EMAIL_VERIFICATION_SENT', { email: user.email });
-      
+      // Configurare pentru email verification cu URL de redirect corect
+      const actionCodeSettings = {
+        // URL unde utilizatorul va fi redirectat după verificare
+        // În producție: app.blocapp.ro, în development: localhost
+        url: process.env.NODE_ENV === 'production'
+          ? 'https://app.blocapp.ro'
+          : 'http://localhost:3000',
+        handleCodeInApp: false // Firebase va gestiona verificarea
+      };
+
+      await sendEmailVerification(user, actionCodeSettings);
+      await logActivity(user.uid, 'EMAIL_VERIFICATION_SENT', {
+        email: user.email,
+        redirectUrl: actionCodeSettings.url
+      });
+
       // Simulare email în development
       EmailSimulator.simulateEmailVerification(user);
-      
+
       return { success: true };
     } catch (error) {
-      await logActivity(user.uid, 'EMAIL_VERIFICATION_FAILED', { 
-        email: user.email, 
-        error: error.code 
+      await logActivity(user.uid, 'EMAIL_VERIFICATION_FAILED', {
+        email: user.email,
+        error: error.code
       });
       throw error;
     }
