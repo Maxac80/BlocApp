@@ -148,7 +148,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'BlocApp <onboarding@resend.dev>', // Pentru test, folosim domeniul Resend
+        from: 'BlocApp <noreply@blocapp.ro>',
         to: [to],
         subject: `Invitație BlocApp - ${associationName || 'Portal Proprietari'}`,
         html: htmlContent,
