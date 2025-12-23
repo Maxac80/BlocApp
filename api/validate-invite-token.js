@@ -9,9 +9,10 @@
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 // Inițializare Firebase Admin (o singură dată)
-function getFirebaseAdmin() {
+function initFirebaseAdmin() {
   if (getApps().length === 0) {
     // Credențialele sunt stocate ca environment variable în Vercel
     const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -48,7 +49,11 @@ function getFirebaseAdmin() {
       projectId: serviceAccount.project_id
     });
   }
-  return getFirestore();
+}
+
+function getFirebaseAdmin() {
+  initFirebaseAdmin();
+  return { db: getFirestore(), auth: getAuth() };
 }
 
 export default async function handler(req, res) {
@@ -73,7 +78,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const db = getFirebaseAdmin();
+    const { db, auth } = getFirebaseAdmin();
 
     // Caută owner-ul cu acest token
     const ownersRef = db.collection('owners');
@@ -107,10 +112,24 @@ export default async function handler(req, res) {
       });
     }
 
+    // Verifică dacă email-ul există deja în Firebase Auth
+    // (ex: admin care e și proprietar)
+    let hasExistingAccount = false;
+    try {
+      await auth.getUserByEmail(owner.email);
+      hasExistingAccount = true;
+    } catch (authErr) {
+      // auth/user-not-found e normal - înseamnă că trebuie cont nou
+      if (authErr.code !== 'auth/user-not-found') {
+        console.warn('Warning checking existing account:', authErr.code);
+      }
+    }
+
     // Token valid - returnează datele necesare pentru înregistrare
     // NU returnăm date sensibile
     return res.status(200).json({
       valid: true,
+      hasExistingAccount, // Flag pentru UI - afișează text diferit
       owner: {
         id: owner.id,
         email: owner.email,

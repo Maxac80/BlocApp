@@ -252,7 +252,8 @@ export const useOwnerInvitation = () => {
 
       return {
         valid: true,
-        owner: data.owner
+        owner: data.owner,
+        hasExistingAccount: data.hasExistingAccount || false
       };
     } catch (err) {
       console.error('Error validating token:', err);

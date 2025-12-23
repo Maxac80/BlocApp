@@ -16,6 +16,7 @@ export default function OwnerInviteRegistration({ token }) {
   const [validationState, setValidationState] = useState('loading'); // loading, valid, invalid, already-active
   const [owner, setOwner] = useState(null);
   const [validationError, setValidationError] = useState('');
+  const [hasExistingAccount, setHasExistingAccount] = useState(false); // Flag pentru admin care e și proprietar
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,6 +38,7 @@ export default function OwnerInviteRegistration({ token }) {
       if (result.valid) {
         setValidationState('valid');
         setOwner(result.owner);
+        setHasExistingAccount(result.hasExistingAccount || false);
       } else if (result.alreadyActive) {
         setValidationState('already-active');
         setValidationError(result.error);
@@ -67,7 +69,8 @@ export default function OwnerInviteRegistration({ token }) {
 
   const passwordStrength = getPasswordStrength(password);
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
-  const canSubmit = password.length >= 6 && passwordsMatch && !loading;
+  // Pentru conturi existente, nu cerem confirmare parolă
+  const canSubmit = password.length >= 6 && (hasExistingAccount || passwordsMatch) && !loading;
 
   // Handler pentru înregistrare
   const handleSubmit = async (e) => {
@@ -183,7 +186,11 @@ export default function OwnerInviteRegistration({ token }) {
             <Building2 className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Bine ai venit în BlocApp!</h1>
-          <p className="text-gray-600">Finalizează înregistrarea pentru a accesa portalul proprietarilor.</p>
+          <p className="text-gray-600">
+            {hasExistingAccount
+              ? 'Confirmă identitatea pentru a activa accesul la portalul proprietarilor.'
+              : 'Finalizează înregistrarea pentru a accesa portalul proprietarilor.'}
+          </p>
         </div>
 
         {/* Owner Info */}
@@ -221,15 +228,20 @@ export default function OwnerInviteRegistration({ token }) {
           {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Setează parola
+              {hasExistingAccount ? 'Parola contului existent' : 'Setează parola'}
             </label>
+            {hasExistingAccount && (
+              <p className="text-xs text-amber-600 mb-2">
+                Acest email are deja un cont (probabil de administrator). Introdu parola existentă pentru a activa accesul de proprietar.
+              </p>
+            )}
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minim 6 caractere"
+                placeholder={hasExistingAccount ? "Parola contului existent" : "Minim 6 caractere"}
                 className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 minLength={6}
@@ -243,8 +255,8 @@ export default function OwnerInviteRegistration({ token }) {
               </button>
             </div>
 
-            {/* Password strength indicator */}
-            {password && (
+            {/* Password strength indicator - doar pentru conturi noi */}
+            {!hasExistingAccount && password && (
               <div className="mt-2">
                 <div className="flex gap-1 mb-1">
                   {[1, 2, 3, 4, 5].map((level) => (
@@ -266,37 +278,39 @@ export default function OwnerInviteRegistration({ token }) {
             )}
           </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmă parola
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repetă parola"
-                className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  confirmPassword && !passwordsMatch ? 'border-red-500' : 'border-gray-300'
-                }`}
-                required
-              />
-              {confirmPassword && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {passwordsMatch ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-500" />
-                  )}
-                </div>
+          {/* Confirm Password - doar pentru conturi noi */}
+          {!hasExistingAccount && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirmă parola
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repetă parola"
+                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    confirmPassword && !passwordsMatch ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  required
+                />
+                {confirmPassword && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {passwordsMatch ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {confirmPassword && !passwordsMatch && (
+                <p className="text-xs text-red-600 mt-1">Parolele nu coincid</p>
               )}
             </div>
-            {confirmPassword && !passwordsMatch && (
-              <p className="text-xs text-red-600 mt-1">Parolele nu coincid</p>
-            )}
-          </div>
+          )}
 
           {/* Error message */}
           {registrationError && (
@@ -319,12 +333,12 @@ export default function OwnerInviteRegistration({ token }) {
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Se creează contul...
+                {hasExistingAccount ? 'Se activează accesul...' : 'Se creează contul...'}
               </>
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
-                Finalizează înregistrarea
+                {hasExistingAccount ? 'Activează accesul de proprietar' : 'Finalizează înregistrarea'}
               </>
             )}
           </button>
