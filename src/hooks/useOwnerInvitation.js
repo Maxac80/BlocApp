@@ -284,14 +284,37 @@ export const useOwnerInvitation = () => {
 
       const owner = validation.owner;
 
-      // Creează cont Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        owner.email,
-        password
-      );
+      let firebaseUser;
 
-      const firebaseUser = userCredential.user;
+      try {
+        // Încearcă să creeze cont Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          owner.email,
+          password
+        );
+        firebaseUser = userCredential.user;
+      } catch (createErr) {
+        // Dacă email-ul există deja, încearcă să se logheze
+        if (createErr.code === 'auth/email-already-in-use') {
+          try {
+            const signInResult = await signInWithEmailAndPassword(
+              auth,
+              owner.email,
+              password
+            );
+            firebaseUser = signInResult.user;
+          } catch (signInErr) {
+            // Parola greșită pentru contul existent
+            if (signInErr.code === 'auth/wrong-password' || signInErr.code === 'auth/invalid-credential') {
+              throw new Error('Acest email are deja un cont. Parola introdusă nu este corectă pentru contul existent.');
+            }
+            throw signInErr;
+          }
+        } else {
+          throw createErr;
+        }
+      }
 
       // Actualizează owner în Firestore
       await updateDoc(doc(db, 'owners', owner.id), {
@@ -317,9 +340,7 @@ export const useOwnerInvitation = () => {
 
       // Traducere erori Firebase
       let errorMessage = err.message;
-      if (err.code === 'auth/email-already-in-use') {
-        errorMessage = 'Există deja un cont cu această adresă de email. Încearcă să te autentifici.';
-      } else if (err.code === 'auth/weak-password') {
+      if (err.code === 'auth/weak-password') {
         errorMessage = 'Parola trebuie să aibă minim 6 caractere.';
       }
 
