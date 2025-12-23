@@ -122,12 +122,12 @@ export const useOwnerInvitation = () => {
 
           associations: [{
             associationId: associationData.id,
-            associationName: associationData.name,
+            associationName: associationData.name || '',
             apartments: [{
-              apartmentId: apartmentData.id,
-              number: apartmentData.number,
-              stairId: apartmentData.stairId,
-              blocId: apartmentData.blocId
+              apartmentId: apartmentData.id || null,
+              number: apartmentData.number || '',
+              stairId: apartmentData.stairId || null,
+              blocId: apartmentData.blocId || null
             }]
           }],
 
@@ -437,22 +437,22 @@ export const useOwnerInvitation = () => {
       if (existingApartIndex < 0) {
         // Adaugă apartamentul nou
         associations[existingAssocIndex].apartments.push({
-          apartmentId: apartmentData.id,
-          number: apartmentData.number,
-          stairId: apartmentData.stairId,
-          blocId: apartmentData.blocId
+          apartmentId: apartmentData.id || null,
+          number: apartmentData.number || '',
+          stairId: apartmentData.stairId || null,
+          blocId: apartmentData.blocId || null
         });
       }
     } else {
       // Asociație nouă
       associations.push({
         associationId: associationData.id,
-        associationName: associationData.name,
+        associationName: associationData.name || '',
         apartments: [{
-          apartmentId: apartmentData.id,
-          number: apartmentData.number,
-          stairId: apartmentData.stairId,
-          blocId: apartmentData.blocId
+          apartmentId: apartmentData.id || null,
+          number: apartmentData.number || '',
+          stairId: apartmentData.stairId || null,
+          blocId: apartmentData.blocId || null
         }]
       });
     }
