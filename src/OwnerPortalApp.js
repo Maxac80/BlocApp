@@ -30,11 +30,6 @@ function OwnerPortalContent() {
   // 🎫 MAGIC LINK: Detectează token de invitație din URL
   const inviteToken = useInviteToken();
 
-  // Prioritate maximă pentru magic link - afișează pagina de înregistrare
-  if (inviteToken) {
-    return <OwnerInviteRegistration token={inviteToken} />;
-  }
-
   // State pentru apartamente găsite după email
   const [userApartments, setUserApartments] = useState([]);
   const [loadingApartments, setLoadingApartments] = useState(false);
@@ -66,6 +61,12 @@ function OwnerPortalContent() {
       findApartmentsByEmail(currentUser.email);
     }
   }, [currentUser, quickAccessApartment, selectedApartment]);
+
+  // 🎫 PRIORITATE MAXIMĂ: Magic link - afișează pagina de înregistrare
+  // Această verificare TREBUIE să fie DUPĂ toate hook-urile (Rules of Hooks)
+  if (inviteToken) {
+    return <OwnerInviteRegistration token={inviteToken} />;
+  }
 
   // Caută apartamentele în toate asociațiile unde email-ul match-uiește
   const findApartmentsByEmail = async (email) => {
