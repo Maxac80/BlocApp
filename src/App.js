@@ -3,6 +3,7 @@ import { AuthProviderEnhanced, useAuthEnhanced } from "./context/AuthContextEnha
 import AuthManager from "./components/auth/AuthManager";
 import BlocApp from "./BlocApp";
 import OwnerPortalWrapper from "./components/owner/OwnerPortalWrapper";
+import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
 import { AlertCircle } from "lucide-react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
@@ -51,6 +52,19 @@ function useAppMode() {
   return mode;
 }
 
+/**
+ * Detectează magic link pentru invitații proprietari
+ * URL format: /invite/{token}
+ */
+function useInviteToken() {
+  const [token, setToken] = useState(() => {
+    const match = window.location.pathname.match(/\/invite\/(.+)/);
+    return match ? match[1] : null;
+  });
+
+  return token;
+}
+
 // Componenta principală care decide ce să afișeze
 function AppContent() {
   const {
@@ -64,6 +78,15 @@ function AppContent() {
 
   // Detectează modul din URL (?mode=owner)
   const appMode = useAppMode();
+
+  // Detectează magic link pentru invitații
+  const inviteToken = useInviteToken();
+
+  // 🎫 MAGIC LINK: Afișează pagina de înregistrare pentru proprietari
+  // Aceasta are prioritate maximă - chiar și dacă user-ul e logat
+  if (inviteToken) {
+    return <OwnerInviteRegistration token={inviteToken} />;
+  }
 
   // 🔄 HANDLE AUTH COMPLETE
   const handleAuthComplete = async (result) => {

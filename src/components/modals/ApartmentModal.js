@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { XCircle } from 'lucide-react';
+import { XCircle, Send, CheckCircle, Clock, RefreshCw, Loader2 } from 'lucide-react';
+import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
 
 const ApartmentModal = ({
   isOpen,
@@ -11,6 +12,8 @@ const ApartmentModal = ({
   blocks, // pentru a găsi blocul
   stairs, // toate scările pentru a găsi scara apartamentului în editare
   apartments, // ADĂUGAT: pentru calcul cotă parte
+  association, // ADĂUGAT: pentru invitații proprietari
+  currentUserId, // ADĂUGAT: ID-ul adminului curent
   onSave
 }) => {
   const isViewMode = mode === 'view';
@@ -25,6 +28,17 @@ const ApartmentModal = ({
     phone: ''
   });
   const [totalSurface, setTotalSurface] = useState(0); // ADĂUGAT: pentru calcul cotă parte
+
+  // Hook pentru invitații proprietari
+  const {
+    sendInvitation,
+    getInvitationStatus,
+    resendInvitation,
+    loading: invitationLoading
+  } = useOwnerInvitation();
+
+  const [invitationStatus, setInvitationStatus] = useState({ status: 'none' });
+  const [invitationSending, setInvitationSending] = useState(false);
 
   // Resetează sau populează datele când se deschide modalul
   useEffect(() => {
@@ -102,6 +116,87 @@ const ApartmentModal = ({
     setTotalSurface(total);
   }, [isOpen, mode, apartment, stair, apartments, formData.surface]);
 
+  // Verifică statusul invitației când se deschide modalul sau se schimbă emailul
+  useEffect(() => {
+    const checkInvitationStatus = async () => {
+      if (!isOpen || !formData.email || mode === 'add') {
+        setInvitationStatus({ status: 'none' });
+        return;
+      }
+
+      const status = await getInvitationStatus(formData.email);
+      setInvitationStatus(status);
+    };
+
+    checkInvitationStatus();
+  }, [isOpen, formData.email, mode, getInvitationStatus]);
+
+  // Handler pentru trimitere invitație
+  const handleSendInvitation = async () => {
+    if (!formData.email || !association || !currentUserId) {
+      alert('Completează adresa de email și salvează apartamentul înainte de a trimite invitația.');
+      return;
+    }
+
+    setInvitationSending(true);
+
+    try {
+      const apartmentData = {
+        id: apartment?.id,
+        number: formData.number,
+        stairId: apartment?.stairId || stair?.id,
+        blocId: apartment?.blocId || stair?.blockId
+      };
+
+      const ownerInfo = {
+        firstName: formData.owner.split(' ')[0] || '',
+        lastName: formData.owner.split(' ').slice(1).join(' ') || '',
+        phone: formData.phone || ''
+      };
+
+      const result = await sendInvitation(
+        formData.email,
+        apartmentData,
+        { id: association.id, name: association.name },
+        currentUserId,
+        ownerInfo
+      );
+
+      if (result.success) {
+        setInvitationStatus({ status: 'pending' });
+        alert(`Invitație trimisă cu succes către ${formData.email}!\n\nLink: ${result.magicLink}`);
+      } else {
+        alert('Eroare la trimiterea invitației: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      alert('Eroare la trimiterea invitației: ' + error.message);
+    } finally {
+      setInvitationSending(false);
+    }
+  };
+
+  // Handler pentru retrimite invitație
+  const handleResendInvitation = async () => {
+    if (!invitationStatus.owner?.id || !currentUserId) return;
+
+    setInvitationSending(true);
+
+    try {
+      const result = await resendInvitation(invitationStatus.owner.id, currentUserId);
+
+      if (result.success) {
+        alert(`Invitație retrimisă către ${formData.email}!\n\nLink: ${result.magicLink}`);
+      } else {
+        alert('Eroare la retrimiterea invitației: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      alert('Eroare: ' + error.message);
+    } finally {
+      setInvitationSending(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -388,19 +483,93 @@ const ApartmentModal = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Adresă email
                     </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
-                        isViewMode
-                          ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
-                          : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
-                      }`}
-                      placeholder="ex: ion.popescu@email.com"
-                      disabled={isViewMode}
-                    />
-                    {!isViewMode && <p className="text-xs text-gray-500 mt-1">Pentru acces la aplicația BlocApp pentru proprietari</p>}
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className={`flex-1 px-3 py-2 border rounded-lg outline-none ${
+                          isViewMode
+                            ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
+                            : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
+                        }`}
+                        placeholder="ex: ion.popescu@email.com"
+                        disabled={isViewMode}
+                      />
+                      {/* Buton invitație - doar în modul edit/view și dacă există email */}
+                      {mode !== 'add' && formData.email && association && (
+                        <>
+                          {invitationStatus.status === 'active' ? (
+                            <span className="inline-flex items-center px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Activ
+                            </span>
+                          ) : invitationStatus.status === 'pending' ? (
+                            <button
+                              type="button"
+                              onClick={handleResendInvitation}
+                              disabled={invitationSending}
+                              className="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200 transition-colors"
+                              title="Retrimite invitația"
+                            >
+                              {invitationSending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Clock className="w-4 h-4 mr-1" />
+                                  <RefreshCw className="w-3 h-3" />
+                                </>
+                              )}
+                            </button>
+                          ) : invitationStatus.status === 'expired' ? (
+                            <button
+                              type="button"
+                              onClick={handleResendInvitation}
+                              disabled={invitationSending}
+                              className="inline-flex items-center px-3 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-200 transition-colors"
+                              title="Invitație expirată - Retrimite"
+                            >
+                              {invitationSending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-4 h-4 mr-1" />
+                                  Retrimite
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleSendInvitation}
+                              disabled={invitationSending || !formData.email}
+                              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                              title="Trimite invitație pentru acces portal"
+                            >
+                              {invitationSending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Send className="w-4 h-4 mr-1" />
+                                  Invită
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {!isViewMode && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {invitationStatus.status === 'active'
+                          ? 'Proprietarul are cont activ în portal'
+                          : invitationStatus.status === 'pending'
+                          ? 'Invitație trimisă - așteaptă activare'
+                          : invitationStatus.status === 'expired'
+                          ? 'Invitația a expirat - retrimite pentru reactivare'
+                          : 'Trimite invitație pentru acces la portalul proprietarilor'}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

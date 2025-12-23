@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import OwnerApp from './OwnerApp';
 import OwnerApartmentSelector from './OwnerApartmentSelector';
@@ -7,8 +7,10 @@ import { Home, Search, AlertCircle, ArrowLeft } from 'lucide-react';
 
 /**
  * Wrapper pentru Owner Portal în modul integrat
- * Folosește sesiunea Firebase existentă (admin autentificat)
- * Permite selectarea apartamentului de testat
+ *
+ * Ordinea de căutare:
+ * 1. Căutare în colecția `owners` după firebaseUid (proprietari invitați și activați)
+ * 2. Fallback: căutare în sheets după email (pentru proprietari neinvitați)
  */
 export default function OwnerPortalWrapper({ currentUser }) {
   const [loading, setLoading] = useState(true);
@@ -16,18 +18,138 @@ export default function OwnerPortalWrapper({ currentUser }) {
   const [selectedApartment, setSelectedApartment] = useState(null);
   const [error, setError] = useState(null);
   const [searchEmail, setSearchEmail] = useState('');
-  const [searchMode, setSearchMode] = useState('auto'); // 'auto' sau 'manual'
+  const [ownerData, setOwnerData] = useState(null); // Date din colecția owners
 
-  // La montare, caută apartamentele pentru email-ul utilizatorului curent
+  // La montare, caută apartamentele pentru utilizatorul curent
   useEffect(() => {
-    if (currentUser?.email) {
-      findApartmentsByEmail(currentUser.email);
+    if (currentUser?.uid) {
+      findOwnerApartments(currentUser.uid, currentUser.email);
     } else {
       setLoading(false);
     }
   }, [currentUser]);
 
-  // Caută apartamentele în toate asociațiile
+  /**
+   * Căutare principală: owners collection → fallback la sheets
+   */
+  const findOwnerApartments = async (uid, email) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Căutare în colecția owners după firebaseUid
+      const ownerApartments = await findApartmentsFromOwnersCollection(uid);
+
+      if (ownerApartments.length > 0) {
+        setApartments(ownerApartments);
+        if (ownerApartments.length === 1) {
+          setSelectedApartment(ownerApartments[0]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback: căutare după email în sheets
+      if (email) {
+        await findApartmentsByEmail(email);
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('[OwnerPortalWrapper] Eroare:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Căutare în colecția owners după firebaseUid
+   */
+  const findApartmentsFromOwnersCollection = async (uid) => {
+    const foundApartments = [];
+
+    try {
+      const ownersQuery = query(
+        collection(db, 'owners'),
+        where('firebaseUid', '==', uid)
+      );
+      const ownersSnap = await getDocs(ownersQuery);
+
+      if (ownersSnap.empty) {
+        return [];
+      }
+
+      const ownerDoc = ownersSnap.docs[0];
+      const owner = { id: ownerDoc.id, ...ownerDoc.data() };
+      setOwnerData(owner);
+
+      // Iterează prin asociațiile din documentul owner
+      for (const assoc of owner.associations || []) {
+        // Obține date complete despre asociație
+        const associationsRef = collection(db, 'associations');
+        const assocSnap = await getDocs(associationsRef);
+        const associationDoc = assocSnap.docs.find(doc => doc.id === assoc.associationId);
+
+        if (!associationDoc) continue;
+
+        const associationData = { id: associationDoc.id, ...associationDoc.data() };
+
+        // Obține sheet-ul activ pentru date complete
+        const sheetsRef = collection(db, `associations/${assoc.associationId}/sheets`);
+        const sheetsSnap = await getDocs(sheetsRef);
+
+        let latestSheet = null;
+        for (const sheetDoc of sheetsSnap.docs) {
+          const sheetData = sheetDoc.data();
+          if (sheetData.status === 'in_progress') {
+            latestSheet = { id: sheetDoc.id, ...sheetData };
+            break;
+          }
+          if (!latestSheet || (sheetData.createdAt > latestSheet.createdAt)) {
+            latestSheet = { id: sheetDoc.id, ...sheetData };
+          }
+        }
+
+        const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
+
+        // Pentru fiecare apartament din owner.associations
+        for (const apt of assoc.apartments || []) {
+          // Găsește datele complete din sheet
+          const fullAptData = sheetApartments.find(a => a.id === apt.apartmentId) || apt;
+
+          // Calculează totalStairSurface
+          const sameStairApartments = sheetApartments.filter(a =>
+            (fullAptData.stairId && a.stairId === fullAptData.stairId) ||
+            (fullAptData.stair && a.stair === fullAptData.stair)
+          );
+          const totalStairSurface = sameStairApartments.reduce(
+            (sum, a) => sum + (parseFloat(a.surface) || 0), 0
+          );
+
+          foundApartments.push({
+            apartmentId: apt.apartmentId,
+            apartmentNumber: apt.number || fullAptData.number,
+            apartmentData: {
+              ...fullAptData,
+              totalStairSurface
+            },
+            associationId: assoc.associationId,
+            associationName: assoc.associationName || associationData.name,
+            associationData: associationData,
+            sheetId: latestSheet?.id
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[OwnerPortalWrapper] Eroare la căutare în owners:', err);
+    }
+
+    return foundApartments;
+  };
+
+  /**
+   * Fallback: Căutare în sheets după email
+   */
   const findApartmentsByEmail = async (email) => {
     setLoading(true);
     setError(null);

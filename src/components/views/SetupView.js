@@ -7,6 +7,7 @@ import BlockModal from '../modals/BlockModal';
 import StairModal from '../modals/StairModal';
 import MaintenanceBreakdownModal from '../modals/MaintenanceBreakdownModal';
 import DashboardHeader from '../dashboard/DashboardHeader';
+import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 const SetupView = ({
   association,
@@ -52,6 +53,9 @@ const SetupView = ({
   // Pentru actualizarea Sheet 1 cu apartamentele
   updateStructureSnapshot
 }) => {
+  // Obține currentUser pentru invitații proprietari
+  const { currentUser } = useAuthEnhanced();
+
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
 
@@ -1982,6 +1986,8 @@ return (
         blocks={blocks}
         stairs={stairs}
         apartments={associationApartments}
+        association={association}
+        currentUserId={currentUser?.uid}
         onSave={handleSaveApartment}
       />
 
