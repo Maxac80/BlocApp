@@ -57,7 +57,8 @@ function useAppMode() {
  * URL format: /invite/{token}
  */
 function useInviteToken() {
-  const [token, setToken] = useState(() => {
+  // Token-ul se extrage o singură dată din URL la mount
+  const [token] = useState(() => {
     const match = window.location.pathname.match(/\/invite\/(.+)/);
     return match ? match[1] : null;
   });
