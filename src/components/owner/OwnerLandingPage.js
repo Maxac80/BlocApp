@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import {
-  Eye, EyeOff, Lock, Mail, AlertCircle, Home, Building2, Loader2
+  Eye, EyeOff, Lock, Mail, AlertCircle, Home
 } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase';
 
 /**
  * Landing Page pentru Portal Proprietari
  *
  * Features:
  * - Formular login standard
- * - Buton "Treci peste" pentru development - caută apartamentul în Firebase după email
+ * - Proprietarii se loghează cu email și parola setată la înregistrare
  */
-export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFirebaseAuthenticated }) {
+export default function OwnerLandingPage() {
   const { loginEnhanced, authError, setAuthError } = useAuthEnhanced();
 
   // State pentru login
@@ -21,63 +19,6 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-
-  // State pentru bypass (development)
-  const [bypassLoading, setBypassLoading] = useState(false);
-  const [bypassError, setBypassError] = useState(null);
-
-  // Handler pentru "Treci peste" - folosește hardcode pentru development
-  // Firebase Auth nu e shared între porturi, deci folosim mapping local
-  const handleDevBypass = async () => {
-    const email = formData.email.trim();
-
-    if (!email) {
-      setBypassError('Introdu adresa de email pentru a continua');
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setBypassError('Adresa de email nu este validă');
-      return;
-    }
-
-    setBypassLoading(true);
-    setBypassError(null);
-
-    // Mapping hardcodat pentru development
-    // useOwnerData.js va căuta în maintenanceTable după apartmentNumber
-    const devMapping = {
-      'misu@blocapp.ro': {
-        apartmentId: '3',  // Folosim NUMBER, nu ID - useOwnerData face match pe apartmentNumber
-        apartmentNumber: '3',
-        apartmentData: {
-          id: '3',
-          number: 3,
-          owner: 'Liviu',
-          email: 'misu@blocapp.ro'
-        },
-        associationId: 'Jr6titqAa2hYxeRhwvGJ',  // ID-ul REAL din Firebase
-        associationName: 'Vulturul B4',
-        associationData: {
-          id: 'Jr6titqAa2hYxeRhwvGJ',
-          name: 'Vulturul B4'
-        }
-      }
-    };
-
-    const apartmentInfo = devMapping[email.toLowerCase()];
-
-    if (apartmentInfo) {
-      console.log('[OwnerLandingPage] DEV BYPASS - Apartament găsit:', apartmentInfo);
-      if (onDevModeSelect) {
-        onDevModeSelect(apartmentInfo);
-      }
-    } else {
-      setBypassError(`Email-ul "${email}" nu este configurat. Folosește: liviu@blocapp.ro`);
-    }
-
-    setBypassLoading(false);
-  };
 
   // Handler pentru input changes
   const handleInputChange = (e) => {
@@ -89,9 +30,6 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
     }
     if (authError) {
       setAuthError(null);
-    }
-    if (bypassError) {
-      setBypassError(null);
     }
   };
 
@@ -175,10 +113,10 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={isLoading || bypassLoading}
+                  disabled={isLoading}
                   className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                  } ${isLoading || bypassLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="email@exemplu.ro"
                 />
               </div>
@@ -203,10 +141,10 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  disabled={isLoading || bypassLoading}
+                  disabled={isLoading}
                   className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                  } ${isLoading || bypassLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Parola ta"
                 />
                 <button
@@ -228,7 +166,7 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
             {/* Buton Login */}
             <button
               type="submit"
-              disabled={isLoading || bypassLoading || !formData.email || !formData.password}
+              disabled={isLoading || !formData.email || !formData.password}
               className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -241,59 +179,6 @@ export default function OwnerLandingPage({ onDevModeSelect, onBypassSearch, isFi
               )}
             </button>
           </form>
-
-          {/* Separator */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-sm text-gray-500">sau</span>
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
-
-          {/* Eroare bypass */}
-          {bypassError && (
-            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" />
-                <p className="text-sm text-orange-800">{bypassError}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Status Firebase */}
-          {isFirebaseAuthenticated && (
-            <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-xs text-green-700 text-center">
-                ✓ Firebase conectat (sesiune admin)
-              </p>
-            </div>
-          )}
-
-          {/* Buton "Treci peste" pentru Development */}
-          <button
-            onClick={handleDevBypass}
-            disabled={bypassLoading || isLoading}
-            className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${
-              isFirebaseAuthenticated
-                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {bypassLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Se caută în Firebase...
-              </>
-            ) : (
-              <>
-                <Building2 className="w-5 h-5 mr-2" />
-                Caută apartament (Development)
-              </>
-            )}
-          </button>
-
-          <p className="text-xs text-gray-500 text-center mt-2">
-            Introdu email-ul proprietarului și apasă pentru a căuta în Firebase
-          </p>
 
         </div>
 
