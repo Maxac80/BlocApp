@@ -50,11 +50,11 @@ export default async function handler(req, res) {
 
           <!-- Header -->
           <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px 12px 0 0;">
+            <td style="padding: 40px 40px 20px; text-align: center; background-color: #2563eb; border-radius: 12px 12px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
-                🏠 BlocApp
+                BlocApp
               </h1>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
+              <p style="margin: 10px 0 0; color: #bfdbfe; font-size: 14px;">
                 Portal pentru proprietari
               </p>
             </td>
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
                 <tr>
                   <td align="center">
                     <a href="${magicLink}"
-                       style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">
+                       style="display: inline-block; padding: 16px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
                       Activează Contul
                     </a>
                   </td>

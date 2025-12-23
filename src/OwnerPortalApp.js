@@ -3,16 +3,37 @@ import { AuthProviderEnhanced, useAuthEnhanced } from "./context/AuthContextEnha
 import OwnerApp from "./components/owner/OwnerApp";
 import OwnerLandingPage from "./components/owner/OwnerLandingPage";
 import OwnerApartmentSelector from "./components/owner/OwnerApartmentSelector";
+import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import './services/appCheck';
 
 /**
+ * Detectează magic link pentru invitații proprietari
+ * URL format: /invite/{token}
+ */
+function useInviteToken() {
+  const [token] = useState(() => {
+    const match = window.location.pathname.match(/\/invite\/(.+)/);
+    return match ? match[1] : null;
+  });
+  return token;
+}
+
+/**
  * Conținutul principal al portalului proprietarilor
  */
 function OwnerPortalContent() {
   const { currentUser, loading: authLoading, logoutEnhanced } = useAuthEnhanced();
+
+  // 🎫 MAGIC LINK: Detectează token de invitație din URL
+  const inviteToken = useInviteToken();
+
+  // Prioritate maximă pentru magic link - afișează pagina de înregistrare
+  if (inviteToken) {
+    return <OwnerInviteRegistration token={inviteToken} />;
+  }
 
   // State pentru apartamente găsite după email
   const [userApartments, setUserApartments] = useState([]);
@@ -283,13 +304,7 @@ function OwnerPortalContent() {
   };
 
   // Nu e logat - afișează landing page
-  return (
-    <OwnerLandingPage
-      onDevModeSelect={handleQuickAccessSelect}
-      onBypassSearch={handleBypassSearch}
-      isFirebaseAuthenticated={!!currentUser}
-    />
-  );
+  return <OwnerLandingPage />;
 }
 
 /**
