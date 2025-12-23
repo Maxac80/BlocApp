@@ -237,9 +237,15 @@ export const useOwnerInvitation = () => {
       const data = await response.json();
 
       if (!response.ok) {
+        // Include error type pentru debugging
+        let errorMsg = data.error || 'Token invalid sau expirat';
+        if (data.errorType && data.errorType !== 'UNKNOWN') {
+          console.error('[validateToken] Error type:', data.errorType);
+        }
         return {
           valid: false,
-          error: data.error || 'Token invalid sau expirat',
+          error: errorMsg,
+          errorType: data.errorType,
           alreadyActive: data.alreadyActive || false
         };
       }

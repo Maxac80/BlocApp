@@ -14,11 +14,38 @@ import { getFirestore } from 'firebase-admin/firestore';
 function getFirebaseAdmin() {
   if (getApps().length === 0) {
     // Credențialele sunt stocate ca environment variable în Vercel
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+    const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+    if (!rawServiceAccount) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    }
+
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(rawServiceAccount);
+    } catch (parseError) {
+      throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
+    }
+
+    // Fix pentru newlines în private_key (Vercel poate escapa \n)
+    if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
+    // Validare că avem câmpurile necesare
+    if (!serviceAccount.project_id) {
+      throw new Error('Service account missing project_id');
+    }
+    if (!serviceAccount.private_key) {
+      throw new Error('Service account missing private_key');
+    }
+    if (!serviceAccount.client_email) {
+      throw new Error('Service account missing client_email');
+    }
 
     initializeApp({
       credential: cert(serviceAccount),
-      projectId: serviceAccount.project_id || process.env.FIREBASE_PROJECT_ID
+      projectId: serviceAccount.project_id
     });
   }
   return getFirestore();
@@ -96,10 +123,30 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error validating token:', error);
+
+    // Returnează erori specifice pentru debugging
+    let errorMessage = 'Eroare la validarea invitației';
+    let errorType = 'UNKNOWN';
+
+    if (error.message?.includes('FIREBASE_SERVICE_ACCOUNT')) {
+      errorType = 'CONFIG_ERROR';
+      errorMessage = 'Configurare server incompletă';
+    } else if (error.message?.includes('Failed to parse')) {
+      errorType = 'JSON_PARSE_ERROR';
+      errorMessage = 'Eroare configurare credențiale';
+    } else if (error.message?.includes('missing')) {
+      errorType = 'MISSING_FIELD';
+      errorMessage = 'Credențiale incomplete';
+    } else if (error.code === 'permission-denied') {
+      errorType = 'PERMISSION_ERROR';
+      errorMessage = 'Eroare permisiuni Firebase';
+    }
+
     return res.status(500).json({
       valid: false,
-      error: 'Eroare la validarea invitației',
-      details: error.message
+      error: errorMessage,
+      errorType: errorType,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }

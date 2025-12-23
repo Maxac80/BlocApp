@@ -106,16 +106,29 @@ export default function OwnerInviteRegistration({ token }) {
 
   // Invalid token state
   if (validationState === 'invalid') {
+    // Detectează tipul erorii pentru debug
+    const isServerError = validationError?.includes('server') ||
+                          validationError?.includes('Configurare') ||
+                          validationError?.includes('credențiale');
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Invitație invalidă</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {isServerError ? 'Eroare server' : 'Invitație invalidă'}
+          </h2>
           <p className="text-gray-600 mb-6">{validationError}</p>
           <p className="text-sm text-gray-500">
-            Contactează administratorul asociației pentru a primi o nouă invitație.
+            {isServerError
+              ? 'Te rugăm să încerci din nou mai târziu sau contactează suportul tehnic.'
+              : 'Contactează administratorul asociației pentru a primi o nouă invitație.'}
+          </p>
+          {/* Debug info pentru development */}
+          <p className="text-xs text-gray-400 mt-4">
+            Token: {token?.substring(0, 20)}...
           </p>
         </div>
       </div>
