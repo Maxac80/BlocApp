@@ -211,6 +211,7 @@ export const useOwnerInvitation = () => {
 
   /**
    * Validează un token de invitație
+   * Folosește API serverless pentru a evita probleme cu Firestore Security Rules
    *
    * @param {string} token - Token-ul din magic link
    * @returns {Object} - {valid: boolean, owner: Object, error: string}
@@ -220,37 +221,37 @@ export const useOwnerInvitation = () => {
     setError(null);
 
     try {
-      // Caută owner-ul cu acest token
-      const q = query(
-        collection(db, 'owners'),
-        where('invitation.token', '==', token)
-      );
+      // Folosește API-ul serverless pentru validare (evită probleme cu security rules)
+      const apiUrl = process.env.NODE_ENV === 'production'
+        ? '/api/validate-invite-token'
+        : 'http://localhost:3000/api/validate-invite-token';
 
-      const snapshot = await getDocs(q);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
 
-      if (snapshot.empty) {
-        return { valid: false, error: 'Token invalid sau expirat' };
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          valid: false,
+          error: data.error || 'Token invalid sau expirat',
+          alreadyActive: data.alreadyActive || false
+        };
       }
 
-      const ownerDoc = snapshot.docs[0];
-      const owner = { id: ownerDoc.id, ...ownerDoc.data() };
-
-      // Verifică expirarea
-      const expiresAt = new Date(owner.invitation.expiresAt);
-      if (expiresAt < new Date()) {
-        return { valid: false, error: 'Invitația a expirat. Contactează administratorul pentru o nouă invitație.' };
-      }
-
-      // Verifică dacă owner-ul e deja activ
-      if (owner.status === 'active') {
-        return { valid: false, error: 'Contul a fost deja activat. Te poți autentifica.', alreadyActive: true };
-      }
-
-      return { valid: true, owner };
+      return {
+        valid: true,
+        owner: data.owner
+      };
     } catch (err) {
       console.error('Error validating token:', err);
       setError(err.message);
-      return { valid: false, error: err.message };
+      return { valid: false, error: 'Eroare la validarea invitației. Încearcă din nou.' };
     } finally {
       setLoading(false);
     }
