@@ -5,11 +5,28 @@
  * Body: { to, ownerName, associationName, apartmentNumber, magicLink }
  */
 
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+// Domenii permise pentru CORS
+const ALLOWED_ORIGINS = [
+  'https://app.blocapp.ro',
+  'https://portal.blocapp.ro',
+  'https://blocapp.ro',
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+
+function setCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+}
+
+export default async function handler(req, res) {
+  // CORS headers - restrictive
+  setCorsHeaders(req, res);
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
