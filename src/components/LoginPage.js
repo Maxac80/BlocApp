@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -79,8 +79,11 @@ export default function LoginPage() {
         {/* Header cu logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <Building2 className="w-12 h-12 text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-800">BlocApp</h1>
+            <img
+              src="/logo.png"
+              alt="BlocApp Logo"
+              className="w-24 h-24 object-contain"
+            />
           </div>
           <p className="text-gray-600">
             {isLogin ? 'Conectează-te la contul tău' : 'Creează-ți cont personal'}

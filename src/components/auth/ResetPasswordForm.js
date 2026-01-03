@@ -150,10 +150,13 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
           
           {/* 🏠 HEADER CU LOGO */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
-              <span className="text-white text-2xl font-bold">B</span>
+            <div className="w-24 h-24 mx-auto mb-4">
+              <img
+                src="/logo.png"
+                alt="BlocApp"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">BlocApp</h1>
           </div>
 
           {/* 📋 CARD SUCCESS */}
@@ -247,10 +250,13 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
         
         {/* 🏠 HEADER CU LOGO */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
-            <span className="text-white text-2xl font-bold">B</span>
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img
+              src="/logo.png"
+              alt="BlocApp"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">BlocApp</h1>
           <p className="text-gray-600 mt-2">Resetează-ți parola</p>
         </div>
 

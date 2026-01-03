@@ -41,3 +41,15 @@ npm start
   9. useMonthManagement.js - 1 locație
   10. Migration utils - 7 locații (optional, dacă nu le folosești pot skip)
   11. useDataOperations.js - 1 locație3
+
+
+
+  Cum rulezi:
+Terminal 1 - Aplicația Administratori (port 3000):
+npm start
+Terminal 2 - Portal Proprietari (port 3001):
+
+
+
+npm start
+npm run start:owner

@@ -182,8 +182,12 @@ export default function OwnerInviteRegistration({ token }) {
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-blue-600" />
+          <div className="w-20 h-20 mx-auto mb-4">
+            <img
+              src="/logo192.png"
+              alt="BlocApp"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Bine ai venit în BlocApp!</h1>
           <p className="text-gray-600">
