@@ -36,8 +36,7 @@ const CONFIG = {
 
 const emailTemplates = {
   // Template verificare email
-  // Folosim CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
-  // Lățime 520px pentru a se potrivi mai bine în preview-ul Yahoo/Outlook
+  // CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
   verification: (userName, verificationLink) => ({
     subject: "Verifică-ți adresa de email - BlocApp",
     html: `
@@ -49,51 +48,51 @@ const emailTemplates = {
   <title>Verificare Email - BlocApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- Header - solid color fallback -->
+          <!-- Header -->
           <tr>
-            <td bgcolor="#2563EB" style="background-color: #2563EB; padding: 30px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
-              <p style="margin: 6px 0 0 0; color: #BFDBFE; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">Management Asociații de Proprietari</p>
+            <td bgcolor="#2563EB" style="background-color: #2563EB; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #BFDBFE; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">Management Asociații de Proprietari</p>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding: 30px;">
-              <h2 style="margin: 0 0 14px 0; color: #1F2937; font-size: 22px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}! 👋</h2>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}! 👋</h2>
 
-              <p style="margin: 0 0 20px 0; color: #4B5563; font-size: 15px; line-height: 1.5; font-family: Arial, Helvetica, sans-serif;">
-                Mulțumim că te-ai înregistrat în BlocApp! 🎉 Pentru a-ți activa contul, te rugăm să îți verifici adresa de email.
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
+                Mulțumim că te-ai înregistrat în BlocApp! Pentru a-ți activa contul și a începe să folosești aplicația, te rugăm să îți verifici adresa de email.
               </p>
 
-              <!-- Button cu table pentru compatibilitate maximă -->
-              <table cellpadding="0" cellspacing="0" border="0" style="margin: 24px auto;">
+              <!-- Button -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
                 <tr>
-                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 6px;">
-                    <a href="${verificationLink}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 14px 36px; font-size: 15px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
-                      ✉️ Verifică adresa de email
+                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 8px;">
+                    <a href="${verificationLink}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
+                      Verifică adresa de email
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin: 20px 0 0 0; color: #6B7280; font-size: 13px; line-height: 1.5; font-family: Arial, Helvetica, sans-serif;">
-                🔗 Dacă butonul nu funcționează, copiază acest link în browser:
+              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
+                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
               </p>
-              <p style="margin: 6px 0 0 0; word-break: break-all;">
-                <a href="${verificationLink}" style="color: #2563EB; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">${verificationLink}</a>
+              <p style="margin: 8px 0 0 0; word-break: break-all;">
+                <a href="${verificationLink}" style="color: #2563EB; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">${verificationLink}</a>
               </p>
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px; border-top: 1px solid #E5E7EB;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 32px; border-top: 1px solid #E5E7EB;">
                 <tr>
-                  <td style="padding-top: 16px;">
-                    <p style="margin: 0; color: #9CA3AF; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">
-                      ⏰ Link-ul expiră în 24h. Dacă nu ai solicitat acest email, ignoră-l.
+                  <td style="padding-top: 24px;">
+                    <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                      Acest link expiră în 24 de ore. Dacă nu ai solicitat acest email, îl poți ignora în siguranță.
                     </p>
                   </td>
                 </tr>
@@ -103,12 +102,12 @@ const emailTemplates = {
 
           <!-- Footer -->
           <tr>
-            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 16px 30px; text-align: center;">
-              <p style="margin: 0; color: #6B7280; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
-                Cu drag ❤️, <strong>Echipa BlocApp</strong>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
               </p>
-              <p style="margin: 4px 0 0 0; color: #9CA3AF; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">
-                © ${new Date().getFullYear()} BlocApp
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
               </p>
             </td>
           </tr>
@@ -123,8 +122,7 @@ const emailTemplates = {
   }),
 
   // Template resetare parolă
-  // Folosim CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
-  // Lățime 520px pentru a se potrivi mai bine în preview-ul Yahoo/Outlook
+  // CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
   passwordReset: (userName, resetLink) => ({
     subject: "Resetare parolă - BlocApp",
     html: `
@@ -136,61 +134,62 @@ const emailTemplates = {
   <title>Resetare Parolă - BlocApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- Header - solid color fallback -->
+          <!-- Header -->
           <tr>
-            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 30px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
-              <p style="margin: 6px 0 0 0; color: #FEF3C7; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">Resetare Parolă</p>
+            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">Resetare Parolă</p>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding: 30px;">
-              <h2 style="margin: 0 0 14px 0; color: #1F2937; font-size: 22px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}! 🔐</h2>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}!</h2>
 
-              <p style="margin: 0 0 20px 0; color: #4B5563; font-size: 15px; line-height: 1.5; font-family: Arial, Helvetica, sans-serif;">
-                Am primit o cerere de resetare a parolei pentru contul tău BlocApp. Apasă butonul de mai jos pentru a-ți seta o parolă nouă.
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
+                Am primit o cerere de resetare a parolei pentru contul tău BlocApp. Dacă ai făcut această cerere, apasă butonul de mai jos pentru a-ți seta o parolă nouă.
               </p>
 
-              <!-- Button cu table pentru compatibilitate maximă -->
-              <table cellpadding="0" cellspacing="0" border="0" style="margin: 24px auto;">
+              <!-- Button -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
                 <tr>
-                  <td align="center" bgcolor="#F59E0B" style="background-color: #F59E0B; border-radius: 6px;">
-                    <a href="${resetLink}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 14px 36px; font-size: 15px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
-                      🔑 Resetează parola
+                  <td align="center" bgcolor="#F59E0B" style="background-color: #F59E0B; border-radius: 8px;">
+                    <a href="${resetLink}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
+                      Resetează parola
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin: 20px 0 0 0; color: #6B7280; font-size: 13px; line-height: 1.5; font-family: Arial, Helvetica, sans-serif;">
-                🔗 Dacă butonul nu funcționează, copiază acest link în browser:
+              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
+                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
               </p>
-              <p style="margin: 6px 0 0 0; word-break: break-all;">
-                <a href="${resetLink}" style="color: #F59E0B; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">${resetLink}</a>
+              <p style="margin: 8px 0 0 0; word-break: break-all;">
+                <a href="${resetLink}" style="color: #F59E0B; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">${resetLink}</a>
               </p>
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 32px;">
                 <tr>
-                  <td bgcolor="#FEF3C7" style="background-color: #FEF3C7; padding: 12px; border-left: 4px solid #F59E0B;">
-                    <p style="margin: 0; color: #92400E; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
-                      ⚠️ <strong>Nu ai solicitat resetarea?</strong> Ignoră acest email.
+                  <td bgcolor="#FEF3C7" style="background-color: #FEF3C7; padding: 16px; border-left: 4px solid #F59E0B;">
+                    <p style="margin: 0; color: #92400E; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                      <strong>Nu ai solicitat resetarea parolei?</strong><br>
+                      Ignoră acest email. Parola ta rămâne neschimbată.
                     </p>
                   </td>
                 </tr>
               </table>
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px; border-top: 1px solid #E5E7EB;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px; border-top: 1px solid #E5E7EB;">
                 <tr>
-                  <td style="padding-top: 16px;">
-                    <p style="margin: 0; color: #9CA3AF; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">
-                      ⏰ Link-ul expiră în 1 oră.
+                  <td style="padding-top: 24px;">
+                    <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                      Acest link expiră în 1 oră.
                     </p>
                   </td>
                 </tr>
@@ -200,12 +199,12 @@ const emailTemplates = {
 
           <!-- Footer -->
           <tr>
-            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 16px 30px; text-align: center;">
-              <p style="margin: 0; color: #6B7280; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
-                Cu drag ❤️, <strong>Echipa BlocApp</strong>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
               </p>
-              <p style="margin: 4px 0 0 0; color: #9CA3AF; font-size: 11px; font-family: Arial, Helvetica, sans-serif;">
-                © ${new Date().getFullYear()} BlocApp
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
               </p>
             </td>
           </tr>
