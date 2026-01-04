@@ -459,7 +459,7 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
   };
 
 return (
-  <div className={`min-h-screen pt-2 px-6 pb-6 ${
+  <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 ${
     monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : monthType === 'next'
@@ -485,77 +485,77 @@ return (
       />
 
       {/* Page Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">🏢 Configurare apartamente</h1>
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏢 Configurare apartamente</h1>
       </div>
 
         {/* Statistici și căutare */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center justify-between sm:justify-start space-x-4 sm:space-x-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{totalBlocks}</div>
-                <div className="text-sm text-gray-600">Blocuri</div>
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalBlocks}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Blocuri</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{totalStairs}</div>
-                <div className="text-sm text-gray-600">Scări</div>
+                <div className="text-xl sm:text-2xl font-bold text-purple-600">{totalStairs}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Scări</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{totalApartments}</div>
-                <div className="text-sm text-gray-600">Apartamente</div>
+                <div className="text-xl sm:text-2xl font-bold text-orange-600">{totalApartments}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Apartamente</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{totalPersons}</div>
-                <div className="text-sm text-gray-600">Persoane</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{totalPersons}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Persoane</div>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {/* Butoane Excel - vizibile doar când există cel puțin o scară fără apartamente */}
               {stairsWithoutApartments > 0 && (
                 <>
                   <button
                     onClick={handleDownloadExcelTemplate}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center text-sm font-medium shadow-lg"
+                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm font-medium shadow-lg"
                     title="Descarcă template Excel pentru import masiv apartamente"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Template Excel
+                    <span className="hidden sm:inline">Template </span>Excel
                   </button>
                   <button
                     onClick={() => setShowExcelUploadModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center text-sm font-medium shadow-lg"
+                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm font-medium shadow-lg"
                     title="Încarcă fișier Excel completat pentru import masiv"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Încarcă Excel
+                    <span className="hidden sm:inline">Încarcă </span>Excel
                   </button>
                 </>
               )}
-              
-              <div className="relative">
+
+              <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
-                  placeholder="Caută apartament sau proprietar..."
+                  placeholder="Caută apartament..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-80"
+                  className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full sm:w-64 lg:w-80 text-sm"
                 />
-                <svg className="absolute left-3 top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-2.5 sm:left-3 top-2 sm:top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600"
+                  className="bg-gray-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-600 text-xs sm:text-sm"
                 >
-                  Șterge căutare
+                  Șterge
                 </button>
               )}
             </div>
@@ -674,10 +674,10 @@ return (
         </div>
 
         {/* Structura ierarhică */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">📋 Structura Asociației</h3>
-            <div className="flex gap-3">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">📋 Structura Asociației</h3>
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
               {associationBlocks.length > 3 && (
                 <div className="flex gap-2">
                   <button
@@ -717,8 +717,8 @@ return (
                   }
                   openAddBlockModal();
                 }}
-                className={`rounded-lg flex items-center transition-all duration-200 ${
-                  associationBlocks.length > 0 ? 'p-2' : 'px-4 py-2'
+                className={`rounded-lg flex items-center transition-all duration-200 text-sm sm:text-base ${
+                  associationBlocks.length > 0 ? 'p-1.5 sm:p-2' : 'px-3 py-1.5 sm:px-4 sm:py-2'
                 } ${
                   isMonthReadOnly
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -728,7 +728,7 @@ return (
                 disabled={isMonthReadOnly}
               >
                 {associationBlocks.length > 0 ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                 ) : (
@@ -790,21 +790,19 @@ return (
             )}
 
             {associationBlocks.length === 0 && !(showAddForm?.type === 'block') ? (
-              <div className="py-4 px-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🏢</span>
+              <div className="py-3 px-3 sm:py-4 sm:px-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="hidden sm:flex w-12 h-12 bg-blue-100 rounded-full items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">🏢</span>
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="bg-blue-600 text-white text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
+                        BLOCURI NECESARE
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-blue-800">Nu există blocuri configurate</span>
                     </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          BLOCURI NECESARE
-                        </span>
-                        <span className="text-sm font-semibold text-blue-800">Nu există blocuri configurate</span>
-                      </div>
-                      <p className="text-sm text-blue-600">Poți genera template Excel cu blocurile și scările și upload de fișier Excel cu apartamentele</p>
-                    </div>
+                    <p className="text-xs sm:text-sm text-blue-600">Poți genera template Excel cu blocurile și scările și upload de fișier Excel cu apartamentele</p>
                   </div>
                 </div>
               </div>

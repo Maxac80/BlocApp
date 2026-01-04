@@ -565,18 +565,18 @@ useEffect(() => {
       <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
-        {/* Buton mobile menu */}
+        {/* Buton mobile menu - poziționat în header area */}
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-blue-600 text-white rounded-lg shadow-lg"
+            className="lg:hidden fixed top-3 left-3 z-40 p-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 active:scale-95 transition-transform"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           </button>
         )}
         
-        {/* Zona de conținut */}
-        <main className="flex-1 overflow-y-scroll">
+        {/* Zona de conținut - padding top pe mobil pentru hamburger button */}
+        <main className="flex-1 overflow-y-scroll pt-14 lg:pt-0">
           
           {/* Dashboard View */}
           {currentView === "dashboard" && (

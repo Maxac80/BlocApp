@@ -952,7 +952,7 @@ const MaintenanceView = ({
             ? "bg-gradient-to-br from-gray-50 to-gray-100"
             : "bg-gradient-to-br from-indigo-50 to-blue-100"
         }`}>
-      <div className="w-full pt-2 px-6 pb-6">
+      <div className="w-full px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
         <DashboardHeader
           key={`header-${publishedSheet?.id || 'no-published'}`}
           association={association}
