@@ -133,48 +133,48 @@ export default function EmailVerification({ onVerified, user }) {
       <div className="w-full max-w-md">
 
         {/* 🏠 HEADER CU LOGO */}
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto mb-4">
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
             <img
               src="/logo.png"
               alt="BlocApp"
               className="w-full h-full object-contain"
             />
           </div>
-          <p className="text-gray-600">Aproape gata!</p>
+          <p className="text-gray-600 text-sm">Aproape gata!</p>
         </div>
 
         {/* 📋 CARD PRINCIPAL */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
 
           {/* 📧 HEADER VERIFICARE */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Mail className="w-8 h-8 text-blue-600" />
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-full mb-3">
+              <Mail className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Verifică-ți emailul</h2>
-            <p className="text-gray-600 mt-3">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Verifică-ți emailul</h2>
+            <p className="text-gray-600 text-sm mt-2">
               Am trimis un link de verificare la
             </p>
-            <p className="font-semibold text-blue-600 mt-1 text-lg">
+            <p className="font-semibold text-blue-600 mt-1 text-sm sm:text-base">
               {user?.email}
             </p>
-            <p className="text-gray-500 text-sm mt-3">
+            <p className="text-gray-500 text-xs mt-2">
               Verifică inbox-ul sau folderul spam
             </p>
           </div>
 
           {/* ✅ MESAJ SUCCES */}
           {resendSuccess && (
-            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-              <p className="text-green-700 text-sm">Email retrimis cu succes!</p>
+            <div className="mb-4 p-2.5 bg-green-50 border border-green-200 rounded-lg text-center">
+              <p className="text-green-700 text-xs">Email retrimis cu succes!</p>
             </div>
           )}
 
           {/* ❌ MESAJ EROARE */}
           {resendError && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
-              <p className="text-red-700 text-sm">{resendError}</p>
+            <div className="mb-4 p-2.5 bg-red-50 border border-red-200 rounded-lg text-center">
+              <p className="text-red-700 text-xs">{resendError}</p>
             </div>
           )}
 
@@ -182,21 +182,21 @@ export default function EmailVerification({ onVerified, user }) {
           <button
             onClick={handleResendEmail}
             disabled={isResending || cooldownTime > 0}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isResending ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Se trimite...
               </div>
             ) : cooldownTime > 0 ? (
               <div className="flex items-center justify-center">
-                <Clock className="w-5 h-5 mr-2" />
+                <Clock className="w-4 h-4 mr-1.5" />
                 Retrimite în {formatCooldownTime(cooldownTime)}
               </div>
             ) : (
               <div className="flex items-center justify-center">
-                <Send className="w-5 h-5 mr-2" />
+                <Send className="w-4 h-4 mr-1.5" />
                 Retrimite emailul
               </div>
             )}
@@ -206,19 +206,19 @@ export default function EmailVerification({ onVerified, user }) {
           {isDevelopment && (
             <button
               onClick={handleSimulateEmailVerification}
-              className="w-full mt-3 bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              className="w-full mt-2 bg-orange-500 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
             >
               <div className="flex items-center justify-center">
-                <Zap className="w-4 h-4 mr-2" />
+                <Zap className="w-3.5 h-3.5 mr-1.5" />
                 Simulează verificare (DEV)
               </div>
             </button>
           )}
 
           {/* 🛠️ FOOTER */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="text-center space-y-3">
-              <p className="text-sm text-gray-500">
+          <div className="mt-5 pt-4 border-t border-gray-100">
+            <div className="text-center space-y-2">
+              <p className="text-xs text-gray-500">
                 Nu ai primit emailul?{' '}
                 <a
                   href="mailto:support@blocapp.ro"
@@ -230,9 +230,9 @@ export default function EmailVerification({ onVerified, user }) {
 
               <button
                 onClick={logoutEnhanced}
-                className="inline-flex items-center text-sm text-gray-500 hover:text-red-600 transition-colors"
+                className="inline-flex items-center text-xs text-gray-500 hover:text-red-600 transition-colors"
               >
-                <LogOut className="w-4 h-4 mr-1" />
+                <LogOut className="w-3.5 h-3.5 mr-1" />
                 Folosește alt cont
               </button>
             </div>

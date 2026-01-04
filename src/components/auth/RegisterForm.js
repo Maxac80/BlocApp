@@ -261,24 +261,24 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     };
     
     return (
-      <div className="mt-2">
+      <div className="mt-1.5">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-gray-600">Puterea parolei:</span>
-          <span className={`text-xs font-medium ${passwordStrength.isValid ? 'text-green-600' : 'text-red-600'}`}>
+          <span className="text-[10px] text-gray-600">Puterea parolei:</span>
+          <span className={`text-[10px] font-medium ${passwordStrength.isValid ? 'text-green-600' : 'text-red-600'}`}>
             {getStrengthText()}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor()}`}
+        <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div
+            className={`h-1.5 rounded-full transition-all duration-300 ${getStrengthColor()}`}
             style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
           ></div>
         </div>
-        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+        <div className="grid grid-cols-2 gap-1 mt-1.5 text-[10px]">
           {Object.entries(passwordStrength.checks).map(([key, valid]) => (
             <div key={key} className={`flex items-center ${valid ? 'text-green-600' : 'text-gray-400'}`}>
-              {valid ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
-              {key === 'length' && 'Min 8 caractere'}
+              {valid ? <Check className="w-2.5 h-2.5 mr-0.5" /> : <X className="w-2.5 h-2.5 mr-0.5" />}
+              {key === 'length' && 'Min 8 car.'}
               {key === 'uppercase' && 'Litere mari'}
               {key === 'lowercase' && 'Litere mici'}
               {key === 'numbers' && 'Cifre'}
@@ -295,35 +295,35 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
       <div className="w-full max-w-lg">
         
         {/* 🏠 HEADER CU LOGO */}
-        <div className="text-center mb-6">
-          <div className="w-24 h-24 mx-auto mb-4">
+        <div className="text-center mb-4 sm:mb-5">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2">
             <img
               src="/logo.png"
               alt="BlocApp"
               className="w-full h-full object-contain"
             />
           </div>
-          <p className="text-gray-600 mt-1">Alătură-te comunității administratorilor profesioniști</p>
+          <p className="text-gray-600 text-sm mt-1">Alătură-te comunității administratorilor profesioniști</p>
         </div>
 
         {/* 📋 CARD PRINCIPAL */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+
           {/* 🔐 HEADER REGISTER */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Creează cont nou</h2>
-            <p className="text-gray-600 mt-1">Începe administrarea eficientă astăzi</p>
+          <div className="text-center mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Creează cont nou</h2>
+            <p className="text-gray-600 text-sm mt-1">Începe administrarea eficientă astăzi</p>
           </div>
 
           {/* 📊 PROGRESS BAR */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Progres completare</span>
-              <span className="text-sm text-gray-600">{formProgress}%</span>
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-xs font-medium text-gray-700">Progres completare</span>
+              <span className="text-xs text-gray-600">{formProgress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div
+                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                 style={{ width: `${formProgress}%` }}
               ></div>
             </div>
@@ -331,25 +331,25 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
           {/* 🚨 AFIȘARE ERORI GLOBALE */}
           {authError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
-                <p className="text-red-800">{authError}</p>
+                <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                <p className="text-red-800 text-sm">{authError}</p>
               </div>
             </div>
           )}
 
           {/* 📝 FORMULAR */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+
             {/* 👤 NUME ȘI PRENUME */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="block text-xs font-medium text-gray-700 mb-1">
                   Prenume *
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   <input
                     type="text"
                     id="firstName"
@@ -357,9 +357,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     disabled={isLoading}
-                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                      validationErrors.firstName 
-                        ? 'border-red-300 bg-red-50' 
+                    className={`w-full pl-8 pr-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                      validationErrors.firstName
+                        ? 'border-red-300 bg-red-50'
                         : 'border-gray-300 bg-white'
                     } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     placeholder="Ion"
@@ -371,7 +371,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="block text-xs font-medium text-gray-700 mb-1">
                   Nume *
                 </label>
                 <input
@@ -381,9 +381,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                    validationErrors.lastName 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                    validationErrors.lastName
+                      ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Popescu"
@@ -396,11 +396,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
             {/* 📧 EMAIL */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
                 Email *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="email"
                   id="email"
@@ -408,9 +408,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                    validationErrors.email 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                    validationErrors.email
+                      ? 'border-red-300 bg-red-50'
                       : emailAvailable === true ? 'border-green-300 bg-green-50'
                       : emailAvailable === false ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white'
@@ -418,15 +418,15 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   placeholder="ion.popescu@exemplu.ro"
                 />
                 {checkingEmail && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <div className="absolute right-2.5 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-600"></div>
                   </div>
                 )}
                 {!checkingEmail && emailAvailable === true && (
-                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
+                  <CheckCircle className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-green-500" />
                 )}
                 {!checkingEmail && emailAvailable === false && (
-                  <X className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-red-500" />
+                  <X className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-red-500" />
                 )}
               </div>
               {validationErrors.email && (
@@ -442,11 +442,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
             {/* 🔒 PAROLĂ */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">
                 Parolă *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
@@ -454,9 +454,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                    validationErrors.password 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                    validationErrors.password
+                      ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Minim 8 caractere"
@@ -465,9 +465,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               {validationErrors.password && (
@@ -478,11 +478,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
             {/* 🔒 CONFIRMARE PAROLĂ */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1">
                 Confirmă parola *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
@@ -490,9 +490,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                    validationErrors.confirmPassword 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                    validationErrors.confirmPassword
+                      ? 'border-red-300 bg-red-50'
                       : formData.confirmPassword && formData.password === formData.confirmPassword ? 'border-green-300 bg-green-50'
                       : 'border-gray-300 bg-white'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -502,9 +502,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               {validationErrors.confirmPassword && (
@@ -520,7 +520,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
             {/* 📱 TELEFON (OBLIGATORIU) */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="block text-xs font-medium text-gray-700 mb-1">
                 Telefon *
               </label>
               <input
@@ -530,9 +530,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 value={formData.phone}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
-                  validationErrors.phone 
-                    ? 'border-red-300 bg-red-50' 
+                className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                  validationErrors.phone
+                    ? 'border-red-300 bg-red-50'
                     : 'border-gray-300 bg-white'
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="0721234567"
@@ -544,7 +544,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
             </div>
 
             {/* ✅ ACORDURI ȘI TERMENI */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2 pt-2">
               <div className="flex items-start">
                 <input
                   type="checkbox"
@@ -553,9 +553,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   checked={formData.acceptTerms}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
                 />
-                <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="acceptTerms" className="ml-2 text-xs text-gray-700">
                   Accept{' '}
                   <a href="/terms" target="_blank" className="text-blue-600 hover:text-blue-800 underline">
                     termenii și condițiile
@@ -564,7 +564,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 </label>
               </div>
               {validationErrors.acceptTerms && (
-                <p className="text-xs text-red-600 ml-6">{validationErrors.acceptTerms}</p>
+                <p className="text-xs text-red-600 ml-5">{validationErrors.acceptTerms}</p>
               )}
 
               <div className="flex items-start">
@@ -575,9 +575,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   checked={formData.acceptPrivacy}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
                 />
-                <label htmlFor="acceptPrivacy" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="acceptPrivacy" className="ml-2 text-xs text-gray-700">
                   Accept{' '}
                   <a href="/privacy" target="_blank" className="text-blue-600 hover:text-blue-800 underline">
                     politica de confidențialitate
@@ -585,7 +585,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 </label>
               </div>
               {validationErrors.acceptPrivacy && (
-                <p className="text-xs text-red-600 ml-6">{validationErrors.acceptPrivacy}</p>
+                <p className="text-xs text-red-600 ml-5">{validationErrors.acceptPrivacy}</p>
               )}
 
               <div className="flex items-start">
@@ -596,9 +596,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   checked={formData.acceptMarketing}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
                 />
-                <label htmlFor="acceptMarketing" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="acceptMarketing" className="ml-2 text-xs text-gray-700">
                   Doresc să primesc informații despre produse și promoții (opțional)
                 </label>
               </div>
@@ -608,11 +608,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
             <button
               type="submit"
               disabled={isLoading || formProgress < 85 || checkingEmail}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+              className="w-full bg-blue-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Se creează contul...
                 </div>
               ) : (
@@ -622,8 +622,8 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
           </form>
 
           {/* 🔗 LINK LOGIN */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          <div className="mt-4 text-center">
+            <p className="text-gray-600 text-sm">
               Ai deja cont?{' '}
               <button
                 onClick={onSwitchToLogin}
@@ -636,9 +636,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
           </div>
 
           {/* 🛡️ SECURITATE INFO */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-center text-xs text-gray-500">
-              <Shield className="w-4 h-4 mr-1" />
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-center text-[10px] sm:text-xs text-gray-500">
+              <Shield className="w-3.5 h-3.5 mr-1" />
               Datele tale sunt protejate • Criptare SSL • Conformitate GDPR
             </div>
           </div>

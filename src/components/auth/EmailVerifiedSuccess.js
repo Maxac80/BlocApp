@@ -110,10 +110,10 @@ export default function EmailVerifiedSuccess() {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Se verifică...</h1>
-          <p className="text-gray-600">Te rugăm să aștepți câteva secunde.</p>
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <Loader2 className="w-12 h-12 sm:w-14 sm:h-14 text-blue-600 animate-spin mx-auto mb-3" />
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Se verifică...</h1>
+          <p className="text-gray-600 text-sm">Te rugăm să aștepți câteva secunde.</p>
         </div>
       </div>
     );
@@ -123,15 +123,15 @@ export default function EmailVerifiedSuccess() {
   if (status === 'error') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-            <span className="text-4xl">❌</span>
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+            <span className="text-2xl sm:text-3xl">❌</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Verificare eșuată</h1>
-          <p className="text-gray-600 mb-6">{errorMessage}</p>
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Verificare eșuată</h1>
+          <p className="text-gray-600 text-sm mb-4">{errorMessage}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="w-full bg-blue-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
           >
             Înapoi la autentificare
           </button>
@@ -143,11 +143,11 @@ export default function EmailVerifiedSuccess() {
   // Success state
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full">
 
         {/* Header cu logo */}
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto mb-4">
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
             <img
               src="/logo.png"
               alt="BlocApp"
@@ -157,41 +157,41 @@ export default function EmailVerifiedSuccess() {
         </div>
 
         {/* Success icon animat */}
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
-            <CheckCircle className="w-12 h-12 text-green-500" />
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+            <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-500" />
           </div>
         </div>
 
         {/* Mesaj succes */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Email verificat cu succes! 🎉
+        <div className="text-center mb-5">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+            Email verificat cu succes!
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm">
             Contul tău BlocApp este acum activ. Poți începe să administrezi asociația ta de proprietari.
           </p>
         </div>
 
         {/* Beneficii */}
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <p className="text-sm font-medium text-gray-700 mb-3">Acum poți:</p>
-          <ul className="space-y-2">
-            <li className="flex items-center text-sm text-gray-600">
-              <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                <CheckCircle className="w-3 h-3 text-green-500" />
+        <div className="bg-gray-50 rounded-xl p-3 mb-4">
+          <p className="text-xs font-medium text-gray-700 mb-2">Acum poți:</p>
+          <ul className="space-y-1.5">
+            <li className="flex items-center text-xs text-gray-600">
+              <span className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center mr-1.5 flex-shrink-0">
+                <CheckCircle className="w-2.5 h-2.5 text-green-500" />
               </span>
               Crea și gestiona asociații de proprietari
             </li>
-            <li className="flex items-center text-sm text-gray-600">
-              <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                <CheckCircle className="w-3 h-3 text-green-500" />
+            <li className="flex items-center text-xs text-gray-600">
+              <span className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center mr-1.5 flex-shrink-0">
+                <CheckCircle className="w-2.5 h-2.5 text-green-500" />
               </span>
               Calcula liste de întreținere automat
             </li>
-            <li className="flex items-center text-sm text-gray-600">
-              <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-2">
-                <CheckCircle className="w-3 h-3 text-green-500" />
+            <li className="flex items-center text-xs text-gray-600">
+              <span className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center mr-1.5 flex-shrink-0">
+                <CheckCircle className="w-2.5 h-2.5 text-green-500" />
               </span>
               Invita proprietari în portal
             </li>
@@ -200,16 +200,16 @@ export default function EmailVerifiedSuccess() {
 
         {/* Mesaj special când există alt tab deschis */}
         {otherTabDetected && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5" />
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-blue-900">
+              <div className="ml-2">
+                <p className="text-xs font-medium text-blue-900">
                   Tab-ul original a fost actualizat automat!
                 </p>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-xs text-blue-700 mt-0.5">
                   Poți închide acest tab și continua în fereastra originală.
                 </p>
               </div>
@@ -218,28 +218,28 @@ export default function EmailVerifiedSuccess() {
         )}
 
         {/* Butoane */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {otherTabDetected && (
             <button
               onClick={() => window.close()}
-              className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center"
+              className="w-full bg-gray-100 text-gray-700 py-2 sm:py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all flex items-center justify-center"
             >
-              <X className="w-5 h-5 mr-2" />
+              <X className="w-4 h-4 mr-1.5" />
               Închide acest tab
             </button>
           )}
 
           <button
             onClick={() => window.location.href = '/'}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 sm:py-3 px-4 rounded-xl text-sm font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
           >
             {otherTabDetected ? 'Sau continuă aici' : 'Continuă spre aplicație'}
-            <ArrowRight className="w-5 h-5 ml-2" />
+            <ArrowRight className="w-4 h-4 ml-1.5" />
           </button>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-[10px] sm:text-xs text-gray-500 mt-4">
           © {new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
         </p>
       </div>

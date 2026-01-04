@@ -147,10 +147,10 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          
+
           {/* 🏠 HEADER CU LOGO */}
-          <div className="text-center mb-8">
-            <div className="w-24 h-24 mx-auto mb-4">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
               <img
                 src="/logo.png"
                 alt="BlocApp"
@@ -160,23 +160,23 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
           </div>
 
           {/* 📋 CARD SUCCESS */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+
             {/* ✅ SUCCESS ICON */}
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full mb-3">
+                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Email trimis!</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Email trimis!</h2>
+              <p className="text-gray-600 text-sm mt-1">
                 Verifică-ți inbox-ul și spam-ul pentru instrucțiunile de resetare
               </p>
             </div>
 
             {/* 📋 INSTRUCȚIUNI */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-blue-900 mb-2">Pași următori:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+            <div className="bg-blue-50 rounded-lg p-3 mb-4">
+              <h3 className="font-semibold text-blue-900 text-sm mb-1.5">Pași următori:</h3>
+              <ol className="list-decimal list-inside space-y-0.5 text-xs text-blue-800">
                 <li>Verifică inbox-ul și folderul spam</li>
                 <li>Deschide emailul de la BlocApp</li>
                 <li>Apasă pe linkul pentru resetare</li>
@@ -186,11 +186,11 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
             </div>
 
             {/* ⏰ COOLDOWN ȘI RETRIMITERE */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-4">
               {cooldownTime > 0 ? (
                 <div className="flex items-center justify-center text-gray-600">
-                  <Clock className="w-4 h-4 mr-2" />
-                  <span className="text-sm">
+                  <Clock className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-xs">
                     Poți retrimite emailul în {formatCooldownTime(cooldownTime)}
                   </span>
                 </div>
@@ -198,11 +198,11 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
                 <button
                   onClick={handleResendEmail}
                   disabled={isLoading}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors disabled:opacity-50"
+                  className="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-600 mr-1.5"></div>
                       Se retrimite...
                     </span>
                   ) : (
@@ -214,10 +214,10 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
 
             {/* 🚨 ERORI LA RETRIMITERE */}
             {authError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-center">
-                  <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
-                  <p className="text-red-800 text-sm">{authError}</p>
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 mr-1.5 flex-shrink-0" />
+                  <p className="text-red-800 text-xs">{authError}</p>
                 </div>
               </div>
             )}
@@ -225,16 +225,16 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
             {/* 🔙 ÎNAPOI LA LOGIN */}
             <button
               onClick={onSwitchToLogin}
-              className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center"
+              className="w-full bg-gray-100 text-gray-700 py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
               Înapoi la autentificare
             </button>
 
             {/* ⚠️ IMPORTANT NOTE */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-500 text-center">
-                💡 Linkul de resetare expiră în 24 de ore din motive de securitate
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <p className="text-[10px] sm:text-xs text-gray-500 text-center">
+                Linkul de resetare expiră în 24 de ore din motive de securitate
               </p>
             </div>
           </div>
@@ -247,51 +247,51 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        
+
         {/* 🏠 HEADER CU LOGO */}
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto mb-4">
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
             <img
               src="/logo.png"
               alt="BlocApp"
               className="w-full h-full object-contain"
             />
           </div>
-          <p className="text-gray-600 mt-2">Resetează-ți parola</p>
+          <p className="text-gray-600 text-sm mt-1">Resetează-ți parola</p>
         </div>
 
         {/* 📋 CARD PRINCIPAL */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+
           {/* 🔐 HEADER RESET */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
-              <Send className="w-6 h-6 text-blue-600" />
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full mb-3">
+              <Send className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Resetare parolă</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Resetare parolă</h2>
+            <p className="text-gray-600 text-sm mt-1">
               Introdu adresa de email pentru a primi instrucțiunile de resetare
             </p>
           </div>
 
           {/* 🚨 AFIȘARE ERORI GLOBALE */}
           {authError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
-                <p className="text-red-800">{authError}</p>
+                <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                <p className="text-red-800 text-sm">{authError}</p>
               </div>
             </div>
           )}
 
           {/* ⏰ COOLDOWN WARNING */}
           {cooldownTime > 0 && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center">
-                <Clock className="w-5 h-5 text-yellow-600 mr-2" />
+                <Clock className="w-4 h-4 text-yellow-600 mr-2 flex-shrink-0" />
                 <div>
-                  <p className="text-yellow-800 font-medium">Așteaptă între cereri</p>
-                  <p className="text-yellow-700 text-sm">
+                  <p className="text-yellow-800 font-medium text-sm">Așteaptă între cereri</p>
+                  <p className="text-yellow-700 text-xs">
                     Poți trimite o nouă cerere în {formatCooldownTime(cooldownTime)}
                   </p>
                 </div>
@@ -300,24 +300,24 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
           )}
 
           {/* 📝 FORMULAR */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
+          <form onSubmit={handleSubmit} className="space-y-4">
+
             {/* 📧 EMAIL INPUT */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
                 Adresa de email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   id="email"
                   value={email}
                   onChange={handleEmailChange}
                   disabled={isLoading || cooldownTime > 0}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    validationError 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    validationError
+                      ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white'
                   } ${(isLoading || cooldownTime > 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="nume@exemplu.ro"
@@ -325,17 +325,17 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
                 />
               </div>
               {validationError && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1" />
                   {validationError}
                 </p>
               )}
             </div>
 
             {/* ℹ️ INFO SECURITATE */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">Despre procesul de resetare:</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+            <div className="bg-blue-50 rounded-lg p-3">
+              <h3 className="font-medium text-blue-900 text-sm mb-1.5">Despre procesul de resetare:</h3>
+              <ul className="text-xs text-blue-800 space-y-0.5">
                 <li>• Vei primi un email cu link securizat</li>
                 <li>• Linkul este valid 24 de ore</li>
                 <li>• Poți folosi linkul o singură dată</li>
@@ -347,11 +347,11 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
             <button
               type="submit"
               disabled={isLoading || !email || cooldownTime > 0 || validationError}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Se trimite emailul...
                 </div>
               ) : cooldownTime > 0 ? (
@@ -363,21 +363,21 @@ export default function ResetPasswordForm({ onSwitchToLogin }) {
           </form>
 
           {/* 🔙 ÎNAPOI LA LOGIN */}
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <button
               onClick={onSwitchToLogin}
               disabled={isLoading}
-              className="text-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center w-full"
+              className="text-gray-600 hover:text-gray-800 text-sm transition-colors flex items-center justify-center w-full"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
               Înapoi la autentificare
             </button>
           </div>
 
           {/* 🛡️ SECURITATE INFO */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-center text-xs text-gray-500">
-              <Send className="w-4 h-4 mr-1" />
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-center text-[10px] sm:text-xs text-gray-500">
+              <Send className="w-3.5 h-3.5 mr-1" />
               Proces securizat • Logging complet • Rate limiting
             </div>
           </div>
