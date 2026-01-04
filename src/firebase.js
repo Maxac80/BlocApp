@@ -3,6 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 // Temporarily disable security validation to fix loading issue
 // import { validateFirebaseConfig } from './config/security';
 
@@ -31,5 +32,20 @@ export const db = getFirestore(app);
 
 // Initialize Firebase Storage and get a reference to the service
 export const storage = getStorage(app);
+
+// Initialize Cloud Functions (region: europe-west1)
+export const functions = getFunctions(app, 'europe-west1');
+
+// Connect to emulator in development
+if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_FUNCTIONS_EMULATOR === 'true') {
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+}
+
+// Export Cloud Function callables
+export const cloudFunctions = {
+  sendVerificationEmail: httpsCallable(functions, 'sendVerificationEmail'),
+  sendPasswordResetEmail: httpsCallable(functions, 'sendPasswordResetEmail'),
+  resendVerificationEmail: httpsCallable(functions, 'resendVerificationEmail')
+};
 
 export default app;

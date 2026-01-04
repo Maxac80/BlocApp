@@ -1,0 +1,390 @@
+/**
+ * 📧 BLOCAPP CLOUD FUNCTIONS
+ *
+ * Funcții pentru trimiterea emailurilor prin Resend
+ * - Verificare email
+ * - Resetare parolă
+ * - Notificări
+ */
+
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const { getFirestore } = require("firebase-admin/firestore");
+const { Resend } = require("resend");
+
+// Inițializare Firebase Admin
+initializeApp();
+
+// Define secret pentru API key (se încarcă la runtime)
+const resendApiKey = defineSecret("RESEND_API_KEY");
+
+// Helper pentru a obține instanța Resend
+const getResend = () => new Resend(resendApiKey.value());
+
+// Configurare
+const CONFIG = {
+  fromEmail: "BlocApp <noreply@blocapp.ro>",
+  appUrl: "https://app.blocapp.ro",
+  appName: "BlocApp"
+};
+
+// ============================================
+// 📧 TEMPLATE-URI EMAIL
+// ============================================
+
+const emailTemplates = {
+  // Template verificare email
+  verification: (userName, verificationLink) => ({
+    subject: "Verifică-ți adresa de email - BlocApp",
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificare Email - BlocApp</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); padding: 40px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #BFDBFE; font-size: 14px;">Management Asociații de Proprietari</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}! 👋</h2>
+
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Mulțumim că te-ai înregistrat în BlocApp! Pentru a-ți activa contul și a începe să folosești aplicația, te rugăm să îți verifici adresa de email.
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${verificationLink}" style="display: inline-block; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);">
+                  ✅ Verifică adresa de email
+                </a>
+              </div>
+
+              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6;">
+                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
+              </p>
+              <p style="margin: 8px 0 0 0; word-break: break-all;">
+                <a href="${verificationLink}" style="color: #3B82F6; font-size: 12px;">${verificationLink}</a>
+              </p>
+
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #E5E7EB;">
+                <p style="margin: 0; color: #9CA3AF; font-size: 12px;">
+                  ⏰ Acest link expiră în 24 de ore.<br>
+                  Dacă nu ai solicitat acest email, îl poți ignora în siguranță.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  }),
+
+  // Template resetare parolă
+  passwordReset: (userName, resetLink) => ({
+    subject: "Resetare parolă - BlocApp",
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resetare Parolă - BlocApp</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 40px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px;">Resetare Parolă</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}! 🔐</h2>
+
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Am primit o cerere de resetare a parolei pentru contul tău BlocApp. Dacă ai făcut această cerere, apasă butonul de mai jos pentru a-ți seta o parolă nouă.
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+                  🔑 Resetează parola
+                </a>
+              </div>
+
+              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6;">
+                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
+              </p>
+              <p style="margin: 8px 0 0 0; word-break: break-all;">
+                <a href="${resetLink}" style="color: #F59E0B; font-size: 12px;">${resetLink}</a>
+              </p>
+
+              <div style="margin-top: 32px; padding: 16px; background-color: #FEF3C7; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                <p style="margin: 0; color: #92400E; font-size: 14px;">
+                  ⚠️ <strong>Nu ai solicitat resetarea parolei?</strong><br>
+                  Ignoră acest email. Parola ta rămâne neschimbată.
+                </p>
+              </div>
+
+              <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #E5E7EB;">
+                <p style="margin: 0; color: #9CA3AF; font-size: 12px;">
+                  ⏰ Acest link expiră în 1 oră.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  })
+};
+
+// ============================================
+// 📧 FUNCȚII CLOUD
+// ============================================
+
+/**
+ * Trimite email de verificare customizat
+ * Apelat din frontend după crearea contului
+ */
+exports.sendVerificationEmail = onCall(
+  {
+    region: "europe-west1",
+    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    secrets: [resendApiKey]
+  },
+  async (request) => {
+    // Verifică autentificarea
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Trebuie să fii autentificat.");
+    }
+
+    const { email, userName } = request.data;
+    const uid = request.auth.uid;
+
+    try {
+      // Generează link de verificare custom folosind Firebase Admin
+      const verificationLink = await getAuth().generateEmailVerificationLink(email, {
+        url: `${CONFIG.appUrl}/email-verified`,
+        handleCodeInApp: false
+      });
+
+      // Trimite email prin Resend
+      const template = emailTemplates.verification(userName || "Utilizator", verificationLink);
+
+      const { data, error } = await getResend().emails.send({
+        from: CONFIG.fromEmail,
+        to: email,
+        subject: template.subject,
+        html: template.html
+      });
+
+      if (error) {
+        console.error("Resend error:", error);
+        throw new HttpsError("internal", "Eroare la trimiterea emailului.");
+      }
+
+      // Log în Firestore
+      await getFirestore().collection("email_logs").add({
+        type: "verification",
+        userId: uid,
+        email: email,
+        resendId: data.id,
+        sentAt: new Date(),
+        status: "sent"
+      });
+
+      return { success: true, message: "Email de verificare trimis!" };
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      throw new HttpsError("internal", error.message);
+    }
+  }
+);
+
+/**
+ * Trimite email de resetare parolă customizat
+ */
+exports.sendPasswordResetEmail = onCall(
+  {
+    region: "europe-west1",
+    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    secrets: [resendApiKey]
+  },
+  async (request) => {
+    const { email } = request.data;
+
+    if (!email) {
+      throw new HttpsError("invalid-argument", "Email-ul este obligatoriu.");
+    }
+
+    try {
+      // Verifică dacă utilizatorul există
+      let user;
+      try {
+        user = await getAuth().getUserByEmail(email);
+      } catch (e) {
+        // Nu dezvăluim dacă emailul există sau nu (securitate)
+        return { success: true, message: "Dacă acest email există, vei primi instrucțiuni." };
+      }
+
+      // Obține numele din Firestore
+      const userDoc = await getFirestore().collection("users").doc(user.uid).get();
+      const userName = userDoc.exists ?
+        (userDoc.data().profile?.personalInfo?.firstName || userDoc.data().name || "Utilizator") :
+        "Utilizator";
+
+      // Generează link de resetare
+      const resetLink = await getAuth().generatePasswordResetLink(email, {
+        url: `${CONFIG.appUrl}/login`,
+        handleCodeInApp: false
+      });
+
+      // Trimite email prin Resend
+      const template = emailTemplates.passwordReset(userName, resetLink);
+
+      const { data, error } = await getResend().emails.send({
+        from: CONFIG.fromEmail,
+        to: email,
+        subject: template.subject,
+        html: template.html
+      });
+
+      if (error) {
+        console.error("Resend error:", error);
+        throw new HttpsError("internal", "Eroare la trimiterea emailului.");
+      }
+
+      // Log în Firestore
+      await getFirestore().collection("email_logs").add({
+        type: "password_reset",
+        email: email,
+        resendId: data.id,
+        sentAt: new Date(),
+        status: "sent"
+      });
+
+      return { success: true, message: "Email de resetare trimis!" };
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      throw new HttpsError("internal", error.message);
+    }
+  }
+);
+
+/**
+ * Retrimite email de verificare
+ */
+exports.resendVerificationEmail = onCall(
+  {
+    region: "europe-west1",
+    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    secrets: [resendApiKey]
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Trebuie să fii autentificat.");
+    }
+
+    const uid = request.auth.uid;
+
+    try {
+      // Obține datele utilizatorului
+      const user = await getAuth().getUser(uid);
+
+      if (user.emailVerified) {
+        return { success: true, message: "Email-ul este deja verificat!" };
+      }
+
+      // Obține numele din Firestore
+      const userDoc = await getFirestore().collection("users").doc(uid).get();
+      const userName = userDoc.exists ?
+        (userDoc.data().profile?.personalInfo?.firstName || userDoc.data().name || "Utilizator") :
+        "Utilizator";
+
+      // Generează link nou
+      const verificationLink = await getAuth().generateEmailVerificationLink(user.email, {
+        url: `${CONFIG.appUrl}/email-verified`,
+        handleCodeInApp: false
+      });
+
+      // Trimite email
+      const template = emailTemplates.verification(userName, verificationLink);
+
+      const { data, error } = await getResend().emails.send({
+        from: CONFIG.fromEmail,
+        to: user.email,
+        subject: template.subject,
+        html: template.html
+      });
+
+      if (error) {
+        throw new HttpsError("internal", "Eroare la trimiterea emailului.");
+      }
+
+      return { success: true, message: "Email de verificare retrimis!" };
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+      throw new HttpsError("internal", error.message);
+    }
+  }
+);
+
+console.log("✅ BlocApp Cloud Functions loaded");

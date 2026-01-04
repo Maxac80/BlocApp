@@ -4,6 +4,7 @@ import AuthManager from "./components/auth/AuthManager";
 import BlocApp from "./BlocApp";
 import OwnerPortalWrapper from "./components/owner/OwnerPortalWrapper";
 import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
+import EmailVerifiedSuccess from "./components/auth/EmailVerifiedSuccess";
 import { AlertCircle } from "lucide-react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
@@ -66,6 +67,38 @@ function useInviteToken() {
   return token;
 }
 
+/**
+ * Detectează link-uri Firebase Auth (verificare email, resetare parolă)
+ * URL format: ?mode=verifyEmail&oobCode=XXX sau /email-verified
+ */
+function useFirebaseAuthAction() {
+  const [authAction, setAuthAction] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+    const pathname = window.location.pathname;
+
+    // Verifică dacă e link de verificare email
+    if (mode === 'verifyEmail' && oobCode) {
+      return { type: 'verifyEmail', oobCode };
+    }
+
+    // Verifică dacă e link de resetare parolă
+    if (mode === 'resetPassword' && oobCode) {
+      return { type: 'resetPassword', oobCode };
+    }
+
+    // Verifică path-ul /email-verified
+    if (pathname === '/email-verified') {
+      return { type: 'emailVerified' };
+    }
+
+    return null;
+  });
+
+  return authAction;
+}
+
 // Componenta principală care decide ce să afișeze
 function AppContent() {
   const {
@@ -82,6 +115,15 @@ function AppContent() {
 
   // Detectează magic link pentru invitații
   const inviteToken = useInviteToken();
+
+  // Detectează link-uri Firebase Auth (verificare email, resetare parolă)
+  const firebaseAuthAction = useFirebaseAuthAction();
+
+  // 🔗 FIREBASE AUTH ACTION: Verificare email sau resetare parolă
+  // Aceasta are prioritate maximă
+  if (firebaseAuthAction && (firebaseAuthAction.type === 'verifyEmail' || firebaseAuthAction.type === 'emailVerified')) {
+    return <EmailVerifiedSuccess />;
+  }
 
   // 🎫 MAGIC LINK: Afișează pagina de înregistrare pentru proprietari
   // Aceasta are prioritate maximă - chiar și dacă user-ul e logat

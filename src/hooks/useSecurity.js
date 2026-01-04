@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { sendPasswordResetEmail, sendEmailVerification, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { auth, db, cloudFunctions } from '../firebase';
 import { EmailSimulator } from '../utils/emailSimulator';
 
 /**
@@ -282,52 +282,57 @@ export const useSecurity = () => {
     };
   };
 
-  // 📧 TRIMITERE EMAIL RESETARE PAROLĂ CU LOGGING
+  // 📧 TRIMITERE EMAIL RESETARE PAROLĂ CU CLOUD FUNCTIONS + RESEND
   const sendPasswordResetWithLogging = async (email) => {
     try {
-      await sendPasswordResetEmail(auth, email);
-      await logActivity('system', 'PASSWORD_RESET_REQUESTED', { email });
-      
-      // Simulare email în development
-      EmailSimulator.simulatePasswordReset(email);
-      
-      return { success: true };
+      // Folosește Cloud Function pentru email profesionist via Resend
+      const result = await cloudFunctions.sendPasswordResetEmail({ email });
+      await logActivity('system', 'PASSWORD_RESET_REQUESTED', {
+        email,
+        method: 'cloud_function_resend'
+      });
+
+      // Simulare email în development (pentru debugging)
+      if (process.env.NODE_ENV === 'development') {
+        EmailSimulator.simulatePasswordReset(email);
+      }
+
+      return { success: true, message: result.data?.message };
     } catch (error) {
-      await logActivity('system', 'PASSWORD_RESET_FAILED', { 
-        email, 
-        error: error.code 
+      console.error('Error sending password reset email:', error);
+      await logActivity('system', 'PASSWORD_RESET_FAILED', {
+        email,
+        error: error.message || error.code
       });
       throw error;
     }
   };
 
-  // ✉️ TRIMITERE EMAIL VERIFICARE CU LOGGING
-  const sendEmailVerificationWithLogging = async (user) => {
+  // ✉️ TRIMITERE EMAIL VERIFICARE CU CLOUD FUNCTIONS + RESEND
+  const sendEmailVerificationWithLogging = async (user, userName = null) => {
     try {
-      // Configurare pentru email verification cu URL de redirect corect
-      const actionCodeSettings = {
-        // URL unde utilizatorul va fi redirectat după verificare
-        // În producție: app.blocapp.ro, în development: localhost
-        url: process.env.NODE_ENV === 'production'
-          ? 'https://app.blocapp.ro'
-          : 'http://localhost:3000',
-        handleCodeInApp: false // Firebase va gestiona verificarea
-      };
-
-      await sendEmailVerification(user, actionCodeSettings);
-      await logActivity(user.uid, 'EMAIL_VERIFICATION_SENT', {
+      // Folosește Cloud Function pentru email profesionist via Resend
+      const result = await cloudFunctions.sendVerificationEmail({
         email: user.email,
-        redirectUrl: actionCodeSettings.url
+        userName: userName || user.displayName || 'Utilizator'
       });
 
-      // Simulare email în development
-      EmailSimulator.simulateEmailVerification(user);
+      await logActivity(user.uid, 'EMAIL_VERIFICATION_SENT', {
+        email: user.email,
+        method: 'cloud_function_resend'
+      });
 
-      return { success: true };
+      // Simulare email în development (pentru debugging)
+      if (process.env.NODE_ENV === 'development') {
+        EmailSimulator.simulateEmailVerification(user);
+      }
+
+      return { success: true, message: result.data?.message };
     } catch (error) {
+      console.error('Error sending verification email:', error);
       await logActivity(user.uid, 'EMAIL_VERIFICATION_FAILED', {
         email: user.email,
-        error: error.code
+        error: error.message || error.code
       });
       throw error;
     }
