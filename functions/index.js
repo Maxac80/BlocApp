@@ -81,13 +81,6 @@ const emailTemplates = {
                 </tr>
               </table>
 
-              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
-                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
-              </p>
-              <p style="margin: 8px 0 0 0; word-break: break-all;">
-                <a href="${verificationLink}" style="color: #2563EB; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">${verificationLink}</a>
-              </p>
-
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 32px; border-top: 1px solid #E5E7EB;">
                 <tr>
                   <td style="padding-top: 24px;">
@@ -166,13 +159,6 @@ const emailTemplates = {
                   </td>
                 </tr>
               </table>
-
-              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
-                Dacă butonul nu funcționează, copiază și lipește acest link în browser:
-              </p>
-              <p style="margin: 8px 0 0 0; word-break: break-all;">
-                <a href="${resetLink}" style="color: #F59E0B; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">${resetLink}</a>
-              </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 32px;">
                 <tr>
