@@ -23,10 +23,7 @@ export default function EmailVerifiedSuccess() {
   const mode = searchParams.get('mode');
   const oobCode = searchParams.get('oobCode');
 
-  // 🔐 Dacă e resetare parolă, afișăm componenta dedicată
-  if (mode === 'resetPassword') {
-    return <PasswordReset oobCode={oobCode} />;
-  }
+  // 🎣 Toate hook-urile trebuie declarate ÎNAINTE de orice return condiționat
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [errorMessage, setErrorMessage] = useState('');
   const [otherTabDetected, setOtherTabDetected] = useState(false);
@@ -34,6 +31,9 @@ export default function EmailVerifiedSuccess() {
 
   // 📡 Inițializare BroadcastChannel pentru comunicare între tab-uri
   useEffect(() => {
+    // Nu inițializăm BroadcastChannel pentru resetare parolă
+    if (mode === 'resetPassword') return;
+
     if (typeof BroadcastChannel !== 'undefined') {
       channelRef.current = new BroadcastChannel('blocapp-email-verification');
 
@@ -53,9 +53,12 @@ export default function EmailVerifiedSuccess() {
         channelRef.current.close();
       }
     };
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    // Nu verificăm email pentru resetare parolă
+    if (mode === 'resetPassword') return;
+
     const verifyEmail = async () => {
       // Verificare email (mode=verifyEmail)
       if (mode === 'verifyEmail' && oobCode) {
@@ -96,7 +99,12 @@ export default function EmailVerifiedSuccess() {
     };
 
     verifyEmail();
-  }, [mode, oobCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, oobCode]);
+
+  // 🔐 Dacă e resetare parolă, afișăm componenta dedicată (DUPĂ toate hook-urile)
+  if (mode === 'resetPassword') {
+    return <PasswordReset oobCode={oobCode} />;
+  }
 
   // Loading state
   if (status === 'verifying') {
