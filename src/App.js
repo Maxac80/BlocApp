@@ -139,7 +139,7 @@ function AppContent() {
 
   // 🔗 FIREBASE AUTH ACTION: Verificare email sau resetare parolă
   // Aceasta are prioritate maximă
-  if (firebaseAuthAction && (firebaseAuthAction.type === 'verifyEmail' || firebaseAuthAction.type === 'emailVerified')) {
+  if (firebaseAuthAction && (firebaseAuthAction.type === 'verifyEmail' || firebaseAuthAction.type === 'emailVerified' || firebaseAuthAction.type === 'resetPassword')) {
     return <EmailVerifiedSuccess />;
   }
 
