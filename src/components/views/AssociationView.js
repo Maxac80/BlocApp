@@ -322,13 +322,13 @@ const AssociationView = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      <tab.icon className="w-5 h-5" />
+                      <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       {tab.title}
                     </button>
                   ))}
@@ -336,7 +336,7 @@ const AssociationView = ({
               </div>
 
               {/* Tab Content */}
-              <div className="p-8">
+              <div className="p-4 sm:p-6 lg:p-8">
                 {/* Tab 1: Date de Identificare + Sediul Social + Contact */}
                 {activeTab === 'identification' && (
                   <div className="space-y-6">
