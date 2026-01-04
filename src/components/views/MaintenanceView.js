@@ -969,8 +969,8 @@ const MaintenanceView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">🧮 Calcul întreținere</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🧮 Calcul întreținere</h1>
         </div>
 
 
@@ -1023,14 +1023,14 @@ const MaintenanceView = ({
             <div className="pb-2">
               {/* Tab-uri pentru scări */}
               <div className={`sticky top-0 z-10 bg-white rounded-t-xl mb-3 ${(blocks?.length > 1 || stairs?.length > 1) ? 'shadow-md border-b border-gray-200' : ''}`} style={{ position: 'sticky' }}>
-                <div className={`flex items-center ${(blocks?.length > 1 || stairs?.length > 1) ? 'justify-between' : 'justify-end'}`}>
+                <div className={`flex flex-col sm:flex-row sm:items-center ${(blocks?.length > 1 || stairs?.length > 1) ? 'sm:justify-between' : 'sm:justify-end'}`}>
                   {/* Tab-uri scări - stânga - ascunse când avem 1 bloc + 1 scară */}
                   {(blocks?.length > 1 || stairs?.length > 1) && (
                   <div className="flex overflow-x-auto">
                     {/* Tab "Toate" */}
                     <button
                       onClick={() => setSelectedStairTab('all')}
-                      className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
+                      className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
                         selectedStairTab === 'all'
                           ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                           : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1046,7 +1046,7 @@ const MaintenanceView = ({
                         <button
                           key={stair.id}
                           onClick={() => setSelectedStairTab(stair.id)}
-                          className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
                             selectedStairTab === stair.id
                               ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                               : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1060,7 +1060,7 @@ const MaintenanceView = ({
                   )}
 
                   {/* Butoane acțiuni - dreapta */}
-                  <div className="flex items-center gap-3 px-6 pt-4 pb-2">
+                  <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-4 pb-2 flex-wrap">
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
                     {!isMonthReadOnly && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
@@ -1068,7 +1068,7 @@ const MaintenanceView = ({
                           setEditingExpense(null);
                           setShowExpenseEntryModal(true);
                         }}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
                           monthType === 'next'
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -1085,7 +1085,7 @@ const MaintenanceView = ({
                           const result = await publishMonth(currentMonth);
                           console.log('Publish result:', result);
                         }}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2 font-medium shadow-md transition-all hover:shadow-lg text-sm whitespace-nowrap"
+                        className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-purple-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
                       >
                         📋 Publică Luna
                       </button>
@@ -1118,7 +1118,7 @@ const MaintenanceView = ({
                             alert(`❌ Eroare la depublicare: ${error.message}`);
                           }
                         }}
-                        className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2 font-medium shadow-md transition-all hover:shadow-lg text-sm whitespace-nowrap"
+                        className="bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-orange-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
                       >
                         ↩️ Depublică Luna
                       </button>
@@ -1188,22 +1188,22 @@ const MaintenanceView = ({
               <div className="mx-2 mb-2">
                 {filteredMaintenanceData.length > 0 ? (
                   <div className="rounded-xl shadow-lg border-2 border-gray-200 bg-white">
-                    <div className={`p-4 border-b ${
+                    <div className={`p-3 sm:p-4 border-b ${
                       monthType === 'historic'
                         ? 'bg-gray-100'
                         : isMonthReadOnly
                         ? 'bg-blue-50'
                         : 'bg-indigo-50'
                     }`}>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                         <div>
-                          <h3 className={`text-lg font-semibold ${
+                          <h3 className={`text-base sm:text-lg font-semibold ${
                             monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-gray-800' : ''
                           }`}>
                             🧾 Tabel Întreținere
                           </h3>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-2">
                           {/* Buton Ajustări Solduri - doar pentru luna în lucru */}
                           {shouldShowAdjustButton(currentMonth) && !isMonthReadOnly && (
                             <button
@@ -1222,10 +1222,10 @@ const MaintenanceView = ({
                                 setAdjustModalData(modalData);
                                 setShowAdjustBalances(true);
                               }}
-                              className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center"
+                              className="bg-yellow-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-yellow-600 flex items-center text-xs sm:text-sm"
                               title="Ajustează soldurile inițiale"
                             >
-                              <Settings className="w-4 h-4 mr-2" />
+                              <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                               Ajustări Solduri
                             </button>
                           )}
@@ -1234,7 +1234,7 @@ const MaintenanceView = ({
                           {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && isMonthReadOnly && (
                             <button
                               onClick={exportPDFAvizier}
-                              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center"
+                              className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-purple-700 flex items-center text-xs sm:text-sm"
                               title="Exportă PDF pentru avizier (fără nume proprietari)"
                             >
                               📄 Export PDF
@@ -1242,8 +1242,8 @@ const MaintenanceView = ({
                           )}
                           {/* Buton Export PDF Detaliat - doar pentru luna publicată și Tabel Detaliat */}
                           {filteredMaintenanceData.length > 0 && activeMaintenanceTab === "detailed" && isMonthReadOnly && (
-                            <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
-                              <Plus className="w-4 h-4 mr-2" />
+                            <button className="bg-green-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-600 flex items-center text-xs sm:text-sm">
+                              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                               Export PDF Detaliat
                             </button>
                           )}
@@ -1256,7 +1256,7 @@ const MaintenanceView = ({
                       <div className="flex">
                         <button
                           onClick={() => setActiveMaintenanceTab("simple")}
-                          className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
                             activeMaintenanceTab === "simple"
                               ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                               : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1266,7 +1266,7 @@ const MaintenanceView = ({
                         </button>
                         <button
                           onClick={() => setActiveMaintenanceTab("detailed")}
-                          className={`px-6 py-4 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
                             activeMaintenanceTab === "detailed"
                               ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                               : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1316,10 +1316,10 @@ const MaintenanceView = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-white rounded-xl shadow-lg border border-gray-200">
-                    <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nu există date de întreținere</h3>
-                    <p className="text-gray-500">
+                  <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-lg border border-gray-200">
+                    <Calculator className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nu există date de întreținere</h3>
+                    <p className="text-sm sm:text-base text-gray-500 px-4">
                       {areAllExpensesFullyCompleted(getAssociationApartments)
                         ? "Completează toate consumurile pentru a genera tabelul de întreținere."
                         : "Adaugă cheltuieli și completează consumurile pentru a calcula întreținerea."}
@@ -1469,41 +1469,41 @@ const MaintenanceView = ({
 
         {/* Modal pentru cheltuieli disponibile */}
         {showAvailableExpensesModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 50 }}>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4" style={{ zIndex: 50 }}>
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-              <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl">
+              <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">📋 Cheltuieli disponibile</h2>
+                  <h2 className="text-lg sm:text-xl font-bold">📋 Cheltuieli disponibile</h2>
                   <button
                     onClick={() => setShowAvailableExpensesModal(false)}
-                    className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+                    className="text-white hover:bg-white/20 p-1.5 sm:p-2 rounded-lg transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="space-y-2 mb-4">
                   {getAvailableExpenseTypes().map((expense, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={index} className="flex items-center gap-2 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                      <span className="font-medium text-gray-900">{typeof expense === 'string' ? expense : expense.name}</span>
+                      <span className="text-sm sm:text-base font-medium text-gray-900">{typeof expense === 'string' ? expense : expense.name}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-900">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
+                  <p className="text-xs sm:text-sm text-blue-900">
                     💡 Pentru a adăuga sau elimina cheltuieli, accesează secțiunea <strong>Configurare cheltuieli</strong>
                   </p>
                 </div>
               </div>
 
-              <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
+              <div className="p-4 sm:p-6 bg-gray-50 border-t flex justify-end gap-2 sm:gap-3">
                 <button
                   onClick={() => setShowAvailableExpensesModal(false)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Anulează
                 </button>
@@ -1512,9 +1512,9 @@ const MaintenanceView = ({
                     setShowAvailableExpensesModal(false);
                     handleNavigation('expenses');
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                   Configurare cheltuieli
                 </button>
               </div>

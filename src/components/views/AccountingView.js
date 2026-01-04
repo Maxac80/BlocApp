@@ -371,8 +371,8 @@ const AccountingView = ({
           getMonthType={getMonthType}
         />
 
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -380,43 +380,43 @@ const AccountingView = ({
             <div className="flex">
               <button
                 onClick={() => setActiveTab('incasari')}
-                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
                   activeTab === 'incasari'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Receipt className="w-5 h-5" />
+                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
                 Încasări ({stats.totalCount || filteredIncasari.length})
               </button>
               <button
                 onClick={() => setActiveTab('facturi')}
-                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
                   activeTab === 'facturi'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <FileText className="w-5 h-5" />
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                 Facturi ({invoiceStats.total})
               </button>
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'incasari' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Statistici Încasări */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Încasat</p>
-                  <p className="text-2xl font-bold text-gray-800">
+                  <p className="text-xs sm:text-sm text-gray-600">Total Încasat</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-800">
                     {stats.totalAmount.toFixed(2)} lei
                   </p>
                 </div>
-                <TrendingUp className="w-8 h-8 text-blue-500 opacity-50" />
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 opacity-50" />
               </div>
             </div>
           

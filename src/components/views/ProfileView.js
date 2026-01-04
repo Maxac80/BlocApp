@@ -496,21 +496,21 @@ const ProfileView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">👤 Profil Administrator</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">👤 Profil Administrator</h1>
         </div>
 
         {/* Mesaj salvare */}
         {saveMessage && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
+          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg flex items-center text-sm sm:text-base ${
             saveMessage.includes('succes')
               ? 'bg-green-50 border border-green-200 text-green-800'
               : 'bg-red-50 border border-red-200 text-red-800'
           }`}>
             {saveMessage.includes('succes') ? (
-              <CheckCircle className="w-5 h-5 mr-2" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             ) : (
-              <AlertCircle className="w-5 h-5 mr-2" />
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             )}
             {saveMessage}
           </div>

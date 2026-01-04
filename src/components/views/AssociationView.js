@@ -272,17 +272,17 @@ const AssociationView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">🏛️ Date Asociație</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏛️ Date Asociație</h1>
         </div>
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
         {!association && userProfile?.metadata?.onboardingCompleted && (
-          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-8">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 p-4 sm:p-6 rounded-xl mb-6 sm:mb-8">
+            <h3 className="text-base sm:text-lg font-semibold text-yellow-800 mb-2">
               🔄 Se încarcă datele asociației...
             </h3>
-            <p className="text-yellow-700 mb-4">
+            <p className="text-sm sm:text-base text-yellow-700 mb-3 sm:mb-4">
               Asociația ta a fost creată în timpul configurării inițiale. Dacă nu se încarcă în câteva secunde, încearcă să reîmprospătezi pagina.
             </p>
             <button

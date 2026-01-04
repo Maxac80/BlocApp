@@ -201,23 +201,23 @@ const DashboardView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">📊 Dashboard</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Dashboard</h1>
         </div>
 
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
         {!association && userProfile?.metadata?.onboardingCompleted && (
-          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl mb-8">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 p-4 sm:p-6 rounded-xl mb-6 sm:mb-8">
+            <h3 className="text-base sm:text-lg font-semibold text-yellow-800 mb-2">
               🔄 Se încarcă datele asociației...
             </h3>
-            <p className="text-yellow-700 mb-4">
+            <p className="text-sm sm:text-base text-yellow-700 mb-3 sm:mb-4">
               Asociația ta a fost creată în timpul configurării inițiale. Dacă nu se încarcă în câteva secunde, încearcă să reîmprospătezi pagina.
             </p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
-              className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 font-medium"
+              className="bg-yellow-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-yellow-700 text-sm sm:text-base font-medium"
             >
               🔄 Reîmprospătează Pagina
             </button>
@@ -226,16 +226,16 @@ const DashboardView = ({
 
         {/* Dacă există asociație fără apartamente */}
         {association && getAssociationApartments().length === 0 && (
-          <div className="bg-green-50 border border-green-200 p-6 rounded-xl mb-8">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">
+          <div className="bg-green-50 border border-green-200 p-4 sm:p-6 rounded-xl mb-6 sm:mb-8">
+            <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-2">
               ✅ Asociația "{association.name}" a fost creată!
             </h3>
-            <p className="text-green-700 mb-4">
+            <p className="text-sm sm:text-base text-green-700 mb-3 sm:mb-4">
               Acum să adaugăm structura: blocurile, scările și apartamentele.
             </p>
-            <button 
+            <button
               onClick={() => handleNavigation("setup")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+              className="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 text-sm sm:text-base font-medium"
             >
               📋 Configurează Blocurile și Apartamentele
             </button>
@@ -251,28 +251,28 @@ const DashboardView = ({
 
               if (!isCurrentMonthPublished) {
                 return (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
-                        <span className="text-2xl">📊</span>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                        <span className="text-xl sm:text-2xl">📊</span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-amber-800">Tabel Întreținere - {currentMonth}</h3>
-                        <p className="text-amber-700">Va fi disponibil după publicarea acestei luni</p>
+                        <h3 className="text-base sm:text-lg font-semibold text-amber-800">Tabel Întreținere - {currentMonth}</h3>
+                        <p className="text-sm sm:text-base text-amber-700">Va fi disponibil după publicarea acestei luni</p>
                       </div>
                     </div>
-                    <div className="bg-amber-100 rounded-lg p-4 mb-4">
-                      <p className="text-amber-800 font-medium mb-2">📝 Pentru a vedea tabelul de întreținere pentru {currentMonth}:</p>
-                      <ol className="text-amber-700 text-sm space-y-1 ml-4">
+                    <div className="bg-amber-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                      <p className="text-sm sm:text-base text-amber-800 font-medium mb-2">📝 Pentru a vedea tabelul de întreținere pentru {currentMonth}:</p>
+                      <ol className="text-amber-700 text-xs sm:text-sm space-y-1 ml-4">
                         <li>1. Mergi la secțiunea <strong>Întreținere</strong></li>
                         <li>2. Calculează întreținerea pentru {currentMonth}</li>
                         <li>3. Publică luna când este gata</li>
                         <li>4. Tabelul va apărea aici în Dashboard</li>
                       </ol>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleNavigation("maintenance")}
-                      className="bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                      className="bg-amber-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-amber-700 transition-colors text-sm sm:text-base font-medium"
                     >
                       📊 Mergi la Întreținere
                     </button>
