@@ -125,18 +125,14 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
         formData.password,
         formData.rememberMe
       );
-      
-      // Reset form pe succes
-      setFormData({
-        email: '',
-        password: '',
-        rememberMe: false
-      });
-      
+
+      // NU resetăm formularul - lăsăm Chrome să captureze credențialele
+      // Componenta se va unmount oricum după login reușit
+
       if (onSuccess) {
         onSuccess(result);
       }
-      
+
     } catch (error) {
       console.error('❌ Login error:', error);
       // Error-ul este gestionat automat de AuthContext
@@ -230,7 +226,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
           )}
 
           {/* 📝 FORMULAR */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} method="post" className="space-y-6">
             
             {/* 📧 EMAIL INPUT */}
             <div>
