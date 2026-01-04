@@ -2,21 +2,31 @@ import React, { useEffect, useState, useRef } from 'react';
 import { CheckCircle, ArrowRight, Loader2, X } from 'lucide-react';
 import { applyActionCode } from 'firebase/auth';
 import { auth } from '../../firebase';
+import PasswordReset from './PasswordReset';
 
 /**
- * 🎉 PAGINĂ SUCCES VERIFICARE EMAIL
+ * 🎉 PAGINĂ ACȚIUNI EMAIL (Verificare & Resetare Parolă)
  *
- * Landing page frumos pentru când utilizatorul
- * își verifică emailul prin link-ul din email
+ * Handler pentru link-urile din email-uri Firebase:
+ * - mode=verifyEmail → Verificare email
+ * - mode=resetPassword → Resetare parolă
  *
  * Features:
  * - Verifică emailul folosind oobCode din URL
+ * - Resetare parolă cu formular pentru parolă nouă
  * - Broadcast către alte tab-uri că emailul a fost verificat
  * - Detectează dacă există alt tab deschis și oferă opțiunea de a închide
  */
 export default function EmailVerifiedSuccess() {
   // Folosim window.location în loc de react-router
   const searchParams = new URLSearchParams(window.location.search);
+  const mode = searchParams.get('mode');
+  const oobCode = searchParams.get('oobCode');
+
+  // 🔐 Dacă e resetare parolă, afișăm componenta dedicată
+  if (mode === 'resetPassword') {
+    return <PasswordReset oobCode={oobCode} />;
+  }
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [errorMessage, setErrorMessage] = useState('');
   const [otherTabDetected, setOtherTabDetected] = useState(false);
@@ -47,10 +57,7 @@ export default function EmailVerifiedSuccess() {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      // Obține codul de verificare din URL (Firebase îl pune ca oobCode)
-      const oobCode = searchParams.get('oobCode');
-      const mode = searchParams.get('mode');
-
+      // Verificare email (mode=verifyEmail)
       if (mode === 'verifyEmail' && oobCode) {
         try {
           // Aplică codul de verificare
@@ -82,9 +89,6 @@ export default function EmailVerifiedSuccess() {
             setErrorMessage('A apărut o eroare la verificarea emailului.');
           }
         }
-      } else if (mode === 'resetPassword') {
-        // Redirect la pagina de resetare parolă (pentru viitoare implementare)
-        window.location.href = '/';
       } else {
         // Dacă nu e un link valid, afișăm succes (poate e redirect după verificare)
         setStatus('success');
@@ -92,7 +96,7 @@ export default function EmailVerifiedSuccess() {
     };
 
     verifyEmail();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, oobCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Loading state
   if (status === 'verifying') {
