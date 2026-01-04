@@ -520,6 +520,16 @@ export const useUserProfile = () => {
         completionPercentage: profileCompletion
       });
 
+      // 📡 Broadcast către alte tab-uri că onboarding-ul s-a completat
+      if (typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel('blocapp-session-sync');
+        channel.postMessage({
+          type: 'ONBOARDING_COMPLETED',
+          userId: userId
+        });
+        channel.close();
+      }
+
       return true;
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);

@@ -110,6 +110,24 @@ function AppContent() {
     logoutEnhanced
   } = useAuthEnhanced();
 
+  // 📡 BROADCAST CHANNEL - Sincronizare între tab-uri
+  // Detectează când onboarding-ul s-a completat în alt tab și reîncarcă pagina
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+
+    const channel = new BroadcastChannel('blocapp-session-sync');
+
+    channel.onmessage = (event) => {
+      // Când onboarding-ul s-a completat în alt tab, reîncarcă pentru a sincroniza starea
+      if (event.data.type === 'ONBOARDING_COMPLETED') {
+        console.log('📡 Onboarding completed in another tab, reloading...');
+        window.location.reload();
+      }
+    };
+
+    return () => channel.close();
+  }, []);
+
   // Detectează modul din URL (?mode=owner)
   const appMode = useAppMode();
 
