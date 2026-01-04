@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
   updateProfile,
   sendEmailVerification,
-  reload
+  reload,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -136,14 +139,20 @@ export function AuthProviderEnhanced({ children }) {
     try {
       setLoading(true);
       setAuthError(null);
-      
+
       // Verifică limitările de login
       const loginCheck = await security.checkLoginAttempts(email);
       if (loginCheck.blocked) {
         throw new Error(`Contul este temporar blocat. Încercări rămasă până la deblocare: ${Math.ceil(loginCheck.remainingTime / 60000)} minute.`);
       }
-      
+
       try {
+        // 🔐 Setează persistența bazată pe "Ține-mă conectat"
+        // browserLocalPersistence = persistă după închiderea browser-ului
+        // browserSessionPersistence = se șterge când tab-ul/browser-ul se închide
+        const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistenceType);
+
         // Încearcă autentificarea
         const result = await signInWithEmailAndPassword(auth, email, password);
         const user = result.user;
