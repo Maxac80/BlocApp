@@ -100,11 +100,49 @@ export default function EmailVerification({ onVerified, onSkip, user }) {
     };
 
     window.addEventListener('emailVerificationSimulated', handleEmailVerificationSimulated);
-    
+
     return () => {
       window.removeEventListener('emailVerificationSimulated', handleEmailVerificationSimulated);
     };
   }, [onVerified]);
+
+  // 📡 BROADCAST CHANNEL - Comunicare între tab-uri
+  // Când utilizatorul verifică emailul în alt tab, primim notificare instant
+  useEffect(() => {
+    // Verificăm dacă BroadcastChannel este suportat (toate browserele moderne)
+    if (typeof BroadcastChannel === 'undefined') {
+      console.log('BroadcastChannel not supported, using polling only');
+      return;
+    }
+
+    const channel = new BroadcastChannel('blocapp-email-verification');
+
+    channel.onmessage = async (event) => {
+      // Răspundem la ping pentru a confirma că tab-ul există
+      if (event.data.type === 'PING_TABS') {
+        channel.postMessage({ type: 'TAB_ACKNOWLEDGED' });
+      }
+
+      // Detectăm când emailul a fost verificat în alt tab
+      if (event.data.type === 'EMAIL_VERIFIED' && event.data.email === user?.email) {
+        console.log('📡 Email verification detected from another tab!');
+
+        // Reîncarcă starea auth pentru a confirma
+        try {
+          const isVerified = await checkEmailVerification();
+          if (isVerified && onVerified) {
+            onVerified();
+          }
+        } catch (error) {
+          console.error('Error confirming email verification:', error);
+        }
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, [user?.email, checkEmailVerification, onVerified]);
 
   // 🔄 VERIFICARE MANUALĂ EMAIL
   const handleManualCheck = async () => {

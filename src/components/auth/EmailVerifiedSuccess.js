@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { CheckCircle, ArrowRight, Loader2, X } from 'lucide-react';
 import { applyActionCode } from 'firebase/auth';
 import { auth } from '../../firebase';
 
@@ -8,12 +8,42 @@ import { auth } from '../../firebase';
  *
  * Landing page frumos pentru când utilizatorul
  * își verifică emailul prin link-ul din email
+ *
+ * Features:
+ * - Verifică emailul folosind oobCode din URL
+ * - Broadcast către alte tab-uri că emailul a fost verificat
+ * - Detectează dacă există alt tab deschis și oferă opțiunea de a închide
  */
 export default function EmailVerifiedSuccess() {
   // Folosim window.location în loc de react-router
   const searchParams = new URLSearchParams(window.location.search);
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [errorMessage, setErrorMessage] = useState('');
+  const [otherTabDetected, setOtherTabDetected] = useState(false);
+  const channelRef = useRef(null);
+
+  // 📡 Inițializare BroadcastChannel pentru comunicare între tab-uri
+  useEffect(() => {
+    if (typeof BroadcastChannel !== 'undefined') {
+      channelRef.current = new BroadcastChannel('blocapp-email-verification');
+
+      // Ascultăm pentru răspuns de la alte tab-uri
+      channelRef.current.onmessage = (event) => {
+        if (event.data.type === 'TAB_ACKNOWLEDGED') {
+          setOtherTabDetected(true);
+        }
+      };
+
+      // Trimitem un ping pentru a detecta dacă există alte tab-uri
+      channelRef.current.postMessage({ type: 'PING_TABS' });
+    }
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -30,6 +60,15 @@ export default function EmailVerifiedSuccess() {
           // Reîmprospătează token-ul pentru a reflecta emailVerified
           if (auth.currentUser) {
             await auth.currentUser.reload();
+
+            // 📡 Broadcast către alte tab-uri că emailul a fost verificat
+            if (channelRef.current) {
+              channelRef.current.postMessage({
+                type: 'EMAIL_VERIFIED',
+                email: auth.currentUser.email
+              });
+              // Tab-ul original va primi acest mesaj și va face redirect automat
+            }
           }
         } catch (error) {
           console.error('Email verification error:', error);
@@ -147,14 +186,45 @@ export default function EmailVerifiedSuccess() {
           </ul>
         </div>
 
-        {/* Buton continuare */}
-        <button
-          onClick={() => window.location.href = '/'}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
-        >
-          Continuă spre aplicație
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </button>
+        {/* Mesaj special când există alt tab deschis */}
+        {otherTabDetected && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-blue-900">
+                  Tab-ul original a fost actualizat automat!
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Poți închide acest tab și continua în fereastra originală.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Butoane */}
+        <div className="space-y-3">
+          {otherTabDetected && (
+            <button
+              onClick={() => window.close()}
+              className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center"
+            >
+              <X className="w-5 h-5 mr-2" />
+              Închide acest tab
+            </button>
+          )}
+
+          <button
+            onClick={() => window.location.href = '/'}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
+          >
+            {otherTabDetected ? 'Sau continuă aici' : 'Continuă spre aplicație'}
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </button>
+        </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-500 mt-6">
