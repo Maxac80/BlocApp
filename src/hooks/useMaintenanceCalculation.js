@@ -109,22 +109,6 @@ const useMaintenanceCalculation = ({
             const payments = publishedSheet.payments || [];
             const apartmentPayments = payments.filter(p => p.apartmentId === apartmentId);
 
-            console.log(`🔍 DEBUG CAZ 2 - Plăți pentru Ap. ${apartmentRow.apartment} (${apartmentRow.owner}):`, {
-              apartmentId,
-              apartmentNumber: apartmentRow.apartment,
-              owner: apartmentRow.owner,
-              totalPaymentsInSheet: payments.length,
-              apartmentPaymentsCount: apartmentPayments.length,
-              apartmentPayments: apartmentPayments.map(p => ({
-                id: p.id,
-                apartmentId: p.apartmentId,
-                apartmentNumber: p.apartmentNumber,
-                amount: p.amount,
-                total: p.total
-              })),
-              allPaymentsApartmentIds: payments.map(p => ({ aptId: p.apartmentId, aptNum: p.apartmentNumber }))
-            });
-
             // CORECȚIE: Separă întreținerea curentă de restanțe și penalități vechi
             const currentMaintenance = apartmentRow.currentMaintenance || 0;
             const restanteVechi = apartmentRow.restante || 0;
@@ -144,20 +128,6 @@ const useMaintenanceCalculation = ({
 
             const totalPaid = totalPaidRestante + totalPaidIntretinere + totalPaidPenalitati;
 
-            console.log(`📊 CAZ 2 - Transfer solduri pentru ${apartmentRow.apartment}:`, {
-              apartmentId,
-              currentMaintenance,
-              restanteVechi,
-              penalitatiVechi,
-              totalPaid,
-              platiDetaliate: {
-                restante: totalPaidRestante,
-                intretinere: totalPaidIntretinere,
-                penalitati: totalPaidPenalitati
-              },
-              totalDatorat: apartmentRow.totalDatorat
-            });
-
             // Calculează ce a rămas de plătit pentru fiecare categorie
             const restanteRamase = Math.max(0, restanteVechi - totalPaidRestante);
             const intretinereRamasa = Math.max(0, currentMaintenance - totalPaidIntretinere);
@@ -165,28 +135,6 @@ const useMaintenanceCalculation = ({
 
             // Restanțele pentru luna următoare = restanțe vechi neplătite + întreținere neplătită din luna curentă
             const restanteTotale = restanteRamase + intretinereRamasa;
-
-            console.log(`💰 Calcul restanțe FINAL pentru Ap. ${apartmentRow.apartment} (${apartmentRow.owner}):`, {
-              restanteVechi,
-              currentMaintenance,
-              penalitatiVechi,
-              totalPaid,
-              platiPeCategorie: {
-                restante: totalPaidRestante,
-                intretinere: totalPaidIntretinere,
-                penalitati: totalPaidPenalitati
-              },
-              rezultatCalcul: {
-                restanteRamase,
-                intretinereRamasa,
-                restanteTotale,
-                penalitatiRamase
-              },
-              RETURN_VALUE: {
-                restante: Math.round(restanteTotale * 100) / 100,
-                penalitati: Math.round(penalitatiRamase * 100) / 100
-              }
-            });
 
             return {
               restante: Math.round(restanteTotale * 100) / 100,
@@ -248,18 +196,7 @@ const useMaintenanceCalculation = ({
       return {}; // Nu e cheltuială pe consum
     }
 
-    const config = getExpenseConfig ? getExpenseConfig(expense) : null;  // Trimite obiectul complet pentru expenseTypeId
-    console.log('🟡 calculateExpenseDifferences - EXPENSE INFO:', {
-      expenseName: expense.name,
-      expenseTypeId: expense.expenseTypeId,
-      expenseType: expense.expenseType,
-      expenseId: expense.id
-    });
-    console.log('🟡 calculateExpenseDifferences - CONFIG LOADED:', {
-      configInputMode: config?.indexConfiguration?.inputMode,
-      configFullIndexConfiguration: config?.indexConfiguration,
-      fullConfig: config
-    });
+    const config = getExpenseConfig ? getExpenseConfig(expense) : null;
 
     // Configurație default pentru diferență dacă nu există
     const differenceConfig = config?.differenceDistribution || {
@@ -268,16 +205,6 @@ const useMaintenanceCalculation = ({
       includeExcludedInDifference: false,
       includeFixedAmountInDifference: false
     };
-
-    console.log('🔍 calculateExpenseDifferences START:', {
-      expenseName: expense.name,
-      unitPrice: expense.unitPrice,
-      billAmount: expense.billAmount,
-      differenceMethod: differenceConfig.method,
-      expenseId: expense.id,
-      expenseTypeId: expense.expenseTypeId,
-      configApartmentParticipation: config?.apartmentParticipation
-    });
 
     // Determină nivelul de introducere sume
     let receptionMode = expense.receptionMode || 'per_association';
@@ -300,7 +227,6 @@ const useMaintenanceCalculation = ({
       const participation = config?.apartmentParticipation?.[apt.id];
       if (participation?.type === 'excluded') {
         apartmentConsumptions[apt.id] = 0;
-        console.log(`🔵 Apt ${apt.id} este EXCLUS - consum forțat la 0`);
         return;
       }
 
@@ -309,7 +235,7 @@ const useMaintenanceCalculation = ({
       // Verifică modul de introducere date din configurație
       const inputMode = config?.indexConfiguration?.inputMode || 'manual';
 
-      // Verifică dacă are indecși VALIDI (cu valori completate)
+      // Verifică dacă are indecși VALIZI (cu valori completate)
       const indexes = expense.indexes?.[apt.id];
       let hasValidIndexes = false;
       if (indexes && Object.keys(indexes).length > 0) {
@@ -318,14 +244,6 @@ const useMaintenanceCalculation = ({
           indexData.newIndex && indexData.oldIndex
         );
       }
-
-      console.log(`🔵 Apt ${apt.id}:`, {
-        inputMode,
-        hasIndexesObject: !!indexes,
-        indexesKeys: indexes ? Object.keys(indexes) : [],
-        hasValidIndexes,
-        manualConsumption: expense.consumption?.[apt.id]
-      });
 
       if (inputMode === 'indexes') {
         // Pentru indexes mode, folosește DOAR indecșii, ignoră consumption
@@ -336,8 +254,6 @@ const useMaintenanceCalculation = ({
             }
           });
         }
-        // Altfel rămâne 0
-        console.log(`🔵 Apt ${apt.id} folosește INDECȘI (indexes mode): ${aptConsumption}`);
       } else if (hasValidIndexes) {
         // Pentru manual/mixed mode cu indecși valizi, folosește indecșii
         Object.values(indexes).forEach(indexData => {
@@ -345,19 +261,15 @@ const useMaintenanceCalculation = ({
             aptConsumption += parseFloat(indexData.newIndex) - parseFloat(indexData.oldIndex);
           }
         });
-        console.log(`🔵 Apt ${apt.id} folosește INDECȘI: ${aptConsumption}`);
       } else {
         // Pentru manual/mixed mode fără indecși valizi, folosește consumption
         aptConsumption = parseFloat(expense.consumption?.[apt.id] || 0);
-        console.log(`🔵 Apt ${apt.id} folosește MANUAL: ${aptConsumption}`);
       }
 
       apartmentConsumptions[apt.id] = aptConsumption;
     });
 
-    console.log('🔍 Consumuri calculate:', apartmentConsumptions);
     const totalConsumption = Object.values(apartmentConsumptions).reduce((sum, c) => sum + c, 0);
-    console.log('🔍 Total consum:', totalConsumption);
 
     // 2. Grupează apartamentele pe nivelul de introducere (scară/bloc/total)
     const apartmentGroups = {};
@@ -450,31 +362,13 @@ const useMaintenanceCalculation = ({
       // 3.3 Calculează diferența pentru acest grup
       const groupDifference = expectedAmount - totalAfterParticipation;
 
-      console.log('🔍 Calcul diferență grup:', {
-        groupKey,
-        expectedAmount,
-        totalAfterParticipation,
-        groupDifference
-      });
-
       if (Math.abs(groupDifference) < 1) {
-        console.log('⚠️ Diferență neglijabilă, skip');
         return; // Diferența e neglijabilă pentru acest grup
       }
 
       // 3.4 Filtrează apartamentele din grup care participă la diferență
       const participatingApartments = groupApartments.filter(apt => {
         const participation = config?.apartmentParticipation?.[apt.id];
-
-        console.log(`🔍 Apt ${apt.id} (${apt.number}) participation check:`, {
-          apartmentId: apt.id,
-          participation,
-          participationType: participation?.type,
-          includeExcluded: differenceConfig.includeExcludedInDifference,
-          includeFixed: differenceConfig.includeFixedAmountInDifference,
-          willParticipate: !(participation?.type === 'excluded' && !differenceConfig.includeExcludedInDifference) &&
-                          !(participation?.type === 'fixed' && !differenceConfig.includeFixedAmountInDifference)
-        });
 
         // Exclude apartamentele excluse dacă nu e bifat includeExcludedInDifference
         if (participation?.type === 'excluded' && !differenceConfig.includeExcludedInDifference) {
@@ -555,8 +449,6 @@ const useMaintenanceCalculation = ({
 
         groupDifferenceByApartment[apt.id] = apartmentShare;
       });
-
-      console.log('🔍 Diferență distribuită (before adjustment):', groupDifferenceByApartment);
 
       // PASUL 2: Aplică ajustările (participation sau apartmentType) cu REPONDERARE
       if (differenceConfig.adjustmentMode === 'participation') {

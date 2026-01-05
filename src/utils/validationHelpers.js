@@ -61,12 +61,17 @@ export const validateConsumptionsComplete = (expenses, maintenanceTable) => {
   const unitBasedExpenses = expenses.filter(exp => exp.isUnitBased === true);
 
   unitBasedExpenses.forEach(expense => {
+    // Folosește aceeași cheie ca în useMaintenanceCalculation
+    const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+
     // Check each apartment in maintenance table
     maintenanceTable.forEach(row => {
-      const expenseDetail = row.expenseDetails?.[expense.name];
+      const expenseDetail = row.expenseDetails?.[expenseKey];
+      // Handle both object format { amount, name, expense } and legacy number format
+      const amount = typeof expenseDetail === 'object' ? expenseDetail?.amount : expenseDetail;
 
       // If expense detail is missing or zero for unit-based expense, it's incomplete
-      if (expenseDetail === undefined || expenseDetail === null || expenseDetail === 0) {
+      if (amount === undefined || amount === null || amount === 0) {
         missingConsumptions.push({
           expenseName: expense.name,
           apartment: row.apartment,

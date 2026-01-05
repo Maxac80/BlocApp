@@ -74,25 +74,12 @@ const useExpenseConfigurations = (currentSheet) => {
       }
     }
 
-    console.log('🔵 getExpenseConfig - INPUT:', {
-      expenseTypeId,
-      expenseTypeName,
-      configurationsKeys: Object.keys(configurations),
-      fullExpenseObject: typeof expenseOrTypeOrId === 'object' ? expenseOrTypeOrId : null
-    });
-
-    // Încearcă să găsește configurația în Firestore
+    // Încearcă să găsească configurația în Firestore
     // Prioritate: 1) după ID (nou), 2) după nume (backwards compatibility)
     let firestoreConfig = expenseTypeId ? configurations[expenseTypeId] : null;
     if (!firestoreConfig && expenseTypeName) {
       firestoreConfig = configurations[expenseTypeName];
     }
-
-    console.log('🔵 getExpenseConfig - FOUND CONFIG:', {
-      foundByKey: firestoreConfig ? (expenseTypeId && configurations[expenseTypeId] ? expenseTypeId : expenseTypeName) : 'NOT FOUND',
-      firestoreConfigKeys: firestoreConfig ? Object.keys(firestoreConfig) : null,
-      indexConfiguration: firestoreConfig?.indexConfiguration
-    });
 
     // Obține participările apartamentelor pentru acest tip de cheltuială
     const allParticipations = currentSheet?.configSnapshot?.apartmentParticipations || {};
@@ -189,22 +176,13 @@ const useExpenseConfigurations = (currentSheet) => {
         }
       }
 
-      const returnValue = {
+      return {
         ...firestoreConfig,
-        id: expenseTypeId,  // Include ID-ul
-        name: expenseTypeName || firestoreConfig.name,  // Include numele
+        id: expenseTypeId,
+        name: expenseTypeName || firestoreConfig.name,
         apartmentParticipation,
         differenceDistribution
       };
-
-      console.log('🟢 getExpenseConfig - RETURN (FIRESTORE):', {
-        name: returnValue.name,
-        id: returnValue.id,
-        indexConfiguration: returnValue.indexConfiguration,
-        allKeys: Object.keys(returnValue)
-      });
-
-      return returnValue;
     }
 
     // Altfel, folosește configurația default din expenseTypes
@@ -215,9 +193,9 @@ const useExpenseConfigurations = (currentSheet) => {
     const defaultInvoiceEntryMode = defaultType?.invoiceEntryMode || 'single';
     const defaultReceptionMode = defaultType?.receptionMode || 'per_association';
 
-    const defaultReturnValue = {
-      id: defaultType?.id,  // Include ID-ul în configurație
-      name: defaultType?.name,  // Include numele pentru afișare
+    return {
+      id: defaultType?.id,
+      name: defaultType?.name,
       distributionType: defaultDistribution,
       invoiceEntryMode: defaultInvoiceEntryMode,
       receptionMode: defaultReceptionMode,
@@ -227,15 +205,6 @@ const useExpenseConfigurations = (currentSheet) => {
       contactPerson: '',
       apartmentParticipation
     };
-
-    console.log('🟢 getExpenseConfig - RETURN (DEFAULT):', {
-      name: defaultReturnValue.name,
-      id: defaultReturnValue.id,
-      indexConfiguration: defaultReturnValue.indexConfiguration,
-      allKeys: Object.keys(defaultReturnValue)
-    });
-
-    return defaultReturnValue;
   }, [configurations, suppliers, currentSheet]);
 
   const updateExpenseConfig = useCallback(async (expenseType, config) => {

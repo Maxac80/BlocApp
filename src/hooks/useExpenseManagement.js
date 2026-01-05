@@ -77,28 +77,12 @@ export const useExpenseManagement = ({
       return defaultExpenseTypes;
     }
 
-    console.log('📋 getAssociationExpenseTypes - Reading from:', {
-      currentSheetId: currentSheet?.id,
-      currentSheetMonth: currentSheet?.monthYear,
-      currentSheetStatus: currentSheet?.status,
-      hasExpenseConfigurations: !!expenseConfigurations,
-      expenseConfigurationsCount: Object.keys(expenseConfigurations || {}).length,
-      currentSheetConfigCount: Object.keys(currentSheet?.configSnapshot?.expenseConfigurations || {}).length
-    });
-
     // 🆕 UNIFIED STRUCTURE: Pentru published/archived sheets, folosește DOAR currentSheet.configSnapshot (locked data)
     // Pentru IN_PROGRESS sheets, folosește expenseConfigurations (live state) sau fallback la currentSheet
     const isLockedSheet = currentSheet?.status === 'published' || currentSheet?.status === 'archived';
     const configs = isLockedSheet
       ? (currentSheet?.configSnapshot?.expenseConfigurations || {})
       : (expenseConfigurations || currentSheet?.configSnapshot?.expenseConfigurations || {});
-
-    console.log('📋 Using configs from:', {
-      isLockedSheet,
-      currentSheetStatus: currentSheet?.status,
-      source: isLockedSheet ? 'currentSheet.configSnapshot (locked)' : 'expenseConfigurations (live state)',
-      configsCount: Object.keys(configs).length
-    });
 
     // Dacă nu există configurații (sheet vechi), folosește logica veche (backwards compatibility)
     if (Object.keys(configs).length === 0) {
@@ -270,9 +254,7 @@ export const useExpenseManagement = ({
   const areAllExpensesFullyCompleted = useCallback((getAssociationApartments) => {
     if (!association?.id || !getAssociationApartments || !currentSheet) return false;
 
-    // 🆕 SHEET-BASED: Folosim cheltuielile din sheet, nu din global expenses
     const sheetExpenses = currentSheet.expenses || [];
-
     if (sheetExpenses.length === 0) return false;
 
     const apartments = getAssociationApartments();
@@ -281,28 +263,83 @@ export const useExpenseManagement = ({
     // Verifică fiecare cheltuială să fie complet completată
     const result = sheetExpenses.every(expense => {
       const expenseSettings = getExpenseConfig(expense.name);
+      const distributionType = expenseSettings.distributionType;
+      const isConsumption = distributionType === "consumption";
+      const isIndividual = distributionType === "individual";
 
-      const apartmentResults = apartments.map(apartment => {
-        const participation = expense.config?.apartmentParticipation?.[apartment.id];
+      // Pentru cheltuieli de tip apartment/person/cotaParte - nu e nevoie de date per apartament
+      // Sunt complete dacă au suma setată (isDistributed este setat la adăugare)
+      if (!isConsumption && !isIndividual) {
+        // Cheltuiala a fost adăugată = este completă (suma a fost setată la adăugare)
+        return expense.isDistributed === true ||
+               (expense.amount && expense.amount > 0) ||
+               (expense.billAmount && expense.billAmount > 0) ||
+               (expense.amountsByBlock && Object.values(expense.amountsByBlock).some(v => v > 0)) ||
+               (expense.amountsByStair && Object.values(expense.amountsByStair).some(v => v > 0));
+      }
 
-        // Apartamentele excluse sunt considerate OK
-        if (participation?.type === 'excluded') {
-          return true;
-        }
-
-        if (expenseSettings.distributionType === "individual") {
-          const value = expense.individualAmounts?.[apartment.id];
-          return value !== undefined && parseFloat(value) >= 0;
-        } else if (expenseSettings.distributionType === "consumption") {
-          const value = expense.consumption?.[apartment.id];
-          return value !== undefined && parseFloat(value) >= 0;
-        } else {
-          // Pentru cheltuieli pe apartament, nu trebuie verificate consumuri
-          return true;
-        }
+      // Pentru consumption și individual - verifică date per apartament
+      const apartmentParticipations = expenseSettings.apartmentParticipation || expense.config?.apartmentParticipation || {};
+      const nonExcludedApartments = apartments.filter(apt => {
+        const participation = apartmentParticipations[apt.id];
+        return participation?.type !== 'excluded';
       });
 
-      return apartmentResults.every(r => r);
+      if (nonExcludedApartments.length === 0) return true;
+
+      const inputMode = expenseSettings.indexConfiguration?.inputMode || 'manual';
+      const indexTypes = expenseSettings.indexConfiguration?.indexTypes || [];
+      const hasIndexConfig = expenseSettings.indexConfiguration?.enabled && indexTypes.length > 0;
+
+      let completed = 0;
+
+      if (isConsumption && hasIndexConfig && inputMode !== 'manual') {
+        // Modul INDECȘI sau MIXT: verifică indexurile
+        const indexesData = expense.indexes || {};
+
+        completed = nonExcludedApartments.filter(apt => {
+          const apartmentIndexes = indexesData[apt.id] || {};
+
+          if (inputMode === 'indexes') {
+            return indexTypes.some(indexType => {
+              const indexData = apartmentIndexes[indexType.id];
+              const oldVal = indexData?.oldIndex;
+              const newVal = indexData?.newIndex;
+              const hasOld = oldVal !== undefined && oldVal !== null && String(oldVal).trim() !== '';
+              const hasNew = newVal !== undefined && newVal !== null && String(newVal).trim() !== '';
+              return hasOld && hasNew;
+            });
+          } else if (inputMode === 'mixed') {
+            const hasIndexes = indexTypes.some(indexType => {
+              const indexData = apartmentIndexes[indexType.id];
+              const oldVal = indexData?.oldIndex;
+              const newVal = indexData?.newIndex;
+              const hasOld = oldVal !== undefined && oldVal !== null && String(oldVal).trim() !== '';
+              const hasNew = newVal !== undefined && newVal !== null && String(newVal).trim() !== '';
+              return hasOld && hasNew;
+            });
+
+            if (hasIndexes) return true;
+
+            const value = expense.consumption?.[apt.id];
+            return value !== undefined && parseFloat(value) >= 0;
+          }
+
+          return false;
+        }).length;
+      } else {
+        // Modul MANUAL sau individual: verifică consumption/individualAmounts
+        const dataObject = isConsumption
+          ? (expense.consumption || {})
+          : (expense.individualAmounts || {});
+
+        completed = nonExcludedApartments.filter(apt => {
+          const value = dataObject[apt.id];
+          return value !== undefined && parseFloat(value) >= 0;
+        }).length;
+      }
+
+      return completed === nonExcludedApartments.length;
     });
 
     return result;
@@ -311,36 +348,16 @@ export const useExpenseManagement = ({
   // ➕ ADĂUGAREA CHELTUIELILOR - OPTIMIZAT (cu factură)
   // NOTE: NU folosim useCallback aici pentru a evita probleme cu parametrii
   const addExpenseInternal = async (expenseDataParam, addInvoiceFn = null, invoiceFunctions = null) => {
-    console.log('🔥 handleAddExpense RAW params:', {
-      param1: expenseDataParam,
-      param1Type: typeof expenseDataParam,
-      param2: addInvoiceFn,
-      param2Type: typeof addInvoiceFn
-    });
-
     // Primește datele direct ca prim parametru
     const expenseData = expenseDataParam;
 
-    console.log('🔥 handleAddExpense START:', {
-      expenseData,
-      hasName: !!expenseData?.name,
-      hasAssociation: !!association
-    });
-
     if (!expenseData?.name || !association) {
-      console.log('❌ Validation failed:', {
-        expenseDataName: expenseData?.name,
-        hasAssociation: !!association
-      });
       return false;
     }
 
     const expenseSettings = getExpenseConfig(expenseData.name);
     const isConsumptionBased = expenseSettings.distributionType === "consumption";
     const isIndividualBased = expenseSettings.distributionType === "individual";
-
-    console.log('🔥 Expense settings:', { expenseSettings, isConsumptionBased, isIndividualBased });
-    console.log('🔥 Expense data received:', expenseData);
 
     // Calculează amount-ul total bazat pe receptionMode
     let totalAmount = 0;
@@ -359,8 +376,6 @@ export const useExpenseManagement = ({
       totalAmount = parseFloat(expenseData.billAmount);
     }
 
-    console.log('🔥 Calculated total amount:', totalAmount);
-
     // Validări actualizate
     if (isConsumptionBased && (!expenseData.unitPrice || !expenseData.billAmount)) {
       alert("Pentru cheltuielile pe consum trebuie să introduci atât prețul pe unitate cât și totalul facturii!");
@@ -378,10 +393,6 @@ export const useExpenseManagement = ({
     }
 
     try {
-      console.log('💾 useExpenseManagement - handleAddExpense received expenseData:', expenseData);
-      console.log('💾 expenseData.invoiceData:', expenseData.invoiceData);
-      console.log('💾 expenseData.separateInvoicesData:', expenseData.separateInvoicesData);
-
       // 1. Adaugă cheltuiala lunară
       const expensePayload = {
         name: expenseData.name,

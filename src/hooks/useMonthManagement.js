@@ -375,20 +375,15 @@ export const useMonthManagement = (associationId) => {
     // CONDIȚIA 1: Toate cheltuielile active trebuie să fie adăugate
     if (typeof getAvailableExpenseTypes === 'function') {
       const availableExpenses = getAvailableExpenseTypes();
-      // console.log('   Available expense types to add:', availableExpenses.length);
       if (availableExpenses.length > 0) {
-        // console.log('   ❌ FAILED: Still have expenses to add:', availableExpenses);
         return false;
       }
     }
 
     // CONDIȚIA 2: Toate cheltuielile adăugate trebuie să fie complet completate
     if (typeof areAllExpensesFullyCompleted === 'function' && typeof getAssociationApartments === 'function') {
-      // console.log('   Checking if all expenses are fully completed...');
       const allCompleted = areAllExpensesFullyCompleted(getAssociationApartments);
-      // console.log('   All expenses completed:', allCompleted);
       if (!allCompleted) {
-        // console.log('   ❌ FAILED: Not all expenses completed');
         return false;
       }
     }
