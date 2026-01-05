@@ -64,7 +64,7 @@ const emailTemplates = {
           <!-- Content -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}! 👋</h2>
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">Bună, ${userName}!</h2>
 
               <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6; font-family: Arial, Helvetica, sans-serif;">
                 Mulțumim că te-ai înregistrat în BlocApp! Pentru a-ți activa contul și a începe să folosești aplicația, te rugăm să îți verifici adresa de email.
