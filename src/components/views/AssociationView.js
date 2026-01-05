@@ -272,39 +272,39 @@ const AssociationView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏛️ Date Asociație</h1>
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900">🏛️ Date Asociație</h1>
         </div>
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
         {!association && userProfile?.metadata?.onboardingCompleted && (
-          <div className="bg-yellow-50 border border-yellow-200 p-4 sm:p-6 rounded-xl mb-6 sm:mb-8">
-            <h3 className="text-base sm:text-lg font-semibold text-yellow-800 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 p-3 sm:p-4 rounded-lg mb-4">
+            <h3 className="text-sm sm:text-base font-semibold text-yellow-800 mb-1.5">
               🔄 Se încarcă datele asociației...
             </h3>
-            <p className="text-sm sm:text-base text-yellow-700 mb-3 sm:mb-4">
+            <p className="text-xs sm:text-sm text-yellow-700 mb-2">
               Asociația ta a fost creată în timpul configurării inițiale. Dacă nu se încarcă în câteva secunde, încearcă să reîmprospătezi pagina.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 font-medium"
+              className="bg-yellow-600 text-white px-3 py-1.5 text-xs sm:text-sm rounded-md hover:bg-yellow-700 font-medium"
             >
-              🔄 Reîmprospătează Pagina
+              🔄 Reîmprospătează
             </button>
           </div>
         )}
 
         {/* Mesaj salvare */}
         {saveMessage && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
+          <div className={`mb-4 p-2.5 rounded-md flex items-center text-xs sm:text-sm ${
             saveMessage.includes('succes')
               ? 'bg-green-50 border border-green-200 text-green-800'
               : 'bg-red-50 border border-red-200 text-red-800'
           }`}>
             {saveMessage.includes('succes') ? (
-              <Save className="w-5 h-5 mr-2" />
+              <Save className="w-4 h-4 mr-1.5" />
             ) : (
-              <X className="w-5 h-5 mr-2" />
+              <X className="w-4 h-4 mr-1.5" />
             )}
             {saveMessage}
           </div>
@@ -322,13 +322,13 @@ const AssociationView = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors whitespace-nowrap ${
+                      className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       {tab.title}
                     </button>
                   ))}
@@ -336,19 +336,19 @@ const AssociationView = ({
               </div>
 
               {/* Tab Content */}
-              <div className="p-4 sm:p-6 lg:p-8">
+              <div className="p-3 sm:p-4 lg:p-6">
                 {/* Tab 1: Date de Identificare + Sediul Social + Contact */}
                 {activeTab === 'identification' && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Date de Identificare */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                        <Building2 className="w-6 h-6 mr-2" />
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <Building2 className="w-4 h-4 mr-1.5" />
                         Date de Identificare
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Denumirea asociației <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -356,13 +356,13 @@ const AssociationView = ({
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             disabled={!isEditing}
                             placeholder="ex: Asociația Primăverii 12"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             CUI <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -370,13 +370,13 @@ const AssociationView = ({
                             onChange={(e) => handleInputChange('cui', e.target.value)}
                             disabled={!isEditing}
                             placeholder="ex: 12345678"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Nr. înregistrare <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -384,7 +384,7 @@ const AssociationView = ({
                             onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
                             disabled={!isEditing}
                             placeholder="ex: 123/2024"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
@@ -393,25 +393,25 @@ const AssociationView = ({
                     </div>
 
                     {/* Sediul Social */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                        <MapPin className="w-6 h-6 mr-2" />
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <MapPin className="w-4 h-4 mr-1.5" />
                         Sediul Social
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Județul <span className="text-red-500">*</span>
                           </label>
                           <select
                             value={formData.sediu_judet}
                             onChange={(e) => handleInputChange('sediu_judet', e.target.value)}
                             disabled={!isEditing}
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           >
-                            <option value="">Selectează județul</option>
+                            <option value="">Selectează</option>
                             {judeteRomania.map(county => (
                               <option key={county.cod} value={county.nume}>
                                 {county.nume}
@@ -421,21 +421,19 @@ const AssociationView = ({
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Orașul <span className="text-red-500">*</span>
                           </label>
                           <select
                             value={formData.sediu_oras}
                             onChange={(e) => handleInputChange('sediu_oras', e.target.value)}
                             disabled={!isEditing || !formData.sediu_judet}
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           >
                             <option value="">
-                              {formData.sediu_judet
-                                ? 'Selectează orașul'
-                                : 'Selectează mai întâi județul'}
+                              {formData.sediu_judet ? 'Selectează' : 'Selectează județ'}
                             </option>
                             {availableCities.map(city => (
                               <option key={city} value={city}>
@@ -445,8 +443,8 @@ const AssociationView = ({
                           </select>
                         </div>
 
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Strada <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -454,15 +452,15 @@ const AssociationView = ({
                             value={formData.sediu_strada}
                             onChange={(e) => handleInputChange('sediu_strada', e.target.value)}
                             disabled={!isEditing}
-                            placeholder="ex: Strada Primăverii"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            placeholder="Strada Primăverii"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Numărul <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -471,14 +469,14 @@ const AssociationView = ({
                             onChange={(e) => handleInputChange('sediu_numar', e.target.value)}
                             disabled={!isEditing}
                             placeholder="123A"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Blocul <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -486,8 +484,8 @@ const AssociationView = ({
                             value={formData.sediu_bloc}
                             onChange={(e) => handleInputChange('sediu_bloc', e.target.value)}
                             disabled={!isEditing}
-                            placeholder="A1, B2, etc."
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            placeholder="A1, B2"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
@@ -496,14 +494,14 @@ const AssociationView = ({
                     </div>
 
                     {/* Date de Contact */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                        <Phone className="w-6 h-6 mr-2" />
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <Phone className="w-4 h-4 mr-1.5" />
                         Date de Contact
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
                             Email asociație <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -511,39 +509,39 @@ const AssociationView = ({
                             value={formData.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             disabled={!isEditing}
-                            placeholder="ex: contact@asociatiaprimaverii.ro"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            placeholder="contact@asociatie.ro"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Telefon asociație</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Telefon asociație</label>
                           <input
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
                             disabled={!isEditing}
-                            placeholder="ex: 0212345678"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            placeholder="0212345678"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
 
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Website (opțional)</label>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Website (opțional)</label>
                           <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <Globe className="h-5 w-5 text-gray-400" />
+                            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                              <Globe className="h-4 w-4 text-gray-400" />
                             </div>
                             <input
                               type="url"
                               value={formData.website}
                               onChange={(e) => handleInputChange('website', e.target.value)}
                               disabled={!isEditing}
-                              placeholder="https://www.asociatiaprimaverii.ro"
-                              className={`w-full pl-10 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                              placeholder="www.asociatie.ro"
+                              className={`w-full pl-7 px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                                 'border-gray-300'
                               }`}
                             />
@@ -556,14 +554,14 @@ const AssociationView = ({
 
                 {/* Tab 2: Program */}
                 {activeTab === 'schedule' && (
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                      <Clock className="w-6 h-6 mr-2" />
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                      <Clock className="w-4 h-4 mr-1.5" />
                       Program de funcționare
                     </h3>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Orarul încasărilor <span className="text-red-500">*</span>
                       </label>
                       <textarea
@@ -571,12 +569,12 @@ const AssociationView = ({
                         onChange={(e) => handleInputChange('collectionSchedule', e.target.value)}
                         disabled={!isEditing}
                         placeholder={`ex:\nLuni: 09:00 - 17:00\nMarți: 09:00 - 17:00\nMiercuri: 09:00 - 17:00\nJoi: 09:00 - 17:00\nVineri: 09:00 - 17:00\nSâmbătă: 09:00 - 12:00`}
-                        rows={8}
-                        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                        rows={6}
+                        className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                           'border-gray-300'
                         }`}
                       />
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-1.5 text-xs text-gray-600">
                         💡 Specifică programul în care proprietarii pot achita taxele și întâlni administratorul
                       </p>
                     </div>
@@ -585,29 +583,29 @@ const AssociationView = ({
 
                 {/* Tab 3: Date Financiare */}
                 {activeTab === 'financial' && (
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                      <CreditCard className="w-6 h-6 mr-2" />
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                      <CreditCard className="w-4 h-4 mr-1.5" />
                       Informații bancare
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Banca <span className="text-red-500">*</span>
                         </label>
                         <input
                           value={formData.bank}
                           onChange={(e) => handleInputChange('bank', e.target.value)}
                           disabled={!isEditing}
-                          placeholder="ex: BCR, BRD, ING Bank"
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          placeholder="BCR, BRD, ING"
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             'border-gray-300'
                           }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           IBAN <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -615,90 +613,84 @@ const AssociationView = ({
                           onChange={(e) => handleInputChange('bankAccount', e.target.value)}
                           disabled={!isEditing}
                           placeholder="RO49 AAAA 1B31..."
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             'border-gray-300'
                           }`}
                         />
                       </div>
 
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Numele contului <span className="text-red-500">*</span>
                         </label>
                         <input
                           value={association?.bankAccountData?.accountName || formData.name}
                           disabled={true}
                           placeholder="Asociația de Proprietari..."
-                          className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 outline-none"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50 outline-none"
                         />
-                        <p className="mt-1 text-xs text-gray-500">
-                          Se completează automat cu numele asociației
-                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Fond de rulment</label>
+                        <input
+                          value={formData.workingFundAccount}
+                          onChange={(e) => handleInputChange('workingFundAccount', e.target.value)}
+                          disabled={!isEditing}
+                          placeholder="RO49 AAAA 1B31... (opțional)"
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            'border-gray-300'
+                          }`}
+                        />
                       </div>
                     </div>
-
-                    <div className="border-t pt-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Cont fond de rulment</label>
-                      <input
-                        value={formData.workingFundAccount}
-                        onChange={(e) => handleInputChange('workingFundAccount', e.target.value)}
-                        disabled={!isEditing}
-                        placeholder="RO49 AAAA 1B31... (opțional - dacă aveți cont separat)"
-                        className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                          'border-gray-300'
-                        }`}
-                      />
-                      <p className="mt-2 text-sm text-gray-600">
-                        💡 Cont separat pentru fondul de rulment (opțional)
-                      </p>
-                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      💡 Numele contului se completează automat. Fondul de rulment e opțional.
+                    </p>
                   </div>
                 )}
 
                 {/* Tab 4: Persoane Responsabile */}
                 {activeTab === 'responsible' && (
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                        <Users className="w-6 h-6 mr-2" />
+                  <div className="space-y-4">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <Users className="w-4 h-4 mr-1.5" />
                         Conducerea asociației
                       </h3>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Administrator</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
                           <input
                             value={association?.adminProfile?.firstName && association?.adminProfile?.lastName
                                     ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
                                     : association?.administrator || ""}
                             readOnly
-                            className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
-                            placeholder="Completat din profilul administratorului"
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
+                            placeholder="Din profil"
                           />
-                          <p className="mt-1 text-xs text-gray-500">
-                            Se completează automat din profil
-                          </p>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Președinte</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Președinte</label>
                           <input
                             value={formData.president}
                             onChange={(e) => handleInputChange('president', e.target.value)}
                             disabled={!isEditing}
                             placeholder="Numele președintelui"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Cenzor</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Cenzor</label>
                           <input
                             value={formData.censor}
                             onChange={(e) => handleInputChange('censor', e.target.value)}
                             disabled={!isEditing}
                             placeholder="Numele cenzorului"
-                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                               'border-gray-300'
                             }`}
                           />
@@ -707,12 +699,12 @@ const AssociationView = ({
                     </div>
 
                     {/* Informații Administrator */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">👤 Informații Administrator</h4>
-                      <div className="flex items-center justify-between bg-gray-50 p-6 rounded-xl">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">👤 Informații Administrator</h4>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 sm:p-4 rounded-lg gap-3">
                         <div className="flex items-center">
                           {/* Avatar Administrator */}
-                          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 border-2 border-green-200 mr-4">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gray-100 border-2 border-green-200 mr-3">
                             {association?.adminProfile?.avatarURL ? (
                               <img
                                 src={association.adminProfile.avatarURL}
@@ -721,59 +713,61 @@ const AssociationView = ({
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <User className="w-8 h-8" />
+                                <User className="w-6 h-6" />
                               </div>
                             )}
                           </div>
 
                           <div>
-                            <h5 className="text-lg font-semibold text-gray-900">
+                            <h5 className="text-sm sm:text-base font-semibold text-gray-900">
                               {association?.adminProfile?.firstName && association?.adminProfile?.lastName
                                 ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
                                 : association?.administrator || 'Administrator'
                               }
                             </h5>
-                            <p className="text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600">
                               {association?.adminProfile?.companyName || 'Companie nespecificată'}
                             </p>
-                            {association?.adminProfile?.phone && (
-                              <p className="text-sm text-gray-500 flex items-center mt-1">
-                                <Phone className="w-4 h-4 mr-1" />
-                                {association.adminProfile.phone}
-                              </p>
-                            )}
-                            {association?.adminProfile?.email && (
-                              <p className="text-sm text-gray-500 flex items-center mt-1">
-                                <Mail className="w-4 h-4 mr-1" />
-                                {association.adminProfile.email}
-                              </p>
-                            )}
+                            <div className="flex flex-wrap gap-x-3 mt-0.5">
+                              {association?.adminProfile?.phone && (
+                                <p className="text-xs text-gray-500 flex items-center">
+                                  <Phone className="w-3 h-3 mr-0.5" />
+                                  {association.adminProfile.phone}
+                                </p>
+                              )}
+                              {association?.adminProfile?.email && (
+                                <p className="text-xs text-gray-500 flex items-center">
+                                  <Mail className="w-3 h-3 mr-0.5" />
+                                  {association.adminProfile.email}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         <button
                           onClick={() => handleNavigation('profile')}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                          className="px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center self-start sm:self-center"
                         >
-                          <User className="w-4 h-4 mr-2" />
+                          <User className="w-3.5 h-3.5 mr-1" />
                           Editează Profil
                         </button>
                       </div>
 
                       {/* Informații rapide */}
                       {(association?.adminProfile?.position || association?.adminProfile?.licenseNumber) && (
-                        <div className="mt-4 bg-white p-4 rounded-lg border">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="mt-3 bg-white p-3 rounded-md border">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
                             {association?.adminProfile?.position && (
                               <div>
                                 <span className="text-gray-500">Funcția:</span>
-                                <p className="font-medium">{association.adminProfile.position}</p>
+                                <span className="font-medium ml-1">{association.adminProfile.position}</span>
                               </div>
                             )}
                             {association?.adminProfile?.licenseNumber && (
                               <div>
-                                <span className="text-gray-500">Număr atestat administrator:</span>
-                                <p className="font-medium">{association.adminProfile.licenseNumber}</p>
+                                <span className="text-gray-500">Nr. atestat:</span>
+                                <span className="font-medium ml-1">{association.adminProfile.licenseNumber}</span>
                               </div>
                             )}
                           </div>
@@ -785,19 +779,19 @@ const AssociationView = ({
               </div>
 
               {/* Footer cu butoanele de editare/salvare */}
-              <div className="bg-gray-50 px-8 py-4 border-t">
+              <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-600 hidden sm:block">
                     {isEditing ? 'Modifică datele și apasă Salvează' : 'Apasă Editează pentru a modifica datele'}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-auto">
                     {!isEditing ? (
                       <button
                         onClick={() => setIsEditing(true)}
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                        className="px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1.5 transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                         Editează
                       </button>
                     ) : (
@@ -805,25 +799,25 @@ const AssociationView = ({
                         <button
                           onClick={handleSave}
                           disabled={isSaving}
-                          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                          className="px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1.5 transition-colors disabled:opacity-50"
                         >
                           {isSaving ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                               Salvez...
                             </>
                           ) : (
                             <>
-                              <Save className="w-4 h-4" />
+                              <Save className="w-3.5 h-3.5" />
                               Salvează
                             </>
                           )}
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                          className="px-3 py-1.5 text-xs sm:text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center gap-1.5 transition-colors"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-3.5 h-3.5" />
                           Anulează
                         </button>
                       </>

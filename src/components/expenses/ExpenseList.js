@@ -980,22 +980,22 @@ const ExpenseList = ({
   return (
     <>
       {/* Header cu total */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-900">
             {filteredExpenses.length} din {totalExpenseTypes} cheltuieli distribuite
             {getFilterInfo().type !== 'all' && (
-              <span className="text-sm font-normal text-gray-600 ml-2">
+              <span className="text-xs sm:text-sm font-normal text-gray-600 ml-2">
                 ({getFilterInfo().blockName} - {getFilterInfo().stairName})
               </span>
             )}
           </h3>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-blue-600">
-            {totalAmount.toFixed(2)} RON
+        <div className="text-right flex-shrink-0 ml-2">
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">
+            {totalAmount.toFixed(2)} <span className="text-sm sm:text-base">RON</span>
           </div>
-          <div className="text-sm text-gray-500">Total</div>
+          <div className="text-xs sm:text-sm text-gray-500">Total</div>
 
           {/* Badge-uri pentru status distribuție */}
           {totals.allKnowExpectedAmount ? (() => {
@@ -1034,10 +1034,10 @@ const ExpenseList = ({
       </div>
 
       {filteredExpenses.length === 0 ? (
-        <div className="text-center py-12">
-          <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Nu există cheltuieli distribuite</p>
-          <p className="text-gray-500 text-sm mt-1">Distribuie prima cheltuială pentru a calcula întreținerea</p>
+        <div className="text-center py-4 sm:py-6">
+          <Calculator className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2" />
+          <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1">Nu există cheltuieli distribuite</h3>
+          <p className="text-xs sm:text-sm text-gray-500">Distribuie prima cheltuială pentru a calcula întreținerea</p>
         </div>
       ) : (
         <div className="space-y-3">

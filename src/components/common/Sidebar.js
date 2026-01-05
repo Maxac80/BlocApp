@@ -32,7 +32,7 @@ const Sidebar = ({
   };
 
   return (
-  <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
+  <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col ${
     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
   } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
     
@@ -90,23 +90,23 @@ const Sidebar = ({
       </button>
     </div>
 
-    {/* Meniu Navigare */}
-    <nav className="flex-1 mt-6">
+    {/* Meniu Navigare - scrollabil */}
+    <nav className="flex-1 mt-4 lg:mt-6 overflow-y-auto">
       <div className="px-2 space-y-1">
         {/* Tabel întreținere */}
         <button
           onClick={() => handleNavigation("dashboard")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "dashboard"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <FileText className="w-5 h-5 flex-shrink-0" />
+          <FileText className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Tabel întreținere</div>
-              <div className="text-xs text-gray-500">Întreţinere luna curentă</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Tabel întreținere</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Întreţinere luna curentă</div>
             </div>
           )}
           
@@ -120,17 +120,17 @@ const Sidebar = ({
         {/* Calcul întreținere */}
         <button
           onClick={() => handleNavigation("maintenance")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "maintenance"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Calculator className="w-5 h-5 flex-shrink-0" />
+          <Calculator className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Calcul întreținere</div>
-              <div className="text-xs text-gray-500">Calculează întreţinerea curentă</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Calcul întreținere</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Calculează întreţinerea curentă</div>
             </div>
           )}
           
@@ -144,17 +144,17 @@ const Sidebar = ({
         {/* Apartamente */}
         <button
           onClick={() => handleNavigation("setup")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "setup"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Building className="w-5 h-5 flex-shrink-0" />
+          <Building className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Apartamente</div>
-              <div className="text-xs text-gray-500">Blocuri, scări, apartamente</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Apartamente</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scări, apartamente</div>
             </div>
           )}
           
@@ -168,17 +168,17 @@ const Sidebar = ({
         {/* Cheltuieli */}
         <button
           onClick={() => handleNavigation("expenses")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "expenses"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Wallet className="w-5 h-5 flex-shrink-0" />
+          <Wallet className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Configurare cheltuieli</div>
-              <div className="text-xs text-gray-500">Cheltuieli & furnizori</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Configurare cheltuieli</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Cheltuieli & furnizori</div>
             </div>
           )}
           
@@ -192,17 +192,17 @@ const Sidebar = ({
         {/* Contabilitate */}
         <button
           onClick={() => handleNavigation("accounting")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "accounting"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Coins className="w-5 h-5 flex-shrink-0" />
+          <Coins className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Contabilitate</div>
-              <div className="text-xs text-gray-500">Încasări & chitanțe</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Contabilitate</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Încasări & chitanțe</div>
             </div>
           )}
           
@@ -216,17 +216,17 @@ const Sidebar = ({
         {/* Date Asociație */}
         <button
           onClick={() => handleNavigation("association")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "association"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Users className="w-5 h-5 flex-shrink-0" />
+          <Users className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Date Asociație</div>
-              <div className="text-xs text-gray-500">Informații generale</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Date Asociație</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Informații generale</div>
             </div>
           )}
           
@@ -240,17 +240,17 @@ const Sidebar = ({
         {/* Profil Administrator */}
         <button
           onClick={() => handleNavigation("profile")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "profile"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <User className="w-5 h-5 flex-shrink-0" />
+          <User className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Profil Administrator</div>
-              <div className="text-xs text-gray-500">Date personale și setări</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Profil Administrator</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Date personale și setări</div>
             </div>
           )}
           
@@ -264,17 +264,17 @@ const Sidebar = ({
         {/* Setări */}
         <button
           onClick={() => handleNavigation("settings")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "settings"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Settings className="w-5 h-5 flex-shrink-0" />
+          <Settings className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Setări</div>
-              <div className="text-xs text-gray-500">Configurări aplicație</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Setări</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Configurări aplicație</div>
             </div>
           )}
 
@@ -288,17 +288,17 @@ const Sidebar = ({
         {/* Tutoriale */}
         <button
           onClick={() => handleNavigation("tutorials")}
-          className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 group ${
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
             currentView === "tutorials"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <BookOpen className="w-5 h-5 flex-shrink-0" />
+          <BookOpen className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
-            <div className="ml-3">
-              <div className="font-medium">Tutoriale</div>
-              <div className="text-xs text-gray-500">Ghiduri și învățare</div>
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Tutoriale</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Ghiduri și învățare</div>
             </div>
           )}
 
@@ -313,20 +313,18 @@ const Sidebar = ({
       {/* Separator și Development Tools */}
       {sidebarExpanded && (
         <>
-          <div className="mx-4 my-6 border-t border-gray-200"></div>
+          <div className="mx-3 lg:mx-4 my-3 lg:my-6 border-t border-gray-200"></div>
 
           {/* Buton ștergere toate datele */}
           {association && (
-            <div className="px-4 space-y-3">
-              <div className="space-y-2">
-                <button
-                  onClick={deleteAllBlocAppData}
-                  className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
-                  title="Șterge toate datele aplicației"
-                >
-                  🗑️ Șterge TOATE datele
-                </button>
-              </div>
+            <div className="px-3 lg:px-4 pb-2">
+              <button
+                onClick={deleteAllBlocAppData}
+                className="w-full bg-red-600 text-white px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
+                title="Șterge toate datele aplicației"
+              >
+                🗑️ Șterge TOATE datele
+              </button>
             </div>
           )}
         </>
@@ -334,25 +332,25 @@ const Sidebar = ({
     </nav>
 
     {/* Footer cu utilizatorul */}
-    <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
+    <div className="flex-shrink-0 border-t border-gray-200 p-3 lg:p-4 bg-white">
       {sidebarExpanded ? (
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden">
+          <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs lg:text-sm overflow-hidden">
             {association?.adminProfile?.avatarURL ? (
-              <img 
-                src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL} 
-                alt="Avatar" 
+              <img
+                src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL}
+                alt="Avatar"
                 className="w-full h-full object-cover"
               />
             ) : (
               userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
             )}
           </div>
-          <div className="ml-3 flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">
+          <div className="ml-2 lg:ml-3 flex-1 min-w-0">
+            <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">
   {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
 </div>
-            <div className="text-xs text-gray-500 truncate">
+            <div className="text-xs text-gray-500 truncate hidden lg:block">
               Administrator
             </div>
           </div>

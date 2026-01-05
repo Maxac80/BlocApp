@@ -677,7 +677,7 @@ return (
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-800">📋 Structura Asociației</h3>
-            <div className="flex gap-2 sm:gap-3 flex-wrap">
+            <div className="flex gap-2 sm:gap-3 flex-wrap self-end sm:self-auto">
               {associationBlocks.length > 3 && (
                 <div className="flex gap-2">
                   <button

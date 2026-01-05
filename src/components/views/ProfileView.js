@@ -496,21 +496,21 @@ const ProfileView = ({
         />
 
         {/* Page Title */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">👤 Profil Administrator</h1>
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900">Profil Administrator</h1>
         </div>
 
         {/* Mesaj salvare */}
         {saveMessage && (
-          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg flex items-center text-sm sm:text-base ${
+          <div className={`mb-3 sm:mb-4 p-2.5 sm:p-3 rounded-md flex items-center text-xs sm:text-sm ${
             saveMessage.includes('succes')
               ? 'bg-green-50 border border-green-200 text-green-800'
               : 'bg-red-50 border border-red-200 text-red-800'
           }`}>
             {saveMessage.includes('succes') ? (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             ) : (
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             )}
             {saveMessage}
           </div>
@@ -519,45 +519,45 @@ const ProfileView = ({
         {/* Tab Container */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Tab Navigation */}
-          <div className="border-b">
+          <div className="border-b overflow-x-auto">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('date')}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'date'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Date </span>Administrator
               </button>
               <button
                 onClick={() => setActiveTab('documente')}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'documente'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Documente </span>Administrator
               </button>
             </div>
           </div>
 
           {/* Tab Content */}
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="p-3 sm:p-4 lg:p-6">
             {/* Tab 1: Date Administrator */}
             {activeTab === 'date' && (
-              <div className="grid lg:grid-cols-3 gap-8">
+              <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Avatar Section */}
                 <div className="lg:col-span-1">
-                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 text-center sticky top-4">
-                    <h4 className="font-semibold text-gray-900 mb-4">Fotografia ta</h4>
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200 text-center sticky top-4">
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Fotografia ta</h4>
 
-                    <div className="relative inline-block mb-4">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg mx-auto">
+                    <div className="relative inline-block mb-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg mx-auto">
                         {formData.avatarURL ? (
                           <img
                             src={getPreviewUrl(formData.avatarURL) || formData.avatarURL}
@@ -566,7 +566,7 @@ const ProfileView = ({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <User className="w-16 h-16" />
+                            <User className="w-10 h-10 sm:w-12 sm:h-12" />
                           </div>
                         )}
                       </div>
@@ -578,8 +578,8 @@ const ProfileView = ({
                       )}
                     </div>
 
-                    <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-                      <Camera className="w-4 h-4 mr-2" />
+                    <label className="inline-flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
+                      <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
                       {formData.avatarURL ? 'Schimbă foto' : 'Adaugă foto'}
                       <input
                         type="file"
@@ -590,19 +590,16 @@ const ProfileView = ({
                       />
                     </label>
 
-                    <p className="text-xs text-gray-500 mt-2">
-                      JPG, PNG până la 2MB (redimensionată automat)
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      💡 Avatarele sunt stocate în Base64 (Firebase Storage necesită upgrade)
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5">
+                      JPG, PNG până la 2MB
                     </p>
 
                     {/* Butoane Edit/Save */}
-                    <div className="mt-6 space-y-2">
+                    <div className="mt-4 space-y-2">
                       {!isEditing ? (
                         <button
                           onClick={() => setIsEditing(true)}
-                          className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                          className="w-full px-3 py-1.5 text-xs sm:text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                         >
                           Editează profil
                         </button>
@@ -611,16 +608,16 @@ const ProfileView = ({
                           <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                            className="w-full px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center"
                           >
                             {isSaving ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
                                 Salvez...
                               </>
                             ) : (
                               <>
-                                <Save className="w-4 h-4 mr-2" />
+                                <Save className="w-3.5 h-3.5 mr-1.5" />
                                 Salvează
                               </>
                             )}
@@ -660,7 +657,7 @@ const ProfileView = ({
                                 });
                               }
                             }}
-                            className="w-full px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
+                            className="w-full px-3 py-1.5 text-xs sm:text-sm bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
                           >
                             Anulează
                           </button>
@@ -671,17 +668,17 @@ const ProfileView = ({
                 </div>
 
                 {/* Formular Date */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                   {/* Date Personale */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-                      <User className="w-5 h-5 mr-2" />
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Date personale
                     </h4>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Prenume <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -689,7 +686,7 @@ const ProfileView = ({
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors.firstName ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="Prenumele tău"
@@ -703,7 +700,7 @@ const ProfileView = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Nume <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -711,7 +708,7 @@ const ProfileView = ({
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors.lastName ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="Numele tău"
@@ -725,7 +722,7 @@ const ProfileView = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Email <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -733,7 +730,7 @@ const ProfileView = ({
                           value={formData.email}
                           onChange={(e) => handleInputChange('email', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors.email ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="exemplu@email.com"
@@ -747,7 +744,7 @@ const ProfileView = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Telefon <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -755,7 +752,7 @@ const ProfileView = ({
                           value={formData.phone}
                           onChange={(e) => handleInputChange('phone', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors.phone ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="0721234567"
@@ -771,22 +768,22 @@ const ProfileView = ({
                   </div>
 
                   {/* ADRESA DE DOMICILIU */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-                      <MapPin className="w-5 h-5 mr-2" />
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Adresa de domiciliu
                     </h4>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Județul <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={formData.address.county}
                           onChange={(e) => handleInputChange('address.county', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors['address.county'] ? 'border-red-500' : 'border-gray-300'
                           }`}
                         >
@@ -806,7 +803,7 @@ const ProfileView = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Localitatea <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -814,7 +811,7 @@ const ProfileView = ({
                           value={formData.address.city}
                           onChange={(e) => handleInputChange('address.city', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors['address.city'] ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="București, Ploiești, etc."
@@ -828,7 +825,7 @@ const ProfileView = ({
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Strada și numărul <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -836,7 +833,7 @@ const ProfileView = ({
                           value={formData.address.street}
                           onChange={(e) => handleInputChange('address.street', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors['address.street'] ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="Strada Exemplu nr. 123"
@@ -852,21 +849,21 @@ const ProfileView = ({
                   </div>
 
                   {/* Date Profesionale */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-                      <Building className="w-5 h-5 mr-2" />
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Date profesionale
                     </h4>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Funcția <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value="Administrator asociație"
-                          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-700"
                           readOnly
                         />
                         {validationErrors.position && (
@@ -878,19 +875,19 @@ const ProfileView = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Compania/Firma (opțional)</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Compania/Firma (opțional)</label>
                         <input
                           type="text"
                           value={formData.companyName}
                           onChange={(e) => handleInputChange('companyName', e.target.value)}
                           disabled={!isEditing}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                           placeholder="Ex: SC Admin Bloc SRL"
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Număr atestat administrator <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -898,7 +895,7 @@ const ProfileView = ({
                           value={formData.licenseNumber}
                           onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
                           disabled={!isEditing}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
                             validationErrors.licenseNumber ? 'border-red-500' : 'border-gray-300'
                           }`}
                           placeholder="Ex: ADM123456"
@@ -918,13 +915,13 @@ const ProfileView = ({
 
             {/* Tab 2: Documente Administrator */}
             {activeTab === 'documente' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                  <FileText className="w-6 h-6 mr-2" />
+              <div className="space-y-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Documentele administratorului
                 </h3>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3">
                   {documents.map((document) => {
                     const documentData = formData.documents?.[document.id] || {};
                     const isUploaded = documentData.uploaded;
@@ -934,7 +931,7 @@ const ProfileView = ({
                       <div
                         key={document.id}
                         className={`
-                          border-2 rounded-lg p-4 transition-all duration-300
+                          border-2 rounded-md p-3 transition-all duration-300
                           ${isUploaded
                             ? 'border-green-200 bg-green-50'
                             : 'border-gray-200 hover:border-gray-300'
@@ -944,23 +941,23 @@ const ProfileView = ({
                         <div className="flex items-start justify-between">
                           <div className="flex items-start">
                             <div className={`
-                              p-2 rounded-lg mr-3 flex-shrink-0
+                              p-1.5 rounded-md mr-2 flex-shrink-0
                               ${isUploaded
                                 ? 'bg-green-100 text-green-600'
                                 : 'bg-gray-100 text-gray-600'
                               }
                             `}>
-                              <document.icon className="w-5 h-5" />
+                              <document.icon className="w-4 h-4" />
                             </div>
 
                             <div className="flex-1">
-                              <h5 className="font-medium text-gray-900 flex items-center">
+                              <h5 className="text-xs sm:text-sm font-medium text-gray-900 flex items-center">
                                 {document.title}
                                 {document.required && <span className="text-red-500 ml-1">*</span>}
                               </h5>
-                              <p className="text-gray-600 text-sm mt-1">{document.description}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                💡 {document.tips}
+                              <p className="text-gray-600 text-xs mt-0.5">{document.description}</p>
+                              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                                {document.tips}
                               </p>
                             </div>
                           </div>
@@ -968,19 +965,19 @@ const ProfileView = ({
                           {/* STATUS ICON */}
                           <div className="flex-shrink-0">
                             {isUploaded ? (
-                              <CheckCircle className="w-6 h-6 text-green-500" />
+                              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                             ) : document.required ? (
-                              <AlertCircle className="w-6 h-6 text-red-400" />
+                              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
                             ) : null}
                           </div>
                         </div>
 
                         {/* ACTIONS */}
-                        <div className="mt-3 flex items-center gap-3">
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
                           {isEditing && (
                             <>
-                              <label className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors text-sm">
-                                <Upload className="w-4 h-4 mr-2" />
+                              <label className="inline-flex items-center px-2 py-1 sm:px-2.5 sm:py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors text-xs">
+                                <Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                                 {isUploaded ? 'Înlocuiește' : 'Încarcă'}
                                 <input
                                   type="file"
@@ -994,9 +991,9 @@ const ProfileView = ({
                               {isUploaded && (
                                 <button
                                   onClick={() => handleDocumentDelete(document.id)}
-                                  className="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                                  className="inline-flex items-center px-2 py-1 sm:px-2.5 sm:py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-xs"
                                 >
-                                  <X className="w-4 h-4 mr-2" />
+                                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                                   Șterge
                                 </button>
                               )}
@@ -1007,18 +1004,18 @@ const ProfileView = ({
                             <>
                               <button
                                 onClick={() => handleDocumentPreview(document.id)}
-                                className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                                className="inline-flex items-center px-2 py-1 sm:px-2.5 sm:py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-xs"
                               >
-                                <Eye className="w-4 h-4 mr-2" />
+                                <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                                 Vezi
                               </button>
 
                               <a
                                 href={documentData.base64}
                                 download={documentData.name}
-                                className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                className="inline-flex items-center px-2 py-1 sm:px-2.5 sm:py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs"
                               >
-                                <Download className="w-4 h-4 mr-2" />
+                                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                                 Descarcă
                               </a>
                             </>
@@ -1027,14 +1024,14 @@ const ProfileView = ({
 
                         {/* PROGRESS BAR */}
                         {isUploading && (
-                          <div className="mt-3">
-                            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-xs text-gray-600 mb-0.5">
                               <span>Se încarcă...</span>
                               <span>{uploadProgress[document.id]}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
                               <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${uploadProgress[document.id]}%` }}
                               ></div>
                             </div>
@@ -1043,21 +1040,21 @@ const ProfileView = ({
 
                         {/* ERROR MESSAGE */}
                         {validationErrors[`document_${document.id}`] && (
-                          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" />
+                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                            <p className="text-xs text-red-600 flex items-center">
+                              <AlertCircle className="w-3 h-3 mr-1" />
                               {validationErrors[`document_${document.id}`]}
                             </p>
                           </div>
                         )}
 
                         {!isEditing && !isUploaded && (
-                          <div className="mt-3 text-center py-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-500">
+                          <div className="mt-2 text-center py-2 sm:py-3 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
+                            <Upload className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-gray-400 mb-1" />
+                            <p className="text-xs text-gray-500">
                               {document.required ? 'Document obligatoriu' : 'Document opțional'}
                             </p>
-                            <p className="text-xs text-gray-400">Activează editarea pentru a adăuga</p>
+                            <p className="text-[10px] sm:text-xs text-gray-400">Activează editarea pentru a adăuga</p>
                           </div>
                         )}
                       </div>
@@ -1066,12 +1063,11 @@ const ProfileView = ({
                 </div>
 
                 {/* INFORMAȚII DOCUMENTE */}
-                <div className="mt-6 bg-blue-50 rounded-lg p-4">
-                  <h5 className="font-medium text-blue-900 mb-2">ℹ️ Informații despre documente</h5>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• Documentele cu * sunt obligatorii pentru activitatea de administrare</li>
-                    <li>• Toate documentele sunt criptate și stocate în siguranță</li>
-                    <li>• Documentele pot fi vizualizate și descărcate oricând</li>
+                <div className="mt-4 bg-blue-50 rounded-md p-2.5 sm:p-3">
+                  <h5 className="text-xs sm:text-sm font-medium text-blue-900 mb-1.5">Informații despre documente</h5>
+                  <ul className="text-[10px] sm:text-xs text-blue-800 space-y-0.5">
+                    <li>• Documentele cu * sunt obligatorii</li>
+                    <li>• Documentele sunt criptate și stocate în siguranță</li>
                     <li>• Pentru modificări, activează editarea profilului</li>
                   </ul>
                 </div>

@@ -246,80 +246,80 @@ const SettingsView = ({
         {/* Main Content */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Tabs */}
-          <div className="border-b">
+          <div className="border-b overflow-x-auto">
             <div className="flex">
             <button
               onClick={() => setActiveTab('luni')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'luni'
                   ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Configurare Luni
             </button>
             <button
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'general'
                   ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Setări </span>Generale
             </button>
             <button
               onClick={() => setActiveTab('sistem')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'sistem'
                   ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Database className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Sistem
             </button>
           </div>
         </div>
 
         {/* Tab Content */}
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-3 sm:p-4 lg:p-6">
           {/* Configurare Luni Tab */}
           {activeTab === 'luni' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Setări pentru Sheet-ul în Lucru */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
                   Configurare Luni pentru Sheet-ul în Lucru
                 </h3>
-                <p className="text-xs text-gray-500 mb-4">
+                <p className="text-xs text-gray-500 mb-3">
                   Setați luna pentru care se calculează întreținerea și luna pentru care sunt înregistrate consumurile.
                 </p>
 
                 {/* Explicația sistemului de sheet-uri */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <h5 className="font-medium text-blue-800 mb-2">💡 Despre Sheet-urile de Lucru</h5>
-                  <div className="text-xs text-blue-700 space-y-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+                  <h5 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5">💡 Despre Sheet-urile de Lucru</h5>
+                  <div className="text-xs text-blue-700 space-y-1">
                     <p><strong>Sheet în Lucru:</strong> Luna pentru care calculați întreținerea în prezent</p>
                     <p><strong>Sheet Publicat:</strong> Luna care a fost finalizată și publicată pentru plată</p>
                     <p><strong>Sheet Arhivat:</strong> Lunile vechi care nu mai pot fi modificate</p>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="mt-2 pt-2 border-t border-blue-200">
                     <p className="text-xs text-blue-600 font-medium">
                       🔄 La publicare, luna în lucru devine publicată și se creează automat un nou sheet pentru luna următoare
                     </p>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-4">
                   {/* Luna în Lucru */}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">Luna în Lucru (întreținere)</h4>
-                    <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Luna în Lucru (întreținere)</h4>
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Luna întreținerii
                         </label>
                         <select
@@ -328,7 +328,7 @@ const SettingsView = ({
                             ...prev,
                             workingMonth: e.target.value
                           }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Selectați luna</option>
                           {romanianMonths.map(month => (
@@ -339,7 +339,7 @@ const SettingsView = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Anul
                         </label>
                         <input
@@ -351,18 +351,18 @@ const SettingsView = ({
                             ...prev,
                             workingYear: parseInt(e.target.value) || new Date().getFullYear()
                           }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Luna Consum */}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">Luna pentru Consumuri</h4>
-                    <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-md p-3">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Luna pentru Consumuri</h4>
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Luna consumurilor
                         </label>
                         <select
@@ -371,7 +371,7 @@ const SettingsView = ({
                             ...prev,
                             consumptionMonth: e.target.value
                           }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Selectați luna</option>
                           {romanianMonths.map(month => (
@@ -382,7 +382,7 @@ const SettingsView = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
                           Anul
                         </label>
                         <input
@@ -394,7 +394,7 @@ const SettingsView = ({
                             ...prev,
                             consumptionYear: parseInt(e.target.value) || new Date().getFullYear()
                           }))}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -404,20 +404,20 @@ const SettingsView = ({
 
               {/* Preview */}
               {monthSettings.workingMonth && monthSettings.consumptionMonth && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     Preview Document
                   </h3>
-                  <div className="bg-white rounded-lg p-4 border border-blue-300">
-                    <p className="text-center text-lg font-bold mb-2">
+                  <div className="bg-white rounded-md p-3 border border-blue-300">
+                    <p className="text-center text-sm font-bold mb-1">
                       TABEL DE ÎNTREȚINERE
                     </p>
-                    <p className="text-center text-gray-700">
+                    <p className="text-center text-xs sm:text-sm text-gray-700">
                       Întreținere luna <strong className="text-blue-600">
                         {monthSettings.workingMonth.charAt(0).toUpperCase() + monthSettings.workingMonth.slice(1)} {monthSettings.workingYear}
                       </strong>
                     </p>
-                    <p className="text-center text-gray-700">
+                    <p className="text-center text-xs sm:text-sm text-gray-700">
                       Consum luna <strong className="text-blue-600">
                         {monthSettings.consumptionMonth.charAt(0).toUpperCase() + monthSettings.consumptionMonth.slice(1)} {monthSettings.consumptionYear}
                       </strong>
@@ -427,10 +427,10 @@ const SettingsView = ({
               )}
 
               {/* Info */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                 <div className="flex">
-                  <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-yellow-800">
                     <p className="font-medium">Notă importantă:</p>
                     <p>La publicarea sheet-ului curent, următorul sheet va incrementa automat ambele luni păstrând diferența dintre ele.</p>
                   </div>
@@ -441,13 +441,13 @@ const SettingsView = ({
 
           {/* Setări Generale Tab */}
           {activeTab === 'general' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">
                   Comportament Publicare
                 </h3>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3">
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={generalSettings.requireConfirmationForPublish}
@@ -455,9 +455,9 @@ const SettingsView = ({
                         ...prev,
                         requireConfirmationForPublish: e.target.checked
                       }))}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-xs sm:text-sm text-gray-700">
                       Cere confirmare înainte de publicarea unei luni
                     </span>
                   </label>
@@ -465,12 +465,12 @@ const SettingsView = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">
                   Penalități și Termene
                 </h3>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Rata penalității (%)
                     </label>
                     <input
@@ -483,13 +483,13 @@ const SettingsView = ({
                         ...prev,
                         defaultPenaltyRate: parseFloat(e.target.value) / 100 || 0
                       }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Standard: 2% din suma datorată</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Standard: 2% din suma datorată</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Zile până la aplicarea penalităților
                     </label>
                     <input
@@ -501,9 +501,9 @@ const SettingsView = ({
                         ...prev,
                         daysBeforePenalty: parseInt(e.target.value) || 30
                       }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Standard: 30 de zile de la emitere</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Standard: 30 de zile de la emitere</p>
                   </div>
                 </div>
               </div>
@@ -512,40 +512,40 @@ const SettingsView = ({
 
           {/* Sistem Tab */}
           {activeTab === 'sistem' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Informații Sistem */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">
                   Informații Sistem
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">Asociație</p>
-                    <p className="font-medium text-gray-900">{association?.name || 'N/A'}</p>
+                    <p className="text-sm font-medium text-gray-900">{association?.name || 'N/A'}</p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">CUI</p>
-                    <p className="font-medium text-gray-900">{association?.cui || 'N/A'}</p>
+                    <p className="text-sm font-medium text-gray-900">{association?.cui || 'N/A'}</p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">Total Sheet-uri</p>
-                    <p className="font-medium text-gray-900">{sheets.length}</p>
+                    <p className="text-sm font-medium text-gray-900">{sheets.length}</p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">Sheet în lucru</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900">
                       {currentSheet?.monthYear || 'Niciunul'}
                     </p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">Sheet publicat</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900">
                       {publishedSheet?.monthYear || 'Niciunul'}
                     </p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-2.5 rounded-md">
                     <p className="text-xs text-gray-600">Data creării</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900">
                       {association?.createdAt ? new Date(association.createdAt).toLocaleDateString('ro-RO') : 'N/A'}
                     </p>
                   </div>
@@ -554,15 +554,15 @@ const SettingsView = ({
 
               {/* Acțiuni Sistem */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">
                   Acțiuni Sistem
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <button
                     onClick={resetToDefaults}
-                    className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    className="flex items-center px-3 py-1.5 text-xs sm:text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
                   >
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                     Resetează Setările la Default
                   </button>
                   <p className="text-xs text-gray-500">
@@ -573,11 +573,11 @@ const SettingsView = ({
 
               {/* Status Sheet-uri Detaliat */}
               {(currentSheet || publishedSheet) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                   <div className="flex">
-                    <Database className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-medium mb-2">Status Sheet-uri</p>
+                    <Database className="w-4 h-4 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-800">
+                      <p className="font-medium mb-1">Status Sheet-uri</p>
                       {currentSheet && (
                         <p>• Sheet în lucru: {currentSheet.monthYear} (ID: {currentSheet.id?.slice(-6)})</p>
                       )}
@@ -593,27 +593,27 @@ const SettingsView = ({
         </div>
 
           {/* Footer cu butoane de acțiune */}
-          <div className="px-6 py-4 bg-gray-50 border-t rounded-b-xl">
-            <div className="flex justify-end space-x-3">
+          <div className="px-3 sm:px-4 py-3 bg-gray-50 border-t rounded-b-xl">
+            <div className="flex justify-end space-x-2">
               <button
                 onClick={() => handleNavigation('dashboard')}
-                className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Anulează
               </button>
               <button
                 onClick={saveSettings}
                 disabled={isSaving}
-                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? (
                   <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    <Clock className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                     Se salvează...
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-3.5 h-3.5 mr-1.5" />
                     Salvează Setările
                   </>
                 )}

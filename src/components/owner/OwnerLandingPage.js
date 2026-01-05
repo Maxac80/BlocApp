@@ -70,43 +70,46 @@ export default function OwnerLandingPage() {
       <div className="w-full max-w-md">
 
         {/* Header cu Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-xl mb-4">
-            <Home className="w-8 h-8 text-white" />
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
+            <img
+              src="/logo.png"
+              alt="BlocApp"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">BlocApp</h1>
-          <p className="text-gray-600 mt-2">Portal Proprietari</p>
+          <p className="text-gray-600 text-sm">Portal Proprietari</p>
         </div>
 
         {/* Card Principal */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
 
           {/* Header Login */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Autentificare</h2>
-            <p className="text-gray-600 mt-1">Conectează-te la contul tău</p>
+          <div className="text-center mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Autentificare</h2>
+            <p className="text-gray-600 text-sm mt-1">Conectează-te la contul tău</p>
           </div>
 
           {/* Erori globale */}
           {authError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
-                <p className="text-red-800">{authError}</p>
+                <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                <p className="text-red-800 text-sm">{authError}</p>
               </div>
             </div>
           )}
 
           {/* Formular Login */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   id="email"
@@ -114,15 +117,16 @@ export default function OwnerLandingPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                  className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="email@exemplu.ro"
+                  autoComplete="email"
                 />
               </div>
               {validationErrors.email && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1" />
                   {validationErrors.email}
                 </p>
               )}
@@ -130,11 +134,11 @@ export default function OwnerLandingPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">
                 Parolă
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
@@ -142,22 +146,23 @@ export default function OwnerLandingPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
+                  className={`w-full pl-9 pr-10 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Parola ta"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {validationErrors.password && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1" />
                   {validationErrors.password}
                 </p>
               )}
@@ -167,11 +172,11 @@ export default function OwnerLandingPage() {
             <button
               type="submit"
               disabled={isLoading || !formData.email || !formData.password}
-              className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Se conectează...
                 </div>
               ) : (
@@ -183,7 +188,7 @@ export default function OwnerLandingPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-gray-500 text-[10px] sm:text-xs mt-4">
           Nu ai cont? Contactează administratorul asociației tale.
         </p>
       </div>

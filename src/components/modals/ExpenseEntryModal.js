@@ -471,9 +471,9 @@ const ExpenseEntryModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className={`p-6 flex-shrink-0 ${
+        <div className={`px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 ${
           monthType === 'historic'
             ? 'bg-gradient-to-r from-gray-600 to-gray-700'
             : monthType === 'next'
@@ -482,27 +482,27 @@ const ExpenseEntryModal = ({
         } text-white`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-lg sm:text-xl font-bold">
                 {editingExpense ? '✏️ Editează distribuirea' : '➕ Distribuie Cheltuială'}
               </h2>
-              <p className="text-white/80 mt-1">{currentMonth}</p>
+              <p className="text-white/80 text-xs sm:text-sm">{currentMonth}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+              className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 flex-1 overflow-y-auto min-h-0">
-          <div className="space-y-4">
+        <div className="p-3 sm:p-4 flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-3">
             {/* Dropdown Cheltuială - doar când adaugi cheltuială nouă */}
             {!editingExpense && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Cheltuială *
                 </label>
                 <select
@@ -514,7 +514,7 @@ const ExpenseEntryModal = ({
                     setUnitPrice('');
                     setBillAmount('');
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 >
                   <option value="">Selectează cheltuiala</option>
                   {availableExpenseTypes.map(expenseType => (
@@ -528,26 +528,26 @@ const ExpenseEntryModal = ({
 
             {/* Info despre cheltuiala selectată */}
             {selectedExpense && config && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start justify-between gap-3">
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <div className="font-medium text-blue-900">
+                    <div className="text-sm font-medium text-blue-900">
                       {selectedExpense}
                     </div>
-                    <div className="text-sm text-blue-700 mt-1">
+                    <div className="text-xs text-blue-700 mt-0.5">
                       📄 Factură: {
                         config.invoiceMode === 'single' ? 'O singură factură' :
                         config.invoiceMode === 'separate' ? 'Facturi separate' : 'O singură factură'
                       }
                     </div>
-                    <div className="text-sm text-blue-700">
+                    <div className="text-xs text-blue-700">
                       💡 Sume: {
                         config.receptionMode === 'per_association' ? 'Pe asociație' :
                         config.receptionMode === 'per_block' ? 'Per bloc' :
                         config.receptionMode === 'per_stair' ? 'Per scară' : config.receptionMode
                       }
                     </div>
-                    <div className="text-sm text-blue-700">
+                    <div className="text-xs text-blue-700">
                       📊 Distribuție: {
                         config.distributionType === 'apartment' ? 'Pe apartament (egal)' :
                         config.distributionType === 'person' ? 'Pe persoană' :
@@ -557,11 +557,11 @@ const ExpenseEntryModal = ({
                       }
                     </div>
                     {config.supplierName ? (
-                      <div className="text-sm text-blue-700">
+                      <div className="text-xs text-blue-700">
                         🏢 Furnizor: {config.supplierName}
                       </div>
                     ) : (
-                      <div className="text-sm text-orange-700 font-medium">
+                      <div className="text-xs text-orange-700 font-medium">
                         ⚠️ Furnizor neconfigurat - apasă Configurare
                       </div>
                     )}
@@ -571,10 +571,10 @@ const ExpenseEntryModal = ({
                       setSelectedExpenseForConfig(selectedExpense);
                       setShowExpenseConfig(true);
                     }}
-                    className={`px-3 py-2 ${config.supplierName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700 animate-pulse'} text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap text-sm`}
+                    className={`px-2 py-1.5 ${config.supplierName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700 animate-pulse'} text-white rounded-md transition-colors flex items-center gap-1.5 whitespace-nowrap text-xs`}
                     title="Configurează cheltuiala"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-3.5 h-3.5" />
                     Configurare
                   </button>
                 </div>
@@ -1422,19 +1422,19 @@ const ExpenseEntryModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
+        <div className="px-3 sm:px-4 py-3 bg-gray-50 border-t flex justify-end gap-2 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-3 py-1.5 text-xs sm:text-sm text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Anulează
           </button>
           <button
             onClick={handleSubmit}
             disabled={!selectedExpense}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             {editingExpense ? 'Salvează Modificări' : 'Distribuie Cheltuială'}
           </button>
         </div>

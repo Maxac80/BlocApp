@@ -1021,46 +1021,45 @@ const MaintenanceView = ({
           // Conținutul care va fi afișat în tab-uri
           tabContent={
             <div className="pb-2">
-              {/* Tab-uri pentru scări */}
-              <div className={`sticky top-0 z-10 bg-white rounded-t-xl mb-3 ${(blocks?.length > 1 || stairs?.length > 1) ? 'shadow-md border-b border-gray-200' : ''}`} style={{ position: 'sticky' }}>
-                <div className={`flex flex-col sm:flex-row sm:items-center ${(blocks?.length > 1 || stairs?.length > 1) ? 'sm:justify-between' : 'sm:justify-end'}`}>
-                  {/* Tab-uri scări - stânga - ascunse când avem 1 bloc + 1 scară */}
-                  {(blocks?.length > 1 || stairs?.length > 1) && (
-                  <div className="flex overflow-x-auto">
-                    {/* Tab "Toate" */}
-                    <button
-                      onClick={() => setSelectedStairTab('all')}
-                      className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
-                        selectedStairTab === 'all'
-                          ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                          : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`}
-                    >
-                      Toate
-                    </button>
+              {/* Tab-uri pentru scări - doar dacă avem mai multe blocuri/scări */}
+              {(blocks?.length > 1 || stairs?.length > 1) && (
+              <div className="bg-white rounded-t-xl mb-3 shadow-md border-b border-gray-200">
+                <div className="flex overflow-x-auto">
+                  {/* Tab "Toate" */}
+                  <button
+                    onClick={() => setSelectedStairTab('all')}
+                    className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 rounded-tl-xl ${
+                      selectedStairTab === 'all'
+                        ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                        : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    Toate
+                  </button>
 
-                    {/* Tab pentru fiecare scară */}
-                    {stairs.map(stair => {
-                      const block = blocks.find(b => b.id === stair.blockId);
-                      return (
-                        <button
-                          key={stair.id}
-                          onClick={() => setSelectedStairTab(stair.id)}
-                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
-                            selectedStairTab === stair.id
-                              ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                              : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                          }`}
-                        >
-                          {block?.name} - {stair.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  )}
+                  {/* Tab pentru fiecare scară */}
+                  {stairs.map(stair => {
+                    const block = blocks.find(b => b.id === stair.blockId);
+                    return (
+                      <button
+                        key={stair.id}
+                        onClick={() => setSelectedStairTab(stair.id)}
+                        className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          selectedStairTab === stair.id
+                            ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                            : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
+                      >
+                        {block?.name} - {stair.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              )}
 
-                  {/* Butoane acțiuni - dreapta */}
-                  <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-4 pb-2 flex-wrap">
+              {/* Butoane acțiuni - în dreapta, nu sticky */}
+              <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 mb-1">
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
                     {!isMonthReadOnly && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
@@ -1068,7 +1067,7 @@ const MaintenanceView = ({
                           setEditingExpense(null);
                           setShowExpenseEntryModal(true);
                         }}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
+                        className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
                           monthType === 'next'
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -1085,7 +1084,7 @@ const MaintenanceView = ({
                           const result = await publishMonth(currentMonth);
                           console.log('Publish result:', result);
                         }}
-                        className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-purple-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
+                        className="bg-purple-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg hover:bg-purple-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
                       >
                         📋 Publică Luna
                       </button>
@@ -1118,18 +1117,16 @@ const MaintenanceView = ({
                             alert(`❌ Eroare la depublicare: ${error.message}`);
                           }
                         }}
-                        className="bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-orange-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
+                        className="bg-orange-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg hover:bg-orange-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
                       >
                         ↩️ Depublică Luna
                       </button>
                     )}
-                  </div>
-                </div>
               </div>
 
               {/* Lista de cheltuieli unificată */}
-              <div className="mb-6 mx-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="mb-4 mx-2">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
                   <ExpenseList
                     associationExpenses={associationExpenses}
                     currentMonth={currentMonth}
@@ -1316,10 +1313,10 @@ const MaintenanceView = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-lg border border-gray-200">
-                    <Calculator className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nu există date de întreținere</h3>
-                    <p className="text-sm sm:text-base text-gray-500 px-4">
+                  <div className="text-center py-4 sm:py-6 bg-white rounded-xl shadow-sm border border-gray-200">
+                    <Calculator className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2" />
+                    <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1">Nu există date de întreținere</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 px-4">
                       {areAllExpensesFullyCompleted(getAssociationApartments)
                         ? "Completează toate consumurile pentru a genera tabelul de întreținere."
                         : "Adaugă cheltuieli și completează consumurile pentru a calcula întreținerea."}

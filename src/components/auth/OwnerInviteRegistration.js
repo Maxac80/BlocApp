@@ -97,11 +97,11 @@ export default function OwnerInviteRegistration({ token }) {
   // Loading state
   if (validationState === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Se verifică invitația...</h2>
-          <p className="text-gray-600">Te rugăm să aștepți.</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 animate-spin mx-auto mb-3 sm:mb-4" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Se verifică invitația...</h2>
+          <p className="text-sm sm:text-base text-gray-600">Te rugăm să aștepți.</p>
         </div>
       </div>
     );
@@ -115,22 +115,22 @@ export default function OwnerInviteRegistration({ token }) {
                           validationError?.includes('credențiale');
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             {isServerError ? 'Eroare server' : 'Invitație invalidă'}
           </h2>
-          <p className="text-gray-600 mb-6">{validationError}</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{validationError}</p>
+          <p className="text-xs sm:text-sm text-gray-500">
             {isServerError
               ? 'Te rugăm să încerci din nou mai târziu sau contactează suportul tehnic.'
               : 'Contactează administratorul asociației pentru a primi o nouă invitație.'}
           </p>
           {/* Debug info pentru development */}
-          <p className="text-xs text-gray-400 mt-4">
+          <p className="text-[10px] sm:text-xs text-gray-400 mt-4">
             Token: {token?.substring(0, 20)}...
           </p>
         </div>
@@ -141,18 +141,18 @@ export default function OwnerInviteRegistration({ token }) {
   // Already active state
   if (validationState === 'already-active') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Cont deja activ</h2>
-          <p className="text-gray-600 mb-6">{validationError}</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Cont deja activ</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{validationError}</p>
           <a
             href={process.env.NODE_ENV === 'production' ? 'https://portal.blocapp.ro' : 'http://localhost:3000?mode=owner'}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-sm sm:text-base text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Home className="w-5 h-5 mr-2" />
+            <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Accesează Portalul
           </a>
         </div>
@@ -163,14 +163,14 @@ export default function OwnerInviteRegistration({ token }) {
   // Success state
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Cont creat cu succes!</h2>
-          <p className="text-gray-600 mb-4">Vei fi redirecționat către portalul proprietarilor...</p>
-          <Loader2 className="w-6 h-6 text-green-600 animate-spin mx-auto" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Cont creat cu succes!</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Vei fi redirecționat către portalul proprietarilor...</p>
+          <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 animate-spin mx-auto" />
         </div>
       </div>
     );
@@ -178,19 +178,19 @@ export default function OwnerInviteRegistration({ token }) {
 
   // Valid token - show registration form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 max-w-md w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4">
             <img
               src="/logo192.png"
               alt="BlocApp"
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bine ai venit în BlocApp!</h1>
-          <p className="text-gray-600">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Bine ai venit în BlocApp!</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             {hasExistingAccount
               ? 'Confirmă identitatea pentru a activa accesul la portalul proprietarilor.'
               : 'Finalizează înregistrarea pentru a accesa portalul proprietarilor.'}
@@ -198,25 +198,25 @@ export default function OwnerInviteRegistration({ token }) {
         </div>
 
         {/* Owner Info */}
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <div className="flex items-center mb-3">
-            <Mail className="w-5 h-5 text-gray-500 mr-2" />
-            <span className="text-gray-900 font-medium">{owner?.email}</span>
+        <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex items-center mb-2 sm:mb-3">
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2" />
+            <span className="text-sm sm:text-base text-gray-900 font-medium">{owner?.email}</span>
           </div>
 
           {owner?.associations?.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-600 font-medium">Apartamentele tale:</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Apartamentele tale:</p>
               {owner.associations.map((assoc, idx) => (
-                <div key={idx} className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="font-medium text-gray-900 text-sm">{assoc.associationName}</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                <div key={idx} className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200">
+                  <p className="font-medium text-gray-900 text-xs sm:text-sm">{assoc.associationName}</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
                     {assoc.apartments.map((apt, aptIdx) => (
                       <span
                         key={aptIdx}
-                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                        className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 text-blue-800 text-[10px] sm:text-xs rounded-full"
                       >
-                        <Home className="w-3 h-3 mr-1" />
+                        <Home className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                         Ap. {apt.number}
                       </span>
                     ))}
@@ -228,25 +228,25 @@ export default function OwnerInviteRegistration({ token }) {
         </div>
 
         {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               {hasExistingAccount ? 'Parola contului existent' : 'Setează parola'}
             </label>
             {hasExistingAccount && (
-              <p className="text-xs text-amber-600 mb-2">
+              <p className="text-[10px] sm:text-xs text-amber-600 mb-2">
                 Acest email are deja un cont (probabil de administrator). Introdu parola existentă pentru a activa accesul de proprietar.
               </p>
             )}
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={hasExistingAccount ? "Parola contului existent" : "Minim 6 caractere"}
-                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 minLength={6}
               />
@@ -255,13 +255,13 @@ export default function OwnerInviteRegistration({ token }) {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
 
             {/* Password strength indicator - doar pentru conturi noi */}
             {!hasExistingAccount && password && (
-              <div className="mt-2">
+              <div className="mt-1.5 sm:mt-2">
                 <div className="flex gap-1 mb-1">
                   {[1, 2, 3, 4, 5].map((level) => (
                     <div
@@ -272,7 +272,7 @@ export default function OwnerInviteRegistration({ token }) {
                     />
                   ))}
                 </div>
-                <p className={`text-xs ${
+                <p className={`text-[10px] sm:text-xs ${
                   passwordStrength.score <= 2 ? 'text-red-600' :
                   passwordStrength.score <= 3 ? 'text-yellow-600' : 'text-green-600'
                 }`}>
@@ -285,17 +285,17 @@ export default function OwnerInviteRegistration({ token }) {
           {/* Confirm Password - doar pentru conturi noi */}
           {!hasExistingAccount && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Confirmă parola
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repetă parola"
-                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     confirmPassword && !passwordsMatch ? 'border-red-500' : 'border-gray-300'
                   }`}
                   required
@@ -303,24 +303,24 @@ export default function OwnerInviteRegistration({ token }) {
                 {confirmPassword && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     {passwordsMatch ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                     ) : (
-                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
                     )}
                   </div>
                 )}
               </div>
               {confirmPassword && !passwordsMatch && (
-                <p className="text-xs text-red-600 mt-1">Parolele nu coincid</p>
+                <p className="text-[10px] sm:text-xs text-red-600 mt-1">Parolele nu coincid</p>
               )}
             </div>
           )}
 
           {/* Error message */}
           {registrationError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start">
-              <AlertCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{registrationError}</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 sm:p-3 flex items-start">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-red-700">{registrationError}</p>
             </div>
           )}
 
@@ -328,7 +328,7 @@ export default function OwnerInviteRegistration({ token }) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
+            className={`w-full py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center justify-center ${
               canSubmit
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -336,20 +336,20 @@ export default function OwnerInviteRegistration({ token }) {
           >
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                {hasExistingAccount ? 'Se activează accesul...' : 'Se creează contul...'}
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                <span className="text-sm sm:text-base">{hasExistingAccount ? 'Se activează accesul...' : 'Se creează contul...'}</span>
               </>
             ) : (
               <>
-                <CheckCircle className="w-5 h-5 mr-2" />
-                {hasExistingAccount ? 'Activează accesul de proprietar' : 'Finalizează înregistrarea'}
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                <span className="text-sm sm:text-base">{hasExistingAccount ? 'Activează accesul de proprietar' : 'Finalizează înregistrarea'}</span>
               </>
             )}
           </button>
         </form>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-[10px] sm:text-xs text-gray-500 mt-4 sm:mt-6">
           Prin finalizarea înregistrării, ești de acord cu{' '}
           <a href="/terms" className="text-blue-600 hover:underline">Termenii și Condițiile</a>
           {' '}BlocApp.

@@ -721,73 +721,73 @@ const ExpenseConfigModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-2 sm:p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-        <div className={`p-6 bg-gradient-to-r ${mode === 'add' ? 'from-green-600 to-green-700' : 'from-purple-600 to-purple-700'} text-white`}>
+        <div className={`p-3 sm:p-4 bg-gradient-to-r ${mode === 'add' ? 'from-green-600 to-green-700' : 'from-purple-600 to-purple-700'} text-white rounded-t-xl`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-lg sm:text-xl font-bold">
                 {mode === 'add' ? 'Adaugă cheltuială nouă' : `⚙️ Configurare: ${expenseName}`}
               </h2>
-              <p className={`${mode === 'add' ? 'text-green-100' : 'text-purple-100'} mt-1`}>
+              <p className={`text-xs sm:text-sm ${mode === 'add' ? 'text-green-100' : 'text-purple-100'} mt-0.5`}>
                 Setări de distribuție și furnizor
               </p>
             </div>
             <button
               onClick={onClose}
-              className={`text-white ${mode === 'add' ? 'hover:bg-green-800' : 'hover:bg-purple-800'} p-2 rounded-lg transition-colors`}
+              className={`text-white ${mode === 'add' ? 'hover:bg-green-800' : 'hover:bg-purple-800'} p-1.5 rounded-lg transition-colors`}
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="border-b">
+        <div className="border-b overflow-x-auto">
           <div className="flex">
             <button
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'general'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               General
             </button>
             <button
               onClick={() => setActiveTab('participation')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'participation'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Participare
             </button>
             <button
               onClick={() => setActiveTab('supplier')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'supplier'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <Building2 className="w-4 h-4" />
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Furnizor
             </button>
             {/* Tab Consum - vizibil doar pentru distributionType === "consumption" */}
             {localConfig.distributionType === 'consumption' && (
               <button
                 onClick={() => setActiveTab('indexes')}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'indexes'
                     ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Activity className="w-4 h-4" />
+                <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Consum
               </button>
             )}
@@ -796,26 +796,26 @@ const ExpenseConfigModal = ({
              localConfig.indexConfiguration?.indexTypes?.length > 0 && (
               <button
                 onClick={() => setActiveTab('meters')}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'meters'
                     ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Gauge className="w-4 h-4" />
+                <Gauge className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Contoare
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-4 overflow-y-auto">
           {activeTab === 'general' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Expense Name Field - Only in ADD mode */}
               {mode === 'add' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Numele cheltuielii *
                   </label>
                   <input
@@ -823,17 +823,17 @@ const ExpenseConfigModal = ({
                     value={inputExpenseName}
                     onChange={(e) => setInputExpenseName(e.target.value)}
                     placeholder="ex: Deratizare, Dezinsecție, etc."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     autoFocus
                   />
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-1 text-xs text-gray-600">
                     Introduceți numele cheltuielii personalizate. Acest nume va fi folosit pentru identificare în sistem.
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Distribuție
                 </label>
                 <select
@@ -847,7 +847,7 @@ const ExpenseConfigModal = ({
                       fixedAmountMode: newDistributionType === 'person' ? 'person' : localConfig.fixedAmountMode
                     });
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="cotaParte">Pe cotă parte indiviză</option>
                   <option value="consumption">Pe consum</option>
@@ -855,7 +855,7 @@ const ExpenseConfigModal = ({
                   <option value="apartment">Pe apartament</option>
                   <option value="individual">Sume individuale pe apartament</option>
                 </select>
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-1 text-xs text-gray-600">
                   {localConfig.distributionType === 'apartment' && 'Cheltuiala se împarte egal între toate apartamentele'}
                   {localConfig.distributionType === 'individual' && 'Fiecare apartament are suma proprie'}
                   {localConfig.distributionType === 'person' && 'Cheltuiala se împarte pe numărul de persoane'}
@@ -863,12 +863,12 @@ const ExpenseConfigModal = ({
                   {localConfig.distributionType === 'cotaParte' && 'Cheltuiala se distribuie proporțional cu cota parte indiviză (% din suprafața utilă totală)'}
                 </p>
                 {localConfig.distributionType === 'cotaParte' && apartments.length === 0 && (
-                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                  <p className="mt-1 text-xs text-orange-600 font-medium">
                     ⚠️ Nu ai apartamente introduse. Nu vei putea publica întreținerea până nu adaugi apartamente și completezi suprafețele.
                   </p>
                 )}
                 {localConfig.distributionType === 'cotaParte' && apartments.length > 0 && apartments.some(apt => !apt.suprafataUtila || apt.suprafataUtila === 0) && (
-                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                  <p className="mt-1 text-xs text-orange-600 font-medium">
                     ⚠️ Unele apartamente nu au suprafața utilă completată. Nu vei putea publica întreținerea până nu completezi toate suprafețele.
                   </p>
                 )}
@@ -876,19 +876,19 @@ const ExpenseConfigModal = ({
 
               {/* Mod participare sumă fixă - apare doar pentru distribuție pe persoană */}
               {localConfig.distributionType === 'person' && (
-                <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="border-t pt-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Mod participare sumă fixă
                   </label>
                   <select
                     value={localConfig.fixedAmountMode}
                     onChange={(e) => setLocalConfig({ ...localConfig, fixedAmountMode: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
                     <option value="apartment">Per apartament</option>
                     <option value="person">Per persoană</option>
                   </select>
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-1 text-xs text-gray-600">
                     {localConfig.fixedAmountMode === 'apartment' && 'Sumă fixă per apartament (indiferent de numărul de persoane)'}
                     {localConfig.fixedAmountMode === 'person' && 'Sumă fixă per persoană înmulțită cu numărul de persoane din apartament'}
                   </p>
@@ -898,7 +898,7 @@ const ExpenseConfigModal = ({
               {/* Unitate de măsură - apare doar pentru consumption */}
               {localConfig.distributionType === 'consumption' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Unitate de măsură
                   </label>
                   <select
@@ -912,7 +912,7 @@ const ExpenseConfigModal = ({
                         setLocalConfig({ ...localConfig, consumptionUnit: e.target.value, customConsumptionUnit: '' });
                       }
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
                     <option value="mc">mc (metri cubi) - Apă, Canalizare, Gaz</option>
                     <option value="Gcal">Gcal (gigacalorii) - Căldură</option>
@@ -922,7 +922,7 @@ const ExpenseConfigModal = ({
                   </select>
 
                   {showCustomUnit && (
-                    <div className="mt-3">
+                    <div className="mt-2">
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Unitatea personalizată *
                       </label>
@@ -931,32 +931,32 @@ const ExpenseConfigModal = ({
                         placeholder="Ex: litri, m³, kW, etc."
                         value={localConfig.customConsumptionUnit || ''}
                         onChange={(e) => setLocalConfig({ ...localConfig, customConsumptionUnit: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         required
                       />
                     </div>
                   )}
 
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-1 text-xs text-gray-600">
                     Unitatea folosită pentru măsurarea consumului
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Factură
                 </label>
                 <select
                   value={localConfig.invoiceMode}
                   onChange={(e) => handleInvoiceModeChange(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   disabled={blocks.length < 2 && stairs.length < 2 && localConfig.invoiceMode === 'single'}
                 >
                   <option value="single">O singură factură</option>
                   {(blocks.length >= 2 || stairs.length >= 2) && <option value="separate">Facturi separate (per scară/bloc)</option>}
                 </select>
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-1 text-xs text-gray-600">
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_association' && 'O factură pe asociație'}
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_block' && 'O factură cu suma totală distribuită pe blocuri'}
                   {localConfig.invoiceMode === 'single' && localConfig.receptionMode === 'per_stair' && 'O factură cu suma totală distribuită pe scări'}
@@ -964,7 +964,7 @@ const ExpenseConfigModal = ({
                   {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_stair' && 'Facturi separate pentru fiecare scară'}
                 </p>
                 {blocks.length < 2 && stairs.length < 2 && (
-                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                  <p className="mt-1 text-xs text-orange-600 font-medium">
                     ⚠️ Adaugă cel puțin 2 blocuri sau 2 scări pentru a putea folosi "Facturi separate"
                   </p>
                 )}
@@ -972,31 +972,31 @@ const ExpenseConfigModal = ({
 
               {/* Introducere sume */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Introducere sume
                 </label>
                 <select
                   value={localConfig.receptionMode}
                   onChange={(e) => handleReceptionModeChange(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   disabled={blocks.length < 2 && stairs.length < 2 && localConfig.receptionMode === 'per_association'}
                 >
                   {localConfig.invoiceMode !== 'separate' && <option value="per_association">Pe asociație</option>}
                   {(blocks.length >= 2 || localConfig.receptionMode === 'per_block') && <option value="per_block">Per bloc</option>}
                   {(stairs.length >= 2 || localConfig.receptionMode === 'per_stair') && <option value="per_stair">Per scară</option>}
                 </select>
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-1 text-xs text-gray-600">
                   {localConfig.receptionMode === 'per_association' && 'Suma se introduce o singură dată pentru întreaga asociație'}
                   {localConfig.receptionMode === 'per_block' && 'Sume separate per bloc'}
                   {localConfig.receptionMode === 'per_stair' && 'Sume separate per scară'}
                 </p>
                 {localConfig.invoiceMode === 'separate' && localConfig.receptionMode === 'per_association' && (
-                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                  <p className="mt-1 text-xs text-orange-600 font-medium">
                     ⚠️ Mod "Facturi separate" necesită "Per bloc" sau "Per scară"
                   </p>
                 )}
                 {blocks.length < 2 && stairs.length < 2 && localConfig.invoiceMode !== 'separate' && (
-                  <p className="mt-2 text-sm text-orange-600 font-medium">
+                  <p className="mt-1 text-xs text-orange-600 font-medium">
                     ⚠️ Adaugă cel puțin 2 blocuri sau 2 scări pentru a putea folosi "Per bloc" sau "Per scară"
                   </p>
                 )}
@@ -1004,41 +1004,41 @@ const ExpenseConfigModal = ({
 
               {/* Se aplică pe (bife) - doar pentru per_block și per_stair */}
               {localConfig.receptionMode !== 'per_association' && (
-                <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                <div className="border-t pt-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
                     🏢 Se aplică pe: (bifează)
                   </label>
 
                   {localConfig.receptionMode === 'per_block' && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {blocks.map(block => (
-                        <label key={block.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-purple-50">
+                        <label key={block.id} className="flex items-center gap-2 p-1.5 border rounded-md cursor-pointer hover:bg-purple-50">
                           <input
                             type="checkbox"
                             checked={localConfig.appliesTo.blocks.includes(block.id)}
                             onChange={() => handleBlockToggle(block.id)}
-                            className="w-4 h-4 text-purple-600 rounded"
+                            className="w-3.5 h-3.5 text-purple-600 rounded"
                           />
-                          <span className="text-sm">{block.name}</span>
+                          <span className="text-xs">{block.name}</span>
                         </label>
                       ))}
                     </div>
                   )}
 
                   {localConfig.receptionMode === 'per_stair' && (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
                       {blocksWithStairs.map(block => (
                         <div key={block.id} className="space-y-1">
-                          <div className="text-xs font-medium text-gray-600 px-2">{block.name}</div>
+                          <div className="text-xs font-medium text-gray-600 px-1.5">{block.name}</div>
                           {block.stairs.map(stair => (
-                            <label key={stair.id} className="flex items-center gap-2 p-2 ml-4 border rounded-lg cursor-pointer hover:bg-purple-50">
+                            <label key={stair.id} className="flex items-center gap-2 p-1.5 ml-3 border rounded-md cursor-pointer hover:bg-purple-50">
                               <input
                                 type="checkbox"
                                 checked={localConfig.appliesTo.stairs.includes(stair.id)}
                                 onChange={() => handleStairToggle(stair.id)}
-                                className="w-4 h-4 text-purple-600 rounded"
+                                className="w-3.5 h-3.5 text-purple-600 rounded"
                               />
-                              <span className="text-sm">{stair.name}</span>
+                              <span className="text-xs">{stair.name}</span>
                             </label>
                           ))}
                         </div>
@@ -1051,8 +1051,8 @@ const ExpenseConfigModal = ({
           )}
 
           {activeTab === 'participation' && (
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600 mb-4">
+            <div className="space-y-3">
+              <div className="text-xs text-gray-600 mb-3">
                 Configurează participarea fiecărui apartament la această cheltuială
               </div>
 
@@ -1062,7 +1062,7 @@ const ExpenseConfigModal = ({
                   <div className="flex">
                     <button
                       onClick={() => setSelectedStairTab('all')}
-                      className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                      className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                         selectedStairTab === 'all'
                           ? 'bg-purple-50 text-purple-700 border-purple-700'
                           : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -1084,7 +1084,7 @@ const ExpenseConfigModal = ({
                           key={stair.id}
                           onClick={() => setSelectedStairTab(stair.id)}
                           disabled={!isStairActive}
-                          className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                             selectedStairTab === stair.id
                               ? 'bg-purple-50 text-purple-700 border-purple-700'
                               : isStairActive
@@ -1239,16 +1239,16 @@ const ExpenseConfigModal = ({
           )}
 
           {activeTab === 'supplier' && (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Selectează furnizor
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={localConfig.supplierId || ''}
                     onChange={(e) => handleSupplierChange(e.target.value)}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg"
+                    className="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     disabled={loading}
                   >
                     <option value="">Fără furnizor</option>
@@ -1260,7 +1260,7 @@ const ExpenseConfigModal = ({
                   </select>
                   <button
                     onClick={() => setIsSupplierModalOpen(true)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    className="px-3 py-1.5 text-xs sm:text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
                   >
                     + Adaugă furnizor
                   </button>
@@ -1270,7 +1270,7 @@ const ExpenseConfigModal = ({
               {localConfig.supplierId && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Număr contract
                     </label>
                     <input
@@ -1278,12 +1278,12 @@ const ExpenseConfigModal = ({
                       value={localConfig.contractNumber}
                       onChange={(e) => setLocalConfig({ ...localConfig, contractNumber: e.target.value })}
                       placeholder="ex: 12345/2024"
-                      className="w-full p-3 border border-gray-300 rounded-lg"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Persoană de contact
                     </label>
                     <input
@@ -1291,7 +1291,7 @@ const ExpenseConfigModal = ({
                       value={localConfig.contactPerson}
                       onChange={(e) => setLocalConfig({ ...localConfig, contactPerson: e.target.value })}
                       placeholder="ex: Ion Popescu"
-                      className="w-full p-3 border border-gray-300 rounded-lg"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     />
                   </div>
                 </>
@@ -1301,55 +1301,55 @@ const ExpenseConfigModal = ({
 
           {/* Tab Consum */}
           {activeTab === 'indexes' && localConfig.distributionType === 'consumption' && (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               {/* 1️⃣ Mod introducere date */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h3 className="text-xs sm:text-sm font-semibold text-blue-900 mb-2">
                   1️⃣ Mod introducere date
                 </h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 p-2 bg-white border-2 rounded-md cursor-pointer hover:border-blue-300 transition-colors">
                     <input
                       type="radio"
                       name="inputMode"
                       value="indexes"
                       checked={localConfig.indexConfiguration.inputMode === 'indexes'}
                       onChange={(e) => handleInputModeChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-3.5 h-3.5 text-blue-600"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Indecși</div>
-                      <div className="text-sm text-gray-600">Index vechi → Index nou (calcul automat consum)</div>
+                      <div className="text-sm font-medium text-gray-900">Indecși</div>
+                      <div className="text-xs text-gray-600">Index vechi → Index nou (calcul automat consum)</div>
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                  <label className="flex items-center gap-2 p-2 bg-white border-2 rounded-md cursor-pointer hover:border-blue-300 transition-colors">
                     <input
                       type="radio"
                       name="inputMode"
                       value="manual"
                       checked={localConfig.indexConfiguration.inputMode === 'manual'}
                       onChange={(e) => handleInputModeChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-3.5 h-3.5 text-blue-600"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Introducere consumuri</div>
-                      <div className="text-sm text-gray-600">Introduci direct consumul (ex: 8.5 mc)</div>
+                      <div className="text-sm font-medium text-gray-900">Introducere consumuri</div>
+                      <div className="text-xs text-gray-600">Introduci direct consumul (ex: 8.5 mc)</div>
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-3 bg-white border-2 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                  <label className="flex items-center gap-2 p-2 bg-white border-2 rounded-md cursor-pointer hover:border-blue-300 transition-colors">
                     <input
                       type="radio"
                       name="inputMode"
                       value="mixed"
                       checked={localConfig.indexConfiguration.inputMode === 'mixed'}
                       onChange={(e) => handleInputModeChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-3.5 h-3.5 text-blue-600"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Mixt</div>
-                      <div className="text-sm text-gray-600">Indecși pentru unele apartamente, consumuri pentru altele</div>
+                      <div className="text-sm font-medium text-gray-900">Mixt</div>
+                      <div className="text-xs text-gray-600">Indecși pentru unele apartamente, consumuri pentru altele</div>
                     </div>
                   </label>
                 </div>
@@ -1357,13 +1357,13 @@ const ExpenseConfigModal = ({
 
               {/* 2️⃣ Configurare Contoare - apare pentru indexes și mixed */}
               {(localConfig.indexConfiguration.inputMode === 'indexes' || localConfig.indexConfiguration.inputMode === 'mixed') && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-green-900 mb-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <h3 className="text-xs sm:text-sm font-semibold text-green-900 mb-2">
                     2️⃣ Configurare Contoare
                   </h3>
 
                   {/* Listă contoare configurate + buton adăugare */}
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-1.5 mb-2">
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-medium text-gray-600">
                         {localConfig.indexConfiguration.indexTypes.length > 0
@@ -1384,13 +1384,13 @@ const ExpenseConfigModal = ({
 
                     {/* Listă contoare */}
                     {localConfig.indexConfiguration.indexTypes.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {localConfig.indexConfiguration.indexTypes.map(indexType => (
-                        <div key={indexType.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                        <div key={indexType.id} className="flex items-center justify-between p-2 bg-white border rounded-md">
                           {editingIndexId === indexType.id ? (
                             // Mod editare
                             <div className="flex items-center gap-2 flex-1">
-                              <Activity className="w-4 h-4 text-green-600" />
+                              <Activity className="w-3.5 h-3.5 text-green-600" />
                               <input
                                 type="text"
                                 value={editingIndexName}
@@ -1399,20 +1399,20 @@ const ExpenseConfigModal = ({
                                   if (e.key === 'Enter') handleSaveEditIndexType();
                                   if (e.key === 'Escape') handleCancelEditIndexType();
                                 }}
-                                className="flex-1 p-1 border border-green-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                className="flex-1 px-2 py-1 text-sm border border-green-500 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 autoFocus
                               />
-                              <span className="text-sm text-gray-500">({indexType.unit})</span>
+                              <span className="text-xs text-gray-500">({indexType.unit})</span>
                               <div className="flex gap-1">
                                 <button
                                   onClick={handleSaveEditIndexType}
-                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                                  className="px-2 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
                                 >
                                   Salvează
                                 </button>
                                 <button
                                   onClick={handleCancelEditIndexType}
-                                  className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 transition-colors"
+                                  className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded-md hover:bg-gray-400 transition-colors"
                                 >
                                   Anulează
                                 </button>
@@ -1422,32 +1422,32 @@ const ExpenseConfigModal = ({
                             // Mod vizualizare
                             <>
                               <div className="flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-green-600" />
-                                <span className="font-medium">{indexType.name}</span>
-                                <span className="text-sm text-gray-500">({indexType.unit})</span>
+                                <Activity className="w-3.5 h-3.5 text-green-600" />
+                                <span className="text-sm font-medium">{indexType.name}</span>
+                                <span className="text-xs text-gray-500">({indexType.unit})</span>
                               </div>
                               <div className="relative">
                                 <button
                                   onClick={() => setOpenDropdownId(openDropdownId === indexType.id ? null : indexType.id)}
-                                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                  className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                                   title="Opțiuni"
                                 >
-                                  <MoreVertical className="w-4 h-4" />
+                                  <MoreVertical className="w-3.5 h-3.5" />
                                 </button>
                                 {openDropdownId === indexType.id && (
-                                  <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                  <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                                     <button
                                       onClick={() => handleStartEditIndexType(indexType)}
-                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
                                     >
-                                      <Edit className="w-4 h-4" />
+                                      <Edit className="w-3.5 h-3.5" />
                                       Editează
                                     </button>
                                     <button
                                       onClick={() => handleDeleteIndexType(indexType.id)}
-                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors rounded-b-md"
                                     >
-                                      <Trash2 className="w-4 h-4" />
+                                      <Trash2 className="w-3.5 h-3.5" />
                                       Șterge
                                     </button>
                                   </div>
@@ -1462,29 +1462,29 @@ const ExpenseConfigModal = ({
 
                     {/* Formular adăugare contor nou - apare doar când dai click pe buton */}
                     {showAddIndexForm && (
-                      <div className="bg-white border-2 border-green-300 rounded-lg p-3">
+                      <div className="bg-white border-2 border-green-300 rounded-md p-2">
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            placeholder="Nume contor (ex: Contor baie, Contor bucătărie, Contor hol)"
+                            placeholder="Nume contor (ex: Contor baie, Contor bucătărie)"
                             value={newIndexName}
                             onChange={(e) => setNewIndexName(e.target.value)}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter') handleAddIndexType();
                               if (e.key === 'Escape') handleCancelAddIndexType();
                             }}
-                            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             autoFocus
                           />
                           <button
                             onClick={handleAddIndexType}
-                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                            className="px-2 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
                           >
                             Adaugă
                           </button>
                           <button
                             onClick={handleCancelAddIndexType}
-                            className="px-3 py-2 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400 transition-colors"
+                            className="px-2 py-1.5 bg-gray-300 text-gray-700 text-xs rounded-md hover:bg-gray-400 transition-colors"
                           >
                             Anulează
                           </button>
@@ -1496,24 +1496,24 @@ const ExpenseConfigModal = ({
               )}
 
               {/* 3️⃣ Distribuție Diferență */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-orange-900 mb-3">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <h3 className="text-xs sm:text-sm font-semibold text-orange-900 mb-2">
                   3️⃣ Distribuție Diferență (Pierderi/Scurgeri)
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Explicație */}
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600">
                     Cum se distribuie diferența dintre totalul facturii și suma consumurilor declarate?
                   </p>
 
                   {/* Metoda de distribuție */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
                       Metoda de distribuție:
                     </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 p-2 bg-white border rounded-lg cursor-pointer hover:border-orange-300">
+                    <div className="space-y-1.5">
+                      <label className="flex items-center gap-2 p-1.5 bg-white border rounded-md cursor-pointer hover:border-orange-300">
                         <input
                           type="radio"
                           name="differenceMethod"
@@ -1523,12 +1523,12 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, method: e.target.value }
                           })}
-                          className="w-4 h-4 text-orange-600"
+                          className="w-3.5 h-3.5 text-orange-600"
                         />
-                        <span className="text-sm">Egal pe apartament</span>
+                        <span className="text-xs sm:text-sm">Egal pe apartament</span>
                       </label>
 
-                      <label className="flex items-center gap-2 p-2 bg-white border rounded-lg cursor-pointer hover:border-orange-300">
+                      <label className="flex items-center gap-2 p-1.5 bg-white border rounded-md cursor-pointer hover:border-orange-300">
                         <input
                           type="radio"
                           name="differenceMethod"
@@ -1538,12 +1538,12 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, method: e.target.value }
                           })}
-                          className="w-4 h-4 text-orange-600"
+                          className="w-3.5 h-3.5 text-orange-600"
                         />
-                        <span className="text-sm">Proporțional cu consumul</span>
+                        <span className="text-xs sm:text-sm">Proporțional cu consumul</span>
                       </label>
 
-                      <label className="flex items-center gap-2 p-2 bg-white border rounded-lg cursor-pointer hover:border-orange-300">
+                      <label className="flex items-center gap-2 p-1.5 bg-white border rounded-md cursor-pointer hover:border-orange-300">
                         <input
                           type="radio"
                           name="differenceMethod"
@@ -1553,23 +1553,23 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, method: e.target.value }
                           })}
-                          className="w-4 h-4 text-orange-600"
+                          className="w-3.5 h-3.5 text-orange-600"
                         />
-                        <span className="text-sm">Proporțional cu numărul de persoane</span>
+                        <span className="text-xs sm:text-sm">Proporțional cu numărul de persoane</span>
                       </label>
 
                     </div>
                   </div>
 
                   {/* AJUSTĂRI DIFERENȚĂ */}
-                  <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50/30">
-                    <label className="block text-sm font-medium text-orange-900 mb-3">
+                  <div className="border-2 border-orange-200 rounded-md p-3 bg-orange-50/30">
+                    <label className="block text-xs sm:text-sm font-medium text-orange-900 mb-2">
                       ⚙️ Mod de ajustare a diferenței
                     </label>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
 
                       {/* Opțiune 1: Fără ajustări */}
-                      <label className="flex items-start gap-3 p-3 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                      <label className="flex items-start gap-2 p-2 bg-white border-2 border-gray-300 rounded-md cursor-pointer hover:border-gray-400">
                         <input
                           type="radio"
                           name="adjustmentMode"
@@ -1579,16 +1579,16 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, adjustmentMode: e.target.value }
                           })}
-                          className="w-4 h-4 text-gray-600 mt-0.5"
+                          className="w-3.5 h-3.5 text-gray-600 mt-0.5"
                         />
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Fără ajustări suplimentare</div>
-                          <div className="text-xs text-gray-600 mt-1">Diferența se distribuie doar conform metodei alese mai sus</div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">Fără ajustări suplimentare</div>
+                          <div className="text-xs text-gray-600">Diferența se distribuie doar conform metodei alese mai sus</div>
                         </div>
                       </label>
 
                       {/* Opțiune 2: Respectă configurările de participare */}
-                      <label className="flex items-start gap-3 p-3 bg-white border-2 border-green-300 rounded-lg cursor-pointer hover:border-green-400">
+                      <label className="flex items-start gap-2 p-2 bg-white border-2 border-green-300 rounded-md cursor-pointer hover:border-green-400">
                         <input
                           type="radio"
                           name="adjustmentMode"
@@ -1598,16 +1598,16 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, adjustmentMode: e.target.value }
                           })}
-                          className="w-4 h-4 text-green-600 mt-0.5"
+                          className="w-3.5 h-3.5 text-green-600 mt-0.5"
                         />
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-green-900">Respectă configurările de participare</div>
-                          <div className="text-xs text-green-700 mt-1">Aplică procentele individuale configurate (ex: Apt cu 50% → primește 50% din diferență)</div>
+                          <div className="text-xs sm:text-sm font-medium text-green-900">Respectă configurările de participare</div>
+                          <div className="text-xs text-green-700">Aplică procentele individuale configurate (ex: Apt cu 50% → primește 50% din diferență)</div>
                         </div>
                       </label>
 
                       {/* Opțiune 3: Ajustare pe tip apartament */}
-                      <label className="flex items-start gap-3 p-3 bg-white border-2 border-purple-300 rounded-lg cursor-pointer hover:border-purple-400">
+                      <label className="flex items-start gap-2 p-2 bg-white border-2 border-purple-300 rounded-md cursor-pointer hover:border-purple-400">
                         <input
                           type="radio"
                           name="adjustmentMode"
@@ -1617,24 +1617,24 @@ const ExpenseConfigModal = ({
                             ...localConfig,
                             differenceDistribution: { ...localConfig.differenceDistribution, adjustmentMode: e.target.value }
                           })}
-                          className="w-4 h-4 text-purple-600 mt-0.5"
+                          className="w-3.5 h-3.5 text-purple-600 mt-0.5"
                         />
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-purple-900">Ajustare pe tip apartament</div>
-                          <div className="text-xs text-purple-700 mt-1">Configurează procente diferite pentru fiecare tip (Garsonieră, 2 camere, etc.)</div>
+                          <div className="text-xs sm:text-sm font-medium text-purple-900">Ajustare pe tip apartament</div>
+                          <div className="text-xs text-purple-700">Configurează procente diferite pentru fiecare tip (Garsonieră, 2 camere, etc.)</div>
                         </div>
                       </label>
 
                       {/* Panel configurare procente pe tip apartament */}
                       {localConfig.differenceDistribution.adjustmentMode === 'apartmentType' && (
-                        <div className="ml-7 p-4 bg-white border border-purple-300 rounded-lg">
-                          <label className="block text-sm font-medium text-purple-900 mb-3">
+                        <div className="ml-5 p-2.5 bg-white border border-purple-300 rounded-md">
+                          <label className="block text-xs font-medium text-purple-900 mb-2">
                             Procent din diferența calculată pentru fiecare tip:
                           </label>
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {['Garsonieră', '2 camere', '3 camere', '4 camere', 'Penthouse'].map(type => (
-                              <div key={type} className="flex items-center gap-3 bg-purple-50 p-2 rounded border border-purple-200">
-                                <label className="flex-1 text-sm font-medium text-gray-700">{type}</label>
+                              <div key={type} className="flex items-center gap-2 bg-purple-50 p-1.5 rounded border border-purple-200">
+                                <label className="flex-1 text-xs font-medium text-gray-700">{type}</label>
                                 <input
                                   type="number"
                                   min="0"
@@ -1654,13 +1654,13 @@ const ExpenseConfigModal = ({
                                       }
                                     });
                                   }}
-                                  className="w-20 p-2 text-sm border border-purple-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  className="w-16 px-2 py-1 text-xs border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 />
-                                <span className="text-sm text-gray-600">%</span>
+                                <span className="text-xs text-gray-600">%</span>
                               </div>
                             ))}
                           </div>
-                          <p className="text-xs text-purple-700 mt-3">
+                          <p className="text-xs text-purple-700 mt-2">
                             💡 Lasă gol pentru 100% (implicit). Cu reponderare - suma totală se păstrează.
                           </p>
                         </div>
@@ -1668,11 +1668,11 @@ const ExpenseConfigModal = ({
                     </div>
 
                     {/* Opțiuni suplimentare care se aplică la orice mod */}
-                    <div className="mt-4 pt-4 border-t border-orange-300">
-                      <label className="block text-sm font-medium text-orange-900 mb-2">Opțiuni suplimentare:</label>
-                      <div className="space-y-2">
+                    <div className="mt-3 pt-3 border-t border-orange-300">
+                      <label className="block text-xs font-medium text-orange-900 mb-1.5">Opțiuni suplimentare:</label>
+                      <div className="space-y-1.5">
                         {/* Include apartamente cu sumă fixă */}
-                        <label className="flex items-center gap-3 p-2 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <label className="flex items-center gap-2 p-1.5 bg-white border rounded-md cursor-pointer hover:bg-gray-50">
                           <input
                             type="checkbox"
                             checked={localConfig.differenceDistribution.includeFixedAmountInDifference}
@@ -1680,16 +1680,16 @@ const ExpenseConfigModal = ({
                               ...localConfig,
                               differenceDistribution: { ...localConfig.differenceDistribution, includeFixedAmountInDifference: e.target.checked }
                             })}
-                            className="w-4 h-4 text-orange-600 rounded"
+                            className="w-3.5 h-3.5 text-orange-600 rounded"
                           />
                           <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">Include apartamente cu sumă fixă</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-900">Include apartamente cu sumă fixă</div>
                             <div className="text-xs text-gray-600">Apartamentele cu sumă fixă participă și la diferență</div>
                           </div>
                         </label>
 
                         {/* Include apartamente excluse */}
-                        <label className="flex items-center gap-3 p-2 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <label className="flex items-center gap-2 p-1.5 bg-white border rounded-md cursor-pointer hover:bg-gray-50">
                           <input
                             type="checkbox"
                             checked={localConfig.differenceDistribution.includeExcludedInDifference}
@@ -1697,10 +1697,10 @@ const ExpenseConfigModal = ({
                               ...localConfig,
                               differenceDistribution: { ...localConfig.differenceDistribution, includeExcludedInDifference: e.target.checked }
                             })}
-                            className="w-4 h-4 text-orange-600 rounded"
+                            className="w-3.5 h-3.5 text-orange-600 rounded"
                           />
                           <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">Include apartamente excluse</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-900">Include apartamente excluse</div>
                             <div className="text-xs text-gray-600">Apartamentele excluse (debranșate) participă și la diferență</div>
                           </div>
                         </label>
@@ -1709,8 +1709,8 @@ const ExpenseConfigModal = ({
                   </div>
 
                   {/* Exemplu explicativ dinamic */}
-                  <div className="bg-gradient-to-br from-orange-50 to-purple-50 border-2 border-orange-200 rounded-lg p-4">
-                    <div className="text-xs font-bold text-orange-900 mb-3">💡 Exemplu detaliat - cum se aplică configurările:</div>
+                  <div className="bg-gradient-to-br from-orange-50 to-purple-50 border-2 border-orange-200 rounded-md p-2.5">
+                    <div className="text-xs font-bold text-orange-900 mb-2">💡 Exemplu detaliat - cum se aplică configurările:</div>
                     <div className="text-xs text-gray-700 space-y-2">
                       {/* Setup inițial */}
                       <div className="bg-white p-2 rounded border border-gray-200">
@@ -1909,8 +1909,8 @@ const ExpenseConfigModal = ({
 
           {/* 🔧 TAB CONTOARE - Configurare contoare per apartament */}
           {activeTab === 'meters' && localConfig.indexConfiguration?.indexTypes?.length > 0 && (
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600 mb-4">
+            <div className="space-y-3">
+              <div className="text-xs text-gray-600 mb-2">
                 Configurează contoarele instalate pentru fiecare apartament
               </div>
 
@@ -1920,7 +1920,7 @@ const ExpenseConfigModal = ({
                   <div className="flex">
                     <button
                       onClick={() => setSelectedStairTab('all')}
-                      className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                      className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                         selectedStairTab === 'all'
                           ? 'bg-purple-50 text-purple-700 border-purple-700'
                           : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -1932,7 +1932,7 @@ const ExpenseConfigModal = ({
                       <button
                         key={stair.id}
                         onClick={() => setSelectedStairTab(stair.id)}
-                        className={`px-4 py-2 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                        className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                           selectedStairTab === stair.id
                             ? 'bg-purple-50 text-purple-700 border-purple-700'
                             : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -1947,18 +1947,18 @@ const ExpenseConfigModal = ({
 
               {/* Tabelul cu contoare per apartament */}
               {filteredApartments.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <div className="overflow-x-auto rounded-md border border-gray-200">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-purple-50">
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 sticky left-0 bg-purple-50 z-10">
+                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-200 sticky left-0 bg-purple-50 z-10">
                           Apartament
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200">
+                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-200">
                           Proprietar
                         </th>
                         {localConfig.indexConfiguration.indexTypes.map(meter => (
-                          <th key={meter.id} className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-r border-gray-200 min-w-[180px]">
+                          <th key={meter.id} className="px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-200 min-w-[140px]">
                             <div>{meter.name}</div>
                             <div className="text-xs font-normal text-gray-500">({meter.unit})</div>
                           </th>
@@ -1969,13 +1969,13 @@ const ExpenseConfigModal = ({
                       {filteredApartments.map((apartment, index) => (
                         <tr key={apartment.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           {/* Coloana Apartament */}
-                          <td className="px-4 py-3 border-b border-r border-gray-200 sticky left-0 bg-inherit z-10">
-                            <div className="font-medium text-gray-900">Apt {apartment.number}</div>
+                          <td className="px-2 py-1.5 border-b border-r border-gray-200 sticky left-0 bg-inherit z-10">
+                            <div className="text-sm font-medium text-gray-900">Apt {apartment.number}</div>
                           </td>
 
                           {/* Coloana Proprietar */}
-                          <td className="px-4 py-3 border-b border-r border-gray-200">
-                            <div className="text-sm text-gray-600">{apartment.owner || '-'}</div>
+                          <td className="px-2 py-1.5 border-b border-r border-gray-200">
+                            <div className="text-xs text-gray-600">{apartment.owner || '-'}</div>
                           </td>
 
                           {/* Coloane pentru fiecare contor */}
@@ -1986,15 +1986,15 @@ const ExpenseConfigModal = ({
                             };
 
                             return (
-                              <td key={meter.id} className="px-4 py-3 border-b border-r border-gray-200">
-                                <div className="flex items-center gap-3">
+                              <td key={meter.id} className="px-2 py-1.5 border-b border-r border-gray-200">
+                                <div className="flex items-center gap-2">
                                   {/* Checkbox activare */}
-                                  <label className="flex items-center gap-2 cursor-pointer">
+                                  <label className="flex items-center gap-1.5 cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={meterConfig.enabled}
                                       onChange={(e) => handleMeterToggle(apartment.id, meter.id, e.target.checked)}
-                                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                      className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                                     />
                                     <span className={`text-xs ${meterConfig.enabled ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
                                       {meterConfig.enabled ? '✓' : ''}
@@ -2031,21 +2031,21 @@ const ExpenseConfigModal = ({
               )}
 
               {/* Info text */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-2.5">
+                <p className="text-xs text-blue-800">
                   <strong>💡 Sfat:</strong> Bifează contoarele instalate pentru fiecare apartament și introdu seria contorului.
                   Doar apartamentele cu contoare bifate vor avea coloane pentru introducerea indexurilor în tabelul de consumuri.
                 </p>
               </div>
 
               {/* 📱 Transmitere din Portal Proprietari */}
-              <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+              <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-md p-3">
+                <h4 className="text-xs sm:text-sm font-semibold text-emerald-900 mb-2 flex items-center gap-2">
                   📱 Transmitere din Portal Proprietari
                 </h4>
 
                 {/* Toggle principal */}
-                <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                <label className="flex items-center gap-2 mb-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={localConfig.indexConfiguration?.portalSubmission?.enabled ?? true}
@@ -2059,20 +2059,20 @@ const ExpenseConfigModal = ({
                         }
                       }
                     })}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                   />
-                  <span className="text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-gray-700">
                     Permite proprietarilor să transmită indexuri online
                   </span>
                 </label>
 
                 {/* Opțiuni perioadă - afișate doar când e enabled */}
                 {localConfig.indexConfiguration?.portalSubmission?.enabled && (
-                  <div className="ml-7 space-y-3">
-                    <p className="text-xs font-medium text-gray-600 mb-2">Perioadă de transmitere:</p>
+                  <div className="ml-5 space-y-2">
+                    <p className="text-xs font-medium text-gray-600 mb-1.5">Perioadă de transmitere:</p>
 
                     {/* Auto (1-25) */}
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="portalPeriodType"
@@ -2088,16 +2088,16 @@ const ExpenseConfigModal = ({
                             }
                           }
                         })}
-                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                        className="w-3.5 h-3.5 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                       />
                       <div>
-                        <span className="text-sm text-gray-700">Automată</span>
+                        <span className="text-xs sm:text-sm text-gray-700">Automată</span>
                         <span className="text-xs text-gray-500 ml-1">(1-25 ale lunii)</span>
                       </div>
                     </label>
 
                     {/* Manual */}
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="portalPeriodType"
@@ -2113,17 +2113,17 @@ const ExpenseConfigModal = ({
                             }
                           }
                         })}
-                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                        className="w-3.5 h-3.5 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                       />
                       <div>
-                        <span className="text-sm text-gray-700">Manuală</span>
+                        <span className="text-xs sm:text-sm text-gray-700">Manuală</span>
                         <span className="text-xs text-gray-500 ml-1">(deschid/închid când vreau)</span>
                       </div>
                     </label>
 
                     {/* Toggle Deschis/Închis - pentru manual */}
                     {localConfig.indexConfiguration?.portalSubmission?.periodType === 'manual' && (
-                      <div className="ml-7 mt-2">
+                      <div className="ml-5 mt-1.5">
                         <select
                           value={localConfig.indexConfiguration?.portalSubmission?.isOpen ? 'open' : 'closed'}
                           onChange={(e) => setLocalConfig({
@@ -2136,7 +2136,7 @@ const ExpenseConfigModal = ({
                               }
                             }
                           })}
-                          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                           <option value="open">🟢 Deschisă</option>
                           <option value="closed">🔴 Închisă</option>
@@ -2145,7 +2145,7 @@ const ExpenseConfigModal = ({
                     )}
 
                     {/* Custom */}
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="portalPeriodType"
@@ -2161,15 +2161,15 @@ const ExpenseConfigModal = ({
                             }
                           }
                         })}
-                        className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                        className="w-3.5 h-3.5 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                       />
-                      <span className="text-sm text-gray-700">Personalizată</span>
+                      <span className="text-xs sm:text-sm text-gray-700">Personalizată</span>
                     </label>
 
                     {/* Inputs pentru custom period */}
                     {localConfig.indexConfiguration?.portalSubmission?.periodType === 'custom' && (
-                      <div className="ml-7 mt-2 flex items-center gap-2">
-                        <span className="text-sm text-gray-600">De la ziua</span>
+                      <div className="ml-5 mt-1.5 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-600">De la ziua</span>
                         <input
                           type="number"
                           min="1"
@@ -2185,9 +2185,9 @@ const ExpenseConfigModal = ({
                               }
                             }
                           })}
-                          className="w-16 text-sm text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-14 text-xs text-center border border-gray-300 rounded-md px-1.5 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         />
-                        <span className="text-sm text-gray-600">până la ziua</span>
+                        <span className="text-xs text-gray-600">până la ziua</span>
                         <input
                           type="number"
                           min="1"
@@ -2203,7 +2203,7 @@ const ExpenseConfigModal = ({
                               }
                             }
                           })}
-                          className="w-16 text-sm text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-14 text-xs text-center border border-gray-300 rounded-md px-1.5 py-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         />
                       </div>
                     )}
@@ -2214,16 +2214,16 @@ const ExpenseConfigModal = ({
           )}
         </div>
 
-        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
+        <div className="p-3 sm:p-4 bg-gray-50 border-t flex justify-end gap-2 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
           >
             Anulează
           </button>
           <button
             onClick={handleSave}
-            className={`px-6 py-3 text-white rounded-lg transition-colors ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-white rounded-md transition-colors ${
               mode === 'add'
                 ? 'bg-green-600 hover:bg-green-700'
                 : 'bg-purple-600 hover:bg-purple-700'

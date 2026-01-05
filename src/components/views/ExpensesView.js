@@ -286,16 +286,17 @@ const ExpensesViewNew = ({
                       }
 
                       return (
-                        <div key={expenseType.name} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium text-lg text-gray-900">{expenseType.name}</span>
+                        <div key={expenseType.name} className="p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              {/* Rând 1: Nume cheltuială */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm sm:text-base text-gray-900">{expenseType.name}</span>
                                 {isCustom && (
-                                  <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Custom</span>
+                                  <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">Custom</span>
                                 )}
                                 {isDistributed && (
-                                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Distribuită</span>
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">Distribuită</span>
                                 )}
                                 {/* Buton toggle Portal pentru cheltuieli cu perioadă manuală */}
                                 {config.distributionType === 'consumption' &&
@@ -310,7 +311,7 @@ const ExpensesViewNew = ({
                                       }
                                       togglePortalSubmission(expenseType.id || expenseType.name);
                                     }}
-                                    className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                    className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                                       config.indexConfiguration?.portalSubmission?.isOpen
                                         ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -320,24 +321,25 @@ const ExpensesViewNew = ({
                                       : 'Portal închis - Click pentru a deschide'}
                                   >
                                     {config.indexConfiguration?.portalSubmission?.isOpen
-                                      ? '🟢 Portal deschis'
-                                      : '⚪ Portal închis'}
+                                      ? '🟢 Portal'
+                                      : '⚪ Portal'}
                                   </button>
                                 )}
                               </div>
-                              <div className="mt-1 text-sm text-gray-600 flex items-center gap-2">
-                                <span className="font-medium text-gray-700">Distribuție:</span>
-                                <span className={`px-2 py-0.5 text-xs rounded ${distributionBadgeClass}`}>
+                              {/* Rând 2: Distribuție */}
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <span className="text-xs text-gray-500">Distribuție:</span>
+                                <span className={`px-1.5 py-0.5 text-xs rounded ${distributionBadgeClass}`}>
                                   {distributionText}
                                 </span>
-                                <span className="mx-1">•</span>
-                                <span className="font-medium text-gray-700">Furnizor:</span>{' '}
+                              </div>
+                              {/* Rând 3: Furnizor */}
+                              <div className="mt-0.5 flex items-center gap-1.5">
+                                <span className="text-xs text-gray-500">Furnizor:</span>
                                 {hasSupplier ? (
-                                  <span className="text-gray-900 font-medium">{supplierName}</span>
+                                  <span className="text-xs text-gray-900 font-medium">{supplierName}</span>
                                 ) : (
-                                  <span className="text-orange-600 italic">
-                                    {supplierName}
-                                  </span>
+                                  <span className="text-xs text-orange-600 italic">{supplierName}</span>
                                 )}
                               </div>
                             </div>
@@ -470,28 +472,30 @@ const ExpensesViewNew = ({
                         }
 
                         return (
-                          <div key={expenseType.name} className="p-4 bg-gray-100 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-medium text-gray-600 line-through">{expenseType.name}</span>
+                          <div key={expenseType.name} className="p-3 sm:p-4 bg-gray-100 rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                {/* Rând 1: Nume cheltuială */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-sm sm:text-base text-gray-500 line-through">{expenseType.name}</span>
                                   {isCustom && (
-                                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full opacity-60">Custom</span>
+                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded opacity-60">Custom</span>
                                   )}
                                 </div>
-                                <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
-                                  <span className="font-medium text-gray-600">Distribuție:</span>
-                                  <span className={`px-2 py-0.5 text-xs rounded opacity-60 ${distributionBadgeClass}`}>
+                                {/* Rând 2: Distribuție */}
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-400">Distribuție:</span>
+                                  <span className={`px-1.5 py-0.5 text-xs rounded opacity-60 ${distributionBadgeClass}`}>
                                     {distributionText}
                                   </span>
-                                  <span className="mx-1">•</span>
-                                  <span className="font-medium text-gray-600">Furnizor:</span>{' '}
+                                </div>
+                                {/* Rând 3: Furnizor */}
+                                <div className="mt-0.5 flex items-center gap-1.5">
+                                  <span className="text-xs text-gray-400">Furnizor:</span>
                                   {hasSupplier ? (
-                                    <span className="text-gray-600 font-medium">{supplierName}</span>
+                                    <span className="text-xs text-gray-500 font-medium">{supplierName}</span>
                                   ) : (
-                                    <span className="text-orange-600 italic opacity-60">
-                                      {supplierName}
-                                    </span>
+                                    <span className="text-xs text-orange-500 italic opacity-60">{supplierName}</span>
                                   )}
                                 </div>
                               </div>
@@ -614,18 +618,18 @@ const ExpensesViewNew = ({
                         return (
                         <div
                           key={supplier.id}
-                          className="p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent"
+                          className="p-3 sm:p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium text-lg text-gray-900">{supplier.name}</div>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm sm:text-base text-gray-900">{supplier.name}</div>
                               {activeExpenseTypes.length > 0 && (
-                                <div className="mt-1 text-sm text-gray-600 flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-gray-700">
+                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs text-gray-500">
                                     {activeExpenseTypes.length === 1 ? 'Cheltuială:' : 'Cheltuieli:'}
                                   </span>
                                   {activeExpenseTypes.map(type => (
-                                    <span key={type} className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">
+                                    <span key={type} className="inline-block px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">
                                       {type}
                                     </span>
                                   ))}
