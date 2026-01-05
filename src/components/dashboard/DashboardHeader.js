@@ -36,11 +36,11 @@ const DashboardHeader = ({
     const baseClasses = "text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded text-center whitespace-nowrap";
 
     if (monthType === 'historic' && isReadOnly) {
-      return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>📚 ARHIVATĂ</span>;
+      return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>ARHIVATĂ</span>;
     } else if (isReadOnly) {
-      return <span className={`${baseClasses} bg-purple-100 text-purple-800`}>📋 PUBLICATĂ</span>;
+      return <span className={`${baseClasses} bg-purple-100 text-purple-800`}>PUBLICATĂ</span>;
     }
-    return <span className={`${baseClasses} bg-orange-100 text-orange-800`}>🔧 ÎN LUCRU</span>;
+    return <span className={`${baseClasses} bg-orange-100 text-orange-800`}>ÎN LUCRU</span>;
   };
 
   return (

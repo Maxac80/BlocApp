@@ -1279,9 +1279,7 @@ const MaintenanceView = ({
                       className={
                         filteredMaintenanceData.length > 10
                           ? "overflow-x-auto overflow-y-auto"
-                          : activeMaintenanceTab === "detailed"
-                          ? "overflow-x-auto"
-                          : ""
+                          : "overflow-x-auto"
                       }
                       style={filteredMaintenanceData.length > 10 ? { maxHeight: '70vh' } : {}}
                     >

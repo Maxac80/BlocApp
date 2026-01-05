@@ -118,7 +118,10 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
       if (isIntegral) {
         // Get the calculated amount for this apartment from allMaintenanceData
         const aptData = allMaintenanceData.find(data => data.apartmentId === apt.id);
-        const aptAmount = aptData?.expenseDetails?.[expense.name] || 0;
+        // Folosește aceeași cheie ca în useMaintenanceCalculation
+        const expenseKey = expense.expenseTypeId || expense.id || expense.name;
+        const expenseDetail = aptData?.expenseDetails?.[expenseKey];
+        const aptAmount = typeof expenseDetail === 'object' ? (expenseDetail?.amount || 0) : (expenseDetail || 0);
         standardAmount = aptAmount;
         foundIntegralApartment = true;
 
@@ -144,7 +147,10 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         if (aptParticipation?.type === 'percentage' && aptParticipation?.value > 0 && aptParticipation?.value !== 100) {
           // Reverse calculate: if apartment pays X with Y% participation, standard is X / (Y/100)
           const aptData = allMaintenanceData.find(data => data.apartmentId === apt.id);
-          const aptAmount = aptData?.expenseDetails?.[expense.name] || 0;
+          // Folosește aceeași cheie ca în useMaintenanceCalculation
+          const expKey = expense.expenseTypeId || expense.id || expense.name;
+          const expDetail = aptData?.expenseDetails?.[expKey];
+          const aptAmount = typeof expDetail === 'object' ? (expDetail?.amount || 0) : (expDetail || 0);
           const multiplier = aptParticipation.value < 1 ? aptParticipation.value : (aptParticipation.value / 100);
           standardAmount = multiplier > 0 ? (aptAmount / multiplier) : 0;
           break;
@@ -250,7 +256,10 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
             if (isIntegral && apt.persons > 0) {
               // Get the calculated amount for this apartment
               const aptData = allMaintenanceData.find(data => data.apartmentId === apt.id);
-              const aptAmount = aptData?.expenseDetails?.[expense.name] || 0;
+              // Folosește aceeași cheie ca în useMaintenanceCalculation
+              const expKey = expense.expenseTypeId || expense.id || expense.name;
+              const expDetail = aptData?.expenseDetails?.[expKey];
+              const aptAmount = typeof expDetail === 'object' ? (expDetail?.amount || 0) : (expDetail || 0);
 
               // Calculate price per person: amount / number of persons
               standardPricePerPerson = aptAmount / apt.persons;
