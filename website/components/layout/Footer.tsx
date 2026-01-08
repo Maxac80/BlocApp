@@ -27,13 +27,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-3 mb-4">
+            <Link href="/" className="mb-4 inline-block">
               <img
-                src="/blocapp-icon-admin.png"
+                src="/blocapp-logo-admin.png"
                 alt="BlocApp"
-                className="h-10 w-10 object-contain"
+                className="h-10 object-contain"
               />
-              <span className="text-xl font-bold text-white">BlocApp</span>
             </Link>
             <p className="text-sm text-gray-400 mb-4">
               Software modern pentru administrarea profesionistă a asociațiilor de proprietari din România.

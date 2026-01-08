@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   description: "Administrează blocul fără Excel. Calculează întreținerea automat, elimină erorile, economisește 70% timp. Trial gratuit 30 zile. Portal proprietari inclus.",
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
+  icons: {
+    icon: '/blocapp-icon-admin.png',
+    apple: '/blocapp-icon-admin.png',
+  },
   openGraph: {
     title: "BlocApp - Administrează blocul fără Excel",
     description: "Calculare automată întreținere, zero erori, portal proprietari. Trial 30 zile gratuit.",
