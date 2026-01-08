@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 
 export const metadata: Metadata = {
   title: 'Prețuri BlocApp | De la 3.99 lei/apartament/lună',
-  description: 'Prețuri simple și transparente: Starter 149 lei/lună (30 apt), Professional 3.99 lei/apt, Enterprise 2.99 lei/apt. Trial 30 zile gratuit, fără card.',
+  description: 'Prețuri simple și transparente: Starter 149 lei/lună (30 apt), Professional 3.99 lei/apt, Enterprise 2.99 lei/apt. Trial 90 zile gratuit, fără card.',
 };
 
 const pricingPlans = [
@@ -83,7 +83,7 @@ const pricingPlans = [
 const faqPricing = [
   {
     q: 'Este trial-ul cu adevărat gratuit?',
-    a: 'Da, 100%. Nu solicităm card, nu facturăm nimic. După 30 zile, alegi un plan sau anulezi fără penalități.',
+    a: 'Da, 100%. Nu solicităm card, nu facturăm nimic. După 90 zile, alegi un plan sau anulezi fără penalități.',
   },
   {
     q: 'Pot schimba planul după ce mă abonez?',
@@ -231,7 +231,7 @@ export default function PreturiPage() {
               </div>
               <div className="p-4">
                 <p className="text-sm font-semibold text-gray-900">
-                  ✓ Primele 30 zile gratuit
+                  ✓ Primele 90 zile gratuit
                 </p>
               </div>
               <div className="p-4">
@@ -273,10 +273,10 @@ export default function PreturiPage() {
               Gata să începi?
             </h2>
             <p className="text-xl text-primary-100 mb-8">
-              Încearcă gratuit 30 de zile. Fără card, fără obligații.
+              Încearcă gratuit 90 de zile. Fără card, fără obligații.
             </p>
             <a
-              href="/trial"
+              href="https://app.blocapp.ro"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
             >
               Creează Cont Gratuit

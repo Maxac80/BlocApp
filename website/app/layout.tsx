@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "BlocApp - Software Administrare Bloc | Calculare Întreținere Automată",
-  description: "Administrează blocul fără Excel. Calculează întreținerea automat, elimină erorile, economisește 70% timp. Trial gratuit 30 zile. Portal proprietari inclus.",
+  description: "Administrează blocul fără Excel. Calculează întreținerea automat, elimină erorile, economisește 70% timp. Trial gratuit 90 zile. Portal proprietari inclus.",
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
   icons: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "BlocApp - Administrează blocul fără Excel",
-    description: "Calculare automată întreținere, zero erori, portal proprietari. Trial 30 zile gratuit.",
+    description: "Calculare automată întreținere, zero erori, portal proprietari. Trial 90 zile gratuit.",
     url: "https://blocapp.ro",
     siteName: "BlocApp",
     locale: "ro_RO",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "BlocApp - Software Administrare Bloc",
-    description: "Calculare automată întreținere, zero erori. Trial 30 zile gratuit.",
+    description: "Calculare automată întreținere, zero erori. Trial 90 zile gratuit.",
   },
   viewport: {
     width: "device-width",

@@ -307,13 +307,13 @@ export default function DemoPage() {
               Sau începe direct cu trial gratuit
             </h2>
             <p className="text-xl text-primary-100 mb-8">
-              30 de zile, fără card, fără obligații. Testează tot ce ai văzut în demo.
+              90 de zile, fără card, fără obligații. Testează tot ce ai văzut în demo.
             </p>
             <a
-              href="/trial"
+              href="https://app.blocapp.ro"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
             >
-              Încearcă Gratuit 30 Zile
+              Încearcă Gratuit 90 Zile
             </a>
           </div>
         </section>

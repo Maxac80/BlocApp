@@ -25,8 +25,8 @@ export default function HomePage() {
 
                 {/* CTA Buttons */}
                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                  <Button href="/trial" size="lg">
-                    Încearcă Gratuit 30 Zile
+                  <Button href="https://app.blocapp.ro" size="lg">
+                    Încearcă Gratuit 90 Zile
                   </Button>
                   <Button href="/demo" variant="outline" size="lg">
                     Vizionează Demo (3 min)
@@ -218,11 +218,11 @@ export default function HomePage() {
               Gata să scapi de Excel?
             </h2>
             <p className="mt-4 text-lg text-primary-100">
-              Încearcă BlocApp gratuit 30 de zile. Fără card, fără obligații. Anulezi oricând.
+              Încearcă BlocApp gratuit 90 de zile. Fără card, fără obligații. Anulezi oricând.
             </p>
             <div className="mt-10">
               <a
-                href="/trial"
+                href="https://app.blocapp.ro"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
               >
                 Creează Cont Gratuit

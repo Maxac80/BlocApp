@@ -357,6 +357,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     disabled={isLoading}
+                    autoComplete="off"
                     className={`w-full pl-8 pr-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                       validationErrors.firstName
                         ? 'border-red-300 bg-red-50'
@@ -381,6 +382,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   disabled={isLoading}
+                  autoComplete="off"
                   className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                     validationErrors.lastName
                       ? 'border-red-300 bg-red-50'
@@ -408,6 +410,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
+                  autoComplete="off"
                   className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                     validationErrors.email
                       ? 'border-red-300 bg-red-50'
@@ -454,6 +457,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
+                  autoComplete="new-password"
                   className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                     validationErrors.password
                       ? 'border-red-300 bg-red-50'
@@ -490,6 +494,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   disabled={isLoading}
+                  autoComplete="new-password"
                   className={`w-full pl-8 pr-9 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                     validationErrors.confirmPassword
                       ? 'border-red-300 bg-red-50'
@@ -530,6 +535,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 value={formData.phone}
                 onChange={handleInputChange}
                 disabled={isLoading}
+                autoComplete="off"
                 className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
                   validationErrors.phone
                     ? 'border-red-300 bg-red-50'

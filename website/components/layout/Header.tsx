@@ -30,7 +30,7 @@ export default function Header() {
               <img
                 src="/blocapp-logo-admin.png"
                 alt="BlocApp"
-                className="h-10 object-contain"
+                className="h-12 object-contain"
               />
             </Link>
           </div>
@@ -66,9 +66,6 @@ export default function Header() {
             >
               Login Admin
             </a>
-            <Button href="/trial" size="md">
-              Încearcă Gratuit
-            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -125,9 +122,6 @@ export default function Header() {
                 >
                   Login Admin
                 </a>
-                <Button href="/trial" size="md" className="w-full">
-                  Încearcă Gratuit
-                </Button>
               </div>
             </div>
           </div>

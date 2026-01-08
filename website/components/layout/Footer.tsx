@@ -29,9 +29,9 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="mb-4 inline-block">
               <img
-                src="/blocapp-logo-admin.png"
+                src="/blocapp-icon-admin.png"
                 alt="BlocApp"
-                className="h-10 object-contain"
+                className="h-12 w-12 object-contain"
               />
             </Link>
             <p className="text-sm text-gray-400 mb-4">

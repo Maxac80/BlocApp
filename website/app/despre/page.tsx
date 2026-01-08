@@ -252,10 +252,10 @@ export default function DesprePage() {
               Vrei să faci parte din povestea BlocApp?
             </h2>
             <p className="text-xl text-primary-100 mb-8">
-              Încearcă gratuit 30 de zile și vezi diferența.
+              Încearcă gratuit 90 de zile și vezi diferența.
             </p>
             <a
-              href="/trial"
+              href="https://app.blocapp.ro"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
             >
               Începe Trial Gratuit
