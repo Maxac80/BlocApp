@@ -22,7 +22,11 @@ export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
     loading 
   } = useAuthEnhanced();
   
-  const [currentFlow, setCurrentFlow] = useState('login'); // login, register, reset, emailVerify, onboarding
+  const [currentFlow, setCurrentFlow] = useState(() => {
+    // Detectează parametru URL pentru a deschide direct pagina de register
+    const params = new URLSearchParams(window.location.search);
+    return params.get('register') === 'true' ? 'register' : 'login';
+  }); // login, register, reset, emailVerify, onboarding
   const [isReady, setIsReady] = useState(false);
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
