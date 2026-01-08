@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Eye, EyeOff, Lock, Mail, AlertCircle, Home
+  Eye, EyeOff, Lock, Mail, AlertCircle, Home, Shield
 } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
@@ -215,10 +215,18 @@ export default function OwnerLandingPage() {
             </button>
           </form>
 
+          {/* Securitate Info */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-center text-[10px] sm:text-xs text-gray-500">
+              <Shield className="w-3.5 h-3.5 mr-1" />
+              Conexiune securizată SSL • Device tracking • Audit logging
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
         <p className="text-center text-gray-500 text-[10px] sm:text-xs mt-4">
+          Nu ai cont?<br />
           Ești proprietar? Contactează administratorul asociației tale.<br />
           Ești locatar? Solicită proprietarului acces la apartament.
         </p>
