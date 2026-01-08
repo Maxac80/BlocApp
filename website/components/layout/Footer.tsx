@@ -33,7 +33,7 @@ export default function Footer() {
                 alt="BlocApp"
                 className="h-12 w-12 object-contain"
               />
-              <span className="text-2xl font-bold text-white">BlocApp</span>
+              <span className="text-3xl font-bold text-white">BlocApp</span>
             </Link>
             <p className="text-sm text-gray-400 mb-4">
               Software modern pentru administrarea profesionistă a asociațiilor de proprietari din România.

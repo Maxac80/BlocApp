@@ -32,7 +32,7 @@ export default function Header() {
                 alt="BlocApp"
                 className="h-10 w-10 object-contain"
               />
-              <span className="text-xl font-bold text-gray-900">BlocApp</span>
+              <span className="text-2xl font-bold text-gray-900">BlocApp</span>
             </Link>
           </div>
 
@@ -59,7 +59,7 @@ export default function Header() {
               href="https://portal.blocapp.ro"
               className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
             >
-              Portal Proprietari
+              Proprietari
             </a>
             <a
               href="https://app.blocapp.ro"
@@ -114,7 +114,7 @@ export default function Header() {
                   className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 border border-gray-200 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Portal Proprietari
+                  Proprietari
                 </a>
                 <a
                   href="https://app.blocapp.ro"
