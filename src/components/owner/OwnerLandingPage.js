@@ -219,7 +219,8 @@ export default function OwnerLandingPage() {
 
         {/* Footer */}
         <p className="text-center text-gray-500 text-[10px] sm:text-xs mt-4">
-          Nu ai cont? Contactează administratorul asociației tale.
+          Ești proprietar? Contactează administratorul asociației tale.<br />
+          Ești locatar? Solicită proprietarului acces la apartament.
         </p>
       </div>
 
