@@ -27,10 +27,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary-600 rounded-lg">
-                <span className="text-white font-bold text-xl">B</span>
-              </div>
+            <Link href="/" className="flex items-center space-x-3 mb-4">
+              <img
+                src="/blocapp-icon-admin.png"
+                alt="BlocApp"
+                className="h-10 w-10 object-contain"
+              />
               <span className="text-xl font-bold text-white">BlocApp</span>
             </Link>
             <p className="text-sm text-gray-400 mb-4">

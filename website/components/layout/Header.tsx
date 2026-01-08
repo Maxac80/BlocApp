@@ -26,10 +26,12 @@ export default function Header() {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary-600 rounded-lg">
-                <span className="text-white font-bold text-xl">B</span>
-              </div>
+            <Link href="/" className="flex items-center space-x-3">
+              <img
+                src="/blocapp-icon-admin.png"
+                alt="BlocApp"
+                className="h-10 w-10 object-contain"
+              />
               <span className="text-xl font-bold text-gray-900">BlocApp</span>
             </Link>
           </div>
