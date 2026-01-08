@@ -41,13 +41,13 @@ const Sidebar = ({
       {sidebarExpanded ? (
         <button
           onClick={handleBlocAppClick}
-          className="flex items-center hover:bg-blue-700 rounded-lg p-1 transition-colors cursor-pointer"
+          className="flex items-center hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
           title="Mergi la Dashboard - luna publicată activă"
         >
           <img
-            src="/icon-admin.png"
+            src="/logo-admin.png"
             alt="BlocApp"
-            className="w-12 h-12 rounded-lg object-contain bg-white/90 p-0.5"
+            className="h-10 object-contain"
           />
         </button>
       ) : (

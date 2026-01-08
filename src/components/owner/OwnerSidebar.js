@@ -60,13 +60,11 @@ export default function OwnerSidebar({ currentView, onNavigate, isOpen, onClose 
       <div className="bg-emerald-600 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div className="ml-2 sm:ml-3">
-              <h1 className="text-lg sm:text-xl font-bold text-white">BlocApp</h1>
-              <p className="text-emerald-100 text-xs sm:text-sm">Portal Proprietari</p>
-            </div>
+            <img
+              src="/logo-portal.png"
+              alt="BlocApp Portal Proprietari"
+              className="h-10 object-contain"
+            />
           </div>
           {/* Close button - doar pe mobile */}
           <button

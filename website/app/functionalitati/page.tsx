@@ -124,8 +124,8 @@ export default function FunctionalitatiPage() {
                 Tot ce ai nevoie într-o singură platformă. De la structura blocului până la rapoarte financiare, BlocApp te acoperă.
               </p>
               <div className="mt-10">
-                <Button href="/trial" size="lg">
-                  Încearcă Gratuit 30 Zile
+                <Button href="https://app.blocapp.ro?register=true" size="lg">
+                  Încearcă Gratuit 90 Zile
                 </Button>
               </div>
             </div>
