@@ -15,15 +15,16 @@ export default function OwnerLandingPage() {
   const { loginEnhanced, authError, setAuthError } = useAuthEnhanced();
 
   // State pentru login
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   // Handler pentru input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    const inputValue = type === 'checkbox' ? checked : value;
+    setFormData(prev => ({ ...prev, [name]: inputValue }));
 
     if (validationErrors[name]) {
       setValidationErrors(prev => ({ ...prev, [name]: '' }));
@@ -55,7 +56,7 @@ export default function OwnerLandingPage() {
 
     setIsLoading(true);
     try {
-      await loginEnhanced(formData.email.trim(), formData.password, false);
+      await loginEnhanced(formData.email.trim(), formData.password, formData.rememberMe);
       // Success-ul va fi gestionat de App.js care verifică rolul
     } catch (error) {
       console.error('Login error:', error);
@@ -82,7 +83,7 @@ export default function OwnerLandingPage() {
               <span className="text-sm text-gray-600 mt-0 pl-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>proprietari</span>
             </div>
           </a>
-          <p className="text-gray-600 text-sm">Acces rapid la informațiile asociației tale</p>
+          <p className="text-gray-600 text-sm">Acces rapid la informațiile apartamentului tău</p>
         </div>
 
         {/* Card Principal */}
@@ -91,7 +92,7 @@ export default function OwnerLandingPage() {
           {/* Header Login */}
           <div className="text-center mb-4 sm:mb-5">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">Autentificare</h2>
-            <p className="text-gray-600 text-sm mt-1">Conectează-te la contul tău</p>
+            <p className="text-gray-600 text-sm mt-1">Conectează-te la contul tău de proprietar/locatar</p>
           </div>
 
           {/* Erori globale */}
@@ -170,6 +171,31 @@ export default function OwnerLandingPage() {
                   {validationErrors.password}
                 </p>
               )}
+            </div>
+
+            {/* Remember Me și Link Resetare Parolă */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                />
+                <label htmlFor="rememberMe" className="ml-2 text-xs text-gray-700">
+                  Ține-mă conectat
+                </label>
+              </div>
+
+              <a
+                href="/"
+                className="text-xs text-emerald-600 hover:text-emerald-800 transition-colors"
+              >
+                Am uitat parola
+              </a>
             </div>
 
             {/* Buton Login */}
