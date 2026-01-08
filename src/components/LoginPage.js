@@ -82,7 +82,7 @@ export default function LoginPage() {
             <img
               src="/logo-admin.png"
               alt="BlocApp Logo"
-              className="h-16 object-contain"
+              className="h-24 object-contain"
             />
           </div>
           <p className="text-gray-600">

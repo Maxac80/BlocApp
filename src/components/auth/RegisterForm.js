@@ -296,11 +296,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         
         {/* 🏠 HEADER CU LOGO */}
         <div className="text-center mb-4 sm:mb-5">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2">
+          <div className="w-48 sm:w-64 mx-auto mb-2">
             <img
               src="/logo-admin.png"
               alt="BlocApp"
-              className="w-full h-full object-contain"
+              className="w-full h-auto object-contain"
             />
           </div>
           <p className="text-gray-600 text-sm mt-1">Alătură-te comunității administratorilor profesioniști</p>

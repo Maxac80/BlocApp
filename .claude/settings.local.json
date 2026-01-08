@@ -59,7 +59,17 @@
       "Bash(git -C c:/blocapp add functions/index.js src/components/auth/EmailVerification.js)",
       "Bash(git -C c:/blocapp commit -m \"$\\(cat <<''EOF''\nrefactor: Clean email templates + simplify verification page\n\nEmail templates:\n- Restored original font sizes \\(16px body, 24px headers\\)\n- Keep 520px width for Yahoo/Outlook compatibility\n- Only 👋 emoji in greeting, removed excess emojis\n- Consistent spacing and padding\n\nEmail verification page \\(best practice redesign\\):\n- Minimalist design: just email, button, and links\n- Removed: auto-check indicator, step-by-step instructions, \"Am verificat\" button\n- Kept: silent auto-check \\(5s\\), resend with cooldown, cross-tab sync\n- Cleaner UX following modern email verification patterns\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(firebase login:list:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(copy \"c:\\\\blocapp\\\\Logo\\\\blocapp-logo-admin.png\" \"c:\\\\blocapp\\\\public\\\\logo-admin.png\")",
+      "Bash(copy \"c:\\\\blocapp\\\\Logo\\\\blocapp-logo-portal.png\" \"c:\\\\blocapp\\\\public\\\\logo-portal.png\")",
+      "Bash(copy \"c:\\\\blocapp\\\\Logo\\\\blocapp-icon-admin.png\" \"c:\\\\blocapp\\\\public\\\\icon-admin.png\")",
+      "Bash(copy \"c:\\\\blocapp\\\\Logo\\\\blocapp-icon-portal.png\" \"c:\\\\blocapp\\\\public\\\\icon-portal.png\")",
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(for file in RegisterForm.js EmailVerification.js EmailVerifiedSuccess.js PasswordReset.js ResetPasswordForm.js)",
+      "Bash(do sed -i 's|src=\"\"/logo\\\\.png\"\"|src=\"\"/logo-admin.png\"\"|g' \"$file\")",
+      "Bash(echo:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": [],

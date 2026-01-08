@@ -147,11 +147,11 @@ export default function EmailVerifiedSuccess() {
 
         {/* Header cu logo */}
         <div className="text-center mb-4 sm:mb-6">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3">
+          <div className="w-48 sm:w-64 mx-auto mb-3">
             <img
               src="/logo-admin.png"
               alt="BlocApp"
-              className="w-full h-full object-contain"
+              className="w-full h-auto object-contain"
             />
           </div>
         </div>
