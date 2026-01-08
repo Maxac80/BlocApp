@@ -80,9 +80,9 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <img
-              src="/logo.png"
+              src="/logo-admin.png"
               alt="BlocApp Logo"
-              className="w-24 h-24 object-contain"
+              className="h-16 object-contain"
             />
           </div>
           <p className="text-gray-600">

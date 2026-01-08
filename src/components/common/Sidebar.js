@@ -45,7 +45,7 @@ const Sidebar = ({
           title="Mergi la Dashboard - luna publicată activă"
         >
           <img
-            src="/logo192.png"
+            src="/icon-admin.png"
             alt="BlocApp"
             className="w-12 h-12 rounded-lg object-contain bg-white/90 p-0.5"
           />
@@ -57,7 +57,7 @@ const Sidebar = ({
           title="Mergi la Dashboard - luna publicată activă"
         >
           <img
-            src="/logo192.png"
+            src="/icon-admin.png"
             alt="BlocApp"
             className="w-10 h-10 rounded-lg object-contain bg-white/90 p-0.5"
           />

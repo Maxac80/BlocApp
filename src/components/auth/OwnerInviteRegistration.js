@@ -184,7 +184,7 @@ export default function OwnerInviteRegistration({ token }) {
         <div className="text-center mb-6 sm:mb-8">
           <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4">
             <img
-              src="/logo192.png"
+              src="/icon-portal.png"
               alt="BlocApp"
               className="w-full h-full object-contain"
             />
