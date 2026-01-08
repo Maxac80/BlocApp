@@ -64,7 +64,7 @@ export default function Header() {
               href="https://app.blocapp.ro"
               className="text-sm font-medium text-gray-700 hover:text-primary-600 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-300 transition-colors"
             >
-              Login Admin
+              Administrator
             </a>
           </div>
 
@@ -120,7 +120,7 @@ export default function Header() {
                   className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:border-primary-300"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Login Admin
+                  Administrator
                 </a>
               </div>
             </div>
