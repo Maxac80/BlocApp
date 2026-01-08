@@ -49,7 +49,7 @@ const Sidebar = ({
             alt="BlocApp"
             className="w-10 h-10 rounded-lg object-contain bg-white/90 p-0.5"
           />
-          <span className="text-xl font-bold text-white">BlocApp</span>
+          <span className="text-xl font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
         </button>
       ) : (
         <button

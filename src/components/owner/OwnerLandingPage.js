@@ -71,13 +71,13 @@ export default function OwnerLandingPage() {
 
         {/* Header cu Logo */}
         <div className="text-center mb-4 sm:mb-6">
-          <div className="flex items-center justify-center space-x-3 mb-3">
+          <div className="flex items-center justify-center space-x-2 mb-3">
             <img
               src="/icon-portal.png"
               alt="BlocApp"
-              className="w-16 h-16 object-contain"
+              className="w-20 h-20 object-contain"
             />
-            <span className="text-3xl font-bold text-gray-900">BlocApp</span>
+            <span className="text-5xl font-bold text-gray-800 pt-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
           </div>
           <p className="text-gray-600 text-sm">Portal Proprietari</p>
         </div>

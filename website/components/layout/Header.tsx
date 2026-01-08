@@ -32,7 +32,7 @@ export default function Header() {
                 alt="BlocApp"
                 className="h-10 w-10 object-contain"
               />
-              <span className="text-2xl font-bold text-gray-900">BlocApp</span>
+              <span className="text-2xl font-bold text-gray-900 font-montserrat">BlocApp</span>
             </Link>
           </div>
 

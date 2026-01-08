@@ -65,7 +65,7 @@ export default function OwnerSidebar({ currentView, onNavigate, isOpen, onClose 
               alt="BlocApp"
               className="w-10 h-10 object-contain"
             />
-            <span className="text-xl font-bold text-white">BlocApp</span>
+            <span className="text-xl font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
           </div>
           {/* Close button - doar pe mobile */}
           <button

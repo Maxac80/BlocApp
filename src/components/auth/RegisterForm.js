@@ -296,13 +296,13 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         
         {/* 🏠 HEADER CU LOGO */}
         <div className="text-center mb-4 sm:mb-5">
-          <div className="flex items-center justify-center space-x-3 mb-2">
+          <div className="flex items-center justify-center space-x-2 mb-2">
             <img
               src="/icon-admin.png"
               alt="BlocApp"
-              className="w-16 h-16 object-contain"
+              className="w-20 h-20 object-contain"
             />
-            <span className="text-3xl font-bold text-gray-900">BlocApp</span>
+            <span className="text-5xl font-bold text-gray-800 pt-2" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
           </div>
           <p className="text-gray-600 text-sm mt-1">Alătură-te comunității administratorilor profesioniști</p>
         </div>
