@@ -59,12 +59,13 @@ export default function OwnerSidebar({ currentView, onNavigate, isOpen, onClose 
       {/* Header Sidebar */}
       <div className="bg-emerald-600 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-3">
             <img
-              src="/logo-portal.png"
-              alt="BlocApp Portal Proprietari"
-              className="h-10 object-contain"
+              src="/icon-portal.png"
+              alt="BlocApp"
+              className="w-10 h-10 object-contain"
             />
+            <span className="text-xl font-bold text-white">BlocApp</span>
           </div>
           {/* Close button - doar pe mobile */}
           <button
