@@ -1056,19 +1056,18 @@ const ExpenseList = ({
                   className="p-3 bg-gradient-to-r from-blue-50 to-white cursor-pointer hover:from-blue-100 rounded-t-lg relative"
                   onClick={() => toggleExpense(expense.id)}
                 >
-                  <div className="flex flex-wrap sm:flex-nowrap sm:items-start sm:justify-between gap-1 sm:gap-2">
-                    {/* Nume cheltuială - order-1 pe mobile */}
-                    <div className="w-full sm:w-auto sm:flex-1 min-w-0 pr-10 sm:pr-0 order-1 sm:order-none">
-                      <div className="mb-0.5 sm:mb-0.5">
+                  <div className="flex flex-wrap sm:flex-nowrap sm:items-start gap-1 sm:gap-2">
+                    {/* Container stânga: Nume + Info - pe mobil sunt separate cu ordering, pe desktop sunt împreună */}
+                    <div className="w-full sm:w-auto sm:flex-1 min-w-0 order-1 sm:order-1 pr-10 sm:pr-0">
+                      {/* Nume cheltuială */}
+                      <div className="mb-0.5">
                         <h4 className="font-semibold text-base text-gray-900 px-2 py-0.5 -ml-2 rounded inline-block">
                           {expense.name}
                         </h4>
                       </div>
-                    </div>
-
-                    {/* Informații pe trei linii compacte - order-3 pe mobile (după sumă) */}
-                    <div className="w-full sm:w-auto order-3 sm:order-none">
-                      <div className="space-y-1 text-xs">
+                      {/* Informații - afișate sub nume pe desktop */}
+                      <div className="hidden sm:block">
+                      <div className="space-y-0.5 sm:space-y-1 text-xs">
                         {/* Linia 1: Mod distribuție */}
                         <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-gray-600">
                           <span className="font-medium">Distribuție:</span>
@@ -1156,11 +1155,64 @@ const ExpenseList = ({
                             </div>
                           );
                         })()}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Partea dreaptă: Sumă + Warning-uri - order-2 pe mobile (imediat sub nume) */}
-                    <div className="flex flex-col items-end gap-0.5 w-full sm:w-auto sm:min-w-[200px] order-2 sm:order-none">
+                    {/* Informații pe mobil - order-3 (după sumă) */}
+                    <div className="w-full sm:hidden order-3">
+                      <div className="space-y-0.5 text-xs">
+                        {/* Linia 1: Mod distribuție */}
+                        <div className="flex flex-wrap items-center gap-1 text-gray-600">
+                          <span className="font-medium">Distribuție:</span>
+                          <span>
+                            {config.distributionType === "apartment" && "Pe apartament (egal)"}
+                            {config.distributionType === "person" && "Pe persoană"}
+                            {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
+                            {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
+                            {config.distributionType === "cotaParte" && "Pe cotă parte indiviză"}
+                          </span>
+                        </div>
+
+                        {/* Linia 2: Introducere sume */}
+                        <div className="flex flex-wrap items-center gap-1 text-gray-600">
+                          <span className="font-medium">Sume:</span>
+                          {actualReceptionMode === 'per_association' && <span>Pe asociație</span>}
+                          {actualReceptionMode === 'per_block' && <span>Pe bloc</span>}
+                          {actualReceptionMode === 'per_stair' && <span>Pe scară</span>}
+                        </div>
+
+                        {/* Linia 3: Participare */}
+                        <div className="flex flex-wrap items-center gap-1 text-gray-600">
+                          <span className="font-medium">Participare:</span>
+                          <span className="text-blue-600 font-medium">
+                            {participationInfo.totalParticipating}/{participationInfo.total} apartamente
+                          </span>
+                        </div>
+
+                        {/* Linia 4: Factură (dacă există) */}
+                        {(() => {
+                          const invoice = getInvoiceForExpense?.(expense);
+                          if (!invoice) return null;
+
+                          return (
+                            <div className="flex flex-wrap items-center gap-1 text-gray-600 pt-1 border-t border-gray-200 mt-1">
+                              <span className="font-medium">Factură:</span>
+                              <span className="text-indigo-600 font-medium">
+                                {invoice.supplierName && `${invoice.supplierName} • `}
+                                Nr. {invoice.invoiceNumber}
+                                {invoice.invoiceDate && ` • ${new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}`}
+                                {invoice.dueDate && ` • ${new Date(invoice.dueDate).toLocaleDateString('ro-RO')}`}
+                                {invoice.invoiceAmount && ` • ${parseFloat(invoice.invoiceAmount).toFixed(2)} RON`}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Partea dreaptă: Sumă + Warning-uri - order-2 pe mobile și desktop */}
+                    <div className="flex flex-col items-end gap-0.5 w-full sm:w-auto sm:min-w-[200px] sm:ml-auto order-2">
                       {/* Sumă principală și mc */}
                       <div className="text-right">
                         <div className="text-base sm:text-lg font-bold text-blue-600">
@@ -1791,8 +1843,8 @@ const ExpenseList = ({
                       })()}
                     </div>
 
-                    {/* Chevron și meniu acțiuni */}
-                    <div className="absolute top-3 right-3 sm:relative sm:top-auto sm:right-auto flex-shrink-0 pt-0 sm:pt-1 flex items-center gap-2">
+                    {/* Chevron și meniu acțiuni - order-3 pe desktop pentru a fi în dreapta */}
+                    <div className="absolute top-3 right-3 sm:relative sm:top-auto sm:right-auto sm:order-3 flex-shrink-0 pt-0 sm:pt-1 flex items-center gap-2">
                       {/* Chevron pentru expand/collapse */}
                       {isExpanded ? (
                         <ChevronUp className="w-4 h-4 text-gray-500" />

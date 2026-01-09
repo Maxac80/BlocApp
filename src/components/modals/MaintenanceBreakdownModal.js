@@ -399,97 +399,97 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
   }).filter(item => item.shouldShow) || [];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Receipt className="w-6 h-6" />
-            <h2 className="text-xl font-bold">Detalii Întreținere</h2>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Receipt className="w-5 h-5 sm:w-6 sm:h-6" />
+            <h2 className="text-base sm:text-xl font-bold">Detalii Întreținere</h2>
           </div>
           <button
             onClick={onClose}
             className="text-white hover:text-gray-200 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {/* Apartment Info Section */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-5 mb-6 border border-blue-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <Home className="w-5 h-5 mr-2 text-blue-600" />
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 sm:p-5 mb-4 sm:mb-6 border border-blue-100">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
               Informații Apartament
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg p-3 shadow-sm">
-                <p className="text-sm text-gray-600 mb-1">Apartament</p>
-                <p className="text-lg font-bold text-blue-600">{apartment}</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">Apartament</p>
+                <p className="text-sm sm:text-lg font-bold text-blue-600">{apartment}</p>
               </div>
-              <div className="bg-white rounded-lg p-3 shadow-sm">
-                <p className="text-sm text-gray-600 mb-1 flex items-center">
-                  <User className="w-4 h-4 mr-1" />
+              <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center">
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   Proprietar
                 </p>
-                <p className="text-lg font-semibold text-gray-800">{owner}</p>
+                <p className="text-xs sm:text-lg font-semibold text-gray-800 truncate">{owner}</p>
               </div>
-              <div className="bg-white rounded-lg p-3 shadow-sm">
-                <p className="text-sm text-gray-600 mb-1 flex items-center">
-                  <Users className="w-4 h-4 mr-1" />
+              <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center">
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   Persoane
                 </p>
-                <p className="text-lg font-bold text-gray-800">{persons}</p>
+                <p className="text-sm sm:text-lg font-bold text-gray-800">{persons}</p>
               </div>
             </div>
           </div>
 
           {/* Expense Breakdown Section */}
-          <div className="bg-gray-50 rounded-lg p-5 mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="bg-gray-50 rounded-lg p-3 sm:p-5 mb-4 sm:mb-6">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
               Detalii Cheltuieli
             </h3>
 
             {expenseBreakdown.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {expenseBreakdown.map((expense, index) => (
                   <div
                     key={index}
-                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border-l-4"
+                    className="bg-white rounded-lg p-2 sm:p-4 shadow-sm hover:shadow-md transition-shadow border-l-4"
                     style={{ borderLeftColor: expense.distributionInfo.color.replace('text-', '#') }}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-800 text-base mb-2">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-800 text-xs sm:text-base mb-1 sm:mb-2 truncate">
                           {expense.name}
                         </div>
                         <div className="space-y-1">
                           <div className="flex flex-wrap gap-1">
-                            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${expense.distributionInfo.bgColor} ${expense.distributionInfo.color} border ${expense.distributionInfo.borderColor}`}>
-                              <Info className="w-3 h-3" />
+                            <div className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium ${expense.distributionInfo.bgColor} ${expense.distributionInfo.color} border ${expense.distributionInfo.borderColor}`}>
+                              <Info className="w-2.5 h-2.5 sm:w-3 sm:h-3 hidden sm:block" />
                               {expense.distributionInfo.label}
                             </div>
                             {expense.distributionInfo.participationBadge && (
-                              <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200">
+                              <div className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200">
                                 {expense.distributionInfo.participationBadge}
                               </div>
                             )}
                           </div>
                           {expense.distributionInfo.details && (
-                            <div className="text-xs text-gray-600 mt-1 ml-1">
+                            <div className="text-[10px] sm:text-xs text-gray-600 mt-1 ml-1 truncate">
                               📊 {expense.distributionInfo.details}
                             </div>
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-bold ${expense.distributionInfo.type === 'excluded' ? 'text-red-600 line-through' : 'text-blue-600'}`}>
+                      <div className="text-right flex-shrink-0">
+                        <div className={`text-sm sm:text-lg font-bold ${expense.distributionInfo.type === 'excluded' ? 'text-red-600 line-through' : 'text-blue-600'}`}>
                           {expense.amount.toFixed(2)} lei
                         </div>
                         {expense.difference !== 0 && (
-                          <div className="text-xs text-orange-600 font-medium mt-1">
-                            Diferență: {expense.difference.toFixed(2)} lei
+                          <div className="text-[10px] sm:text-xs text-orange-600 font-medium mt-1">
+                            Dif: {expense.difference.toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -498,29 +498,29 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 text-center py-4 text-xs sm:text-base">
                 Nu există detalii despre cheltuieli
               </p>
             )}
           </div>
 
           {/* Totals Section */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-5 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Totaluri</h3>
-            <div className="space-y-3">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 sm:p-5 border border-gray-200">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Totaluri</h3>
+            <div className="space-y-2 sm:space-y-3">
               {/* Current Maintenance - Initial Value */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                <span className="font-medium text-gray-700">Întreținere Curentă</span>
-                <span className="text-xl font-bold text-blue-600">
+              <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-300">
+                <span className="font-medium text-gray-700 text-xs sm:text-base">Întreținere Curentă</span>
+                <span className="text-sm sm:text-xl font-bold text-blue-600">
                   {initialCurrentMaintenance?.toFixed(2) || '0.00'} lei
                 </span>
               </div>
 
               {/* Arrears - Initial Value */}
               {initialRestante > 0 && (
-                <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                  <span className="font-medium text-gray-700">Restanțe</span>
-                  <span className="text-xl font-bold text-red-600">
+                <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-300">
+                  <span className="font-medium text-gray-700 text-xs sm:text-base">Restanțe</span>
+                  <span className="text-sm sm:text-xl font-bold text-red-600">
                     {initialRestante?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
@@ -528,9 +528,9 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
 
               {/* Penalties - Initial Value */}
               {initialPenalitati > 0 && (
-                <div className="flex justify-between items-center py-2 border-b border-gray-300">
-                  <span className="font-medium text-gray-700">Penalități</span>
-                  <span className="text-xl font-bold text-orange-600">
+                <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-300">
+                  <span className="font-medium text-gray-700 text-xs sm:text-base">Penalități</span>
+                  <span className="text-sm sm:text-xl font-bold text-orange-600">
                     {initialPenalitati?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
@@ -538,9 +538,9 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
 
               {/* Total Datorat (Inițial - doar dacă sunt încasări) */}
               {apartmentPayments.length > 0 && (
-                <div className="flex justify-between items-center py-3 bg-gradient-to-r from-gray-100 to-gray-200 -mx-5 px-5 border-b border-gray-300 mt-2">
-                  <span className="text-lg font-bold text-gray-800">Total Datorat</span>
-                  <span className="text-2xl font-bold text-gray-700">
+                <div className="flex justify-between items-center py-2 sm:py-3 bg-gradient-to-r from-gray-100 to-gray-200 -mx-3 sm:-mx-5 px-3 sm:px-5 border-b border-gray-300 mt-2">
+                  <span className="text-sm sm:text-lg font-bold text-gray-800">Total Datorat</span>
+                  <span className="text-lg sm:text-2xl font-bold text-gray-700">
                     {initialTotalDatorat?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
@@ -548,23 +548,23 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
 
               {/* Payments Made */}
               {apartmentPayments.length > 0 && (
-                <div className="bg-green-50 -mx-5 px-5 py-3 border-b border-gray-300">
+                <div className="bg-green-50 -mx-3 sm:-mx-5 px-3 sm:px-5 py-2 sm:py-3 border-b border-gray-300">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-700 flex items-center">
-                      <Receipt className="w-4 h-4 mr-1 text-green-600" />
+                    <span className="font-medium text-gray-700 flex items-center text-xs sm:text-base">
+                      <Receipt className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-600" />
                       Încasări ({apartmentPayments.length})
                     </span>
-                    <span className="text-xl font-bold text-green-600">
+                    <span className="text-sm sm:text-xl font-bold text-green-600">
                       -{totalIncasat?.toFixed(2) || '0.00'} lei
                     </span>
                   </div>
 
                   {/* Breakdown pe categorii - ORDINE: Întreținere, Restanță, Penalități */}
-                  <div className="ml-5 space-y-1 text-sm">
+                  <div className="ml-3 sm:ml-5 space-y-1 text-xs sm:text-sm">
                     {totalIncasatIntretinere > 0 && (
                       <div className="flex justify-between items-center text-gray-700">
                         <span className="flex items-center">
-                          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mr-1.5 sm:mr-2"></span>
                           Întreținere
                         </span>
                         <span className="font-semibold text-green-600">-{totalIncasatIntretinere.toFixed(2)} lei</span>
@@ -573,7 +573,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                     {totalIncasatRestante > 0 && (
                       <div className="flex justify-between items-center text-gray-700">
                         <span className="flex items-center">
-                          <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full mr-1.5 sm:mr-2"></span>
                           Restanță
                         </span>
                         <span className="font-semibold text-green-600">-{totalIncasatRestante.toFixed(2)} lei</span>
@@ -582,7 +582,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                     {totalIncasatPenalitati > 0 && (
                       <div className="flex justify-between items-center text-gray-700">
                         <span className="flex items-center">
-                          <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full mr-1.5 sm:mr-2"></span>
                           Penalități
                         </span>
                         <span className="font-semibold text-green-600">-{totalIncasatPenalitati.toFixed(2)} lei</span>
@@ -593,7 +593,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                   {/* Lista de chitanțe */}
                   <div className="mt-2 pt-2 border-t border-green-200">
                     {apartmentPayments.map((payment, index) => (
-                      <div key={index} className="text-xs text-gray-600 ml-5 mt-1">
+                      <div key={index} className="text-[10px] sm:text-xs text-gray-600 ml-3 sm:ml-5 mt-1">
                         {new Date(payment.timestamp || payment.createdAt).toLocaleDateString('ro-RO')} - Chitanță #{payment.receiptNumber}
                       </div>
                     ))}
@@ -602,12 +602,12 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
               )}
 
               {/* Total Final - afișează fie "Total Datorat" (fără încasări) fie "Rest de Plată" (cu încasări) */}
-              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 -mx-5 px-5 py-3 mt-2 rounded-b-lg">
+              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 -mx-3 sm:-mx-5 px-3 sm:px-5 py-2 sm:py-3 mt-2 rounded-b-lg">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-800">
+                  <span className="text-sm sm:text-lg font-bold text-gray-800">
                     {apartmentPayments.length > 0 ? 'Rest de Plată' : 'Total Datorat'}
                   </span>
-                  <span className="text-2xl font-bold text-blue-700">
+                  <span className="text-lg sm:text-2xl font-bold text-blue-700">
                     {totalDatorat?.toFixed(2) || '0.00'} lei
                   </span>
                 </div>
@@ -617,10 +617,10 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+        <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            className="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
           >
             Închide
           </button>

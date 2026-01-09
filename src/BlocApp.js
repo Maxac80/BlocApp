@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Menu } from "lucide-react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import MobileHeader from "./components/common/MobileHeader";
+import BottomNavigation from "./components/common/BottomNavigation";
 
 // Hooks
 import { useAssociationData } from "./hooks/useFirestore";
@@ -561,22 +562,29 @@ useEffect(() => {
       {/* Overlay pentru mobile */}
       <Overlay />
       
+      {/* Mobile Header - visible only on mobile */}
+      <MobileHeader
+        onLogoClick={() => {
+          // Navighează la luna publicată activă și apoi la Dashboard
+          if (publishedSheet?.monthYear) {
+            setCurrentMonth(publishedSheet.monthYear);
+          } else if (currentSheet?.monthYear) {
+            setCurrentMonth(currentSheet.monthYear);
+          }
+          handleNavigation("dashboard");
+        }}
+        onAvatarClick={() => handleNavigation("profile")}
+        association={association}
+        userProfile={userProfile}
+        activeUser={activeUser}
+      />
+
       {/* Conținut principal */}
       <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
-        {/* Buton mobile menu - poziționat în header area */}
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden fixed top-3 left-3 z-40 p-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 active:scale-95 transition-transform"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
-        
-        {/* Zona de conținut - padding top pe mobil pentru hamburger button */}
-        <main className="flex-1 overflow-y-scroll pt-14 lg:pt-0">
+        {/* Zona de conținut - padding mutat în fiecare view pentru background corect */}
+        <main className="flex-1 overflow-y-scroll">
           
           {/* Dashboard View */}
           {currentView === "dashboard" && (
@@ -890,6 +898,12 @@ useEffect(() => {
 
         </main>
       </div>
+
+      {/* Bottom Navigation - visible only on mobile */}
+      <BottomNavigation
+        currentView={currentView}
+        handleNavigation={handleNavigation}
+      />
     </div>
     </ErrorBoundary>
   );

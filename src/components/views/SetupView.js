@@ -109,7 +109,7 @@ const SetupView = ({
   // Verifică dacă toate props-urile necesare sunt disponibile
   if (!association || !blocks || !stairs) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 pt-16 lg:pt-4 pb-20 lg:pb-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Se încarcă datele...</p>
@@ -459,7 +459,7 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
   };
 
 return (
-  <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 ${
+  <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pb-20 lg:pb-6 pt-16 lg:pt-0 ${
     monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : monthType === 'next'
@@ -851,7 +851,7 @@ return (
                   <div key={block.id} className="border border-gray-200 rounded-lg">
                     {/* Header Bloc */}
                     <div
-                      className="flex items-center justify-between p-4 bg-blue-50 border-b cursor-pointer hover:bg-blue-100 transition-colors"
+                      className="flex items-center justify-between p-2 sm:p-4 bg-blue-50 border-b cursor-pointer hover:bg-blue-100 transition-colors"
                       onClick={() => {
                         setExpandedBlocks(prev => ({
                           ...prev,
@@ -859,13 +859,13 @@ return (
                         }));
                       }}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="text-blue-600 text-xl">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="text-blue-600 text-base sm:text-xl">
                           {isExpanded ? '▼' : '▸'}
                         </div>
-                        
+
                         <div
-                          className="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 rounded-lg p-2 -m-2 transition-colors"
+                          className="flex flex-wrap items-center gap-1 sm:gap-2 cursor-pointer hover:bg-blue-100 rounded-lg p-1 sm:p-2 -m-1 sm:-m-2 transition-colors"
                           onClick={() => {
                             setExpandedBlocks(prev => ({
                               ...prev,
@@ -873,10 +873,10 @@ return (
                             }));
                           }}
                         >
-                          <span className="text-lg font-medium text-gray-800">
+                          <span className="text-sm sm:text-lg font-medium text-gray-800 whitespace-nowrap">
                             🏢 {block.name}
                           </span>
-                          <span className="text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded-full">
+                          <span className="text-[10px] sm:text-sm text-gray-600 bg-blue-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                             {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
                               return sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length;
                             }, 0)} apartamente
@@ -1052,7 +1052,7 @@ return (
 
                     {/* Conținutul blocului */}
                     {isExpanded && (
-                      <div className="p-4">
+                      <div className="p-2 sm:p-4">
                         {/* Form adăugare scară */}
                         {showAddForm?.type === 'stair' && showAddForm?.parentId === block.id && (
                           <div className="mb-4 bg-green-50 border-2 border-green-300 rounded-lg p-4">
@@ -1134,9 +1134,9 @@ return (
                               const isStairExpanded = expandedStairs[currentStair.id] ?? shouldExpandStair();
                               
                               return (
-                                <div key={currentStair.id} className="ml-6 border-l-2 border-green-200 pl-4">
+                                <div key={currentStair.id} className="ml-2 sm:ml-6 border-l-2 border-green-200 pl-2 sm:pl-4">
                                   <div
-                                    className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                                    className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
                                     onClick={() => {
                                       setExpandedStairs(prev => ({
                                         ...prev,
@@ -1144,11 +1144,11 @@ return (
                                       }));
                                     }}
                                   >
-                                    <div className="flex items-center space-x-3">
-                                      <div className="text-green-600">
+                                    <div className="flex items-center space-x-1.5 sm:space-x-3">
+                                      <div className="text-green-600 text-sm sm:text-base">
                                         {isStairExpanded ? '▼' : '▸'}
                                       </div>
-                                      <Layers className="w-6 h-6 text-green-600" />
+                                      <Layers className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
                                       
                                       {editingItem?.type === 'stair' && editingItem?.id === currentStair.id ? (
                                         <div className="flex items-center space-x-2">
@@ -1191,7 +1191,7 @@ return (
                                         </div>
                                       ) : (
                                         <div
-                                          className="flex items-center space-x-2 cursor-pointer hover:bg-green-100 rounded-lg p-2 -m-2 transition-colors"
+                                          className="flex flex-wrap items-center gap-1 sm:gap-2 cursor-pointer hover:bg-green-100 rounded-lg p-1 sm:p-2 -m-1 sm:-m-2 transition-colors"
                                           onClick={() => {
                                             setExpandedStairs(prev => ({
                                               ...prev,
@@ -1199,10 +1199,10 @@ return (
                                             }));
                                           }}
                                         >
-                                          <span className="font-medium text-gray-800 text-lg">
+                                          <span className="font-medium text-gray-800 text-sm sm:text-lg whitespace-nowrap">
                                             {currentStair.name}
                                           </span>
-                                          <span className="text-sm text-gray-600 bg-green-100 px-2 py-1 rounded-full">
+                                          <span className="text-[10px] sm:text-sm text-gray-600 bg-green-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                                             {stairApartments.length} apartamente • {stairApartments.reduce((sum, apt) => sum + apt.persons, 0)} persoane
                                           </span>
                                         </div>
@@ -1537,26 +1537,24 @@ return (
 
                                       {/* Lista apartamentelor */}
                                       {stairApartments.length === 0 && !(showAddForm?.type === 'apartment' && showAddForm.parentId === currentStair.id) ? (
-                                        <div className="py-4 px-6 bg-orange-50 border-2 border-orange-200 rounded-xl">
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                                <span className="text-2xl">👥</span>
+                                        <div className="py-2 sm:py-4 px-3 sm:px-6 bg-orange-50 border-2 border-orange-200 rounded-xl">
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                            <div className="hidden sm:flex w-12 h-12 bg-orange-100 rounded-full items-center justify-center flex-shrink-0">
+                                              <span className="text-2xl">👥</span>
+                                            </div>
+                                            <div className="text-left flex-1 min-w-0">
+                                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                                                <span className="bg-orange-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
+                                                  APARTAMENTE NECESARE
+                                                </span>
+                                                <span className="text-xs sm:text-sm font-semibold text-orange-800">Nu există apartamente</span>
                                               </div>
-                                              <div className="text-left">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                  <span className="bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                                    APARTAMENTE NECESARE
-                                                  </span>
-                                                  <span className="text-sm font-semibold text-orange-800">Nu există apartamente în această scară</span>
-                                                </div>
-                                                <p className="text-sm text-orange-600">Adaugă apartamentele manual pentru această scară sau folosește Import masiv cu Excel pentru scările fără apartamente</p>
-                                              </div>
+                                              <p className="text-xs sm:text-sm text-orange-600">Adaugă apartamentele manual sau folosește Import masiv cu Excel</p>
                                             </div>
                                           </div>
                                         </div>
                                       ) : stairApartments.length > 0 ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 sm:space-y-3">
                                           {stairApartments.sort((a, b) => {
                                             const numberDiff = a.number - b.number;
                                             if (numberDiff !== 0) return numberDiff;
@@ -1570,7 +1568,7 @@ return (
                                                 ? "bg-white border-2 border-orange-400 rounded-xl p-4 shadow-lg ring-2 ring-orange-200"
                                                 : highlightedApartmentId === apartment.id
                                                 ? "bg-yellow-100 border-2 border-yellow-400 rounded-xl p-4 shadow-lg ring-2 ring-yellow-200 animate-pulse"
-                                                : "bg-orange-50 border border-orange-200 rounded-lg p-3 hover:bg-orange-100"
+                                                : "bg-orange-50 border border-orange-200 rounded-lg p-2 sm:p-3 hover:bg-orange-100"
                                             } transition-all duration-200`}>
                                               {editingItem?.type === 'apartment' && editingItem?.id === apartment.id ? (
                                                 /* Form editare apartament */
@@ -1747,46 +1745,34 @@ return (
                                                       </div>
                                                     </div>
 
-                                                    {/* Mobile: numele sus, etichetele jos */}
+                                                    {/* Mobile: numele sus, etichetele jos - compact */}
                                                     <div className="lg:hidden">
-                                                      <div className="mb-2">
-                                                        <span className="font-medium text-gray-800 text-lg">
-                                                          👥 Apt {apartment.number} - {apartment.owner}
+                                                      <div className="mb-1.5">
+                                                        <span className="font-medium text-gray-800 text-sm sm:text-base">
+                                                          👥 Apt {apartment.number} - <span className="truncate">{apartment.owner}</span>
                                                         </span>
                                                       </div>
 
-                                                      <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="text-xs bg-orange-200 text-orange-800 px-2 py-0.5 rounded w-32 text-center">
-                                                          {apartment.persons} {apartment.persons === 1 ? 'persoană' : 'persoane'}
+                                                      <div className="flex flex-wrap items-center gap-1">
+                                                        <span className="text-[10px] sm:text-xs bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded">
+                                                          {apartment.persons} pers.
                                                         </span>
 
-                                                        {apartment.apartmentType ? (
-                                                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded w-28 text-center">
+                                                        {apartment.apartmentType && (
+                                                          <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
                                                             🏠 {apartment.apartmentType}
                                                           </span>
-                                                        ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-28 text-center">
-                                                            🏠 -
-                                                          </span>
                                                         )}
 
-                                                        {apartment.surface ? (
-                                                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded w-24 text-center">
+                                                        {apartment.surface && (
+                                                          <span className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
                                                             📐 {apartment.surface} mp
                                                           </span>
-                                                        ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-24 text-center">
-                                                            📐 - mp
-                                                          </span>
                                                         )}
 
-                                                        {apartment.heatingSource ? (
-                                                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded w-40 text-center">
+                                                        {apartment.heatingSource && (
+                                                          <span className="text-[10px] sm:text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
                                                             🔥 {apartment.heatingSource}
-                                                          </span>
-                                                        ) : (
-                                                          <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded w-40 text-center">
-                                                            🔥 -
                                                           </span>
                                                         )}
                                                       </div>
@@ -1912,21 +1898,19 @@ return (
                             })}
                           </div>
                         ) : !(showAddForm?.type === 'stair' && showAddForm?.parentId === block.id) ? (
-                          <div className="py-4 px-6 bg-green-50 border-2 border-green-200 rounded-xl">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                  <Layers className="w-7 h-7 text-green-600" />
+                          <div className="py-2 sm:py-4 px-3 sm:px-6 bg-green-50 border-2 border-green-200 rounded-xl">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                              <div className="hidden sm:flex w-12 h-12 bg-green-100 rounded-full items-center justify-center flex-shrink-0">
+                                <Layers className="w-7 h-7 text-green-600" />
+                              </div>
+                              <div className="text-left flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                                  <span className="bg-green-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
+                                    SCĂRI NECESARE
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-semibold text-green-800">Nu există scări în acest bloc</span>
                                 </div>
-                                <div className="text-left">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                      SCĂRI NECESARE
-                                    </span>
-                                    <span className="text-sm font-semibold text-green-800">Nu există scări în acest bloc</span>
-                                  </div>
-                                  <p className="text-sm text-green-600">Adaugă scările pentru acest bloc pentru a putea configura apartamentele</p>
-                                </div>
+                                <p className="text-xs sm:text-sm text-green-600">Adaugă scările pentru a putea configura apartamentele</p>
                               </div>
                             </div>
                           </div>

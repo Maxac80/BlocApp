@@ -742,11 +742,11 @@ const ExpenseConfigModal = ({
           </div>
         </div>
 
-        <div className="border-b overflow-x-auto">
-          <div className="flex">
+        <div className="border-b overflow-x-auto flex-shrink-0">
+          <div className="flex min-w-max">
             <button
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'general'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
@@ -757,7 +757,7 @@ const ExpenseConfigModal = ({
             </button>
             <button
               onClick={() => setActiveTab('participation')}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'participation'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
@@ -768,7 +768,7 @@ const ExpenseConfigModal = ({
             </button>
             <button
               onClick={() => setActiveTab('supplier')}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'supplier'
                   ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                   : 'text-gray-600 hover:text-gray-900'
@@ -781,7 +781,7 @@ const ExpenseConfigModal = ({
             {localConfig.distributionType === 'consumption' && (
               <button
                 onClick={() => setActiveTab('indexes')}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'indexes'
                     ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                     : 'text-gray-600 hover:text-gray-900'
@@ -796,7 +796,7 @@ const ExpenseConfigModal = ({
              localConfig.indexConfiguration?.indexTypes?.length > 0 && (
               <button
                 onClick={() => setActiveTab('meters')}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'meters'
                     ? `${mode === 'add' ? 'bg-green-50 text-green-700 border-b-2 border-green-700' : 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'}`
                     : 'text-gray-600 hover:text-gray-900'

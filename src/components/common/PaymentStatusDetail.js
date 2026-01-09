@@ -109,21 +109,21 @@ const PaymentStatusDetail = ({
   const StatusContent = () => (
     <div className="relative">
       <div className="flex flex-col gap-0.5">
-        {/* Status principal */}
+        {/* Status principal - compact pe mobil */}
         <div className={`flex items-center font-medium ${
           isPaid ? 'text-green-600' :
           isPartiallyPaid ? 'text-orange-600' :
           'text-red-600'
         }`}>
-          {isPaid && <CheckCircle className="w-4 h-4 mr-1" />}
-          {isPartiallyPaid && <span className="w-4 h-4 mr-1 text-orange-500">◐</span>}
-          {!isPaid && !isPartiallyPaid && <X className="w-4 h-4 mr-1" />}
-          <span className="text-sm">{paymentStatus}</span>
+          {isPaid && <CheckCircle className="w-4 h-4 sm:mr-1" />}
+          {isPartiallyPaid && <span className="w-4 h-4 sm:mr-1 text-orange-500">◐</span>}
+          {!isPaid && !isPartiallyPaid && <X className="w-4 h-4 sm:mr-1" />}
+          <span className="hidden sm:inline text-sm">{paymentStatus}</span>
         </div>
 
-        {/* Detalii plată cu iconițe */}
+        {/* Detalii plată cu iconițe - doar pe desktop */}
         {paymentBreakdown && (isPaid || isPartiallyPaid) && (
-          <div className="space-y-0.5">
+          <div className="hidden sm:block space-y-0.5">
             {/* Total plătit */}
             <div className="flex items-center text-xs text-gray-600">
               Total: {paymentBreakdown.total.toFixed(2)} RON
@@ -155,10 +155,10 @@ const PaymentStatusDetail = ({
         )}
       </div>
 
-      {/* Tooltip complex la mouseover */}
+      {/* Tooltip complex la mouseover - doar pe desktop */}
       {paymentBreakdown && (
-        <div 
-          className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 min-w-64"
+        <div
+          className="hidden sm:block absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 min-w-64"
           style={{ transform: 'translateX(-50%)' }}
         >
           <div className="text-sm font-semibold mb-2">Detalii Plăți</div>

@@ -114,18 +114,18 @@ const DashboardMaintenanceTable = ({
   const apartamenteCuIncasari = stairFilteredData.filter(d => d.isPaid || d.isPartiallyPaid).length;
 
   return (
-    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200">
-      <div className={`p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
-        <div className="flex items-center justify-between gap-4">
+    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200 overflow-hidden">
+      <div className={`p-3 sm:p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="flex-shrink-0">
-            <h3 className={`text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
+            <h3 className={`text-sm sm:text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
               📊 Tabel Întreținere - {currentMonth}
             </h3>
           </div>
 
           {/* Statistici de încasare - discret în dreapta */}
           {isMonthReadOnly && (
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="hidden md:flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Grad încasare:</span>
                 <span className="font-semibold text-green-600">{gradIncasare.toFixed(1)}%</span>
@@ -141,27 +141,42 @@ const DashboardMaintenanceTable = ({
           )}
 
           {/* Bara de căutare mutată în header */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative w-full sm:flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Caută apartament, proprietar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full"
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm w-full"
             />
           </div>
         </div>
+
+        {/* Statistici compacte pe mobile */}
+        {isMonthReadOnly && (
+          <div className="flex md:hidden items-center justify-between mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">Grad încasare:</span>
+              <span className="font-semibold text-green-600">{gradIncasare.toFixed(1)}%</span>
+              <span className="text-gray-400">({totalIncasat.toFixed(0)}/{totalDatoratInitial.toFixed(0)} RON)</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">Încasări:</span>
+              <span className="font-semibold text-blue-600">{apartamenteCuIncasari}/{apartamenteTotal} ap</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tab-uri pentru scări */}
-      {associationStairs.length > 0 && (
+      {/* Tab-uri pentru scări - doar dacă avem mai multe blocuri/scări */}
+      {(associationBlocks.length > 1 || associationStairs.length > 1) && (
         <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200" style={{ position: 'sticky' }}>
           <div className="flex overflow-x-auto">
             {/* Tab "Toate" */}
             <button
               onClick={() => setSelectedStairTab('all')}
-              className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                 selectedStairTab === 'all'
                   ? 'bg-purple-100 text-purple-700 border-purple-700'
                   : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-purple-100'
@@ -178,7 +193,7 @@ const DashboardMaintenanceTable = ({
                 <button
                   key={stair.id}
                   onClick={() => setSelectedStairTab(stair.id)}
-                  className={`px-6 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                     selectedStairTab === stair.id
                       ? 'bg-purple-100 text-purple-700 border-purple-700'
                       : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-purple-100'
@@ -193,7 +208,7 @@ const DashboardMaintenanceTable = ({
       )}
 
       <div
-        className={filteredData.length > 10 ? "overflow-auto" : ""}
+        className={`overflow-x-auto ${filteredData.length > 10 ? "overflow-y-auto" : ""}`}
         style={filteredData.length > 10 ? { maxHeight: '70vh' } : {}}
       >
         <MaintenanceTableSimple

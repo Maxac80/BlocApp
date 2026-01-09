@@ -253,27 +253,27 @@ const ApartmentModal = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-[95vw] sm:max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header cu gradient - albastru pentru view, orange pentru edit/add */}
-        <div className={`p-4 flex items-center justify-between text-white flex-shrink-0 ${
+        <div className={`p-3 sm:p-4 flex items-center justify-between text-white flex-shrink-0 ${
           isViewMode
             ? 'bg-gradient-to-r from-blue-500 to-blue-600'
             : 'bg-gradient-to-r from-orange-500 to-orange-600'
         }`}>
-          <div className="flex items-center gap-3">
-            <div className="bg-white bg-opacity-20 rounded-lg p-2">
-              <span className="text-2xl">{isViewMode ? '👁️' : '🏠'}</span>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="bg-white bg-opacity-20 rounded-lg p-1.5 sm:p-2 flex-shrink-0">
+              <span className="text-xl sm:text-2xl">{isViewMode ? '👁️' : '🏠'}</span>
             </div>
-            <div>
-              <h3 className="text-xl font-semibold">
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-xl font-semibold truncate">
                 {isViewMode
                   ? `Vizualizare apartament ${apartment?.number}`
                   : mode === 'edit'
                     ? `Editează apartament ${apartment?.number}`
                     : 'Configurare: Apartament nou'}
               </h3>
-              <p className={`text-sm ${isViewMode ? 'text-blue-100' : 'text-orange-100'}`}>
+              <p className={`text-xs sm:text-sm truncate ${isViewMode ? 'text-blue-100' : 'text-orange-100'}`}>
                 {(mode === 'edit' || isViewMode)
                   ? `${displayBlockName} - ${displayStairName}`
                   : `Apartament nou la ${currentBlock?.name || ''} - ${stair?.name || ''}`}
@@ -282,21 +282,21 @@ const ApartmentModal = ({
           </div>
           <button
             onClick={onClose}
-            className={`text-white transition-colors ${isViewMode ? 'hover:text-blue-200' : 'hover:text-orange-200'}`}
+            className={`text-white transition-colors flex-shrink-0 ${isViewMode ? 'hover:text-blue-200' : 'hover:text-orange-200'}`}
           >
-            <XCircle className="w-6 h-6" />
+            <XCircle className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto flex-1 min-h-0">
-          <div className="space-y-3">
-            <h4 className="text-base font-medium text-gray-800 mb-3">Informații generale</h4>
+        <div className="p-3 sm:p-4 overflow-y-auto flex-1 min-h-0">
+          <div className="space-y-2 sm:space-y-3">
+            <h4 className="text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">Informații generale</h4>
 
                 {/* Rândul 1: Numărul apartamentului și Proprietarul */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Numărul apartamentului {!isViewMode && '*'}
                     </label>
                     <input
@@ -306,7 +306,7 @@ const ApartmentModal = ({
                         const value = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({...formData, number: value});
                       }}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                         isViewMode
                           ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                           : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
@@ -317,14 +317,14 @@ const ApartmentModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Proprietar {!isViewMode && '*'}
                     </label>
                     <input
                       type="text"
                       value={formData.owner}
                       onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                      className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none ${
                         isViewMode
                           ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                           : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
@@ -337,9 +337,9 @@ const ApartmentModal = ({
                 </div>
 
                 {/* Rândul 2: Numărul de persoane și Tipul apartamentului */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Numărul de persoane {!isViewMode && '*'}
                     </label>
                     <input
@@ -349,7 +349,7 @@ const ApartmentModal = ({
                         const value = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({...formData, persons: value});
                       }}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                         isViewMode
                           ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                           : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
@@ -360,7 +360,7 @@ const ApartmentModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Tipul apartamentului
                     </label>
                     {isViewMode ? (
@@ -368,14 +368,14 @@ const ApartmentModal = ({
                       <input
                         type="text"
                         value={formData.apartmentType || '-'}
-                        className="w-full px-3 py-2 border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
                         disabled
                       />
                     ) : (
                       <select
                         value={formData.apartmentType}
                         onChange={(e) => setFormData({...formData, apartmentType: e.target.value})}
-                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                       >
                         <option value="">Selectează tipul</option>
                         <option value="Garsoniera">Garsoniera</option>
@@ -390,9 +390,9 @@ const ApartmentModal = ({
                 </div>
 
                 {/* Rândul 3: Suprafața și Sursa de încălzire */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Suprafața utilă (mp)
                     </label>
                     <input
@@ -405,7 +405,7 @@ const ApartmentModal = ({
                         const cleanValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
                         setFormData({...formData, surface: cleanValue});
                       }}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                         isViewMode
                           ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                           : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
@@ -415,7 +415,7 @@ const ApartmentModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Sursa de încălzire
                     </label>
                     {isViewMode ? (
@@ -423,14 +423,14 @@ const ApartmentModal = ({
                       <input
                         type="text"
                         value={formData.heatingSource || '-'}
-                        className="w-full px-3 py-2 border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed rounded-lg outline-none"
                         disabled
                       />
                     ) : (
                       <select
                         value={formData.heatingSource}
                         onChange={(e) => setFormData({...formData, heatingSource: e.target.value})}
-                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
                       >
                         <option value="">Selectează sursa</option>
                         <option value="Termoficare">Termoficare</option>
@@ -444,28 +444,28 @@ const ApartmentModal = ({
 
                 {/* ADĂUGAT: Cotă parte indiviză - calculată automat */}
                 {formData.surface && (
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
+                    <label className="block text-xs sm:text-sm font-medium text-blue-900 mb-1">
                       📊 Cotă parte indiviză {isViewMode ? '' : '(calculată automat)'}
                     </label>
-                    <div className="text-lg font-semibold text-blue-700">
+                    <div className="text-sm sm:text-lg font-semibold text-blue-700">
                       {/* În modul view, folosim cotaParte salvată în snapshot dacă există */}
                       {isViewMode && apartment?.cotaParte ? (
                         <>
                           {apartment.cotaParte.toFixed(4)}%
-                          <span className="text-sm font-normal text-blue-600 ml-2">
+                          <span className="text-xs sm:text-sm font-normal text-blue-600 ml-1 sm:ml-2">
                             ({formData.surface} mp - calculat la momentul salvării)
                           </span>
                         </>
                       ) : totalSurface > 0 ? (
                         <>
                           {((parseFloat(formData.surface) / totalSurface) * 100).toFixed(4)}%
-                          <span className="text-sm font-normal text-blue-600 ml-2">
+                          <span className="text-xs sm:text-sm font-normal text-blue-600 ml-1 sm:ml-2">
                             ({formData.surface} mp / {totalSurface.toFixed(2)} mp)
                           </span>
                         </>
                       ) : (
-                        <span className="text-sm text-blue-600">
+                        <span className="text-xs sm:text-sm text-blue-600">
                           {isViewMode
                             ? 'Nu sunt disponibile date de suprafață pentru calculul cotei parte'
                             : 'Completați suprafețele celorlalte apartamente pentru calcul complet'}
@@ -475,25 +475,25 @@ const ApartmentModal = ({
                   </div>
                 )}
 
-                <h4 className="text-base font-medium text-gray-800 mb-3 mt-4">Informații de contact</h4>
+                <h4 className="text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3 mt-3 sm:mt-4">Informații de contact</h4>
 
                 {/* Email și Telefon pe aceeași linie */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Adresă email
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className={`flex-1 px-3 py-2 border rounded-lg outline-none ${
+                        className={`flex-1 min-w-0 px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none ${
                           isViewMode
                             ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                             : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
                         }`}
-                        placeholder="ex: ion.popescu@email.com"
+                        placeholder="ex: ion.popescu@en"
                         disabled={isViewMode}
                       />
                       {/* Buton invitație - doar în modul edit/view și dacă există email */}
@@ -572,14 +572,14 @@ const ApartmentModal = ({
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                       Număr de telefon
                     </label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className={`w-full px-3 py-2 border rounded-lg outline-none ${
+                      className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border rounded-lg outline-none ${
                         isViewMode
                           ? 'border-blue-200 bg-blue-50 text-gray-700 cursor-not-allowed'
                           : 'border-orange-300 focus:ring-2 focus:ring-orange-500'
@@ -587,19 +587,19 @@ const ApartmentModal = ({
                       placeholder="ex: 0721234567"
                       disabled={isViewMode}
                     />
-                    {!isViewMode && <p className="text-xs text-gray-500 mt-1">Opțional - pentru urgențe sau notificări</p>}
+                    {!isViewMode && <p className="text-xs text-gray-500 mt-1">Opțional - pentru urgențe</p>}
                   </div>
                 </div>
               </div>
         </div>
 
         {/* Butoane fixe */}
-        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3 flex-shrink-0">
+        <div className="p-3 sm:p-4 bg-gray-50 border-t flex justify-end gap-2 sm:gap-3 flex-shrink-0">
           {isViewMode ? (
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="px-4 sm:px-6 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Închide
             </button>
@@ -608,13 +608,13 @@ const ApartmentModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 Anulează
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                className="px-4 sm:px-6 py-1.5 sm:py-2 text-sm sm:text-base bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
               >
                 {mode === 'edit' ? 'Salvează' : 'Adaugă'}
               </button>
