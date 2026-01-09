@@ -21,7 +21,10 @@ export const metadata: Metadata = {
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
   icons: {
-    icon: '/blocapp-icon-admin.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/blocapp-icon-admin.png', type: 'image/png' },
+    ],
     apple: '/blocapp-icon-admin.png',
   },
   openGraph: {
