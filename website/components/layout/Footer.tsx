@@ -31,7 +31,7 @@ export default function Footer() {
               <img
                 src="/blocapp-icon-admin.png"
                 alt="BlocApp"
-                className="h-12 w-12 object-contain"
+                className="h-14 w-14 object-contain"
               />
               <span className="text-3xl font-bold text-white font-montserrat self-end">BlocApp</span>
             </Link>

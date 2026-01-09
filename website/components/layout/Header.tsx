@@ -23,14 +23,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Top">
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between py-3">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3">
               <img
                 src="/blocapp-icon-admin.png"
                 alt="BlocApp"
-                className="h-10 w-10 object-contain"
+                className="h-12 w-12 object-contain"
               />
               <span className="text-3xl font-bold text-gray-900 font-montserrat self-end">BlocApp</span>
             </Link>
