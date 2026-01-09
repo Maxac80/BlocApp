@@ -19,7 +19,7 @@ const DashboardHeader = ({
 
   // Helper pentru badge-ul tipului lunii
   const getMonthTypeBadge = () => {
-    const baseClasses = "text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded text-center whitespace-nowrap";
+    const baseClasses = "text-[11px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded text-center whitespace-nowrap";
 
     if (monthType === 'current') {
       return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>LUNA ACTIVĂ</span>;
@@ -33,7 +33,7 @@ const DashboardHeader = ({
 
   // Helper pentru badge-ul statusului
   const getStatusBadge = () => {
-    const baseClasses = "text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded text-center whitespace-nowrap";
+    const baseClasses = "text-[11px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded text-center whitespace-nowrap";
 
     if (monthType === 'historic' && isReadOnly) {
       return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>ARHIVATĂ</span>;
@@ -68,8 +68,8 @@ const DashboardHeader = ({
           </div>
 
           {/* Secțiunea cu controls - selector și badge-uri */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* Selector luna - compact pe mobil */}
+          <div className="flex items-center justify-between gap-1 sm:gap-3 flex-nowrap">
+            {/* Selector luna - la stanga */}
             <select
               value={currentMonth}
               onChange={(e) => setCurrentMonth(e.target.value)}
@@ -85,9 +85,11 @@ const DashboardHeader = ({
               }
             </select>
 
-            {/* Badge-uri status */}
-            {getMonthTypeBadge()}
-            {getStatusBadge()}
+            {/* Badge-uri status - la dreapta */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap">
+              {getMonthTypeBadge()}
+              {getStatusBadge()}
+            </div>
           </div>
         </div>
       </div>
