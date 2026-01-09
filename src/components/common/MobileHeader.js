@@ -9,7 +9,15 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, association, userProfile, ac
   const userName = userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator';
 
   return (
-    <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 text-white h-14 flex items-center justify-between px-4 shadow-lg">
+    <>
+    <header
+      className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 text-white flex items-center justify-between px-4 shadow-lg"
+      style={{
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+        paddingBottom: '0.5rem',
+        minHeight: '3.5rem'
+      }}
+    >
       {/* Logo și nume aplicație */}
       <button
         onClick={onLogoClick}
@@ -46,6 +54,15 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, association, userProfile, ac
         )}
       </button>
     </header>
+    {/* Spacer pentru safe-area pe dispozitive cu notch */}
+    <style>{`
+      @supports (padding-top: env(safe-area-inset-top)) {
+        .mobile-header-spacer {
+          height: calc(3.5rem + env(safe-area-inset-top, 0px));
+        }
+      }
+    `}</style>
+    </>
   );
 };
 

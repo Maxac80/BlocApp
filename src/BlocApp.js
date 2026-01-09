@@ -583,8 +583,20 @@ useEffect(() => {
       <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
-        {/* Zona de conținut - padding mutat în fiecare view pentru background corect */}
-        <main className="flex-1 overflow-y-scroll">
+        {/* Zona de conținut - padding pentru mobile header și bottom nav cu safe-area */}
+        <main className="flex-1 overflow-y-scroll main-content-mobile-padding">
+        <style>{`
+          .main-content-mobile-padding {
+            padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+          }
+          @media (min-width: 1024px) {
+            .main-content-mobile-padding {
+              padding-top: 0;
+              padding-bottom: 0;
+            }
+          }
+        `}</style>
           
           {/* Dashboard View */}
           {currentView === "dashboard" && (
