@@ -37,7 +37,7 @@ if (!fs.existsSync(sourceIcon)) {
 const targets = [
   { dest: path.join(publicDir, 'logo192.png'), desc: 'PWA Icon 192x192' },
   { dest: path.join(publicDir, 'logo512.png'), desc: 'PWA Icon 512x512' },
-  { dest: path.join(publicDir, 'favicon.ico'), desc: 'Favicon', skip: true } // Favicon rămâne separat
+  { dest: path.join(publicDir, 'favicon.ico'), desc: 'Favicon (browser tab icon)' } // Acum se copiază în funcție de mod
 ];
 
 console.log(`\n📋 Copying icons from: ${path.basename(sourceIcon)}`);
