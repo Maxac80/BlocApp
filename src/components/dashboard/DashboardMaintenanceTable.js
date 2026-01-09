@@ -107,9 +107,9 @@ const DashboardMaintenanceTable = ({
     totalIncasatFiltered = paymentStats.totalIncasat || 0; // Fallback la total
   }
 
-  const totalIncasat = totalIncasatFiltered;
-  const totalDatoratInitial = totalDatoratRamas + totalIncasat; // Inițial = ce a rămas + ce s-a plătit
-  const gradIncasare = totalDatoratInitial > 0 ? (totalIncasat / totalDatoratInitial) * 100 : 0;
+  const totalIncasat = totalIncasatFiltered || 0;
+  const totalDatoratInitial = (totalDatoratRamas || 0) + (totalIncasat || 0); // Inițial = ce a rămas + ce s-a plătit
+  const gradIncasare = totalDatoratInitial > 0 ? ((totalIncasat || 0) / totalDatoratInitial) * 100 : 0;
   const apartamenteTotal = stairFilteredData.length;
   const apartamenteCuIncasari = stairFilteredData.filter(d => d.isPaid || d.isPartiallyPaid).length;
 
@@ -128,8 +128,8 @@ const DashboardMaintenanceTable = ({
             <div className="hidden md:flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Grad încasare:</span>
-                <span className="font-semibold text-green-600">{gradIncasare.toFixed(1)}%</span>
-                <span className="text-gray-400">({totalIncasat.toFixed(0)} / {totalDatoratInitial.toFixed(0)} RON)</span>
+                <span className="font-semibold text-green-600">{(gradIncasare || 0).toFixed(1)}%</span>
+                <span className="text-gray-400">({(totalIncasat || 0).toFixed(0)} / {(totalDatoratInitial || 0).toFixed(0)} RON)</span>
               </div>
               <div className="h-4 w-px bg-gray-300"></div>
               <div className="flex items-center gap-2">
@@ -158,8 +158,8 @@ const DashboardMaintenanceTable = ({
           <div className="flex md:hidden items-center justify-between mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
             <div className="flex items-center gap-1">
               <span className="text-gray-500">Grad încasare:</span>
-              <span className="font-semibold text-green-600">{gradIncasare.toFixed(1)}%</span>
-              <span className="text-gray-400">({totalIncasat.toFixed(0)}/{totalDatoratInitial.toFixed(0)} RON)</span>
+              <span className="font-semibold text-green-600">{(gradIncasare || 0).toFixed(1)}%</span>
+              <span className="text-gray-400">({(totalIncasat || 0).toFixed(0)}/{(totalDatoratInitial || 0).toFixed(0)} RON)</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">Încasări:</span>
