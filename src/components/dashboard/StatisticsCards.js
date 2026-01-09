@@ -70,11 +70,11 @@ const StatisticsCards = ({
         <div className="text-xs text-gray-600">Cheltuieli</div>
       </div>
       <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-        <div className="text-lg font-bold text-indigo-600">{totalExpenses.toFixed(0)}</div>
+        <div className="text-lg font-bold text-indigo-600">{(totalExpenses || 0).toFixed(0)}</div>
         <div className="text-xs text-gray-600">Val. Cheltuieli</div>
       </div>
       <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">
-        <div className="text-lg font-bold text-emerald-600">{totalIncasari.toFixed(0)}</div>
+        <div className="text-lg font-bold text-emerald-600">{(totalIncasari || 0).toFixed(0)}</div>
         <div className="text-xs text-gray-600">Total Încasări</div>
       </div>
       <div className="bg-white p-4 rounded-xl shadow border text-center min-w-0">

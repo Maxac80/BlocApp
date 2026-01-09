@@ -57,12 +57,12 @@ const MaintenanceTableSimple = ({
               </div>
             </td>
             {/* Coloane ascunse pe mobil */}
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap">{data.persons}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-indigo-600 whitespace-nowrap">{data.currentMaintenance.toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-red-600 whitespace-nowrap">{data.restante.toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-purple-600 whitespace-nowrap">{data.totalMaintenance.toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-orange-600 whitespace-nowrap">{data.penalitati.toFixed(2)}</td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">{data.totalDatorat.toFixed(2)}</td>
+            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap">{data.persons || 0}</td>
+            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-indigo-600 whitespace-nowrap">{(data.currentMaintenance || 0).toFixed(2)}</td>
+            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-red-600 whitespace-nowrap">{(data.restante || 0).toFixed(2)}</td>
+            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-purple-600 whitespace-nowrap">{(data.totalMaintenance || 0).toFixed(2)}</td>
+            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-orange-600 whitespace-nowrap">{(data.penalitati || 0).toFixed(2)}</td>
+            <td className="px-1 sm:px-3 py-2 sm:py-3 font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">{(data.totalDatorat || 0).toFixed(2)}</td>
             {isMonthReadOnly && (
               <>
                 <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap">
@@ -112,22 +112,22 @@ const MaintenanceTableSimple = ({
           <td className="px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap">TOTAL:</td>
           {/* Coloane ascunse pe mobil */}
           <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-gray-800 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.persons, 0)}
+            {maintenanceData.reduce((sum, d) => sum + (d.persons || 0), 0)}
           </td>
           <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-indigo-600 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.currentMaintenance, 0).toFixed(2)}
+            {maintenanceData.reduce((sum, d) => sum + (d.currentMaintenance || 0), 0).toFixed(2)}
           </td>
           <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-red-600 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.restante, 0).toFixed(2)}
+            {maintenanceData.reduce((sum, d) => sum + (d.restante || 0), 0).toFixed(2)}
           </td>
           <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-purple-600 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.totalMaintenance, 0).toFixed(2)}
+            {maintenanceData.reduce((sum, d) => sum + (d.totalMaintenance || 0), 0).toFixed(2)}
           </td>
           <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 font-bold text-orange-600 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.penalitati, 0).toFixed(2)}
+            {maintenanceData.reduce((sum, d) => sum + (d.penalitati || 0), 0).toFixed(2)}
           </td>
           <td className="px-1 sm:px-3 py-2 sm:py-3 font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
+            {maintenanceData.reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
           </td>
           {isMonthReadOnly && (
             <>
@@ -144,14 +144,14 @@ const MaintenanceTableSimple = ({
             <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50">
               <span className="font-semibold text-xs sm:text-sm">ÎNCASAT:</span>
               <span className="sm:hidden font-bold text-green-600 ml-1 text-xs">
-                {paymentStats ? paymentStats.totalIncasat.toFixed(2) : '0.00'}
+                {(paymentStats?.totalIncasat || 0).toFixed(2)}
               </span>
             </td>
             {/* Desktop only: Pers (gol) */}
             <td className="hidden sm:table-cell px-3 py-3 whitespace-nowrap bg-blue-50"></td>
             {/* Desktop only: Întreținere - valoare încasat */}
             <td className="hidden sm:table-cell px-3 py-3 font-bold text-green-600 whitespace-nowrap bg-blue-50">
-              {paymentStats ? paymentStats.totalIncasat.toFixed(2) : '0.00'}
+              {(paymentStats?.totalIncasat || 0).toFixed(2)}
             </td>
             {/* Desktop only: Restanță (gol) */}
             <td className="hidden sm:table-cell px-3 py-3 whitespace-nowrap bg-blue-50"></td>
@@ -159,7 +159,7 @@ const MaintenanceTableSimple = ({
             <td className="hidden sm:table-cell px-3 py-3 font-semibold text-right whitespace-nowrap bg-blue-50">RESTANȚE:</td>
             {/* Desktop only: Penalități - valoare restanțe */}
             <td className="hidden sm:table-cell px-3 py-3 font-bold text-red-600 whitespace-nowrap bg-blue-50">
-              {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
+              {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
             </td>
             {/* Coloana Total Datorat - diferit pe mobil vs desktop */}
             <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50">
@@ -167,7 +167,7 @@ const MaintenanceTableSimple = ({
               <div className="sm:hidden">
                 <span className="font-semibold text-xs">Restanțe: </span>
                 <span className="font-bold text-red-600 text-xs">
-                  {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + d.totalDatorat, 0).toFixed(2)}
+                  {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
                 </span>
               </div>
               {/* Pe desktop: gol */}

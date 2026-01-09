@@ -20,7 +20,7 @@ const RecentActivity = ({ maintenanceData, association, currentMonth, getAssocia
   }
 
   // Calculează totalul curent rămas de plată
-  const totalDatoratCurent = maintenanceData.reduce((sum, d) => sum + d.totalDatorat, 0);
+  const totalDatoratCurent = maintenanceData.reduce((sum, d) => sum + (d.totalDatorat || 0), 0);
   
   // Pentru a calcula totalul inițial și ce s-a încasat, trebuie să folosim datele originale
   // Logica: Dacă maintenanceData vine cu date actualizate prin usePaymentSync,
@@ -83,47 +83,47 @@ const RecentActivity = ({ maintenanceData, association, currentMonth, getAssocia
         <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
           <span className="font-medium">Tabel întreținere generat</span>
           <span className="text-green-600 font-bold">
-            {maintenanceData.length} apartamente
+            {maintenanceData?.length || 0} apartamente
           </span>
         </div>
         <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
           <span className="font-medium">Total întreținere publicată</span>
           <span className="text-blue-600 font-bold">
-            {totalDatoratInitial.toFixed(2)} RON
+            {(totalDatoratInitial || 0).toFixed(2)} RON
           </span>
         </div>
         <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg border-l-4 border-orange-500">
           <span className="font-medium">Total de încasat</span>
           <span className="text-orange-600 font-bold">
-            {totalRestante.toFixed(2)} RON
+            {(totalRestante || 0).toFixed(2)} RON
           </span>
         </div>
-        {totalIncasat > 0 && (
+        {(totalIncasat || 0) > 0 && (
           <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-lg border-l-4 border-emerald-500">
             <span className="font-medium">Deja încasat</span>
             <span className="text-emerald-600 font-bold">
-              {totalIncasat.toFixed(2)} RON
+              {(totalIncasat || 0).toFixed(2)} RON
             </span>
           </div>
         )}
         <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
           <div>
-            <span className="font-medium">Plăți înregistrate: {platiInregistrate} / {maintenanceData.length}</span>
-            <div className="text-sm text-gray-600">Procent încasare: {procentIncasare.toFixed(1)}%</div>
+            <span className="font-medium">Plăți înregistrate: {platiInregistrate || 0} / {maintenanceData?.length || 0}</span>
+            <div className="text-sm text-gray-600">Procent încasare: {(procentIncasare || 0).toFixed(1)}%</div>
           </div>
         </div>
       </div>
-      
+
       {/* Bară de progres */}
       <div className="mt-4">
         <div className="flex justify-between text-sm text-gray-600 mb-1">
           <span>Progres încasare</span>
-          <span>{procentIncasare.toFixed(1)}%</span>
+          <span>{(procentIncasare || 0).toFixed(1)}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className="bg-gradient-to-r from-emerald-500 to-green-600 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${Math.min(procentIncasare, 100)}%` }}
+            style={{ width: `${Math.min(procentIncasare || 0, 100)}%` }}
           ></div>
         </div>
       </div>

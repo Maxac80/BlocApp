@@ -1299,9 +1299,9 @@ const ExpenseList = ({
                                   amountToDisplay += totalDifferentaScara;
                                 }
 
-                                return `${amountToDisplay.toFixed(2)} RON`;
+                                return `${(amountToDisplay || 0).toFixed(2)} RON`;
                               }
-                              return `${relevantAmount.toFixed(2)} RON`;
+                              return `${(relevantAmount || 0).toFixed(2)} RON`;
                             }
 
                             // Dacă NU știi suma așteptată, afișează suma introdusă CU PARTICIPĂRI
@@ -1378,7 +1378,7 @@ const ExpenseList = ({
                               amountToDisplay += totalDifferentaScara;
                             }
 
-                            return `${amountToDisplay.toFixed(2)} RON`;
+                            return `${(amountToDisplay || 0).toFixed(2)} RON`;
                           })()}
                         </div>
                         {/* Total mc + Preț unitar pe o singură linie */}
