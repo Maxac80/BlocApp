@@ -334,7 +334,7 @@ const MaintenanceView = ({
       getAssociationApartments
     });
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen pb-20 lg:pb-2">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Se încarcă datele asociației...</p>
@@ -943,7 +943,7 @@ const MaintenanceView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-        <div className={`min-h-screen ${
+        <div className={`min-h-screen pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
           monthType === 'current'
             ? "bg-gradient-to-br from-indigo-50 to-blue-100"
             : monthType === 'next'
@@ -952,7 +952,7 @@ const MaintenanceView = ({
             ? "bg-gradient-to-br from-gray-50 to-gray-100"
             : "bg-gradient-to-br from-indigo-50 to-blue-100"
         }`}>
-      <div className="w-full px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
+      <div className="w-full px-3 sm:px-4 lg:px-6">
         <DashboardHeader
           key={`header-${publishedSheet?.id || 'no-published'}`}
           association={association}

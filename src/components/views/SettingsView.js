@@ -203,7 +203,7 @@ const SettingsView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 ${
+    <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
       monthType === 'current'
         ? "bg-gradient-to-br from-indigo-50 to-blue-100"
         : monthType === 'next'

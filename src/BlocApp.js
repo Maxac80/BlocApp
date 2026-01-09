@@ -584,16 +584,15 @@ useEffect(() => {
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
         {/* Zona de conținut - padding pentru mobile header și bottom nav cu safe-area */}
-        <main className="flex-1 overflow-y-scroll main-content-mobile-padding">
+        <main className="flex-1 overflow-y-auto main-content-mobile-padding">
         <style>{`
           .main-content-mobile-padding {
             padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
-            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+            /* padding-bottom handled by individual views to extend gradient background */
           }
           @media (min-width: 1024px) {
             .main-content-mobile-padding {
               padding-top: 0;
-              padding-bottom: 0;
             }
           }
         `}</style>

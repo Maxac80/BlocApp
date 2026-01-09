@@ -208,7 +208,7 @@ const DashboardMaintenanceTable = ({
       )}
 
       <div
-        className={`overflow-x-auto ${filteredData.length > 10 ? "overflow-y-auto" : ""}`}
+        className={`overflow-x-auto ${filteredData.length > 10 ? "overflow-y-auto" : "overflow-y-hidden"}`}
         style={filteredData.length > 10 ? { maxHeight: '70vh' } : {}}
       >
         <MaintenanceTableSimple

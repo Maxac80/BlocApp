@@ -6,7 +6,7 @@ const MaintenanceSummary = ({
 // Afișăm întotdeauna conținutul - navigarea se face prin dropdown din header
 
 return (
-  <div className="mb-6">
+  <div>
     <div className="bg-white rounded-xl shadow-lg">
       {/* Afișăm conținutul direct fără tab-uri pentru luni */}
       {tabContent}

@@ -109,7 +109,7 @@ const SetupView = ({
   // Verifică dacă toate props-urile necesare sunt disponibile
   if (!association || !blocks || !stairs) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 pt-16 lg:pt-4 pb-20 lg:pb-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 pb-20 lg:pt-4 lg:pb-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Se încarcă datele...</p>
@@ -459,7 +459,7 @@ const monthType = getMonthType ? getMonthType(currentMonth) : null;
   };
 
 return (
-  <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pb-20 lg:pb-6 pt-16 lg:pt-0 ${
+  <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
     monthType === 'current'
       ? "bg-gradient-to-br from-indigo-50 to-blue-100"
       : monthType === 'next'
