@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, RefreshCw } from 'lucide-react';
 
-const MobileHeader = ({ onLogoClick, onAvatarClick, association, userProfile, activeUser }) => {
+const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association, userProfile, activeUser }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -111,6 +111,20 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, association, userProfile, ac
               <User className="w-4 h-4 mr-3 text-gray-500" />
               Profil
             </button>
+
+            {/* Schimbă asociația */}
+            {onSwitchContext && (
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  onSwitchContext();
+                }}
+                className="w-full flex items-center px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4 mr-3" />
+                Schimbă asociația
+              </button>
+            )}
 
             {/* Deconectare */}
             <button

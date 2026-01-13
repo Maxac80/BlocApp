@@ -456,7 +456,7 @@ function AppContent() {
 
   // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (FĂRĂ HEADER!)
   if (userProfile.role === 'admin_asociatie' || userProfile.role === 'super_admin' || userProfile.role === 'presedinte' || userProfile.role === 'cenzor' || currentContext?.type === 'association') {
-    return <BlocApp associationId={currentContext?.data?.id} />;
+    return <BlocApp associationId={currentContext?.data?.id} onSwitchContext={clearContext} />;
   }
 
   // 🚫 FALLBACK - ACCES RESTRICȚIONAT

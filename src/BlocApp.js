@@ -29,9 +29,12 @@ import {
   SettingsView
 } from './components/views';
 
-export default function BlocApp({ associationId }) {
+export default function BlocApp({ associationId, onSwitchContext }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
+
+  // Folosește onSwitchContext din props sau clearContext din context
+  const handleSwitchContext = onSwitchContext || clearContext;
 
   // 🔗 REF pentru sheet operations (pentru a evita dependența circulară)
   const sheetOperationsRef = useRef(null);
@@ -576,6 +579,7 @@ useEffect(() => {
           handleNavigation("dashboard");
         }}
         onAvatarClick={() => handleNavigation("profile")}
+        onSwitchContext={handleSwitchContext}
         association={association}
         userProfile={userProfile}
         activeUser={activeUser}
