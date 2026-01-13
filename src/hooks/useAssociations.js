@@ -483,25 +483,106 @@ export const useAssociations = (userId = null) => {
         );
         const adminSnapshot = await getDocs(adminQuery);
 
-        const adminAssociations = adminSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        // Încarcă statisticile pentru fiecare asociație
+        const adminAssociations = await Promise.all(
+          adminSnapshot.docs.map(async (assocDoc) => {
+            const assocData = {
+              id: assocDoc.id,
+              ...assocDoc.data()
+            };
+
+            // Încarcă statisticile din sheets
+            try {
+              const sheetsRef = collection(db, 'associations', assocDoc.id, 'sheets');
+              const sheetsSnapshot = await getDocs(sheetsRef);
+
+              if (sheetsSnapshot.size > 0) {
+                let activeSheet = null;
+                sheetsSnapshot.docs.forEach(sheetDoc => {
+                  const data = sheetDoc.data();
+                  if (data.status === 'in_progress') {
+                    activeSheet = data;
+                  } else if (!activeSheet && data.status === 'published') {
+                    activeSheet = data;
+                  }
+                });
+
+                if (activeSheet?.associationSnapshot) {
+                  const snapshot = activeSheet.associationSnapshot;
+                  let totalPersons = 0;
+                  if (snapshot.apartments && Array.isArray(snapshot.apartments)) {
+                    snapshot.apartments.forEach(apt => {
+                      totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+                    });
+                  }
+                  assocData.stats = {
+                    totalBlocks: snapshot.blocks?.length || 0,
+                    totalStairs: snapshot.stairs?.length || 0,
+                    totalApartments: snapshot.apartments?.length || 0,
+                    totalPersons
+                  };
+                }
+              }
+            } catch (statsErr) {
+              console.warn('⚠️ Could not load stats for association:', assocDoc.id, statsErr);
+            }
+
+            return assocData;
+          })
+        );
 
         setAssociations(adminAssociations);
         return adminAssociations;
       }
 
-      // Încarcă detaliile fiecărei asociații
+      // Încarcă detaliile fiecărei asociații + statistici din sheets
       const assocPromises = directAssociationIds.map(async (assocId) => {
         const assocRef = doc(db, 'associations', assocId);
         const assocDoc = await getDoc(assocRef);
 
         if (assocDoc.exists()) {
-          return {
+          const assocData = {
             id: assocDoc.id,
             ...assocDoc.data()
           };
+
+          // Încarcă statisticile din sheets
+          try {
+            const sheetsRef = collection(db, 'associations', assocId, 'sheets');
+            const sheetsSnapshot = await getDocs(sheetsRef);
+
+            if (sheetsSnapshot.size > 0) {
+              let activeSheet = null;
+              sheetsSnapshot.docs.forEach(sheetDoc => {
+                const data = sheetDoc.data();
+                if (data.status === 'in_progress') {
+                  activeSheet = data;
+                } else if (!activeSheet && data.status === 'published') {
+                  activeSheet = data;
+                }
+              });
+
+              if (activeSheet?.associationSnapshot) {
+                const snapshot = activeSheet.associationSnapshot;
+                let totalPersons = 0;
+                if (snapshot.apartments && Array.isArray(snapshot.apartments)) {
+                  snapshot.apartments.forEach(apt => {
+                    totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+                  });
+                }
+                assocData.stats = {
+                  totalBlocks: snapshot.blocks?.length || 0,
+                  totalStairs: snapshot.stairs?.length || 0,
+                  totalApartments: snapshot.apartments?.length || 0,
+                  totalPersons
+                };
+              }
+            }
+          } catch (statsErr) {
+            console.warn('⚠️ Could not load stats for association:', assocId, statsErr);
+          }
+
+          return assocData;
         }
         return null;
       });
@@ -632,21 +713,58 @@ export const useAssociations = (userId = null) => {
     }
   };
 
-  // 📊 OBȚINERE STATISTICI ASOCIAȚIE
+  // 📊 OBȚINERE STATISTICI ASOCIAȚIE (din sheets - arhitectură nouă)
   const getAssociationStats = async (associationId) => {
     if (!associationId) return null;
 
     try {
-      // Obține apartamentele
+      let totalApartments = 0;
+      let totalPersons = 0;
+      let totalBlocks = 0;
+
+      // 1. Încearcă să citească din sheets (arhitectură nouă)
+      const sheetsRef = collection(db, 'associations', associationId, 'sheets');
+      const sheetsSnapshot = await getDocs(sheetsRef);
+
+      if (sheetsSnapshot.size > 0) {
+        // Caută sheet-ul in_progress sau cel mai recent
+        let activeSheet = null;
+        sheetsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'in_progress') {
+            activeSheet = data;
+          } else if (!activeSheet && data.status === 'published') {
+            activeSheet = data;
+          }
+        });
+
+        if (activeSheet?.associationSnapshot) {
+          const snapshot = activeSheet.associationSnapshot;
+          totalBlocks = snapshot.blocks?.length || 0;
+          totalApartments = snapshot.apartments?.length || 0;
+
+          // Calculează numărul de persoane
+          if (snapshot.apartments && Array.isArray(snapshot.apartments)) {
+            snapshot.apartments.forEach(apt => {
+              totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+            });
+          }
+
+          return {
+            totalApartments,
+            totalPersons,
+            totalBlocks
+          };
+        }
+      }
+
+      // 2. Fallback: citește din colecțiile vechi (pentru compatibilitate)
       const blocksQuery = query(
         collection(db, 'blocks'),
         where('associationId', '==', associationId)
       );
       const blocksSnapshot = await getDocs(blocksQuery);
       const blockIds = blocksSnapshot.docs.map(doc => doc.id);
-
-      let totalApartments = 0;
-      let totalPersons = 0;
 
       if (blockIds.length > 0) {
         const stairsQuery = query(

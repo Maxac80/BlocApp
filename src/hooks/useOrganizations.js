@@ -529,18 +529,82 @@ export const useOrganizations = (userId = null) => {
         return [];
       }
 
-      // Încarcă detaliile fiecărei organizații
+      // Încarcă detaliile fiecărei organizații + statistici
       const orgPromises = userOrganizations.map(async (orgEntry) => {
         const orgRef = doc(db, 'organizations', orgEntry.id);
         const orgDoc = await getDoc(orgRef);
 
         if (orgDoc.exists()) {
-          return {
+          const orgData = {
             id: orgDoc.id,
             ...orgDoc.data(),
             userRole: orgEntry.role,
             userJoinedAt: orgEntry.joinedAt
           };
+
+          // Calculează statisticile pentru organizație
+          try {
+            const associationsQuery = query(
+              collection(db, 'associations'),
+              where('organizationId', '==', orgDoc.id)
+            );
+            const assocsSnapshot = await getDocs(associationsQuery);
+
+            let totalApartments = 0;
+            let totalPersons = 0;
+            let totalBlocks = 0;
+            let totalStairs = 0;
+
+            // Pentru fiecare asociație, citește stats din sheets
+            await Promise.all(
+              assocsSnapshot.docs.map(async (assocDoc) => {
+                try {
+                  const sheetsRef = collection(db, 'associations', assocDoc.id, 'sheets');
+                  const sheetsSnapshot = await getDocs(sheetsRef);
+
+                  if (sheetsSnapshot.size > 0) {
+                    let activeSheet = null;
+                    sheetsSnapshot.docs.forEach(sheetDoc => {
+                      const data = sheetDoc.data();
+                      if (data.status === 'in_progress') {
+                        activeSheet = data;
+                      } else if (!activeSheet && data.status === 'published') {
+                        activeSheet = data;
+                      }
+                    });
+
+                    if (activeSheet?.associationSnapshot) {
+                      const snapshot = activeSheet.associationSnapshot;
+                      totalBlocks += snapshot.blocks?.length || 0;
+                      totalStairs += snapshot.stairs?.length || 0;
+                      totalApartments += snapshot.apartments?.length || 0;
+                      if (snapshot.apartments && Array.isArray(snapshot.apartments)) {
+                        snapshot.apartments.forEach(apt => {
+                          totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+                        });
+                      }
+                    }
+                  }
+                } catch (statsErr) {
+                  console.warn('⚠️ Could not load stats for association in org:', assocDoc.id);
+                }
+              })
+            );
+
+            // Adaugă stats în billing (pentru compatibilitate cu UI-ul existent)
+            orgData.billing = {
+              ...orgData.billing,
+              totalAssociations: assocsSnapshot.size,
+              totalApartments,
+              totalPersons,
+              totalBlocks,
+              totalStairs
+            };
+          } catch (statsErr) {
+            console.warn('⚠️ Could not calculate org stats:', orgDoc.id, statsErr);
+          }
+
+          return orgData;
         }
         return null;
       });
@@ -561,7 +625,7 @@ export const useOrganizations = (userId = null) => {
     }
   }, []);
 
-  // 📊 OBȚINERE ASOCIAȚII DIN ORGANIZAȚIE
+  // 📊 OBȚINERE ASOCIAȚII DIN ORGANIZAȚIE (cu statistici din sheets)
   const getOrganizationAssociations = async (organizationId) => {
     if (!organizationId) return [];
 
@@ -572,10 +636,55 @@ export const useOrganizations = (userId = null) => {
       );
       const snapshot = await getDocs(associationsQuery);
 
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      // Încarcă asociațiile cu statistici din sheets
+      const associations = await Promise.all(
+        snapshot.docs.map(async (assocDoc) => {
+          const assocData = {
+            id: assocDoc.id,
+            ...assocDoc.data()
+          };
+
+          // Încarcă statisticile din sheets
+          try {
+            const sheetsRef = collection(db, 'associations', assocDoc.id, 'sheets');
+            const sheetsSnapshot = await getDocs(sheetsRef);
+
+            if (sheetsSnapshot.size > 0) {
+              let activeSheet = null;
+              sheetsSnapshot.docs.forEach(sheetDoc => {
+                const data = sheetDoc.data();
+                if (data.status === 'in_progress') {
+                  activeSheet = data;
+                } else if (!activeSheet && data.status === 'published') {
+                  activeSheet = data;
+                }
+              });
+
+              if (activeSheet?.associationSnapshot) {
+                const snapData = activeSheet.associationSnapshot;
+                let totalPersons = 0;
+                if (snapData.apartments && Array.isArray(snapData.apartments)) {
+                  snapData.apartments.forEach(apt => {
+                    totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+                  });
+                }
+                assocData.stats = {
+                  totalBlocks: snapData.blocks?.length || 0,
+                  totalStairs: snapData.stairs?.length || 0,
+                  totalApartments: snapData.apartments?.length || 0,
+                  totalPersons
+                };
+              }
+            }
+          } catch (statsErr) {
+            console.warn('⚠️ Could not load stats for org association:', assocDoc.id, statsErr);
+          }
+
+          return assocData;
+        })
+      );
+
+      return associations;
     } catch (err) {
       console.error('❌ Error getting organization associations:', err);
       return [];

@@ -86,11 +86,20 @@ const OrganizationView = ({
       const assocs = await getOrganizationAssociations(organizationId);
       setAssociations(assocs || []);
 
-      // Calculează statistici
+      // Calculează statistici din asociațiile încărcate
+      let totalApartments = 0;
+      let totalPersons = 0;
+      (assocs || []).forEach(assoc => {
+        if (assoc.stats) {
+          totalApartments += assoc.stats.totalApartments || 0;
+          totalPersons += assoc.stats.totalPersons || 0;
+        }
+      });
+
       setStats({
         totalAssociations: (assocs || []).length,
-        totalApartments: 0,
-        totalPersons: 0,
+        totalApartments,
+        totalPersons,
         totalRestante: 0,
         totalDeIncasat: 0
       });
@@ -237,7 +246,7 @@ const OrganizationView = ({
             </div>
             <div className="bg-emerald-50 rounded-lg p-4">
               <p className="text-xs text-emerald-600 font-medium mb-1">Apartamente</p>
-              <p className="text-2xl font-bold text-emerald-900">{billing.totalApartments || 0}</p>
+              <p className="text-2xl font-bold text-emerald-900">{stats.totalApartments || 0}</p>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
               <p className="text-xs text-purple-600 font-medium mb-1">Cost lunar</p>
@@ -350,10 +359,32 @@ const OrganizationView = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">— apt</p>
-                      <p className="text-xs text-gray-500">apartamente</p>
+                  <div className="flex items-center gap-3 sm:gap-6">
+                    {/* Stats - full on desktop, compact on mobile */}
+                    <div className="hidden sm:flex items-center gap-4 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <Home className="w-3.5 h-3.5 text-emerald-500" />
+                        {assoc.stats?.totalApartments ?? 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-blue-500" />
+                        {assoc.stats?.totalPersons ?? 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3.5 h-3.5 text-purple-500" />
+                        {assoc.stats?.totalBlocks ?? 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="text-orange-500 font-medium text-xs">Sc</span>
+                        {assoc.stats?.totalStairs ?? 0}
+                      </span>
+                    </div>
+
+                    {/* Mobile compact stats */}
+                    <div className="sm:hidden text-xs text-gray-600">
+                      <span>{assoc.stats?.totalApartments ?? 0} apt</span>
+                      <span className="mx-1">•</span>
+                      <span>{assoc.stats?.totalPersons ?? 0} pers</span>
                     </div>
 
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -376,7 +407,7 @@ const OrganizationView = ({
                 <p className="text-sm text-gray-500 mt-1">
                   Plan: <span className="font-medium capitalize">{billing.tier || 'Starter'}</span>
                   {' • '}
-                  {billing.totalApartments || 0} apartamente
+                  {stats.totalApartments || 0} apartamente
                 </p>
               </div>
 

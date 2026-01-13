@@ -110,37 +110,51 @@ const ContextSelectorView = ({
         `}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-3">
-              <Building2 className="w-6 h-6 text-blue-600" />
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="flex items-center min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
-            <div>
-              <h3 className={`font-semibold text-gray-900 ${isLarge ? 'text-lg' : 'text-base'}`}>
+            <div className="min-w-0">
+              <h3 className={`font-semibold text-gray-900 truncate ${isLarge ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
                 {org.name}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 {org.userRole === 'org_owner' ? 'Proprietar' :
                  org.userRole === 'org_admin' ? 'Administrator' : 'Membru'}
               </p>
             </div>
           </div>
-          <StatusBadge status={orgStats.status || 'trial'} />
+          <div className="flex-shrink-0">
+            <StatusBadge status={orgStats.status || 'trial'} />
+          </div>
         </div>
 
         {/* Stats */}
         {isLarge && (
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Asociații</p>
-              <p className="text-xl font-bold text-gray-900">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Asociații</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
                 {orgStats.totalAssociations || 0}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Apartamente</p>
-              <p className="text-xl font-bold text-gray-900">
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
                 {orgStats.totalApartments || 0}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {orgStats.totalBlocks || 0}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {orgStats.totalStairs || 0}
               </p>
             </div>
           </div>
@@ -148,28 +162,28 @@ const ContextSelectorView = ({
 
         {/* Contact Info (only large) */}
         {isLarge && org.contact && (
-          <div className="space-y-2 mb-4 text-sm text-gray-600">
+          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-600">
             {org.contact.phone && (
               <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400" />
                 {org.contact.phone}
               </div>
             )}
             {org.contact.email && (
-              <div className="flex items-center">
-                <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                {org.contact.email}
+              <div className="flex items-center truncate">
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
+                <span className="truncate">{org.contact.email}</span>
               </div>
             )}
           </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+          <span className="text-xs sm:text-sm text-gray-500">
             {org.cui && `CUI: ${org.cui}`}
           </span>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
         </div>
       </div>
     );
@@ -186,46 +200,54 @@ const ContextSelectorView = ({
         className={`
           bg-white rounded-xl border-2 border-gray-100 hover:border-emerald-300
           hover:shadow-lg transition-all duration-200 cursor-pointer
-          ${isLarge ? 'p-6' : 'p-4'}
+          ${isLarge ? 'p-4 sm:p-6' : 'p-4'}
         `}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-3">
-              <Home className="w-6 h-6 text-emerald-600" />
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="flex items-center min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
             </div>
-            <div>
-              <h3 className={`font-semibold text-gray-900 ${isLarge ? 'text-lg' : 'text-base'}`}>
+            <div className="min-w-0">
+              <h3 className={`font-semibold text-gray-900 truncate ${isLarge ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
                 {assoc.name}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Asociație directă
               </p>
             </div>
           </div>
-          <StatusBadge status={billing.status || 'trial'} />
+          <div className="flex-shrink-0">
+            <StatusBadge status={billing.status || 'trial'} />
+          </div>
         </div>
 
         {/* Stats */}
         {isLarge && (
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Apartamente</p>
-              <p className="text-xl font-bold text-gray-900">
-                {assocStats.totalApartments || '—'}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {assocStats.totalApartments ?? '—'}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Persoane</p>
-              <p className="text-xl font-bold text-gray-900">
-                {assocStats.totalPersons || '—'}
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Persoane</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {assocStats.totalPersons ?? '—'}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Blocuri</p>
-              <p className="text-xl font-bold text-gray-900">
-                {assocStats.totalBlocks || '—'}
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {assocStats.totalBlocks ?? '—'}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">
+                {assocStats.totalStairs ?? '—'}
               </p>
             </div>
           </div>
@@ -233,9 +255,9 @@ const ContextSelectorView = ({
 
         {/* Address (only large) */}
         {isLarge && assoc.address && (
-          <div className="flex items-start text-sm text-gray-600 mb-4">
-            <MapPin className="w-4 h-4 mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
-            <span>
+          <div className="flex items-start text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
+            <span className="line-clamp-2">
               {assoc.address.street} {assoc.address.number},
               {assoc.address.city}, {assoc.address.county}
             </span>
@@ -243,11 +265,11 @@ const ContextSelectorView = ({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+          <span className="text-xs sm:text-sm text-gray-500">
             {assoc.cui && `CUI: ${assoc.cui}`}
           </span>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
         </div>
       </div>
     );
@@ -324,35 +346,35 @@ const ContextSelectorView = ({
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Dashboard
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                Selectează o organizație sau asociație pentru a continua
+              <p className="text-sm text-gray-600 mt-1">
+                Selectează o organizație sau asociație
               </p>
             </div>
 
-            {/* Quick Actions */}
+            {/* Quick Actions - Buttons aligned right on mobile */}
             {totalItems > 0 && (
-              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
                 {hasPermission(PERMISSIONS.ORG_CREATE) && (
                   <button
                     onClick={onCreateOrganization}
-                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-lg hover:bg-blue-100 transition-colors"
+                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
                   >
-                    <Plus className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Organizație</span>
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Organizație
                   </button>
                 )}
                 {hasPermission(PERMISSIONS.ASSOC_CREATE) && (
                   <button
                     onClick={onCreateAssociation}
-                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg hover:bg-emerald-100 transition-colors"
+                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-emerald-50 text-emerald-600 text-sm font-medium rounded-lg hover:bg-emerald-100 transition-colors"
                   >
-                    <Plus className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Asociație</span>
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Asociație
                   </button>
                 )}
               </div>

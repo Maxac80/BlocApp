@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import MobileHeader from "./components/common/MobileHeader";
 import BottomNavigation from "./components/common/BottomNavigation";
@@ -38,6 +38,9 @@ export default function BlocApp({ associationId, onSwitchContext }) {
 
   // 🔗 REF pentru sheet operations (pentru a evita dependența circulară)
   const sheetOperationsRef = useRef(null);
+
+  // 🆕 STATE pentru a preveni crearea multiplă a sheet-ului inițial
+  const [initialSheetCreationAttempted, setInitialSheetCreationAttempted] = useState(false);
 
   // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE (primul pentru a obține association)
   // Dacă avem associationId din props (din context selector), îl transmitem pentru a încărca asociația corectă
@@ -217,6 +220,36 @@ export default function BlocApp({ associationId, onSwitchContext }) {
 
   }, [fixTransferredBalances, createInitialSheet, association, currentSheet, publishedSheet, sheets]);
 
+  // 🆕 AUTO-CREARE SHEET INIȚIAL pentru asociații noi
+  // Când asociația este încărcată dar nu există niciun sheet, creăm automat primul sheet
+  useEffect(() => {
+    const autoCreateInitialSheet = async () => {
+      // Verificări: asociația există, nu avem sheets, nu am încercat deja, funcția există
+      if (
+        association?.id &&
+        sheets !== undefined &&
+        sheets.length === 0 &&
+        !currentSheet &&
+        !publishedSheet &&
+        !initialSheetCreationAttempted &&
+        createInitialSheet &&
+        !loading
+      ) {
+        console.log('🆕 Auto-creating initial sheet for new association:', association.name);
+        setInitialSheetCreationAttempted(true);
+
+        try {
+          // Transmitem și association.id explicit (la fel ca în onboarding)
+          await createInitialSheet(association, association.id);
+          console.log('✅ Initial sheet created successfully');
+        } catch (error) {
+          console.error('❌ Failed to auto-create initial sheet:', error);
+        }
+      }
+    };
+
+    autoCreateInitialSheet();
+  }, [association, sheets, currentSheet, publishedSheet, initialSheetCreationAttempted, createInitialSheet, loading]);
 
   // 🔥 HOOK PENTRU GESTIONAREA SOLDURILOR
   const {
