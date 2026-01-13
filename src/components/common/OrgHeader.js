@@ -97,7 +97,7 @@ const OrgHeader = ({
                 className="w-8 h-8 rounded-lg object-contain bg-white/90 p-0.5"
               />
               <span
-                className="text-lg font-bold text-white hidden sm:block"
+                className="text-lg font-bold text-white"
                 style={{ fontFamily: 'Montserrat, sans-serif' }}
               >
                 BlocApp

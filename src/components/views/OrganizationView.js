@@ -17,7 +17,11 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  Link2
+  Link2,
+  LayoutGrid,
+  List,
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 import { useOrganizations } from '../../hooks/useOrganizations';
 import { useOrgMembers } from '../../hooks/useOrgMembers';
@@ -59,9 +63,12 @@ const OrganizationView = ({
     totalAssociations: 0,
     totalApartments: 0,
     totalPersons: 0,
+    totalBlocks: 0,
+    totalStairs: 0,
     totalRestante: 0,
     totalDeIncasat: 0
   });
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'list'
 
   // Folosim rolul venit din props (din AuthContext) sau calculăm din organization
   const userRole = propUserRole || organization?.userRole || 'org_member';
@@ -89,10 +96,14 @@ const OrganizationView = ({
       // Calculează statistici din asociațiile încărcate
       let totalApartments = 0;
       let totalPersons = 0;
+      let totalBlocks = 0;
+      let totalStairs = 0;
       (assocs || []).forEach(assoc => {
         if (assoc.stats) {
           totalApartments += assoc.stats.totalApartments || 0;
           totalPersons += assoc.stats.totalPersons || 0;
+          totalBlocks += assoc.stats.totalBlocks || 0;
+          totalStairs += assoc.stats.totalStairs || 0;
         }
       });
 
@@ -100,6 +111,8 @@ const OrganizationView = ({
         totalAssociations: (assocs || []).length,
         totalApartments,
         totalPersons,
+        totalBlocks,
+        totalStairs,
         totalRestante: 0,
         totalDeIncasat: 0
       });
@@ -147,6 +160,85 @@ const OrganizationView = ({
       return <div className="w-3 h-3 rounded-full bg-yellow-500" title="Restanțe > 5%" />;
     }
     return <div className="w-3 h-3 rounded-full bg-green-500" title="OK" />;
+  };
+
+  // Association Card Component (pentru view cards)
+  const AssociationCard = ({ assoc }) => {
+    const assocStats = assoc.stats || {};
+    const billing = assoc.billing || {};
+
+    return (
+      <div
+        onClick={() => onSelectAssociation(assoc)}
+        className="bg-white rounded-xl border-2 border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all duration-200 cursor-pointer border-l-[3px] border-l-emerald-500 p-4 sm:p-6"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="flex items-center min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-gray-900 truncate text-base sm:text-lg">
+                {assoc.name}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500">
+                {assoc.address?.city}, {assoc.address?.county}
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            <HealthIndicator association={assoc} />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
+            <p className="text-lg sm:text-xl font-bold text-gray-900">
+              {assocStats.totalApartments ?? '—'}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Persoane</p>
+            <p className="text-lg sm:text-xl font-bold text-gray-900">
+              {assocStats.totalPersons ?? '—'}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
+            <p className="text-lg sm:text-xl font-bold text-gray-900">
+              {assocStats.totalBlocks ?? '—'}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
+            <p className="text-lg sm:text-xl font-bold text-gray-900">
+              {assocStats.totalStairs ?? '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* Address */}
+        {assoc.address && (
+          <div className="flex items-start text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
+            <span className="line-clamp-2">
+              {assoc.address.street} {assoc.address.number}
+            </span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+          <span className="text-xs sm:text-sm text-gray-500">
+            {assoc.cui && `CUI: ${assoc.cui}`}
+          </span>
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+        </div>
+      </div>
+    );
   };
 
   if (loading && !currentOrganization) {
@@ -199,13 +291,13 @@ const OrganizationView = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center min-w-0">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
-                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                <h1 className="text-base sm:text-xl font-bold text-gray-900 sm:truncate">
                   {currentOrganization.name}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                <p className="text-xs sm:text-sm text-gray-500">
                   {currentOrganization.cui && `CUI: ${currentOrganization.cui}`}
                 </p>
               </div>
@@ -239,24 +331,36 @@ const OrganizationView = ({
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-xs text-blue-600 font-medium mb-1">Asociații</p>
-              <p className="text-2xl font-bold text-blue-900">{stats.totalAssociations}</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+            <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-blue-600 font-medium mb-0.5">Asociații</p>
+              <p className="text-lg sm:text-xl font-bold text-blue-900">{stats.totalAssociations}</p>
             </div>
-            <div className="bg-emerald-50 rounded-lg p-4">
-              <p className="text-xs text-emerald-600 font-medium mb-1">Apartamente</p>
-              <p className="text-2xl font-bold text-emerald-900">{stats.totalApartments || 0}</p>
+            <div className="bg-emerald-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-emerald-600 font-medium mb-0.5">Apartamente</p>
+              <p className="text-lg sm:text-xl font-bold text-emerald-900">{stats.totalApartments || 0}</p>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-xs text-purple-600 font-medium mb-1">Cost lunar</p>
-              <p className="text-2xl font-bold text-purple-900">
+            <div className="bg-cyan-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-cyan-600 font-medium mb-0.5">Persoane</p>
+              <p className="text-lg sm:text-xl font-bold text-cyan-900">{stats.totalPersons || 0}</p>
+            </div>
+            <div className="bg-violet-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-violet-600 font-medium mb-0.5">Blocuri</p>
+              <p className="text-lg sm:text-xl font-bold text-violet-900">{stats.totalBlocks || 0}</p>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-amber-600 font-medium mb-0.5">Scări</p>
+              <p className="text-lg sm:text-xl font-bold text-amber-900">{stats.totalStairs || 0}</p>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-purple-600 font-medium mb-0.5">Cost lunar</p>
+              <p className="text-lg sm:text-xl font-bold text-purple-900">
                 {billing.monthlyAmount || 0} RON
               </p>
             </div>
-            <div className="bg-orange-50 rounded-lg p-4">
-              <p className="text-xs text-orange-600 font-medium mb-1">Tier</p>
-              <p className="text-2xl font-bold text-orange-900 capitalize">
+            <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
+              <p className="text-xs text-orange-600 font-medium mb-0.5">Tier</p>
+              <p className="text-lg sm:text-xl font-bold text-orange-900 capitalize">
                 {billing.tier || 'starter'}
               </p>
             </div>
@@ -299,22 +403,51 @@ const OrganizationView = ({
           </div>
         )}
 
-        {/* Associations List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
+        {/* Associations Section */}
+        <div>
+          {/* Section Header with View Toggle */}
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
               <Home className="w-5 h-5 mr-2 text-emerald-600" />
               Asociații {loadingAssociations ? '' : `(${associations.length})`}
             </h2>
+
+            {/* View Toggle Buttons */}
+            {associations.length > 0 && (
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-md transition-colors ${
+                    viewMode === 'cards'
+                      ? 'bg-white text-emerald-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Afișare carduri"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-white text-emerald-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Afișare listă"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           {loadingAssociations ? (
-            <div className="px-6 py-8 text-center">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
               <p className="text-gray-500 mt-3 text-sm">Se încarcă asociațiile...</p>
             </div>
           ) : associations.length === 0 ? (
-            <div className="px-6 py-12 text-center">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-12 text-center">
               <Home className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Nicio asociație încă
@@ -341,8 +474,16 @@ const OrganizationView = ({
                 </div>
               )}
             </div>
+          ) : viewMode === 'cards' ? (
+            /* Card View */
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {associations.map(assoc => (
+                <AssociationCard key={assoc.id} assoc={assoc} />
+              ))}
+            </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            /* List View */
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
               {associations.map(assoc => (
                 <div
                   key={assoc.id}

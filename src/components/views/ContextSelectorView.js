@@ -106,6 +106,7 @@ const ContextSelectorView = ({
         className={`
           bg-white rounded-xl border-2 border-gray-100 hover:border-blue-300
           hover:shadow-lg transition-all duration-200 cursor-pointer
+          border-l-[3px] border-l-blue-500
           ${isLarge ? 'p-6' : 'p-4'}
         `}
       >
@@ -113,7 +114,7 @@ const ContextSelectorView = ({
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex items-center min-w-0 flex-1">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-              <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div className="min-w-0">
               <h3 className={`font-semibold text-gray-900 truncate ${isLarge ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
@@ -132,32 +133,81 @@ const ContextSelectorView = ({
 
         {/* Stats */}
         {isLarge && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Asociații</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
-                {orgStats.totalAssociations || 0}
-              </p>
+          <>
+            {/* Mobile layout: 2 rows (3+2) */}
+            <div className="sm:hidden space-y-2 mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Asociații</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {orgStats.totalAssociations || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Apartamente</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {orgStats.totalApartments || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Persoane</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {orgStats.totalPersons || 0}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Blocuri</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {orgStats.totalBlocks || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Scări</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {orgStats.totalStairs || 0}
+                  </p>
+                </div>
+                {/* Empty space for symmetry */}
+                <div></div>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
-                {orgStats.totalApartments || 0}
-              </p>
+
+            {/* Desktop layout: 5 columns */}
+            <div className="hidden sm:grid sm:grid-cols-5 gap-2 mb-4">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-0.5">Asociații</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {orgStats.totalAssociations || 0}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-0.5">Apartamente</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {orgStats.totalApartments || 0}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-0.5">Persoane</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {orgStats.totalPersons || 0}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-0.5">Blocuri</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {orgStats.totalBlocks || 0}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xs text-gray-500 mb-0.5">Scări</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {orgStats.totalStairs || 0}
+                </p>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
-                {orgStats.totalBlocks || 0}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
-                {orgStats.totalStairs || 0}
-              </p>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Contact Info (only large) */}
@@ -200,6 +250,7 @@ const ContextSelectorView = ({
         className={`
           bg-white rounded-xl border-2 border-gray-100 hover:border-emerald-300
           hover:shadow-lg transition-all duration-200 cursor-pointer
+          border-l-[3px] border-l-emerald-500
           ${isLarge ? 'p-4 sm:p-6' : 'p-4'}
         `}
       >
@@ -352,7 +403,7 @@ const ContextSelectorView = ({
                 Dashboard
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Selectează o organizație sau asociație
+                Organizațiile și asociațiile mele
               </p>
             </div>
 
@@ -394,7 +445,7 @@ const ContextSelectorView = ({
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Building2 className="w-5 h-5 mr-2 text-blue-600" />
+                    <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
                     Organizații ({organizations.length})
                   </h2>
                 </div>
@@ -402,8 +453,8 @@ const ContextSelectorView = ({
                 <div className={`
                   grid gap-4
                   ${layoutStyle === 'large'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    ? 'grid-cols-1 md:grid-cols-2'
+                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                   }
                 `}>
                   {organizations.map(org => (
@@ -430,8 +481,8 @@ const ContextSelectorView = ({
                 <div className={`
                   grid gap-4
                   ${layoutStyle === 'large'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    ? 'grid-cols-1 md:grid-cols-2'
+                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                   }
                 `}>
                   {directAssociations.map(assoc => (
