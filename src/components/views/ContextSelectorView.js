@@ -133,81 +133,50 @@ const ContextSelectorView = ({
 
         {/* Stats */}
         {isLarge && (
-          <>
-            {/* Mobile layout: 2 rows (3+2) */}
-            <div className="sm:hidden space-y-2 mb-4">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Asociații</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {orgStats.totalAssociations || 0}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Apartamente</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {orgStats.totalApartments || 0}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Persoane</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {orgStats.totalPersons || 0}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Blocuri</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {orgStats.totalBlocks || 0}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Scări</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {orgStats.totalStairs || 0}
-                  </p>
-                </div>
-                {/* Empty space for symmetry */}
-                <div></div>
-              </div>
+          <div className="grid grid-cols-5 gap-1 sm:gap-2 mb-4">
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Asoc</span>
+                <span className="hidden sm:inline">Asociații</span>
+              </p>
+              <p className="text-sm sm:text-lg font-bold text-gray-900">
+                {orgStats.totalAssociations || 0}
+              </p>
             </div>
-
-            {/* Desktop layout: 5 columns */}
-            <div className="hidden sm:grid sm:grid-cols-5 gap-2 mb-4">
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-xs text-gray-500 mb-0.5">Asociații</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {orgStats.totalAssociations || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-xs text-gray-500 mb-0.5">Apartamente</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {orgStats.totalApartments || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-xs text-gray-500 mb-0.5">Persoane</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {orgStats.totalPersons || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-xs text-gray-500 mb-0.5">Blocuri</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {orgStats.totalBlocks || 0}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2">
-                <p className="text-xs text-gray-500 mb-0.5">Scări</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {orgStats.totalStairs || 0}
-                </p>
-              </div>
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Apt</span>
+                <span className="hidden sm:inline">Apartamente</span>
+              </p>
+              <p className="text-sm sm:text-lg font-bold text-gray-900">
+                {orgStats.totalApartments || 0}
+              </p>
             </div>
-          </>
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Pers</span>
+                <span className="hidden sm:inline">Persoane</span>
+              </p>
+              <p className="text-sm sm:text-lg font-bold text-gray-900">
+                {orgStats.totalPersons || 0}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Bloc</span>
+                <span className="hidden sm:inline">Blocuri</span>
+              </p>
+              <p className="text-sm sm:text-lg font-bold text-gray-900">
+                {orgStats.totalBlocks || 0}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">Scări</p>
+              <p className="text-sm sm:text-lg font-bold text-gray-900">
+                {orgStats.totalStairs || 0}
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Contact Info (only large) */}
@@ -276,28 +245,37 @@ const ContextSelectorView = ({
 
         {/* Stats */}
         {isLarge && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
+          <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-3 sm:mb-4">
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Apt</span>
+                <span className="hidden sm:inline">Apartamente</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-gray-900">
                 {assocStats.totalApartments ?? '—'}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Persoane</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Pers</span>
+                <span className="hidden sm:inline">Persoane</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-gray-900">
                 {assocStats.totalPersons ?? '—'}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                <span className="sm:hidden">Bloc</span>
+                <span className="hidden sm:inline">Blocuri</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-gray-900">
                 {assocStats.totalBlocks ?? '—'}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">
+            <div className="bg-gray-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">Scări</p>
+              <p className="text-sm sm:text-xl font-bold text-gray-900">
                 {assocStats.totalStairs ?? '—'}
               </p>
             </div>

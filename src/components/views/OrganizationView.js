@@ -192,29 +192,41 @@ const OrganizationView = ({
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
-          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Apartamente</p>
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
+        {/* Stats - 4 on one line */}
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-3 sm:mb-4">
+          <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+            <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+              <span className="sm:hidden">Apt</span>
+              <span className="hidden sm:inline">Apartamente</span>
+            </p>
+            <p className="text-sm sm:text-lg font-bold text-gray-900">
               {assocStats.totalApartments ?? '—'}
             </p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Persoane</p>
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
+          <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+            <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+              <span className="sm:hidden">Pers</span>
+              <span className="hidden sm:inline">Persoane</span>
+            </p>
+            <p className="text-sm sm:text-lg font-bold text-gray-900">
               {assocStats.totalPersons ?? '—'}
             </p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Blocuri</p>
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
+          <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+            <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+              <span className="sm:hidden">Bloc</span>
+              <span className="hidden sm:inline">Blocuri</span>
+            </p>
+            <p className="text-sm sm:text-lg font-bold text-gray-900">
               {assocStats.totalBlocks ?? '—'}
             </p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-            <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">Scări</p>
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
+          <div className="bg-gray-50 rounded-lg p-1.5 sm:p-2 text-center sm:text-left">
+            <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+              <span className="sm:hidden">Scări</span>
+              <span className="hidden sm:inline">Scări</span>
+            </p>
+            <p className="text-sm sm:text-lg font-bold text-gray-900">
               {assocStats.totalStairs ?? '—'}
             </p>
           </div>
@@ -306,6 +318,12 @@ const OrganizationView = ({
             {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
               <StatusBadge status={billing.status || 'trial'} />
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                {billing.tier || 'Starter'}
+              </span>
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                {billing.monthlyAmount || 0} RON/lună
+              </span>
 
               {isAdmin && (
                 <button
@@ -330,39 +348,42 @@ const OrganizationView = ({
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
-            <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-blue-600 font-medium mb-0.5">Asociații</p>
-              <p className="text-lg sm:text-xl font-bold text-blue-900">{stats.totalAssociations}</p>
-            </div>
-            <div className="bg-emerald-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-emerald-600 font-medium mb-0.5">Apartamente</p>
-              <p className="text-lg sm:text-xl font-bold text-emerald-900">{stats.totalApartments || 0}</p>
-            </div>
-            <div className="bg-cyan-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-cyan-600 font-medium mb-0.5">Persoane</p>
-              <p className="text-lg sm:text-xl font-bold text-cyan-900">{stats.totalPersons || 0}</p>
-            </div>
-            <div className="bg-violet-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-violet-600 font-medium mb-0.5">Blocuri</p>
-              <p className="text-lg sm:text-xl font-bold text-violet-900">{stats.totalBlocks || 0}</p>
-            </div>
-            <div className="bg-amber-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-amber-600 font-medium mb-0.5">Scări</p>
-              <p className="text-lg sm:text-xl font-bold text-amber-900">{stats.totalStairs || 0}</p>
-            </div>
-            <div className="bg-purple-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-purple-600 font-medium mb-0.5">Cost lunar</p>
-              <p className="text-lg sm:text-xl font-bold text-purple-900">
-                {billing.monthlyAmount || 0} RON
+          {/* Stats Bar - 5 stats on one line */}
+          <div className="grid grid-cols-5 gap-1 sm:gap-2">
+            <div className="bg-blue-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-blue-600 font-medium mb-0.5">
+                <span className="sm:hidden">Asoc</span>
+                <span className="hidden sm:inline">Asociații</span>
               </p>
+              <p className="text-sm sm:text-xl font-bold text-blue-900">{stats.totalAssociations}</p>
             </div>
-            <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
-              <p className="text-xs text-orange-600 font-medium mb-0.5">Tier</p>
-              <p className="text-lg sm:text-xl font-bold text-orange-900 capitalize">
-                {billing.tier || 'starter'}
+            <div className="bg-emerald-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-emerald-600 font-medium mb-0.5">
+                <span className="sm:hidden">Apt</span>
+                <span className="hidden sm:inline">Apartamente</span>
               </p>
+              <p className="text-sm sm:text-xl font-bold text-emerald-900">{stats.totalApartments || 0}</p>
+            </div>
+            <div className="bg-cyan-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-cyan-600 font-medium mb-0.5">
+                <span className="sm:hidden">Pers</span>
+                <span className="hidden sm:inline">Persoane</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-cyan-900">{stats.totalPersons || 0}</p>
+            </div>
+            <div className="bg-violet-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-violet-600 font-medium mb-0.5">
+                <span className="sm:hidden">Bloc</span>
+                <span className="hidden sm:inline">Blocuri</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-violet-900">{stats.totalBlocks || 0}</p>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-1.5 sm:p-3 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs text-amber-600 font-medium mb-0.5">
+                <span className="sm:hidden">Scări</span>
+                <span className="hidden sm:inline">Scări</span>
+              </p>
+              <p className="text-sm sm:text-xl font-bold text-amber-900">{stats.totalStairs || 0}</p>
             </div>
           </div>
         </div>
