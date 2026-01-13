@@ -119,7 +119,7 @@ export const useUserProfile = () => {
     
     // Metadata
     metadata: {
-      profileVersion: '1.0',
+      profileVersion: '2.0',
       lastUpdated: null,
       createdAt: null,
       completionPercentage: 0,
@@ -127,6 +127,18 @@ export const useUserProfile = () => {
       emailVerified: false,
       documentsVerified: false
     }
+  };
+
+  // 🏢 STRUCTURA PENTRU ORGANIZATIONS & DIRECT ASSOCIATIONS (v2.0)
+  // Acestea sunt câmpuri la nivel de user, nu în profile
+  const defaultUserOrganizationFields = {
+    // Array de organizații în care user-ul este membru/owner
+    // Format: [{ id: string, role: 'org_owner' | 'org_admin' | 'org_member', joinedAt: timestamp }]
+    organizations: [],
+
+    // Array de asociații administrate direct (fără firmă)
+    // Format: [associationId1, associationId2, ...]
+    directAssociations: []
   };
 
   // 📊 CALCULARE PROGRES COMPLETARE PROFIL
@@ -482,6 +494,241 @@ export const useUserProfile = () => {
     return profileCompletion >= 80; // 80% completion required
   };
 
+  // 🏢 ADĂUGARE ORGANIZAȚIE LA USER
+  const addOrganizationToUser = async (userId, organizationId, role = 'org_member') => {
+    if (!userId || !organizationId) return false;
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentOrganizations = userData.organizations || [];
+
+      // Verifică dacă user-ul e deja în organizație
+      if (currentOrganizations.some(org => org.id === organizationId)) {
+        console.log('User already in organization');
+        return true;
+      }
+
+      const newOrgEntry = {
+        id: organizationId,
+        role: role,
+        joinedAt: new Date().toISOString()
+      };
+
+      await updateDoc(userRef, {
+        organizations: [...currentOrganizations, newOrgEntry],
+        updatedAt: new Date().toISOString()
+      });
+
+      await logActivity(userId, 'ORGANIZATION_JOINED', {
+        organizationId,
+        role
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error adding organization to user:', error);
+      return false;
+    }
+  };
+
+  // 🏢 ELIMINARE ORGANIZAȚIE DE LA USER
+  const removeOrganizationFromUser = async (userId, organizationId) => {
+    if (!userId || !organizationId) return false;
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentOrganizations = userData.organizations || [];
+
+      const updatedOrganizations = currentOrganizations.filter(
+        org => org.id !== organizationId
+      );
+
+      await updateDoc(userRef, {
+        organizations: updatedOrganizations,
+        updatedAt: new Date().toISOString()
+      });
+
+      await logActivity(userId, 'ORGANIZATION_LEFT', {
+        organizationId
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error removing organization from user:', error);
+      return false;
+    }
+  };
+
+  // 🏢 ACTUALIZARE ROL ÎN ORGANIZAȚIE
+  const updateUserOrganizationRole = async (userId, organizationId, newRole) => {
+    if (!userId || !organizationId || !newRole) return false;
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentOrganizations = userData.organizations || [];
+
+      const updatedOrganizations = currentOrganizations.map(org => {
+        if (org.id === organizationId) {
+          return { ...org, role: newRole };
+        }
+        return org;
+      });
+
+      await updateDoc(userRef, {
+        organizations: updatedOrganizations,
+        updatedAt: new Date().toISOString()
+      });
+
+      await logActivity(userId, 'ORGANIZATION_ROLE_CHANGED', {
+        organizationId,
+        newRole
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error updating user organization role:', error);
+      return false;
+    }
+  };
+
+  // 🏠 ADĂUGARE ASOCIAȚIE DIRECTĂ LA USER
+  const addDirectAssociation = async (userId, associationId) => {
+    if (!userId || !associationId) return false;
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentDirectAssociations = userData.directAssociations || [];
+
+      // Verifică dacă asociația e deja adăugată
+      if (currentDirectAssociations.includes(associationId)) {
+        console.log('Association already in directAssociations');
+        return true;
+      }
+
+      await updateDoc(userRef, {
+        directAssociations: [...currentDirectAssociations, associationId],
+        updatedAt: new Date().toISOString()
+      });
+
+      await logActivity(userId, 'DIRECT_ASSOCIATION_ADDED', {
+        associationId
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error adding direct association:', error);
+      return false;
+    }
+  };
+
+  // 🏠 ELIMINARE ASOCIAȚIE DIRECTĂ DE LA USER
+  const removeDirectAssociation = async (userId, associationId) => {
+    if (!userId || !associationId) return false;
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        console.error('User document not found');
+        return false;
+      }
+
+      const userData = userDoc.data();
+      const currentDirectAssociations = userData.directAssociations || [];
+
+      const updatedDirectAssociations = currentDirectAssociations.filter(
+        id => id !== associationId
+      );
+
+      await updateDoc(userRef, {
+        directAssociations: updatedDirectAssociations,
+        updatedAt: new Date().toISOString()
+      });
+
+      await logActivity(userId, 'DIRECT_ASSOCIATION_REMOVED', {
+        associationId
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error removing direct association:', error);
+      return false;
+    }
+  };
+
+  // 📊 OBȚINERE ORGANIZAȚII USER (cu date complete)
+  const getUserOrganizations = async (userId) => {
+    if (!userId) return [];
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        return [];
+      }
+
+      const userData = userDoc.data();
+      return userData.organizations || [];
+    } catch (error) {
+      console.error('❌ Error getting user organizations:', error);
+      return [];
+    }
+  };
+
+  // 📊 OBȚINERE ASOCIAȚII DIRECTE USER
+  const getUserDirectAssociations = async (userId) => {
+    if (!userId) return [];
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        return [];
+      }
+
+      const userData = userDoc.data();
+      return userData.directAssociations || [];
+    } catch (error) {
+      console.error('❌ Error getting user direct associations:', error);
+      return [];
+    }
+  };
+
   // ✅ MARCARE ONBOARDING COMPLET
   const completeOnboarding = async (userId) => {
     try {
@@ -543,7 +790,7 @@ export const useUserProfile = () => {
     profileLoading,
     uploadProgress,
     profileCompletion,
-    
+
     // Functions
     loadUserProfile,
     updateUserProfile,
@@ -554,8 +801,18 @@ export const useUserProfile = () => {
     isProfileComplete,
     completeOnboarding,
     calculateProfileCompletion,
-    
+
+    // 🏢 Organization & Direct Association functions (v2.0)
+    addOrganizationToUser,
+    removeOrganizationFromUser,
+    updateUserOrganizationRole,
+    addDirectAssociation,
+    removeDirectAssociation,
+    getUserOrganizations,
+    getUserDirectAssociations,
+
     // Helpers
-    defaultProfileStructure
+    defaultProfileStructure,
+    defaultUserOrganizationFields
   };
 };

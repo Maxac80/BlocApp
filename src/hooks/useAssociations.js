@@ -1,0 +1,744 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  doc,
+  collection,
+  addDoc,
+  updateDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  onSnapshot,
+  arrayUnion
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { useSecurity } from './useSecurity';
+import { useUserProfile } from './useUserProfile';
+
+/**
+ * 🏠 HOOK PENTRU GESTIONAREA AVANSATĂ A ASOCIAȚIILOR
+ *
+ * Extinde funcționalitatea existentă din useFirestore cu:
+ * - organizationId (link la firmă)
+ * - president object (userId opțional)
+ * - censors[] array
+ * - settings pentru workflow
+ * - billing information
+ *
+ * Structura Firebase:
+ * /associations/{assocId}
+ * /associations/{assocId}/members/{memberId}
+ */
+export const useAssociations = (userId = null) => {
+  const { logActivity } = useSecurity();
+  const { addDirectAssociation, removeDirectAssociation } = useUserProfile();
+
+  const [associations, setAssociations] = useState([]);
+  const [currentAssociation, setCurrentAssociation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 📋 STRUCTURA DEFAULT PENTRU ASSOCIATION (EXTINSĂ v2.0)
+  const defaultAssociationStructure = {
+    // Date de bază (existente)
+    name: '',
+    cui: '',
+    registrationNumber: '',
+    address: {
+      street: '',
+      number: '',
+      city: '',
+      county: '',
+      zipCode: ''
+    },
+    email: '',
+    phone: '',
+    bank: '',
+    bankAccount: '',
+
+    // Administrator principal
+    adminId: '',
+    adminProfile: null,
+
+    // 🏢 NOU: Link la organizație (null = asociație directă)
+    organizationId: null,
+
+    // 👤 NOU: Președinte (poate fi user sau doar nume text)
+    president: null,
+    // Format: { userId: string | null, name: string, phone: string, email: string }
+
+    // 👥 NOU: Cenzori (array, 1-3 cenzori)
+    censors: [],
+    // Format: [{ userId: string | null, name: string, phone: string, email: string }]
+
+    // ⚙️ NOU: Setări workflow
+    settings: {
+      requirePresidentApproval: false,
+      notifyPresidentOnPublish: false,
+      notifyCensorsOnPublish: false,
+      autoSendToOwners: false,
+      penaltyEnabled: false,
+      penaltyPercentage: 0.1, // 10% default
+      penaltyThresholdDays: 30
+    },
+
+    // 💰 NOU: Billing (integrat din architecture)
+    billing: {
+      mode: 'trial', // 'trial' | 'organization' | 'association'
+      billedToOrganizationId: null,
+      billingContact: null,
+      // Format billingContact: { name, email, phone, address }
+      status: 'trial', // 'trial' | 'active' | 'overdue' | 'suspended'
+      trialEndsAt: null,
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      lastPaymentAt: null,
+      transfers: []
+    },
+
+    // Timestamps
+    createdAt: null,
+    updatedAt: null,
+    createdBy: null
+  };
+
+  // 🏠 CREARE ASOCIAȚIE NOUĂ (EXTINSĂ)
+  const createAssociation = async (associationData, creatorUserId, organizationId = null) => {
+    if (!creatorUserId) {
+      throw new Error('User ID is required to create association');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Calculează data de expirare trial (90 zile)
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 90);
+
+      const newAssociation = {
+        ...defaultAssociationStructure,
+        ...associationData,
+        adminId: creatorUserId,
+        organizationId: organizationId,
+        billing: {
+          ...defaultAssociationStructure.billing,
+          mode: organizationId ? 'organization' : 'trial',
+          billedToOrganizationId: organizationId,
+          status: 'trial',
+          trialEndsAt: trialEndsAt.toISOString(),
+          currentPeriodStart: new Date().toISOString()
+        },
+        createdBy: creatorUserId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // Creare în Firestore
+      const assocRef = await addDoc(collection(db, 'associations'), newAssociation);
+      const associationId = assocRef.id;
+
+      // Dacă nu e parte dintr-o organizație, adaugă la directAssociations
+      if (!organizationId) {
+        await addDirectAssociation(creatorUserId, associationId);
+      }
+
+      // Log activitate
+      await logActivity(creatorUserId, 'ASSOCIATION_CREATED', {
+        associationId,
+        associationName: associationData.name,
+        organizationId
+      });
+
+      const createdAssoc = { id: associationId, ...newAssociation };
+      setAssociations(prev => [...prev, createdAssoc]);
+
+      return createdAssoc;
+    } catch (err) {
+      console.error('❌ Error creating association:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 📝 ACTUALIZARE ASOCIAȚIE
+  const updateAssociation = async (associationId, updates) => {
+    if (!associationId) {
+      throw new Error('Association ID is required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+
+      const updateData = {
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateDoc(assocRef, updateData);
+
+      // Update local state
+      setAssociations(prev =>
+        prev.map(assoc =>
+          assoc.id === associationId ? { ...assoc, ...updateData } : assoc
+        )
+      );
+
+      if (currentAssociation?.id === associationId) {
+        setCurrentAssociation(prev => ({ ...prev, ...updateData }));
+      }
+
+      await logActivity(userId, 'ASSOCIATION_UPDATED', {
+        associationId,
+        updatedFields: Object.keys(updates)
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error updating association:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 👤 SETARE PREȘEDINTE
+  const setPresident = async (associationId, presidentData) => {
+    if (!associationId) {
+      throw new Error('Association ID is required');
+    }
+
+    try {
+      // presidentData: { userId: string | null, name: string, phone: string, email: string }
+      const president = {
+        userId: presidentData.userId || null,
+        name: presidentData.name || '',
+        phone: presidentData.phone || '',
+        email: presidentData.email || ''
+      };
+
+      await updateAssociation(associationId, { president });
+
+      // Dacă președintele are userId, adaugă în members subcollection
+      if (president.userId) {
+        const memberRef = doc(db, 'associations', associationId, 'members', president.userId);
+        await updateDoc(memberRef, {
+          role: 'assoc_president',
+          updatedAt: new Date().toISOString()
+        }).catch(async () => {
+          // Dacă documentul nu există, creează-l
+          await addDoc(collection(db, 'associations', associationId, 'members'), {
+            id: president.userId,
+            userId: president.userId,
+            role: 'assoc_president',
+            name: president.name,
+            addedAt: new Date().toISOString(),
+            status: 'active'
+          });
+        });
+      }
+
+      await logActivity(userId, 'ASSOCIATION_PRESIDENT_SET', {
+        associationId,
+        presidentName: president.name,
+        hasUserId: !!president.userId
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error setting president:', err);
+      throw err;
+    }
+  };
+
+  // 👤 ELIMINARE PREȘEDINTE
+  const removePresident = async (associationId) => {
+    if (!associationId) {
+      throw new Error('Association ID is required');
+    }
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) {
+        throw new Error('Association not found');
+      }
+
+      const currentPresident = assocDoc.data().president;
+
+      // Dacă președintele avea userId, elimină din members
+      if (currentPresident?.userId) {
+        const memberRef = doc(db, 'associations', associationId, 'members', currentPresident.userId);
+        await deleteDoc(memberRef).catch(() => {});
+      }
+
+      await updateAssociation(associationId, { president: null });
+
+      await logActivity(userId, 'ASSOCIATION_PRESIDENT_REMOVED', {
+        associationId
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error removing president:', err);
+      throw err;
+    }
+  };
+
+  // 👥 ADĂUGARE CENZOR
+  const addCensor = async (associationId, censorData) => {
+    if (!associationId) {
+      throw new Error('Association ID is required');
+    }
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) {
+        throw new Error('Association not found');
+      }
+
+      const currentCensors = assocDoc.data().censors || [];
+
+      // Verifică limita de 3 cenzori
+      if (currentCensors.length >= 3) {
+        throw new Error('MAXIMUM_3_CENSORS_ALLOWED');
+      }
+
+      const newCensor = {
+        id: `censor-${Date.now()}`,
+        userId: censorData.userId || null,
+        name: censorData.name || '',
+        phone: censorData.phone || '',
+        email: censorData.email || ''
+      };
+
+      await updateAssociation(associationId, {
+        censors: [...currentCensors, newCensor]
+      });
+
+      // Dacă cenzorul are userId, adaugă în members subcollection
+      if (newCensor.userId) {
+        await addDoc(collection(db, 'associations', associationId, 'members'), {
+          userId: newCensor.userId,
+          role: 'assoc_censor',
+          name: newCensor.name,
+          addedAt: new Date().toISOString(),
+          status: 'active'
+        });
+      }
+
+      await logActivity(userId, 'ASSOCIATION_CENSOR_ADDED', {
+        associationId,
+        censorName: newCensor.name,
+        hasUserId: !!newCensor.userId
+      });
+
+      return newCensor;
+    } catch (err) {
+      console.error('❌ Error adding censor:', err);
+      throw err;
+    }
+  };
+
+  // 👥 ELIMINARE CENZOR
+  const removeCensor = async (associationId, censorId) => {
+    if (!associationId || !censorId) {
+      throw new Error('Association ID and Censor ID are required');
+    }
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) {
+        throw new Error('Association not found');
+      }
+
+      const currentCensors = assocDoc.data().censors || [];
+      const censorToRemove = currentCensors.find(c => c.id === censorId);
+
+      const updatedCensors = currentCensors.filter(c => c.id !== censorId);
+
+      await updateAssociation(associationId, { censors: updatedCensors });
+
+      // Dacă cenzorul avea userId, elimină din members
+      if (censorToRemove?.userId) {
+        const membersQuery = query(
+          collection(db, 'associations', associationId, 'members'),
+          where('userId', '==', censorToRemove.userId),
+          where('role', '==', 'assoc_censor')
+        );
+        const membersSnapshot = await getDocs(membersQuery);
+        for (const memberDoc of membersSnapshot.docs) {
+          await deleteDoc(memberDoc.ref);
+        }
+      }
+
+      await logActivity(userId, 'ASSOCIATION_CENSOR_REMOVED', {
+        associationId,
+        censorId
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error removing censor:', err);
+      throw err;
+    }
+  };
+
+  // ⚙️ ACTUALIZARE SETĂRI WORKFLOW
+  const updateSettings = async (associationId, settingsUpdates) => {
+    if (!associationId) {
+      throw new Error('Association ID is required');
+    }
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) {
+        throw new Error('Association not found');
+      }
+
+      const currentSettings = assocDoc.data().settings || {};
+
+      await updateAssociation(associationId, {
+        settings: { ...currentSettings, ...settingsUpdates }
+      });
+
+      await logActivity(userId, 'ASSOCIATION_SETTINGS_UPDATED', {
+        associationId,
+        updatedSettings: Object.keys(settingsUpdates)
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error updating settings:', err);
+      throw err;
+    }
+  };
+
+  // 📥 ÎNCĂRCARE ASOCIAȚIE BY ID
+  const loadAssociation = async (associationId) => {
+    if (!associationId) return null;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (assocDoc.exists()) {
+        const assocData = { id: assocDoc.id, ...assocDoc.data() };
+        setCurrentAssociation(assocData);
+        return assocData;
+      }
+
+      return null;
+    } catch (err) {
+      console.error('❌ Error loading association:', err);
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 📥 ÎNCĂRCARE ASOCIAȚII DIRECTE ALE UTILIZATORULUI
+  const loadUserDirectAssociations = useCallback(async (userIdToLoad) => {
+    if (!userIdToLoad) return [];
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obține lista de directAssociations din user document
+      const userRef = doc(db, 'users', userIdToLoad);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        setAssociations([]);
+        return [];
+      }
+
+      const userData = userDoc.data();
+      const directAssociationIds = userData.directAssociations || [];
+
+      if (directAssociationIds.length === 0) {
+        // Fallback: caută asociații unde adminId === userId
+        const adminQuery = query(
+          collection(db, 'associations'),
+          where('adminId', '==', userIdToLoad)
+        );
+        const adminSnapshot = await getDocs(adminQuery);
+
+        const adminAssociations = adminSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setAssociations(adminAssociations);
+        return adminAssociations;
+      }
+
+      // Încarcă detaliile fiecărei asociații
+      const assocPromises = directAssociationIds.map(async (assocId) => {
+        const assocRef = doc(db, 'associations', assocId);
+        const assocDoc = await getDoc(assocRef);
+
+        if (assocDoc.exists()) {
+          return {
+            id: assocDoc.id,
+            ...assocDoc.data()
+          };
+        }
+        return null;
+      });
+
+      const assocs = (await Promise.all(assocPromises)).filter(assoc => assoc !== null);
+
+      setAssociations(assocs);
+      return assocs;
+    } catch (err) {
+      console.error('❌ Error loading user direct associations:', err);
+      setError(err.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 📊 OBȚINERE MEMBRI ASOCIAȚIE
+  const getAssociationMembers = async (associationId) => {
+    if (!associationId) return [];
+
+    try {
+      const membersSnapshot = await getDocs(
+        collection(db, 'associations', associationId, 'members')
+      );
+
+      return membersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (err) {
+      console.error('❌ Error getting association members:', err);
+      return [];
+    }
+  };
+
+  // 💰 VERIFICARE DACĂ POATE ȘTERGE ASOCIAȚIA (canDeleteAssociation)
+  const canDeleteAssociation = async (associationId, userIdToCheck) => {
+    if (!associationId || !userIdToCheck) return false;
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) return false;
+
+      const assocData = assocDoc.data();
+      const billing = assocData.billing || {};
+
+      // Obține user data pentru a verifica rolul
+      const userRef = doc(db, 'users', userIdToCheck);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : {};
+
+      // Super admin poate oricând
+      if (userData.role === 'super_admin') return true;
+
+      // În funcție de billing mode
+      switch (billing.mode) {
+        case 'trial':
+          // Doar creatorul asociației
+          return assocData.createdBy === userIdToCheck;
+
+        case 'organization':
+          // Doar org_owner al organizației care plătește
+          if (!billing.billedToOrganizationId) return false;
+          const orgRef = doc(db, 'organizations', billing.billedToOrganizationId);
+          const orgDoc = await getDoc(orgRef);
+          if (!orgDoc.exists()) return false;
+          return orgDoc.data().ownerIds?.includes(userIdToCheck);
+
+        case 'association':
+          // Doar assoc_admin care e și billing contact
+          return assocData.adminId === userIdToCheck &&
+                 billing.billingContact?.email === userData.email;
+
+        default:
+          return false;
+      }
+    } catch (err) {
+      console.error('❌ Error checking delete permission:', err);
+      return false;
+    }
+  };
+
+  // 🗑️ ȘTERGERE ASOCIAȚIE
+  const deleteAssociation = async (associationId, deletingUserId) => {
+    if (!associationId || !deletingUserId) {
+      throw new Error('Association ID and User ID are required');
+    }
+
+    // Verifică permisiunea
+    const canDelete = await canDeleteAssociation(associationId, deletingUserId);
+    if (!canDelete) {
+      throw new Error('NOT_AUTHORIZED_TO_DELETE');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const assocRef = doc(db, 'associations', associationId);
+
+      // Elimină din directAssociations ale userului
+      await removeDirectAssociation(deletingUserId, associationId);
+
+      // Șterge asociația
+      await deleteDoc(assocRef);
+
+      // Update local state
+      setAssociations(prev => prev.filter(assoc => assoc.id !== associationId));
+
+      if (currentAssociation?.id === associationId) {
+        setCurrentAssociation(null);
+      }
+
+      await logActivity(deletingUserId, 'ASSOCIATION_DELETED', {
+        associationId
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error deleting association:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 📊 OBȚINERE STATISTICI ASOCIAȚIE
+  const getAssociationStats = async (associationId) => {
+    if (!associationId) return null;
+
+    try {
+      // Obține apartamentele
+      const blocksQuery = query(
+        collection(db, 'blocks'),
+        where('associationId', '==', associationId)
+      );
+      const blocksSnapshot = await getDocs(blocksQuery);
+      const blockIds = blocksSnapshot.docs.map(doc => doc.id);
+
+      let totalApartments = 0;
+      let totalPersons = 0;
+
+      if (blockIds.length > 0) {
+        const stairsQuery = query(
+          collection(db, 'stairs'),
+          where('blockId', 'in', blockIds)
+        );
+        const stairsSnapshot = await getDocs(stairsQuery);
+        const stairIds = stairsSnapshot.docs.map(doc => doc.id);
+
+        if (stairIds.length > 0) {
+          const apartmentsQuery = query(
+            collection(db, 'apartments'),
+            where('stairId', 'in', stairIds)
+          );
+          const apartmentsSnapshot = await getDocs(apartmentsQuery);
+
+          totalApartments = apartmentsSnapshot.size;
+          apartmentsSnapshot.docs.forEach(doc => {
+            const apt = doc.data();
+            totalPersons += parseInt(apt.persons || apt.noPersons || 0);
+          });
+        }
+      }
+
+      return {
+        totalApartments,
+        totalPersons,
+        totalBlocks: blocksSnapshot.size
+      };
+    } catch (err) {
+      console.error('❌ Error getting association stats:', err);
+      return null;
+    }
+  };
+
+  // 🔄 EFFECT: Încarcă asociațiile când userId se schimbă
+  useEffect(() => {
+    if (userId) {
+      loadUserDirectAssociations(userId);
+    } else {
+      setAssociations([]);
+      setCurrentAssociation(null);
+    }
+  }, [userId, loadUserDirectAssociations]);
+
+  // 🆕 CREARE ASOCIAȚIE DIRECTĂ (wrapper pentru modal)
+  const createDirectAssociation = async (associationData) => {
+    if (!userId) {
+      return { success: false, error: 'User ID is required' };
+    }
+
+    try {
+      const result = await createAssociation(associationData, userId, null);
+      return { success: true, association: result };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  return {
+    // State
+    associations,
+    currentAssociation,
+    loading,
+    error,
+
+    // CRUD Operations
+    createAssociation,
+    createDirectAssociation,
+    updateAssociation,
+    deleteAssociation,
+    loadAssociation,
+    loadUserDirectAssociations,
+
+    // President & Censor Management
+    setPresident,
+    removePresident,
+    addCensor,
+    removeCensor,
+
+    // Settings
+    updateSettings,
+
+    // Members
+    getAssociationMembers,
+
+    // Utils
+    canDeleteAssociation,
+    getAssociationStats,
+    setCurrentAssociation,
+
+    // Helpers
+    defaultAssociationStructure
+  };
+};

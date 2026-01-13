@@ -159,12 +159,17 @@ function OwnerPortalContent() {
 
   // Handler pentru logout
   const handleLogout = async () => {
+    // Curăță state-urile și localStorage
     setSelectedApartment(null);
     setUserApartments([]);
     setQuickAccessApartment(null);
-    // Curăță localStorage
     localStorage.removeItem('ownerPortal_selectedApartment');
     localStorage.removeItem('ownerPortal_quickAccess');
+
+    // Așteptăm un tick pentru ca OwnerApp să se demonteze și
+    // listener-urile Firestore să se oprească înainte de logout
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     await logoutEnhanced();
   };
 

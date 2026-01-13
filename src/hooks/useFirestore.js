@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   query,
   updateDoc,
@@ -13,7 +14,7 @@ import { useAuthEnhanced } from "../context/AuthContextEnhanced";
 import { db } from "../firebase";
 import { getSheetsCollection } from "../utils/firestoreHelpers";
 
-export const useAssociationData = (sheetOperationsRef = null) => {
+export const useAssociationData = (sheetOperationsRef = null, associationId = null) => {
   const { userProfile, currentUser } = useAuthEnhanced();
 
   // Determină utilizatorul activ
@@ -404,6 +405,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     // console.log("- currentUser:", currentUser?.uid);
     // console.log("- activeUser:", activeUser?.uid);
     // console.log("- userProfile:", userProfile?.role);
+    // console.log("- associationId (din props):", associationId);
 
     if (!activeUser) {
       // console.log("❌ Nu există activeUser, opresc loading");
@@ -422,19 +424,77 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       setError(null);
 
       try {
-        // 1. Încarcă asociația utilizatorului
-        const associationQuery = query(
-          collection(db, "associations"),
-          where("adminId", "==", activeUser.uid)
-        );
-        const associationSnapshot = await getDocs(associationQuery);
+        let associationData = null;
 
-        if (!associationSnapshot.empty) {
-          const associationDoc = associationSnapshot.docs[0];
-          const associationData = { id: associationDoc.id, ...associationDoc.data() };
-          setAssociation(associationData);
+        // 🆕 Dacă avem associationId din props, încarcă acea asociație specifică
+        if (associationId) {
+          console.log("📍 Încarcă asociația specifică din context:", associationId);
+          const associationDoc = await getDoc(doc(db, "associations", associationId));
+          if (associationDoc.exists()) {
+            associationData = { id: associationDoc.id, ...associationDoc.data() };
+            setAssociation(associationData);
+          } else {
+            console.error("❌ Asociația nu există:", associationId);
+            setAssociation(null);
+            setBlocks([]);
+            setStairs([]);
+            setApartments([]);
+            setExpenses([]);
+            setCustomExpenses([]);
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Comportament legacy: Încarcă prima asociație a utilizatorului
+          const associationQuery = query(
+            collection(db, "associations"),
+            where("adminId", "==", activeUser.uid)
+          );
+          const associationSnapshot = await getDocs(associationQuery);
 
-          // 2. Încarcă toate datele asociate - TRANSMITE associationId
+          if (!associationSnapshot.empty) {
+            const associationDoc = associationSnapshot.docs[0];
+            associationData = { id: associationDoc.id, ...associationDoc.data() };
+            setAssociation(associationData);
+
+            // 🆕 MIGRARE: Adaugă asociația la directAssociations[] dacă nu există
+            try {
+              const userRef = doc(db, "users", activeUser.uid);
+              const userDocSnap = await getDoc(userRef);
+              if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                const currentDirectAssocs = userData.directAssociations || [];
+                if (!currentDirectAssocs.includes(associationDoc.id)) {
+                  await updateDoc(userRef, {
+                    directAssociations: [...currentDirectAssocs, associationDoc.id]
+                  });
+                  console.log("✅ MIGRARE: Asociația adăugată la directAssociations[]");
+                  // Reîncarcă pagina pentru a aplica noile context switching features
+                  setTimeout(() => {
+                    console.log("🔄 Reîncarc pagina pentru context switching...");
+                    window.location.reload();
+                  }, 1000);
+                  return; // Oprește încărcarea datelor, pagina se va reîncărca
+                }
+              }
+            } catch (migrationErr) {
+              console.warn("⚠️ MIGRARE: Nu s-a putut actualiza directAssociations:", migrationErr);
+            }
+          } else {
+            console.log("❌ Nu s-a găsit asociație pentru acest utilizator");
+            setAssociation(null);
+            setBlocks([]);
+            setStairs([]);
+            setApartments([]);
+            setExpenses([]);
+            setCustomExpenses([]);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 2. Încarcă toate datele asociate - TRANSMITE associationId
+        if (associationData) {
           await Promise.all([
             loadBlocks(associationData.id),
             loadStairs(associationData.id),
@@ -442,14 +502,6 @@ export const useAssociationData = (sheetOperationsRef = null) => {
             loadExpenses(associationData.id),
             loadCustomExpenses(associationData.id),
           ]);
-        } else {
-          console.log("❌ Nu s-a găsit asociație pentru acest utilizator");
-          setAssociation(null);
-          setBlocks([]);
-          setStairs([]);
-          setApartments([]);
-          setExpenses([]);
-          setCustomExpenses([]);
         }
       } catch (err) {
         console.error("❌ Eroare la încărcarea datelor:", err);
@@ -460,7 +512,7 @@ export const useAssociationData = (sheetOperationsRef = null) => {
     };
 
     loadUserData();
-  }, [activeUser, userProfile]);
+  }, [activeUser, userProfile, associationId]);
 
   // Funcții CRUD cu reîncărcare automată
   const createAssociation = async (data) => {
@@ -488,6 +540,24 @@ export const useAssociationData = (sheetOperationsRef = null) => {
       const docRef = await addDoc(collection(db, "associations"), associationData);
       const newAssociation = { id: docRef.id, ...associationData };
       setAssociation(newAssociation);
+
+      // 🆕 Adaugă asociația la directAssociations[] în profilul userului
+      try {
+        const userRef = doc(db, "users", activeUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const currentDirectAssocs = userData.directAssociations || [];
+          if (!currentDirectAssocs.includes(docRef.id)) {
+            await updateDoc(userRef, {
+              directAssociations: [...currentDirectAssocs, docRef.id]
+            });
+            console.log("✅ Asociația adăugată la directAssociations[]");
+          }
+        }
+      } catch (userUpdateErr) {
+        console.warn("⚠️ Nu s-a putut actualiza directAssociations:", userUpdateErr);
+      }
 
       // console.log("✅ Asociație creată cu succes:", newAssociation);
       return newAssociation;

@@ -1,9 +1,228 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Temporary: Allow all authenticated users full access
+
+    // ============================================
+    // 🔐 HELPER FUNCTIONS
+    // ============================================
+
+    // Verifică dacă utilizatorul este autentificat
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verifică dacă utilizatorul este proprietarul documentului
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Verifică dacă utilizatorul este super_admin
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    // Verifică dacă utilizatorul este owner al organizației
+    function isOrgOwner(orgId) {
+      return isAuthenticated() &&
+        request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerIds;
+    }
+
+    // Verifică dacă utilizatorul este membru al organizației (owner sau membru)
+    function isOrgMember(orgId) {
+      return isAuthenticated() && (
+        isOrgOwner(orgId) ||
+        exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+      );
+    }
+
+    // Verifică dacă utilizatorul are rol specific în organizație
+    function hasOrgRole(orgId, roles) {
+      let membership = get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data;
+      return isAuthenticated() && membership.role in roles;
+    }
+
+    // Verifică dacă utilizatorul are acces la asociație
+    function hasAssociationAccess(assocId) {
+      let assoc = get(/databases/$(database)/documents/associations/$(assocId)).data;
+      return isAuthenticated() && (
+        assoc.adminId == request.auth.uid ||
+        request.auth.uid in assoc.ownerIds ||
+        isSuperAdmin()
+      );
+    }
+
+    // ============================================
+    // 👤 USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Citire: propriul profil sau super_admin
+      allow read: if isOwner(userId) || isSuperAdmin();
+
+      // Creare: doar pentru propriul profil
+      allow create: if isOwner(userId);
+
+      // Update: propriul profil sau super_admin
+      allow update: if isOwner(userId) || isSuperAdmin();
+
+      // Delete: doar super_admin
+      allow delete: if isSuperAdmin();
+    }
+
+    // ============================================
+    // 🏢 ORGANIZATIONS COLLECTION
+    // ============================================
+    match /organizations/{orgId} {
+      // Citire: oricine autentificat care e membru sau owner
+      allow read: if isOrgMember(orgId) || isSuperAdmin();
+
+      // Creare: oricine autentificat (devine owner)
+      allow create: if isAuthenticated();
+
+      // Update: doar owners sau super_admin
+      allow update: if isOrgOwner(orgId) || isSuperAdmin();
+
+      // Delete: doar super_admin (soft delete prin update în cod)
+      allow delete: if isSuperAdmin();
+
+      // Sub-colecția members
+      match /members/{memberId} {
+        // Citire: membrii organizației
+        allow read: if isOrgMember(orgId) || isSuperAdmin();
+
+        // Creare: owner sau admin al organizației
+        allow create: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin();
+
+        // Update: owner sau admin al organizației
+        allow update: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin();
+
+        // Delete: owner sau admin al organizației
+        allow delete: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin();
+      }
+
+      // Sub-colecția invitations
+      match /invitations/{invitationId} {
+        // Citire: oricine autentificat (pentru verificare token)
+        allow read: if isAuthenticated();
+
+        // Creare: owner sau admin al organizației
+        allow create: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin();
+
+        // Update: owner sau admin, sau userul care acceptă invitația
+        allow update: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin() ||
+          isAuthenticated(); // Pentru acceptare
+
+        // Delete: owner sau admin al organizației
+        allow delete: if isOrgOwner(orgId) ||
+          hasOrgRole(orgId, ['org_admin']) ||
+          isSuperAdmin();
+      }
+    }
+
+    // ============================================
+    // 🏠 ASSOCIATIONS COLLECTION
+    // ============================================
+    match /associations/{assocId} {
+      // Citire: admin-ul asociației, membrii organizației părinte, sau super_admin
+      allow read: if isAuthenticated();
+
+      // Creare: oricine autentificat
+      allow create: if isAuthenticated();
+
+      // Update: admin-ul asociației sau super_admin
+      allow update: if hasAssociationAccess(assocId) || isSuperAdmin();
+
+      // Delete: doar super_admin
+      allow delete: if isSuperAdmin();
+
+      // Sub-colecții asociație
+      match /{subcollection}/{docId} {
+        allow read, write: if hasAssociationAccess(assocId) || isSuperAdmin();
+      }
+    }
+
+    // ============================================
+    // 📋 ALTE COLECȚII (legacy support)
+    // ============================================
+
+    // Apartments
+    match /apartments/{apartmentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Blocs
+    match /blocs/{blocId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Stairs
+    match /stairs/{stairId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Expenses
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Suppliers
+    match /suppliers/{supplierId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Invoices
+    match /invoices/{invoiceId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Sheets
+    match /sheets/{sheetId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Incasari
+    match /incasari/{incasareId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Owners
+    match /owners/{ownerId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Audit Logs (root level)
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Onboarding Progress (root level)
+    match /onboarding_progress/{progressId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ============================================
+    // 🔒 CATCH-ALL RULE (temporarily permissive)
+    // Remove this in production after testing
+    // ============================================
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }

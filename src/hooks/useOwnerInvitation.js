@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   doc,
   setDoc,
@@ -422,7 +422,7 @@ export const useOwnerInvitation = () => {
    *
    * @param {string} email - Email-ul proprietarului
    */
-  const getInvitationStatus = async (email) => {
+  const getInvitationStatus = useCallback(async (email) => {
     if (!email) return { status: 'none' };
 
     try {
@@ -447,7 +447,7 @@ export const useOwnerInvitation = () => {
       console.error('Error getting invitation status:', err);
       return { status: 'error', error: err.message };
     }
-  };
+  }, []);
 
   /**
    * Actualizează array-ul de asociații cu un apartament nou

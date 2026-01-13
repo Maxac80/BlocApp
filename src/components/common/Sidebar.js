@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins } from 'lucide-react';
+import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight } from 'lucide-react';
 
 const Sidebar = ({
   sidebarOpen,
@@ -15,7 +15,8 @@ const Sidebar = ({
   activeUser,
   setCurrentMonth,
   publishedSheet,
-  currentSheet
+  currentSheet,
+  onSwitchContext // 🆕 Pentru a reveni la ecranul de selecție context
 }) => {
   // Funcția pentru a naviga la Dashboard și la luna publicată activă
   const handleBlocAppClick = () => {
@@ -335,75 +336,106 @@ const Sidebar = ({
     {/* Footer cu utilizatorul */}
     <div className="flex-shrink-0 border-t border-gray-200 p-3 lg:p-4 bg-white">
       {sidebarExpanded ? (
-        <div className="flex items-center">
-          <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs lg:text-sm overflow-hidden">
-            {association?.adminProfile?.avatarURL ? (
-              <img
-                src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
-            )}
-          </div>
-          <div className="ml-2 lg:ml-3 flex-1 min-w-0">
-            <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">
-  {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
-</div>
-            <div className="text-xs text-gray-500 truncate hidden lg:block">
-              Administrator
+        <div className="space-y-2">
+          {/* 🆕 Buton Schimbă Asociație/Organizație */}
+          {onSwitchContext && (
+            <button
+              onClick={onSwitchContext}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors"
+              title="Schimbă asociația sau organizația"
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+              <span>Schimbă asociația</span>
+            </button>
+          )}
+
+          <div className="flex items-center">
+            <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs lg:text-sm overflow-hidden">
+              {association?.adminProfile?.avatarURL ? (
+                <img
+                  src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
+              )}
             </div>
+            <div className="ml-2 lg:ml-3 flex-1 min-w-0">
+              <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">
+    {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+  </div>
+              <div className="text-xs text-gray-500 truncate hidden lg:block">
+                Administrator
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  const { signOut } = await import('firebase/auth');
+                  const { auth } = await import('../../firebase');
+                  await signOut(auth);
+                  window.location.reload();
+                } catch (error) {
+                  console.error('❌ Eroare la deconectare:', error);
+                }
+              }}
+              className="text-gray-400 hover:text-red-600 transition-colors"
+              title="Deconectare"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3v1" />
+              </svg>
+            </button>
           </div>
-          <button 
-            onClick={async () => {
-              try {
-                const { signOut } = await import('firebase/auth');
-                const { auth } = await import('../../firebase');
-                await signOut(auth);
-                window.location.reload();
-              } catch (error) {
-                console.error('❌ Eroare la deconectare:', error);
-              }
-            }}
-            className="text-gray-400 hover:text-red-600 transition-colors" 
-            title="Deconectare"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3v1" />
-            </svg>
-          </button>
         </div>
       ) : (
-        <div className="flex justify-center group relative">
-          <button
-            onClick={async () => {
-              try {
-                const { signOut } = await import('firebase/auth');
-                const { auth } = await import('../../firebase');
-                await signOut(auth);
-                window.location.reload();
-              } catch (error) {
-                console.error('❌ Eroare la deconectare:', error);
-              }
-            }}
-            className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors overflow-hidden"
-            title={`Click pentru deconectare - ${userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}`}
-          >
-            {association?.adminProfile?.avatarURL ? (
-              <img 
-                src={association.adminProfile.avatarURL} 
-                alt="Avatar" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
-            )}
-          </button>
-          
-<div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-  Click pentru deconectare - {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
-</div>
+        <div className="flex flex-col items-center gap-2">
+          {/* 🆕 Buton Schimbă Context (collapsed) */}
+          {onSwitchContext && (
+            <div className="group relative">
+              <button
+                onClick={onSwitchContext}
+                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                title="Schimbă asociația"
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+              </button>
+              <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Schimbă asociația
+              </div>
+            </div>
+          )}
+
+          <div className="group relative">
+            <button
+              onClick={async () => {
+                try {
+                  const { signOut } = await import('firebase/auth');
+                  const { auth } = await import('../../firebase');
+                  await signOut(auth);
+                  window.location.reload();
+                } catch (error) {
+                  console.error('❌ Eroare la deconectare:', error);
+                }
+              }}
+              className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors overflow-hidden"
+              title={`Click pentru deconectare - ${userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}`}
+            >
+              {association?.adminProfile?.avatarURL ? (
+                <img
+                  src={association.adminProfile.avatarURL}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
+              )}
+            </button>
+            <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Click pentru deconectare - {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
+            </div>
+          </div>
         </div>
       )}
     </div>

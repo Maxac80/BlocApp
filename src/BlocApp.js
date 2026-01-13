@@ -29,14 +29,15 @@ import {
   SettingsView
 } from './components/views';
 
-export default function BlocApp() {
-  const { userProfile, currentUser } = useAuthEnhanced();
+export default function BlocApp({ associationId }) {
+  const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
 
   // 🔗 REF pentru sheet operations (pentru a evita dependența circulară)
   const sheetOperationsRef = useRef(null);
-  
+
   // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE (primul pentru a obține association)
+  // Dacă avem associationId din props (din context selector), îl transmitem pentru a încărca asociația corectă
   const {
     loading,
     error,
@@ -61,7 +62,7 @@ export default function BlocApp() {
     deleteBlock,
     updateStair,
     deleteStair
-  } = useAssociationData(sheetOperationsRef);
+  } = useAssociationData(sheetOperationsRef, associationId);
 
   // 🔥 HOOK PENTRU NAVIGARE ȘI UI
   const {
@@ -557,6 +558,7 @@ useEffect(() => {
         setCurrentMonth={setCurrentMonth}
         publishedSheet={publishedSheet}
         currentSheet={currentSheet}
+        onSwitchContext={clearContext}
       />
       
       {/* Overlay pentru mobile */}

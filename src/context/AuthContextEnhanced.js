@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -11,7 +11,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, onSnapshot, collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useSecurity } from '../hooks/useSecurity';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -44,7 +44,14 @@ export function AuthProviderEnhanced({ children }) {
   const [authError, setAuthError] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  
+
+  // 🆕 STATE PENTRU CONTEXT SWITCHING
+  const [currentContext, setCurrentContext] = useState(null);
+  // currentContext = { type: 'organization' | 'association', id: string, data: object, role: string }
+  const [userOrganizations, setUserOrganizations] = useState([]);
+  const [userDirectAssociations, setUserDirectAssociations] = useState([]);
+  const [contextsLoading, setContextsLoading] = useState(false);
+
   // Hooks pentru funcționalități avansate
   const security = useSecurity();
   const profileManager = useUserProfile();
@@ -506,6 +513,176 @@ export function AuthProviderEnhanced({ children }) {
     return canAdminister() || canReview();
   }
 
+  // 🆕 ÎNCĂRCARE ORGANIZAȚII ȘI ASOCIAȚII DIRECTE
+  const loadUserContexts = useCallback(async (userId) => {
+    if (!userId) {
+      setUserOrganizations([]);
+      setUserDirectAssociations([]);
+      return;
+    }
+
+    setContextsLoading(true);
+
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+
+      if (!userDoc.exists()) {
+        setUserOrganizations([]);
+        setUserDirectAssociations([]);
+        return;
+      }
+
+      const userData = userDoc.data();
+
+      // Încarcă organizațiile cu date complete
+      const orgs = [];
+      if (userData.organizations && userData.organizations.length > 0) {
+        for (const orgRef of userData.organizations) {
+          try {
+            const orgDoc = await getDoc(doc(db, 'organizations', orgRef.id));
+            if (orgDoc.exists()) {
+              orgs.push({
+                id: orgRef.id,
+                userRole: orgRef.role,
+                joinedAt: orgRef.joinedAt,
+                ...orgDoc.data()
+              });
+            }
+          } catch (err) {
+            console.error(`Error loading org ${orgRef.id}:`, err);
+          }
+        }
+      }
+      setUserOrganizations(orgs);
+
+      // Încarcă asociațiile directe cu date complete
+      const assocs = [];
+      if (userData.directAssociations && userData.directAssociations.length > 0) {
+        for (const assocId of userData.directAssociations) {
+          try {
+            const assocDoc = await getDoc(doc(db, 'associations', assocId));
+            if (assocDoc.exists()) {
+              assocs.push({
+                id: assocId,
+                ...assocDoc.data()
+              });
+            }
+          } catch (err) {
+            console.error(`Error loading assoc ${assocId}:`, err);
+          }
+        }
+      }
+      setUserDirectAssociations(assocs);
+    } catch (err) {
+      console.error('Error loading user contexts:', err);
+    } finally {
+      setContextsLoading(false);
+    }
+  }, []);
+
+  // 🆕 SELECTARE CONTEXT ORGANIZAȚIE
+  const selectOrganization = useCallback(async (organization) => {
+    if (!organization) {
+      setCurrentContext(null);
+      localStorage.removeItem('blocapp_context');
+      return;
+    }
+
+    const role = organization.userRole ||
+      userProfile?.organizations?.find(o => o.id === organization.id)?.role ||
+      'org_member';
+
+    const context = {
+      type: 'organization',
+      id: organization.id,
+      data: organization,
+      role
+    };
+
+    setCurrentContext(context);
+    localStorage.setItem('blocapp_context', JSON.stringify({
+      type: 'organization',
+      id: organization.id
+    }));
+  }, [userProfile]);
+
+  // 🆕 SELECTARE CONTEXT ASOCIAȚIE DIRECTĂ
+  const selectDirectAssociation = useCallback(async (association) => {
+    if (!association) {
+      setCurrentContext(null);
+      localStorage.removeItem('blocapp_context');
+      return;
+    }
+
+    const context = {
+      type: 'association',
+      id: association.id,
+      data: association,
+      role: 'assoc_admin'
+    };
+
+    setCurrentContext(context);
+    localStorage.setItem('blocapp_context', JSON.stringify({
+      type: 'association',
+      id: association.id
+    }));
+  }, []);
+
+  // 🆕 CLEAR CONTEXT
+  const clearContext = useCallback(() => {
+    setCurrentContext(null);
+    localStorage.removeItem('blocapp_context');
+  }, []);
+
+  // 🆕 RESTAURARE CONTEXT DIN localStorage
+  const restoreContext = useCallback(async () => {
+    const saved = localStorage.getItem('blocapp_context');
+    if (!saved) return;
+
+    try {
+      const { type, id } = JSON.parse(saved);
+
+      if (type === 'organization') {
+        const org = userOrganizations.find(o => o.id === id);
+        if (org) selectOrganization(org);
+        else localStorage.removeItem('blocapp_context');
+      } else if (type === 'association') {
+        const assoc = userDirectAssociations.find(a => a.id === id);
+        if (assoc) selectDirectAssociation(assoc);
+        else localStorage.removeItem('blocapp_context');
+      }
+    } catch (err) {
+      localStorage.removeItem('blocapp_context');
+    }
+  }, [userOrganizations, userDirectAssociations, selectOrganization, selectDirectAssociation]);
+
+  // 🆕 VERIFICĂRI ROL ÎN CONTEXT CURENT
+  const isOrgOwner = useCallback(() => {
+    return currentContext?.type === 'organization' && currentContext?.role === 'org_owner';
+  }, [currentContext]);
+
+  const isOrgAdmin = useCallback(() => {
+    return currentContext?.type === 'organization' &&
+      (currentContext?.role === 'org_owner' || currentContext?.role === 'org_admin');
+  }, [currentContext]);
+
+  const isOrgMember = useCallback(() => {
+    return currentContext?.type === 'organization' && currentContext?.role === 'org_member';
+  }, [currentContext]);
+
+  const isDirectAssocAdmin = useCallback(() => {
+    return currentContext?.type === 'association';
+  }, [currentContext]);
+
+  // 🆕 HELPER PENTRU VERIFICARE CONTEXT SELECTION
+  const needsContextSelection = useCallback(() => {
+    if (loading || contextsLoading) return false;
+    if (!currentUser) return false;
+    if (userProfile?.role === 'super_admin') return false;
+    if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
+    return !currentContext;
+  }, [loading, contextsLoading, currentUser, userProfile, userOrganizations, userDirectAssociations, currentContext]);
+
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -515,6 +692,7 @@ export function AuthProviderEnhanced({ children }) {
         // Încarcă profilul cu un mic delay pentru Firestore
         setTimeout(async () => {
           await loadUserProfileEnhanced(user);
+          await loadUserContexts(user.uid);
           setLoading(false);
         }, 500);
       } else {
@@ -522,12 +700,23 @@ export function AuthProviderEnhanced({ children }) {
         setIsEmailVerified(false);
         setNeedsOnboarding(false);
         setSessionInfo(null);
+        setUserOrganizations([]);
+        setUserDirectAssociations([]);
+        setCurrentContext(null);
+        localStorage.removeItem('blocapp_context');
         setLoading(false);
       }
     });
 
     return unsubscribe;
-  }, []);
+  }, [loadUserContexts]);
+
+  // 🆕 Effect pentru restaurare context după încărcare
+  useEffect(() => {
+    if (!contextsLoading && (userOrganizations.length > 0 || userDirectAssociations.length > 0)) {
+      restoreContext();
+    }
+  }, [contextsLoading, userOrganizations, userDirectAssociations, restoreContext]);
 
   // Listener în timp real pentru profilul utilizatorului
   useEffect(() => {
@@ -559,17 +748,24 @@ export function AuthProviderEnhanced({ children }) {
     currentUser,
     userProfile,
     loading,
-    
+
     // State enhanced
     isEmailVerified,
     authError,
     sessionInfo,
     needsOnboarding,
-    
+
+    // 🆕 Context switching state
+    currentContext,
+    contextsLoading,
+    userOrganizations,
+    userDirectAssociations,
+
     // Funcții originale (compatibilitate)
     register,
     login,
     logout,
+    signup: register, // Alias
     isSuperAdmin,
     isAdminAsociatie,
     isPresedinte,
@@ -578,7 +774,7 @@ export function AuthProviderEnhanced({ children }) {
     canAdminister,
     canReview,
     canManage,
-    
+
     // Funcții enhanced
     registerEnhanced,
     loginEnhanced,
@@ -586,12 +782,25 @@ export function AuthProviderEnhanced({ children }) {
     resendEmailVerification,
     checkEmailVerification,
     checkNeedsOnboarding,
-    
+
+    // 🆕 Context switching funcții
+    selectOrganization,
+    selectDirectAssociation,
+    clearContext,
+    loadUserContexts,
+    needsContextSelection,
+
+    // 🆕 Role checks pentru context
+    isOrgOwner,
+    isOrgAdmin,
+    isOrgMember,
+    isDirectAssocAdmin,
+
     // Hooks integrate
     security,
     profileManager,
     onboarding,
-    
+
     // Utils
     calculateSessionDuration,
     setAuthError
