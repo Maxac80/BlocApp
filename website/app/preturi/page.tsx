@@ -106,7 +106,7 @@ export default function PreturiPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-primary-50 to-white py-20">
+        <section className="bg-gradient-to-b from-primary-50 to-white py-10 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
