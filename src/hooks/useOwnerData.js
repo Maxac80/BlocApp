@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { collection, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { defaultExpenseTypes } from '../data/expenseTypes';
@@ -49,6 +49,9 @@ export function useOwnerData(associationId, apartmentId) {
   // Verifică dacă avem date necesare pentru interogare
   const hasRequiredData = associationId && apartmentId;
 
+  // Ref pentru a ști dacă componenta e montată (previne erori la logout)
+  const isMountedRef = useRef(true);
+
   // State
   const [loading, setLoading] = useState(hasRequiredData);
   const [error, setError] = useState(null);
@@ -75,6 +78,9 @@ export function useOwnerData(associationId, apartmentId) {
 
   // Încarcă sheets-urile din Firebase
   useEffect(() => {
+    // Marchează componenta ca montată
+    isMountedRef.current = true;
+
     if (!hasRequiredData) {
       setLoading(false);
       return;
@@ -88,6 +94,9 @@ export function useOwnerData(associationId, apartmentId) {
     const unsubscribe = onSnapshot(
       sheetsRef,
       (snapshot) => {
+        // Ignoră dacă componenta nu mai e montată (ex: logout în curs)
+        if (!isMountedRef.current) return;
+
         try {
           const sheets = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -128,19 +137,34 @@ export function useOwnerData(associationId, apartmentId) {
 
           setLoading(false);
         } catch (err) {
+          // Ignoră erorile dacă componenta nu mai e montată
+          if (!isMountedRef.current) return;
           console.error('Error processing sheets:', err);
           setError(err.message);
           setLoading(false);
         }
       },
       (err) => {
+        // Ignoră erorile de permisiuni dacă componenta nu mai e montată (logout)
+        if (!isMountedRef.current) return;
+
+        // Ignoră erori de permisiuni silențios (apar la logout)
+        if (err.code === 'permission-denied') {
+          console.log('[useOwnerData] Permission denied - probabil logout în curs');
+          return;
+        }
+
         console.error('Error loading sheets:', err);
         setError(err.message);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      // Marchează componenta ca demontată înainte de unsubscribe
+      isMountedRef.current = false;
+      unsubscribe();
+    };
   }, [associationId, apartmentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Procesează datele pentru apartamentul specific
