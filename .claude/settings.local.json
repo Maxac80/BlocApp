@@ -95,7 +95,9 @@
       "Bash(git -C c:/blocapp commit -m \"$\\(cat <<''EOF''\nfix: Update all logos with corrected design + add website favicon\n\n## Changes:\n1. Updated all logo files with corrected design \\(doors at building base\\)\n2. Added favicon.ico to website/public/ \\(was missing - caused old icon to persist\\)\n3. Added icon.png to website/public/ for better compatibility\n4. Updated website/app/layout.tsx to include favicon.ico in icons config\n\n## Files Updated:\n- Logo/blocapp-icon-admin.png \\(source - blue\\)\n- Logo/blocapp-icon-portal.png \\(source - green\\)\n- public/* \\(all icon variants for React app\\)\n- website/public/favicon.ico \\(NEW - fixes Vercel favicon\\)\n- website/public/icon.png \\(NEW\\)\n- website/public/blocapp-icon-admin.png\n- website/public/blocapp-logo-admin.png\n- website/app/layout.tsx \\(favicon config\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git -C c:/blocapp commit -m \"fix: Update favicon in website/app directory \\(Next.js App Router priority\\)\n\nThe favicon.ico in app/ directory takes precedence over public/ in Next.js 13+.\nUpdated both favicon.ico and added icon.png in app/ directory.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\")",
       "Bash(git -C c:/blocapp commit -m \"feat: Increase logo icon size in website header and footer\n\n- Header icon: h-10 → h-12, padding py-4 → py-3 \\(keep header compact\\)\n- Footer icon: h-12 → h-14\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\")",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(curl:*)",
+      "Bash(magick identify:*)"
     ],
     "deny": [],
     "ask": [],

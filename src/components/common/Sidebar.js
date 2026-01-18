@@ -38,38 +38,37 @@ const Sidebar = ({
   } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
     
     {/* Header Sidebar cu buton expand/collapse */}
-    <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white">
+    <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
       {sidebarExpanded ? (
         <button
           onClick={handleBlocAppClick}
-          className="flex items-center space-x-3 hover:bg-blue-700 rounded-lg p-2 transition-colors cursor-pointer"
+          className="flex items-center hover:bg-gray-100 rounded-lg p-1 transition-colors cursor-pointer"
           title="Mergi la Dashboard - luna publicată activă"
         >
           <img
-            src="/icon-admin.png"
+            src="/blocapp-logo.png"
             alt="BlocApp"
-            className="w-10 h-10 rounded-lg object-contain bg-white/90 p-0.5"
+            className="h-10 object-contain"
           />
-          <span className="text-xl font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
         </button>
       ) : (
         <button
           onClick={handleBlocAppClick}
-          className="flex items-center justify-center w-full hover:bg-blue-700 rounded-lg p-1 transition-colors cursor-pointer"
+          className="flex items-center justify-center w-full hover:bg-gray-100 rounded-lg p-1 transition-colors cursor-pointer"
           title="Mergi la Dashboard - luna publicată activă"
         >
           <img
-            src="/icon-admin.png"
+            src="/blocapp-logo.png"
             alt="BlocApp"
-            className="w-10 h-10 rounded-lg object-contain bg-white/90 p-0.5"
+            className="h-8 object-contain"
           />
         </button>
       )}
-      
+
       {/* Buton expand/collapse pentru desktop */}
       <button
         onClick={() => setSidebarExpanded(!sidebarExpanded)}
-        className="hidden lg:block p-1 rounded-md hover:bg-blue-700 transition-colors ml-2"
+        className="hidden lg:block p-1 rounded-md hover:bg-gray-100 transition-colors ml-2 text-gray-600"
         title={sidebarExpanded ? "Micșorează meniul" : "Mărește meniul"}
       >
         {sidebarExpanded ? (
@@ -82,11 +81,11 @@ const Sidebar = ({
           </svg>
         )}
       </button>
-      
+
       {/* Buton închidere pentru mobile */}
       <button
         onClick={() => setSidebarOpen(false)}
-        className="lg:hidden p-1 rounded-md hover:bg-blue-700"
+        className="lg:hidden p-1 rounded-md hover:bg-gray-100 text-gray-600"
       >
         <X className="w-5 h-5" />
       </button>

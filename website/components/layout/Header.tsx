@@ -26,13 +26,12 @@ export default function Header() {
         <div className="flex items-center justify-between py-3">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center">
               <img
-                src="/blocapp-icon-admin.png"
+                src="/blocapp-logo.png"
                 alt="BlocApp"
-                className="h-12 w-12 object-contain"
+                className="h-14 object-contain"
               />
-              <span className="text-3xl font-bold text-gray-900 font-montserrat self-end">BlocApp</span>
             </Link>
           </div>
 

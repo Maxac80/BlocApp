@@ -57,34 +57,31 @@ export default function OwnerSidebar({ currentView, onNavigate, isOpen, onClose 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Header Sidebar */}
-      <div className="bg-emerald-600 p-4 sm:p-6">
+      <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <div className="flex items-center space-x-3">
-            <img
-              src="/icon-portal.png"
-              alt="BlocApp"
-              className="w-10 h-10 object-contain"
-            />
-            <span className="text-xl font-bold text-white" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
-          </div>
+          <img
+            src="/blocapp-logo-portal.png"
+            alt="BlocApp"
+            className="h-10 object-contain"
+          />
           {/* Close button - doar pe mobile */}
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 sm:p-2 rounded-lg hover:bg-emerald-500 text-white transition-colors"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Info Apartament */}
-        <div className="bg-emerald-500 bg-opacity-50 rounded-lg p-2.5 sm:p-3">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 sm:p-3">
           <div className="flex items-center">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-emerald-600 font-bold text-xs sm:text-sm">{apartmentNumber}</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs sm:text-sm">{apartmentNumber}</span>
             </div>
             <div className="ml-2 sm:ml-3">
-              <p className="text-white font-medium text-sm sm:text-base">Apartamentul {apartmentNumber}</p>
-              <p className="text-emerald-100 text-[10px] sm:text-xs truncate">{associationName}</p>
+              <p className="text-gray-800 font-medium text-sm sm:text-base">Apartamentul {apartmentNumber}</p>
+              <p className="text-gray-500 text-[10px] sm:text-xs truncate">{associationName}</p>
             </div>
           </div>
         </div>

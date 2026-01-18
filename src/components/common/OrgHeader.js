@@ -59,7 +59,7 @@ const OrgHeader = ({
   };
 
   return (
-    <header className="bg-blue-600 text-white shadow-lg">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="flex items-center justify-between"
@@ -74,7 +74,7 @@ const OrgHeader = ({
             {showBackButton && onBack ? (
               <button
                 onClick={onBack}
-                className="flex items-center hover:bg-blue-700 rounded-lg p-2 transition-colors mr-2"
+                className="flex items-center hover:bg-gray-100 rounded-lg p-2 transition-colors mr-2 text-gray-600"
                 title="Înapoi"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -88,20 +88,14 @@ const OrgHeader = ({
 
             <button
               onClick={onLogoClick}
-              className="flex items-center space-x-2 hover:bg-blue-700 rounded-lg p-1.5 transition-colors"
+              className="flex items-center hover:bg-gray-100 rounded-lg p-1 transition-colors"
               title="Mergi la Dashboard"
             >
               <img
-                src="/icon-admin.png"
+                src="/blocapp-logo.png"
                 alt="BlocApp"
-                className="w-8 h-8 rounded-lg object-contain bg-white/90 p-0.5"
+                className="h-10 object-contain"
               />
-              <span
-                className="text-lg font-bold text-white"
-                style={{ fontFamily: 'Montserrat, sans-serif' }}
-              >
-                BlocApp
-              </span>
             </button>
           </div>
 
@@ -109,10 +103,10 @@ const OrgHeader = ({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-2 hover:bg-blue-700 rounded-lg p-1.5 transition-colors"
+              className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-1.5 transition-colors"
               title={userName}
             >
-              <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden ring-2 ring-white/30">
+              <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden ring-2 ring-blue-200">
                 {avatarURL ? (
                   <img
                     src={avatarURL}
@@ -124,11 +118,11 @@ const OrgHeader = ({
                 )}
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-white truncate max-w-[150px]">
+                <p className="text-sm font-medium text-gray-700 truncate max-w-[150px]">
                   {userName}
                 </p>
               </div>
-              <ChevronDown className={`w-4 h-4 hidden sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 hidden sm:block transition-transform text-gray-500 ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown menu */}

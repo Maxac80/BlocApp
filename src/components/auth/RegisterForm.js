@@ -296,16 +296,12 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         
         {/* 🏠 HEADER CU LOGO */}
         <div className="text-center mb-4 sm:mb-5">
-          <a href="https://blocapp.ro" className="flex items-center justify-center space-x-2 mb-4 hover:opacity-80 transition-opacity">
+          <a href="https://blocapp.ro" className="flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
             <img
-              src="/icon-admin.png"
-              alt="BlocApp"
-              className="w-14 h-14 object-contain"
+              src="/logo-admin.png"
+              alt="BlocApp Administratori"
+              className="h-16 object-contain"
             />
-            <div className="flex flex-col items-start pt-2">
-              <span className="text-3xl font-bold text-gray-800 leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
-              <span className="text-xs text-gray-600 mt-0 pl-0.5" style={{ fontFamily: 'Montserrat, sans-serif' }}>administratori</span>
-            </div>
           </a>
           <p className="text-gray-500 text-xs">Alătură-te comunității administratorilor profesioniști</p>
         </div>

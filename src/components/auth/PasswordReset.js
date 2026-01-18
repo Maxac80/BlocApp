@@ -135,16 +135,12 @@ export default function PasswordReset({ oobCode }) {
         <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full">
           {/* Header cu logo */}
           <div className="text-center mb-4 sm:mb-6">
-            <a href="https://blocapp.ro" className="flex items-center justify-center space-x-2 mb-5 hover:opacity-80 transition-opacity">
+            <a href="https://blocapp.ro" className="flex items-center justify-center mb-5 hover:opacity-80 transition-opacity">
               <img
-                src="/icon-admin.png"
-                alt="BlocApp"
-                className="w-20 h-20 object-contain"
+                src="/logo-admin.png"
+                alt="BlocApp Administratori"
+                className="h-20 object-contain"
               />
-              <div className="flex flex-col items-start pt-3">
-                <span className="text-5xl font-bold text-gray-800 leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
-                <span className="text-sm text-gray-600 mt-0 pl-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>administratori</span>
-              </div>
             </a>
           </div>
 
@@ -189,16 +185,12 @@ export default function PasswordReset({ oobCode }) {
       <div className="w-full max-w-md">
         {/* Header cu logo */}
         <div className="text-center mb-4 sm:mb-6">
-          <a href="https://blocapp.ro" className="flex items-center justify-center space-x-2 mb-6 hover:opacity-80 transition-opacity">
+          <a href="https://blocapp.ro" className="flex items-center justify-center mb-6 hover:opacity-80 transition-opacity">
             <img
-              src="/icon-admin.png"
-              alt="BlocApp"
-              className="w-20 h-20 object-contain"
+              src="/logo-admin.png"
+              alt="BlocApp Administratori"
+              className="h-20 object-contain"
             />
-            <div className="flex flex-col items-start pt-3">
-              <span className="text-5xl font-bold text-gray-800 leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>BlocApp</span>
-              <span className="text-sm text-gray-600 mt-0 pl-1" style={{ fontFamily: 'Montserrat, sans-serif' }}>administratori</span>
-            </div>
           </a>
           <p className="text-gray-600 text-sm">Resetare parolă</p>
         </div>

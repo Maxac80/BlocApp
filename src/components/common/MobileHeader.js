@@ -50,7 +50,7 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association
   return (
     <>
     <header
-      className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-600 text-white flex items-center justify-between px-4 shadow-lg"
+      className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
         paddingBottom: '0.5rem',
@@ -60,27 +60,21 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association
       {/* Logo și nume aplicație */}
       <button
         onClick={onLogoClick}
-        className="flex items-center space-x-2 hover:bg-blue-700 rounded-lg p-1.5 transition-colors"
+        className="flex items-center hover:bg-gray-100 rounded-lg p-1 transition-colors"
         title="Mergi la Dashboard"
       >
         <img
-          src="/icon-admin.png"
+          src="/blocapp-logo.png"
           alt="BlocApp"
-          className="w-8 h-8 rounded-lg object-contain bg-white/90 p-0.5"
+          className="h-8 object-contain"
         />
-        <span
-          className="text-lg font-bold text-white"
-          style={{ fontFamily: 'Montserrat, sans-serif' }}
-        >
-          BlocApp
-        </span>
       </button>
 
       {/* Avatar utilizator cu dropdown */}
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden hover:ring-2 hover:ring-white/50 transition-all"
+          className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden hover:ring-2 hover:ring-blue-300 transition-all"
           title={userName}
         >
           {avatarURL ? (
