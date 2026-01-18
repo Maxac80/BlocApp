@@ -30,7 +30,7 @@ export default function Header() {
               <img
                 src="/blocapp-logo.png"
                 alt="BlocApp"
-                className="h-10 sm:h-12 lg:h-14 object-contain"
+                className="h-12 lg:h-14 object-contain"
               />
             </Link>
           </div>
