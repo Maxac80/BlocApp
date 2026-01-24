@@ -145,14 +145,8 @@ export function useOwnerData(associationId, apartmentId) {
         }
       },
       (err) => {
-        // Ignoră erorile de permisiuni dacă componenta nu mai e montată (logout)
+        // Ignoră erorile dacă componenta nu mai e montată (logout)
         if (!isMountedRef.current) return;
-
-        // Ignoră erori de permisiuni silențios (apar la logout)
-        if (err.code === 'permission-denied') {
-          console.log('[useOwnerData] Permission denied - probabil logout în curs');
-          return;
-        }
 
         console.error('Error loading sheets:', err);
         setError(err.message);

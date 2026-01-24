@@ -62,6 +62,16 @@ function OwnerPortalContent() {
     }
   }, [currentUser, quickAccessApartment, selectedApartment]);
 
+  // Curăță localStorage dacă sesiunea a expirat (user nu e logat dar avem date salvate)
+  useEffect(() => {
+    if (!authLoading && !currentUser && selectedApartment) {
+      setSelectedApartment(null);
+      setQuickAccessApartment(null);
+      localStorage.removeItem('ownerPortal_selectedApartment');
+      localStorage.removeItem('ownerPortal_quickAccess');
+    }
+  }, [authLoading, currentUser, selectedApartment]);
+
   // 🎫 PRIORITATE MAXIMĂ: Magic link - afișează pagina de înregistrare
   // Această verificare TREBUIE să fie DUPĂ toate hook-urile (Rules of Hooks)
   if (inviteToken) {
@@ -186,7 +196,8 @@ function OwnerPortalContent() {
   }
 
   // Dacă avem apartament selectat (din login real sau acces rapid), afișează aplicația
-  if (selectedApartment) {
+  // IMPORTANT: verifică și că userul e autentificat (previne erori la revenire cu sesiune expirată)
+  if (selectedApartment && currentUser) {
     return (
       <OwnerApp
         apartmentInfo={selectedApartment}
