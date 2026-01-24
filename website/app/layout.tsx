@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     apple: '/blocapp-icon-admin.png',
   },
   openGraph: {
-    title: "BlocApp - Administrează blocul fără Excel",
-    description: "Calculare automată întreținere, zero erori, portal proprietari. Trial 90 zile gratuit.",
+    title: "BlocApp - Software modern pentru asociații de proprietari",
+    description: "Calcul întreținere automat, portal proprietari, plăți online.",
     url: "https://blocapp.ro",
     siteName: "BlocApp",
     locale: "ro_RO",
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "BlocApp - Software Administrare Bloc",
-    description: "Calculare automată întreținere, zero erori. Trial 90 zile gratuit.",
+    title: "BlocApp - Software modern pentru asociații de proprietari",
+    description: "Calcul întreținere automat, portal proprietari, plăți online.",
     images: ["https://blocapp.ro/og-image.png"],
   },
   viewport: {
