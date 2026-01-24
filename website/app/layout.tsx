@@ -34,11 +34,21 @@ export const metadata: Metadata = {
     siteName: "BlocApp",
     locale: "ro_RO",
     type: "website",
+    images: [
+      {
+        url: "https://blocapp.ro/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "BlocApp - Software Administrare Bloc",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "BlocApp - Software Administrare Bloc",
     description: "Calculare automată întreținere, zero erori. Trial 90 zile gratuit.",
+    images: ["https://blocapp.ro/og-image.png"],
   },
   viewport: {
     width: "device-width",
@@ -62,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ro" className={`${inter.variable} ${montserrat.variable}`}>
+    <html lang="ro" className={`${inter.variable} ${montserrat.variable}`} style={{ colorScheme: 'light only' }}>
       <body className="antialiased">
         {children}
       </body>
