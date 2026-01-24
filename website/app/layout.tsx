@@ -16,8 +16,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "BlocApp - Software Administrare Bloc | Calculare Întreținere Automată",
-  description: "Administrează blocul fără Excel. Calculează întreținerea automat, elimină erorile, economisește 70% timp. Trial gratuit 90 zile. Portal proprietari inclus.",
+  title: "BlocApp - Software modern pentru asociații de proprietari",
+  description: "Calcul întreținere automat, portal proprietari, plăți online.",
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
   icons: {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
         url: "https://blocapp.ro/og-image.png",
         width: 1200,
         height: 630,
-        alt: "BlocApp - Software Administrare Bloc",
+        alt: "BlocApp - Software modern pentru asociații de proprietari",
         type: "image/png",
       },
     ],
