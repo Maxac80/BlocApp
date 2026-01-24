@@ -115,5 +115,75 @@ if (mode === 'owner') {
   console.log('  [OK] manifest.json set for Admin\n');
 }
 
-console.log('Icons setup complete for ' + mode + ' mode!');
+// --- OG Image & Meta Tags ---
+console.log('Setting up OG metadata...\n');
+
+const ogConfig = mode === 'owner' ? {
+  ogImage: 'og-image-portal.png',
+  title: 'BlocApp Locatari',
+  description: 'Vezi \u00eentre\u021binerea, pl\u0103te\u0219te online, transmite indexuri.',
+  imageUrl: 'https://portal.blocapp.ro/og-image.png',
+  themeColor: '#10B981'
+} : {
+  ogImage: 'og-image-admin.png',
+  title: 'BlocApp Administratori',
+  description: 'Calcul \u00eentre\u021binere automat, gestiune cheltuieli, \u00eencas\u0103ri.',
+  imageUrl: 'https://app.blocapp.ro/og-image.png',
+  themeColor: '#3B82F6'
+};
+
+// Copy correct OG image as og-image.png
+const ogSource = path.join(publicDir, ogConfig.ogImage);
+const ogDest = path.join(publicDir, 'og-image.png');
+if (fs.existsSync(ogSource)) {
+  fs.copyFileSync(ogSource, ogDest);
+  console.log('  [OK] Copied ' + ogConfig.ogImage + ' -> og-image.png');
+} else {
+  console.log('  [WARN] OG image not found: ' + ogConfig.ogImage);
+}
+
+// Update index.html meta tags
+const indexPath = path.join(publicDir, 'index.html');
+let indexHtml = fs.readFileSync(indexPath, 'utf8');
+
+// Replace title
+indexHtml = indexHtml.replace(/<title>.*?<\/title>/, '<title>' + ogConfig.title + '</title>');
+
+// Replace meta description
+indexHtml = indexHtml.replace(
+  /(<meta\s[\s\S]*?name="description"\s[\s\S]*?content=").*?(")/,
+  '$1' + ogConfig.description + '$2'
+);
+
+// Replace theme-color
+indexHtml = indexHtml.replace(
+  /(<meta\s+name="theme-color"\s+content=").*?(")/,
+  '$1' + ogConfig.themeColor + '$2'
+);
+
+// Replace og:title
+indexHtml = indexHtml.replace(
+  /(<meta\s+property="og:title"\s+content=").*?(")/,
+  '$1' + ogConfig.title + '$2'
+);
+
+// Replace og:description
+indexHtml = indexHtml.replace(
+  /(<meta\s+property="og:description"\s+content=").*?(")/,
+  '$1' + ogConfig.description + '$2'
+);
+
+// Replace og:image
+indexHtml = indexHtml.replace(
+  /(<meta\s+property="og:image"\s+content=").*?(")/,
+  '$1' + ogConfig.imageUrl + '$2'
+);
+
+fs.writeFileSync(indexPath, indexHtml);
+console.log('  [OK] Updated index.html meta tags');
+console.log('    Title: ' + ogConfig.title);
+console.log('    Description: ' + ogConfig.description);
+console.log('    OG Image: ' + ogConfig.imageUrl + '\n');
+
+console.log('Setup complete for ' + mode + ' mode!');
 console.log('========================================\n');
