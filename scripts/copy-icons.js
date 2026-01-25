@@ -87,7 +87,7 @@ if (mode === 'owner') {
   const manifestPath = path.join(publicDir, 'manifest.json');
   const manifest = {
     "short_name": "BlocApp",
-    "name": "BlocApp - Management Asociatii de Proprietari",
+    "name": "BlocApp Administratori",
     "icons": [
       {
         "src": "favicon.ico",
@@ -178,6 +178,21 @@ indexHtml = indexHtml.replace(
   /(<meta\s+property="og:image"\s+content=").*?(")/,
   '$1' + ogConfig.imageUrl + '$2'
 );
+
+// Update splash screen for portal mode
+if (mode === 'owner') {
+  // Change gradient from blue to green
+  indexHtml = indexHtml.replace(
+    /linear-gradient\(to bottom,#EFF6FF,#DBEAFE\)/,
+    'linear-gradient(to bottom,#ECFDF5,#D1FAE5)'
+  );
+  // Change logo from admin to portal
+  indexHtml = indexHtml.replace(
+    /logo-admin\.png/g,
+    'logo-portal.png'
+  );
+  console.log('  [OK] Updated splash screen for Portal (green gradient)');
+}
 
 fs.writeFileSync(indexPath, indexHtml);
 console.log('  [OK] Updated index.html meta tags');
