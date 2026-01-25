@@ -73,7 +73,7 @@ if (mode === 'owner') {
     "start_url": ".",
     "display": "standalone",
     "theme_color": "#10B981",
-    "background_color": "#ECFDF5"
+    "background_color": "#FFFFFF"
   };
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
@@ -108,7 +108,7 @@ if (mode === 'owner') {
     "start_url": ".",
     "display": "standalone",
     "theme_color": "#3B82F6",
-    "background_color": "#EFF6FF"
+    "background_color": "#FFFFFF"
   };
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
@@ -178,21 +178,6 @@ indexHtml = indexHtml.replace(
   /(<meta\s+property="og:image"\s+content=").*?(")/,
   '$1' + ogConfig.imageUrl + '$2'
 );
-
-// Update splash screen for portal mode
-if (mode === 'owner') {
-  // Change gradient from blue to green
-  indexHtml = indexHtml.replace(
-    /linear-gradient\(to bottom,#EFF6FF,#DBEAFE\)/,
-    'linear-gradient(to bottom,#ECFDF5,#D1FAE5)'
-  );
-  // Change logo from admin to portal
-  indexHtml = indexHtml.replace(
-    /logo-admin\.png/g,
-    'logo-portal.png'
-  );
-  console.log('  [OK] Updated splash screen for Portal (green gradient)');
-}
 
 fs.writeFileSync(indexPath, indexHtml);
 console.log('  [OK] Updated index.html meta tags');
