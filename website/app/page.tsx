@@ -16,7 +16,7 @@ export default function HomePage() {
               {/* Left Column - Text */}
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                  Software modern pentru administrarea asociațiilor de bloc
+                  Software modern pentru administrarea asociațiilor de proprietari
                 </h1>
                 <p className="mt-6 text-lg leading-8 text-gray-600">
                   Automatizează calculele, asigură transparența și economisește până la 10 ore lunar.

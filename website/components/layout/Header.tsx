@@ -58,7 +58,7 @@ export default function Header() {
               href="https://portal.blocapp.ro"
               className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
             >
-              Proprietari
+              Locatari
             </a>
             <a
               href="https://app.blocapp.ro"
@@ -113,7 +113,7 @@ export default function Header() {
                   className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 border border-gray-200 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Proprietari
+                  Locatari
                 </a>
                 <a
                   href="https://app.blocapp.ro"
