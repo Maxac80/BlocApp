@@ -325,7 +325,7 @@ function OwnerPortalContent() {
 }
 
 /**
- * Aplicație standalone pentru Portal Proprietari
+ * Aplicație standalone pentru Portal Locatari
  */
 export default function OwnerPortalApp() {
   return (

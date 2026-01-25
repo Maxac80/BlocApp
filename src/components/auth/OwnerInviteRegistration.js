@@ -169,7 +169,7 @@ export default function OwnerInviteRegistration({ token }) {
             <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Cont creat cu succes!</h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Vei fi redirecționat către portalul proprietarilor...</p>
+          <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Vei fi redirecționat către Portal Locatari...</p>
           <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 animate-spin mx-auto" />
         </div>
       </div>
@@ -185,15 +185,15 @@ export default function OwnerInviteRegistration({ token }) {
           <div className="mx-auto mb-3 sm:mb-4">
             <img
               src="/logo-portal.png"
-              alt="BlocApp Proprietari"
+              alt="BlocApp Locatari"
               className="h-16 object-contain mx-auto"
             />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Bine ai venit în BlocApp!</h1>
           <p className="text-sm sm:text-base text-gray-600">
             {hasExistingAccount
-              ? 'Confirmă identitatea pentru a activa accesul la portalul proprietarilor.'
-              : 'Finalizează înregistrarea pentru a accesa portalul proprietarilor.'}
+              ? 'Confirmă identitatea pentru a activa accesul la Portal Locatari.'
+              : 'Finalizează înregistrarea pentru a accesa Portal Locatari.'}
           </p>
         </div>
 

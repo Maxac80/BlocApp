@@ -5,7 +5,7 @@ import {
 import { useOwnerContext } from './OwnerApp';
 
 /**
- * Sidebar pentru Portal Proprietari
+ * Sidebar pentru Portal Locatari
  *
  * Features:
  * - Navigare între views

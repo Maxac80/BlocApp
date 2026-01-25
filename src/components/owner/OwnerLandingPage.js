@@ -5,11 +5,11 @@ import {
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 /**
- * Landing Page pentru Portal Proprietari
+ * Landing Page pentru Portal Locatari
  *
  * Features:
  * - Formular login standard
- * - Proprietarii se loghează cu email și parola setată la înregistrare
+ * - Locatarii se loghează cu email și parola setată la înregistrare
  */
 export default function OwnerLandingPage() {
   const { loginEnhanced, authError, setAuthError } = useAuthEnhanced();
@@ -75,7 +75,7 @@ export default function OwnerLandingPage() {
           <a href="https://blocapp.ro" className="flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
             <img
               src="/logo-portal.png"
-              alt="BlocApp Proprietari"
+              alt="BlocApp Locatari"
               className="h-16 object-contain"
             />
           </a>

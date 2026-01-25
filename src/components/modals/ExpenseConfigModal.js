@@ -57,7 +57,7 @@ const ExpenseConfigModal = ({
       enabled: false,
       inputMode: 'mixed', // 'manual' | 'indexes' | 'mixed' - Default: Mixt (flexibil)
       indexTypes: [],
-      // 📱 Setări Portal Proprietari
+      // 📱 Setări Portal Locatari
       portalSubmission: {
         enabled: true,           // Permite transmitere din portal
         periodType: 'auto',      // 'auto' | 'manual' | 'custom'
@@ -192,7 +192,7 @@ const ExpenseConfigModal = ({
           inputMode: expenseConfig.indexConfiguration?.inputMode || 'mixed',
           indexTypes: expenseConfig.indexConfiguration?.indexTypes || [],
           apartmentMeters: expenseConfig.indexConfiguration?.apartmentMeters || {},
-          // 📱 Setări Portal Proprietari - merge cu defaults
+          // 📱 Setări Portal Locatari - merge cu defaults
           portalSubmission: {
             enabled: expenseConfig.indexConfiguration?.portalSubmission?.enabled ?? true,
             periodType: expenseConfig.indexConfiguration?.portalSubmission?.periodType || 'auto',
@@ -2038,10 +2038,10 @@ const ExpenseConfigModal = ({
                 </p>
               </div>
 
-              {/* 📱 Transmitere din Portal Proprietari */}
+              {/* 📱 Transmitere din Portal Locatari */}
               <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-md p-3">
                 <h4 className="text-xs sm:text-sm font-semibold text-emerald-900 mb-2 flex items-center gap-2">
-                  📱 Transmitere din Portal Proprietari
+                  📱 Transmitere din Portal Locatari
                 </h4>
 
                 {/* Toggle principal */}

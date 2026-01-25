@@ -20,7 +20,7 @@ export const useOwnerContext = () => {
 };
 
 /**
- * Aplicația principală pentru Portal Proprietari
+ * Aplicația principală pentru Portal Locatari
  *
  * Props:
  * - apartmentInfo: Informații despre apartamentul selectat

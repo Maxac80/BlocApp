@@ -3,7 +3,7 @@ import { Menu, Bell, User, ChevronDown, LogOut, RefreshCw, Wrench } from 'lucide
 import { useOwnerContext } from './OwnerApp';
 
 /**
- * Header pentru Portal Proprietari
+ * Header pentru Portal Locatari
  *
  * Features:
  * - Buton menu mobile
