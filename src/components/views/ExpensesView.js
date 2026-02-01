@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Trash2, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';

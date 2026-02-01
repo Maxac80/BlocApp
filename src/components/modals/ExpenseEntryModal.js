@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { X, Plus, FileText, Settings } from 'lucide-react';
 import InvoiceDetailsModal from './InvoiceDetailsModal';

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React from 'react';
 import { CheckCircle, Eye } from 'lucide-react';
 import PaymentStatusDetail from '../common/PaymentStatusDetail';

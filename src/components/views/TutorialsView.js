@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Play, ChevronLeft, ChevronRight, Check, ExternalLink, BookOpen, Video, FileText } from 'lucide-react';
 

@@ -42,7 +42,7 @@ import { useUserProfile } from './useUserProfile';
 export const useOrgInvitation = () => {
   const { logActivity } = useSecurity();
   const { addMember } = useOrgMembers();
-  const { addOrganizationToUser, loadUserProfile } = useUserProfile();
+  const { loadUserProfile } = useUserProfile();
 
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);

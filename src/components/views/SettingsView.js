@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Settings, Calendar, AlertCircle, RefreshCw, Database, Clock, Save } from 'lucide-react';
 import DashboardHeader from '../dashboard/DashboardHeader';

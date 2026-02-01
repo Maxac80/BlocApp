@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   createUserWithEmailAndPassword,

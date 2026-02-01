@@ -30,7 +30,7 @@ import { useOrgInvitation } from '../../hooks/useOrgInvitation';
  */
 const OrgInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
   const { currentUser, signup, login } = useAuth();
-  const { verifyInvitation, acceptInvitation, loading: invLoading } = useOrgInvitation();
+  const { verifyInvitation, acceptInvitation } = useOrgInvitation();
 
   // State pentru verificare invitație
   const [invitationStatus, setInvitationStatus] = useState('loading'); // loading, valid, invalid
@@ -101,6 +101,7 @@ const OrgInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     };
 
     autoAccept();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, invitationStatus]);
 
   // Validare formular

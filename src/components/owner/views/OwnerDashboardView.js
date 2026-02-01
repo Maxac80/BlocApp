@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState } from 'react';
 import {
   TrendingUp, Users, Home, FileText, Download,

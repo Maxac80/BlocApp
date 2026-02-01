@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import { LoginForm, RegisterForm, ResetPasswordForm, EmailVerification } from './index';
 import OnboardingTabs from '../onboarding/OnboardingTabs';
-import ErrorBoundary from '../common/ErrorBoundary';
 
 /**
  * 🎯 AUTH MANAGER - ORCHESTREAZĂ TOATE FLOWS-URILE DE AUTENTIFICARE
@@ -14,12 +13,11 @@ import ErrorBoundary from '../common/ErrorBoundary';
  * - Redirect către aplicația principală la final
  */
 export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
-  const { 
-    currentUser, 
-    userProfile, 
-    isEmailVerified, 
+  const {
+    currentUser,
+    isEmailVerified,
     needsOnboarding,
-    loading 
+    loading
   } = useAuthEnhanced();
   
   const [currentFlow, setCurrentFlow] = useState(() => {
@@ -121,15 +119,14 @@ export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
     }, 1500); // 1.5 secunde pentru a afișa mesajul de succes
   };
 
-  // ⏭️ HANDLE ONBOARDING SKIP
+  // ⏭️ HANDLE ONBOARDING SKIP (reserved for future use)
+  // eslint-disable-next-line no-unused-vars
   const handleOnboardingSkip = () => {
-    // console.log('⏭️ Onboarding skipped');
-    
     // Permite accesul limitat la aplicația principală
     if (onAuthComplete) {
-      onAuthComplete({ 
+      onAuthComplete({
         onboardingCompleted: false,
-        limitedAccess: true 
+        limitedAccess: true
       });
     }
   };

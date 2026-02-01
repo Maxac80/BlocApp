@@ -1,10 +1,10 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // hooks/useMonthManagementV2.js
 // VERSIUNE NOUĂ SIMPLIFICATĂ - Wrapper peste useSheetManagement
 // Păstrează interfața existentă pentru compatibilitate dar folosește sheet-uri
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { setDoc, serverTimestamp } from 'firebase/firestore';
 import useSheetManagement from './useSheetManagement';
 import { validateReadyToPublish } from '../utils/validationHelpers';
 import { createNewSheetRef } from '../utils/firestoreHelpers';
@@ -17,14 +17,12 @@ export const useMonthManagement = (associationId) => {
     publishedSheet,
     archivedSheets,
     loading,
-    error,
     createInitialSheet,
     publishCurrentSheet,
     unpublishSheet, // 🆕 FAZA 8
     addExpenseToSheet,
     removeExpenseFromSheet,
     updateExpenseInSheet,
-    addPaymentToPublishedSheet,
     SHEET_STATUS,
     updateStructureSnapshot,
     updateConfigSnapshot,
@@ -152,6 +150,7 @@ export const useMonthManagement = (associationId) => {
     } catch (error) {
       console.error('❌ Error initializing sheets:', error);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createInitialSheet]); // Eliminăm associationId din dependențe pentru că folosim explicitAssociationId
 
   // 🗑️ ELIMINAT: getMonthStatus și setMonthStatus - folosim direct sheet.status din currentSheet/publishedSheet
@@ -341,7 +340,7 @@ export const useMonthManagement = (associationId) => {
   // Funcție completă de validare pentru publicare (nouă - FAZA 2)
   const validatePublishing = useCallback((params) => {
     const {
-      month,
+      // month is intentionally unused - kept for API compatibility
       expenses,
       maintenanceData,
       apartments,

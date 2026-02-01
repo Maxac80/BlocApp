@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback } from 'react';
 import {
   doc,

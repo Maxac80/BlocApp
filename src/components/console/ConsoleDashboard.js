@@ -296,8 +296,7 @@ const ConsoleDashboard = ({ onNavigate }) => {
   const {
     getDashboardStats,
     getMrrHistory,
-    getPendingBankTransfers,
-    loading
+    getPendingBankTransfers
   } = useAdminBilling();
 
   const [stats, setStats] = useState(null);

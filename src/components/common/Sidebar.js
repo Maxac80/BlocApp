@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight, CreditCard } from 'lucide-react';
+import { Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight, CreditCard } from 'lucide-react';
 
 const Sidebar = ({
   sidebarOpen,

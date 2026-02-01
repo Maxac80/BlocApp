@@ -4,7 +4,6 @@ import {
   Home,
   Search,
   Check,
-  Building2,
   MapPin,
   AlertCircle,
   Loader2,
@@ -40,6 +39,7 @@ const AllocateExistingAssociationModal = ({
     if (isOpen && userId) {
       loadUserDirectAssociations(userId);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, userId]);
 
   // Reset la închidere

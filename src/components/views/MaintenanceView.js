@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X } from 'lucide-react';

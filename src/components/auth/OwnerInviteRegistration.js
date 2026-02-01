@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail } from 'lucide-react';
 import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
 
 /**
@@ -49,6 +49,7 @@ export default function OwnerInviteRegistration({ token }) {
     };
 
     validate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Validare parolă

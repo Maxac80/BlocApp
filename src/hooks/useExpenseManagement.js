@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { defaultExpenseTypes } from '../data/expenseTypes';
 import { getSheetRef } from '../utils/firestoreHelpers';

@@ -653,8 +653,10 @@ export const useOnboarding = () => {
       case 'welcome':
         // Welcome step este întotdeauna valid
         break;
+      default:
+        break;
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors

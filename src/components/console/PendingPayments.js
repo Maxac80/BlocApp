@@ -4,13 +4,11 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  Building2,
   Mail,
   Hash,
   Calendar,
   DollarSign,
   AlertTriangle,
-  Filter,
   Search
 } from 'lucide-react';
 import { useAdminBilling } from '../../hooks/useAdminBilling';

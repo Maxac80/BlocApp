@@ -8,9 +8,6 @@ import {
   getDocs,
   query,
   where,
-  deleteDoc,
-  onSnapshot,
-  serverTimestamp,
   arrayUnion,
   arrayRemove,
   runTransaction
@@ -35,7 +32,7 @@ import { useUserProfile } from './useUserProfile';
  */
 export const useOrganizations = (userId = null) => {
   const { logActivity } = useSecurity();
-  const { addOrganizationToUser, removeOrganizationFromUser, updateUserOrganizationRole } = useUserProfile();
+  const { addOrganizationToUser, removeOrganizationFromUser } = useUserProfile();
 
   const [organizations, setOrganizations] = useState([]);
   const [currentOrganization, setCurrentOrganization] = useState(null);

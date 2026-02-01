@@ -3,13 +3,10 @@ import {
   Users,
   Search,
   Filter,
-  ChevronDown,
-  ChevronRight,
   Clock,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Calendar,
   Building2,
   MoreVertical,
   RefreshCw,
@@ -453,6 +450,7 @@ const UserManagement = ({ onSelectUser, adminUserId }) => {
 
   useEffect(() => {
     loadUsers(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
 
   // Handler pentru acțiuni

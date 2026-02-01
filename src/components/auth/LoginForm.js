@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle, Shield, Clock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield, Clock } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 /**

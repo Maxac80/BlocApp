@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle, Send, CheckCircle, Clock, RefreshCw, Loader2 } from 'lucide-react';

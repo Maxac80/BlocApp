@@ -2,9 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   User,
-  Mail,
-  Phone,
-  Calendar,
   Building2,
   CreditCard,
   FileText,
@@ -19,8 +16,7 @@ import {
   DollarSign,
   TrendingUp,
   RefreshCw,
-  Download,
-  ExternalLink
+  Download
 } from 'lucide-react';
 import { useAdminBilling } from '../../hooks/useAdminBilling';
 import { downloadInvoicePdf } from '../../utils/invoicePdfGenerator';

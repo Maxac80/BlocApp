@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from "react";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import MobileHeader from "./components/common/MobileHeader";
@@ -36,7 +37,8 @@ export default function BlocApp({ associationId, onSwitchContext }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
 
-  // 💳 SUBSCRIPTION STATUS
+  // 💳 SUBSCRIPTION STATUS (some values reserved for future use)
+  // eslint-disable-next-line no-unused-vars
   const {
     status: subscriptionStatus,
     trialDaysRemaining,
@@ -501,6 +503,7 @@ useEffect(() => {
   if (association?.id && blocks.length > 0 && currentView === 'setup') {
     autoExpandEntities(blocks, stairs, association.id);
   }
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [association?.id, currentView, blocks.length, stairs.length, autoExpandEntities]);
 
 // 🔥 ÎNCĂRCAREA AJUSTĂRILOR DE SOLDURI LA SCHIMBAREA ASOCIAȚIEI SAU SHEET-ULUI
@@ -849,8 +852,6 @@ useEffect(() => {
               currentSheet={currentSheet}
               publishedSheet={publishedSheet}
               sheets={sheets}
-              blocks={blocks}
-              stairs={stairs}
               togglePortalSubmission={togglePortalSubmission}
             />
           )}

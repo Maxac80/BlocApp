@@ -9,7 +9,6 @@ import {
   query,
   where,
   deleteDoc,
-  onSnapshot,
   arrayUnion,
   arrayRemove
 } from 'firebase/firestore';

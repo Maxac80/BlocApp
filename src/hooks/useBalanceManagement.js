@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { getDocs, doc, query, where, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';

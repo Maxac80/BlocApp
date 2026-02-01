@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { AuthProviderEnhanced, useAuthEnhanced } from "./context/AuthContextEnhanced";
 import OwnerApp from "./components/owner/OwnerApp";

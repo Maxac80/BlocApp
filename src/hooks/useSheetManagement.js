@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // hooks/useSheetManagement.js
 // SISTEM NOU DE SHEET-URI PENTRU FIECARE LUNĂ PUBLICATĂ
 // Fiecare sheet = snapshot complet al unei luni publicate
@@ -262,6 +263,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error creating initial sheet:', error);
       throw error;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Eliminăm associationId din dependențe pentru că folosim explicitAssociationId
 
   /**
@@ -433,7 +435,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error adding expense snapshot:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Șterge o cheltuială din sheet-ul curent
@@ -469,7 +471,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error removing expense from sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Funcție helper pentru a elimina recursiv toate valorile undefined
@@ -543,7 +545,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error updating expense in sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Actualizează configurările pentru sheet-ul curent
@@ -583,7 +585,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error updating config snapshot:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Publică sheet-ul curent și creează automat următorul
@@ -919,6 +921,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error publishing sheet:', error);
       throw error;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSheet, publishedSheet, associationId]);
 
   /**

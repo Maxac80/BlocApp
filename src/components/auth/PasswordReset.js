@@ -61,7 +61,7 @@ export default function PasswordReset({ oobCode }) {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    symbols: /[!@#$%^&*()_+\-=[{};':"\\|,.<>/?]/.test(password)
   };
 
   const isPasswordValid = Object.values(passwordRequirements).every(Boolean);

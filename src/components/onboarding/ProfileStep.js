@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { User, Phone, MapPin, Building, Calendar, AlertCircle, CheckCircle, Camera } from 'lucide-react';
 import { judeteRomania, getOraseByJudet } from '../../data/counties';

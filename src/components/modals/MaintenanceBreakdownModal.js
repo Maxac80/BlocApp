@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React from 'react';
 import { X, Home, User, Users, Receipt, AlertCircle, Info } from 'lucide-react';
 

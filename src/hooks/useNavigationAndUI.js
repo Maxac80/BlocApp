@@ -154,6 +154,8 @@ const autoExpandEntities = useCallback((blocks, stairs, associationId) => {
         setShowExpenseConfig(true);
         if (data) setSelectedExpenseForConfig(data);
         break;
+      default:
+        break;
     }
   };
 
@@ -169,6 +171,8 @@ const autoExpandEntities = useCallback((blocks, stairs, associationId) => {
       case 'expenseConfig':
         setShowExpenseConfig(false);
         setSelectedExpenseForConfig(null);
+        break;
+      default:
         break;
     }
   };

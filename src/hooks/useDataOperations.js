@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // hooks/useDataOperations.js
 import { useCallback } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';

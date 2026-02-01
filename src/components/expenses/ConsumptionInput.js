@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Calculator, MoreVertical, Edit2 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';

@@ -1,22 +1,12 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Trash2, ChevronDown, ChevronUp, AlertCircle, Edit2, Layers, Building2, BarChart, MoreVertical, Settings, FileText } from 'lucide-react';
+import { Calculator, Trash2, ChevronDown, ChevronUp, Edit2, Layers, Building2, BarChart, MoreVertical, Settings } from 'lucide-react';
 import {
   ConsumptionTable,
   IndividualAmountsTable,
   ExpenseStatusBadge,
-  ExpenseDifferenceDisplay,
-  getExpenseStatus,
-  calculateTotals,
-  getFilterInfo as getFilterInfoShared,
-  getFilteredApartments as getFilteredApartmentsShared
+  getExpenseStatus
 } from './shared/ConsumptionComponents';
-import {
-  calculateExpenseDifferenceInfo
-} from './shared/DifferenceCalculations';
-import {
-  ExpenseTotalBadge,
-  DifferenceBadge
-} from './shared/ExpenseBadges';
 
 const ExpenseList = ({
   associationExpenses,
@@ -280,6 +270,8 @@ const ExpenseList = ({
         case 'perPerson':
           // Pentru distribuție pe persoană: greutatea este numărul de persoane
           baseWeight = apt.persons || 0;
+          break;
+        default:
           break;
       }
 
