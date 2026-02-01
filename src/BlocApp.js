@@ -14,8 +14,11 @@ import { useDataOperations } from './hooks/useDataOperations';
 import { useAuthEnhanced } from "./context/AuthContextEnhanced";
 import useExpenseConfigurations from './hooks/useExpenseConfigurations';
 import useInvoices from './hooks/useInvoices';
+import { useSubscription } from './hooks/useSubscription';
 
 // Components
+import SubscriptionBanner from './components/subscription/SubscriptionBanner';
+import SubscriptionSettings from './components/subscription/SubscriptionSettings';
 import Sidebar from './components/common/Sidebar';
 import {
   SetupView,
@@ -32,6 +35,18 @@ import {
 export default function BlocApp({ associationId, onSwitchContext }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
+
+  // 💳 SUBSCRIPTION STATUS
+  const {
+    status: subscriptionStatus,
+    trialDaysRemaining,
+    shouldShowTrialBanner,
+    shouldShowExpiredBanner,
+    shouldShowSuspendedBanner,
+    canEdit: subscriptionCanEdit,
+    canPublish: subscriptionCanPublish,
+    isReadOnly: subscriptionIsReadOnly
+  } = useSubscription(currentUser?.uid);
 
   // Folosește onSwitchContext din props sau clearContext din context
   const handleSwitchContext = onSwitchContext || clearContext;
@@ -635,7 +650,12 @@ useEffect(() => {
             }
           }
         `}</style>
-          
+
+          {/* 💳 Subscription Banner - afișat când trial expiră sau cont suspendat */}
+          <SubscriptionBanner
+            onNavigateToSubscription={() => handleNavigation('subscription')}
+          />
+
           {/* Dashboard View */}
           {currentView === "dashboard" && (
             <DashboardView
@@ -944,6 +964,11 @@ useEffect(() => {
               updateSheetCustomName={updateSheetCustomName}
               updateSheetMonthSettings={updateSheetMonthSettings}
             />
+          )}
+
+          {/* Subscription Settings View */}
+          {currentView === "subscription" && (
+            <SubscriptionSettings />
           )}
 
         </main>

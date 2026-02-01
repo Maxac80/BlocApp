@@ -591,9 +591,25 @@ export const useSheetManagement = (associationId) => {
    * Publică sheet-ul curent și creează automat următorul
    * Workflow principal: IN_PROGRESS → PUBLISHED + nou IN_PROGRESS
    */
-  const publishCurrentSheet = useCallback(async (maintenanceData, publishedBy) => {
+  const publishCurrentSheet = useCallback(async (maintenanceData, publishedBy, options = {}) => {
     if (!currentSheet || currentSheet.status !== SHEET_STATUS.IN_PROGRESS) {
       throw new Error('Nu există sheet în lucru pentru publicare');
+    }
+
+    // 💳 VERIFICARE READ-ONLY MODE
+    // Verifică dacă asociația sau subscription-ul sunt în modul read-only
+    const { checkReadOnly = true, association = null, subscriptionStatus = null } = options;
+
+    if (checkReadOnly) {
+      // Verifică dacă asociația e suspendată
+      if (association?.billingStatus === 'suspended' || association?.suspendedByOrganization) {
+        throw new Error('READ_ONLY_ASSOCIATION_SUSPENDED');
+      }
+
+      // Verifică dacă subscription-ul e expirat sau suspendat
+      if (subscriptionStatus === 'past_due' || subscriptionStatus === 'suspended') {
+        throw new Error('READ_ONLY_SUBSCRIPTION_EXPIRED');
+      }
     }
 
     // 🧹 CURĂȚĂ maintenanceData la început pentru a elimina toate valorile undefined

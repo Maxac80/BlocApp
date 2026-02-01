@@ -86,6 +86,16 @@ export const useOrganizations = (userId = null) => {
       monthlyAmount: 0,
       tier: 'starter'
     },
+
+    // 💳 NOU: Billing Status (pentru suspendare/reactivare de către user)
+    // Când organizația e suspendată, TOATE asociațiile din ea devin read-only
+    billingStatus: 'active', // 'active' | 'suspended'
+    billingStatusChangedAt: null,
+    billingStatusChangedBy: null,
+    suspensionReason: null,
+    suspendedAt: null,
+    reactivatedAt: null,
+
     createdAt: null,
     updatedAt: null
   };
@@ -104,6 +114,8 @@ export const useOrganizations = (userId = null) => {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 90);
 
+      const now = new Date();
+
       const newOrganization = {
         ...defaultOrganizationStructure,
         ...organizationData,
@@ -114,10 +126,17 @@ export const useOrganizations = (userId = null) => {
           ...defaultOrganizationStructure.billing,
           status: 'trial',
           trialEndsAt: trialEndsAt.toISOString(),
-          currentPeriodStart: new Date().toISOString()
+          currentPeriodStart: now.toISOString()
         },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        // Billing status - default active la creare
+        billingStatus: 'active',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: creatorUserId,
+        suspensionReason: null,
+        suspendedAt: null,
+        reactivatedAt: null,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
       };
 
       // Creare în Firestore
@@ -816,6 +835,132 @@ export const useOrganizations = (userId = null) => {
     }
   };
 
+  // 💳 SUSPENDARE ORGANIZAȚIE (de către user - nu mai plătește pentru ea)
+  // Toate asociațiile din organizație devin read-only
+  const suspendOrganization = async (organizationId, suspendingUserId, reason = null) => {
+    if (!organizationId || !suspendingUserId) {
+      throw new Error('Organization ID and User ID are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const now = new Date();
+
+      // 1. Actualizează organizația
+      await updateOrganization(organizationId, {
+        billingStatus: 'suspended',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: suspendingUserId,
+        suspensionReason: reason,
+        suspendedAt: now.toISOString()
+      });
+
+      // 2. Suspendă toate asociațiile din organizație
+      const associationsQuery = query(
+        collection(db, 'associations'),
+        where('organizationId', '==', organizationId)
+      );
+      const assocsSnapshot = await getDocs(associationsQuery);
+
+      const updatePromises = assocsSnapshot.docs.map(assocDoc => {
+        const assocRef = doc(db, 'associations', assocDoc.id);
+        return updateDoc(assocRef, {
+          billingStatus: 'suspended',
+          billingStatusChangedAt: now.toISOString(),
+          billingStatusChangedBy: suspendingUserId,
+          suspendedByOrganization: true,
+          suspensionReason: `Organizația ${organizationId} a fost suspendată`,
+          suspendedAt: now.toISOString(),
+          updatedAt: now.toISOString()
+        });
+      });
+
+      await Promise.all(updatePromises);
+
+      await logActivity(suspendingUserId, 'ORGANIZATION_SUSPENDED', {
+        organizationId,
+        reason,
+        associationsAffected: assocsSnapshot.size
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error suspending organization:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 💳 REACTIVARE ORGANIZAȚIE (de către user - începe să plătească iar)
+  // Toate asociațiile din organizație devin active din nou
+  const reactivateOrganization = async (organizationId, reactivatingUserId) => {
+    if (!organizationId || !reactivatingUserId) {
+      throw new Error('Organization ID and User ID are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const now = new Date();
+
+      // 1. Actualizează organizația
+      await updateOrganization(organizationId, {
+        billingStatus: 'active',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: reactivatingUserId,
+        suspensionReason: null,
+        reactivatedAt: now.toISOString()
+      });
+
+      // 2. Reactivează toate asociațiile care au fost suspendate de organizație
+      const associationsQuery = query(
+        collection(db, 'associations'),
+        where('organizationId', '==', organizationId),
+        where('suspendedByOrganization', '==', true)
+      );
+      const assocsSnapshot = await getDocs(associationsQuery);
+
+      const updatePromises = assocsSnapshot.docs.map(assocDoc => {
+        const assocRef = doc(db, 'associations', assocDoc.id);
+        return updateDoc(assocRef, {
+          billingStatus: 'active',
+          billingStatusChangedAt: now.toISOString(),
+          billingStatusChangedBy: reactivatingUserId,
+          suspendedByOrganization: false,
+          suspensionReason: null,
+          reactivatedAt: now.toISOString(),
+          updatedAt: now.toISOString()
+        });
+      });
+
+      await Promise.all(updatePromises);
+
+      await logActivity(reactivatingUserId, 'ORGANIZATION_REACTIVATED', {
+        organizationId,
+        associationsReactivated: assocsSnapshot.size
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error reactivating organization:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 💳 VERIFICARE DACĂ ORGANIZAȚIA E SUSPENDATĂ
+  const isOrganizationSuspended = (organization) => {
+    if (!organization) return false;
+    return organization.billingStatus === 'suspended';
+  };
+
   // 📊 VERIFICĂ DACĂ USER E OWNER/ADMIN/MEMBER ÎN ORGANIZAȚIE
   const getUserRoleInOrganization = async (organizationId, userIdToCheck) => {
     if (!organizationId || !userIdToCheck) return null;
@@ -885,6 +1030,11 @@ export const useOrganizations = (userId = null) => {
     // Utils
     getUserRoleInOrganization,
     setCurrentOrganization,
+
+    // 💳 Billing Status Management
+    suspendOrganization,
+    reactivateOrganization,
+    isOrganizationSuspended,
 
     // Helpers
     defaultOrganizationStructure

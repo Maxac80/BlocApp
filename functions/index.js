@@ -8,10 +8,11 @@
  */
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { Resend } = require("resend");
 
 // Inițializare Firebase Admin
@@ -396,4 +397,562 @@ exports.resendVerificationEmail = onCall(
   }
 );
 
-console.log("✅ BlocApp Cloud Functions loaded");
+// ============================================
+// 💰 BILLING EMAIL TEMPLATES
+// ============================================
+
+const billingEmailTemplates = {
+  // Template trial expiring
+  trialExpiring: (userName, daysRemaining) => ({
+    subject: `Perioada de trial expiră în ${daysRemaining} zile - BlocApp`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px;">Perioada de trial</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Perioada ta de trial la BlocApp expiră în <strong>${daysRemaining} zile</strong>.
+                Pentru a continua să folosești aplicația fără întreruperi, te rugăm să adaugi o metodă de plată.
+              </p>
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
+                <tr>
+                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 8px;">
+                    <a href="${CONFIG.appUrl}/subscription" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold;">
+                      Adaugă metodă de plată
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 24px 0 0 0; color: #6B7280; font-size: 14px;">
+                Dacă ai întrebări, ne poți contacta la support@blocapp.ro
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  }),
+
+  // Template trial expired
+  trialExpired: (userName) => ({
+    subject: "Perioada de trial a expirat - BlocApp",
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td bgcolor="#DC2626" style="background-color: #DC2626; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #FEE2E2; font-size: 14px;">Trial Expirat</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Perioada ta de trial la BlocApp a expirat. Contul tău este acum în modul <strong>read-only</strong>.
+                Pentru a continua să editezi și să publici liste de întreținere, te rugăm să activezi abonamentul.
+              </p>
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
+                <tr>
+                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 8px;">
+                    <a href="${CONFIG.appUrl}/subscription" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold;">
+                      Activează abonamentul
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  }),
+
+  // Template invoice generated
+  invoiceGenerated: (userName, invoiceNumber, amount, dueDate) => ({
+    subject: `Factură nouă ${invoiceNumber} - BlocApp`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td bgcolor="#2563EB" style="background-color: #2563EB; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #BFDBFE; font-size: 14px;">Factură Nouă</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Ai o factură nouă pentru abonamentul BlocApp.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F3F4F6; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">Număr factură</p>
+                    <p style="margin: 0 0 16px 0; color: #1F2937; font-size: 18px; font-weight: bold;">${invoiceNumber}</p>
+                    <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">Sumă de plată</p>
+                    <p style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px; font-weight: bold;">${amount} RON</p>
+                    <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">Scadență</p>
+                    <p style="margin: 0; color: #1F2937; font-size: 16px; font-weight: bold;">${dueDate}</p>
+                  </td>
+                </tr>
+              </table>
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
+                <tr>
+                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 8px;">
+                    <a href="${CONFIG.appUrl}/subscription" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold;">
+                      Vezi factura
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  }),
+
+  // Template payment reminder
+  paymentReminder: (userName, invoiceNumber, amount, daysOverdue) => ({
+    subject: `Reminder: Factură ${invoiceNumber} neplătită - BlocApp`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
+              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px;">Reminder Plată</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
+              <p style="margin: 0 0 24px 0; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                Factura ${invoiceNumber} în valoare de <strong>${amount} RON</strong> este scadentă de ${daysOverdue} zile.
+                Te rugăm să efectuezi plata pentru a evita suspendarea contului.
+              </p>
+              <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
+                <tr>
+                  <td align="center" bgcolor="#F59E0B" style="background-color: #F59E0B; border-radius: 8px;">
+                    <a href="${CONFIG.appUrl}/subscription" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold;">
+                      Plătește acum
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+  })
+};
+
+// ============================================
+// 💰 BILLING CLOUD FUNCTIONS
+// ============================================
+
+/**
+ * Verifică zilnic trial-urile care expiră și trimite notificări
+ * Rulează zilnic la 09:00 Europe/Bucharest
+ */
+exports.checkTrialExpirations = onSchedule(
+  {
+    schedule: "0 9 * * *", // Zilnic la 09:00
+    timeZone: "Europe/Bucharest",
+    region: "europe-west1",
+    secrets: [resendApiKey]
+  },
+  async (event) => {
+    const db = getFirestore();
+    const now = new Date();
+
+    console.log("🔍 Checking trial expirations...");
+
+    try {
+      // Obține toți userii cu status trial
+      const usersSnapshot = await db.collection("users")
+        .where("subscription.status", "==", "trial")
+        .get();
+
+      let notificationsSent = 0;
+      let trialExpired = 0;
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const trialEndsAt = userData.subscription?.trialEndsAt?.toDate();
+
+        if (!trialEndsAt) continue;
+
+        const daysRemaining = Math.ceil((trialEndsAt - now) / (1000 * 60 * 60 * 24));
+        const userName = userData.profile?.personalInfo?.firstName || userData.name || "Utilizator";
+        const email = userData.email;
+
+        // Verifică dacă trial-ul a expirat
+        if (daysRemaining <= 0) {
+          // Marchează ca past_due
+          await db.collection("users").doc(userDoc.id).update({
+            "subscription.status": "past_due",
+            "subscription.statusChangedAt": FieldValue.serverTimestamp()
+          });
+
+          // Trimite email trial expirat
+          const template = billingEmailTemplates.trialExpired(userName);
+          await getResend().emails.send({
+            from: CONFIG.fromEmail,
+            to: email,
+            subject: template.subject,
+            html: template.html
+          });
+
+          trialExpired++;
+          console.log(`❌ Trial expirat pentru ${email}`);
+        }
+        // Trimite reminder la 14, 7, 3, 1 zile
+        else if ([14, 7, 3, 1].includes(daysRemaining)) {
+          const template = billingEmailTemplates.trialExpiring(userName, daysRemaining);
+          await getResend().emails.send({
+            from: CONFIG.fromEmail,
+            to: email,
+            subject: template.subject,
+            html: template.html
+          });
+
+          notificationsSent++;
+          console.log(`📧 Reminder trimis pentru ${email} - ${daysRemaining} zile rămase`);
+        }
+      }
+
+      console.log(`✅ Trial check complete: ${notificationsSent} reminders, ${trialExpired} expired`);
+      return { notificationsSent, trialExpired };
+    } catch (error) {
+      console.error("❌ Error checking trial expirations:", error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Generează facturi lunare pentru userii activi
+ * Rulează în prima zi a lunii la 00:05
+ */
+exports.generateMonthlyInvoices = onSchedule(
+  {
+    schedule: "5 0 1 * *", // Prima zi a lunii la 00:05
+    timeZone: "Europe/Bucharest",
+    region: "europe-west1",
+    secrets: [resendApiKey]
+  },
+  async (event) => {
+    const db = getFirestore();
+    const now = new Date();
+
+    console.log("📄 Generating monthly invoices...");
+
+    try {
+      // Obține toți userii cu status active
+      const usersSnapshot = await db.collection("users")
+        .where("subscription.status", "==", "active")
+        .get();
+
+      let invoicesGenerated = 0;
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+        const email = userData.email;
+        const userName = userData.profile?.personalInfo?.firstName || "Utilizator";
+
+        // Calculează apartamentele active (simplificat - în producție ar trebui logica completă)
+        // TODO: Implementează contorizare reală din asociații
+        const pricePerApartment = userData.subscription?.customPricing?.pricePerApartment || 5.00;
+        const discountPercent = userData.subscription?.customPricing?.discountPercent || 0;
+
+        // Obține numărul de facturi pentru a genera numărul următor
+        const invoicesCount = await db.collection("invoices")
+          .where("userId", "==", userId)
+          .count()
+          .get();
+
+        const invoiceNumber = `BLC-${now.getFullYear()}-${String(invoicesCount.data().count + 1).padStart(6, "0")}`;
+
+        // Perioada facturării
+        const periodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const periodEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), 14); // 14 zile termen
+
+        // TODO: Calculează totalApartments și totalAmount din asociații reale
+        // Pentru moment, folosim un placeholder
+        const totalApartments = 0; // Va fi calculat din asociații
+        const subtotal = totalApartments * pricePerApartment;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const totalAmount = subtotal - discountAmount;
+
+        // Nu genera factură dacă suma este 0
+        if (totalAmount <= 0) {
+          console.log(`⏭️ Skip ${email} - no billable apartments`);
+          continue;
+        }
+
+        // Creează factura
+        const invoiceRef = await db.collection("invoices").add({
+          userId,
+          invoiceNumber,
+          status: "pending",
+          periodStart,
+          periodEnd,
+          issuedAt: now,
+          dueAt: dueDate,
+          lineItems: [], // TODO: Populează cu detalii asociații
+          subtotal,
+          discountPercent,
+          discountAmount,
+          totalAmount,
+          currency: "RON",
+          billingContact: userData.subscription?.billingContact || null,
+          createdAt: FieldValue.serverTimestamp()
+        });
+
+        // Trimite email
+        const template = billingEmailTemplates.invoiceGenerated(
+          userName,
+          invoiceNumber,
+          totalAmount.toFixed(2),
+          dueDate.toLocaleDateString("ro-RO")
+        );
+
+        await getResend().emails.send({
+          from: CONFIG.fromEmail,
+          to: email,
+          subject: template.subject,
+          html: template.html
+        });
+
+        invoicesGenerated++;
+        console.log(`📄 Invoice ${invoiceNumber} generated for ${email}`);
+      }
+
+      console.log(`✅ Invoice generation complete: ${invoicesGenerated} invoices`);
+      return { invoicesGenerated };
+    } catch (error) {
+      console.error("❌ Error generating invoices:", error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Trimite remindere pentru plăți restante
+ * Rulează zilnic la 10:00
+ */
+exports.sendPaymentReminders = onSchedule(
+  {
+    schedule: "0 10 * * *", // Zilnic la 10:00
+    timeZone: "Europe/Bucharest",
+    region: "europe-west1",
+    secrets: [resendApiKey]
+  },
+  async (event) => {
+    const db = getFirestore();
+    const now = new Date();
+
+    console.log("📧 Sending payment reminders...");
+
+    try {
+      // Obține facturile pending care au depășit scadența
+      const overdueInvoices = await db.collection("invoices")
+        .where("status", "==", "pending")
+        .where("dueAt", "<", now)
+        .get();
+
+      let remindersSent = 0;
+
+      for (const invoiceDoc of overdueInvoices.docs) {
+        const invoice = invoiceDoc.data();
+        const daysOverdue = Math.ceil((now - invoice.dueAt.toDate()) / (1000 * 60 * 60 * 24));
+
+        // Trimite reminder la 1, 3, 7, 14 zile după scadență
+        if (![1, 3, 7, 14].includes(daysOverdue)) continue;
+
+        // Obține datele userului
+        const userDoc = await db.collection("users").doc(invoice.userId).get();
+        if (!userDoc.exists) continue;
+
+        const userData = userDoc.data();
+        const userName = userData.profile?.personalInfo?.firstName || "Utilizator";
+        const email = userData.email;
+
+        const template = billingEmailTemplates.paymentReminder(
+          userName,
+          invoice.invoiceNumber,
+          invoice.totalAmount.toFixed(2),
+          daysOverdue
+        );
+
+        await getResend().emails.send({
+          from: CONFIG.fromEmail,
+          to: email,
+          subject: template.subject,
+          html: template.html
+        });
+
+        // După 14 zile, suspendă contul
+        if (daysOverdue >= 14) {
+          await db.collection("users").doc(invoice.userId).update({
+            "subscription.status": "suspended",
+            "subscription.statusChangedAt": FieldValue.serverTimestamp()
+          });
+          console.log(`🔒 User ${email} suspended due to non-payment`);
+        }
+
+        remindersSent++;
+        console.log(`📧 Reminder sent to ${email} - ${daysOverdue} days overdue`);
+      }
+
+      console.log(`✅ Payment reminders complete: ${remindersSent} sent`);
+      return { remindersSent };
+    } catch (error) {
+      console.error("❌ Error sending payment reminders:", error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Marchează plată manuală (apelat din admin portal)
+ */
+exports.recordManualPayment = onCall(
+  {
+    region: "europe-west1",
+    cors: ["https://app.blocapp.ro", "https://console.blocapp.ro", "http://localhost:3000"]
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Trebuie să fii autentificat.");
+    }
+
+    const db = getFirestore();
+    const adminUid = request.auth.uid;
+
+    // Verifică dacă este super_admin
+    const adminDoc = await db.collection("users").doc(adminUid).get();
+    if (!adminDoc.exists || adminDoc.data().role !== "super_admin") {
+      throw new HttpsError("permission-denied", "Nu ai permisiunea pentru această acțiune.");
+    }
+
+    const { invoiceId, amount, paymentDate, bankReference, notes } = request.data;
+
+    if (!invoiceId || !amount) {
+      throw new HttpsError("invalid-argument", "Invoice ID și suma sunt obligatorii.");
+    }
+
+    try {
+      const invoiceRef = db.collection("invoices").doc(invoiceId);
+      const invoiceDoc = await invoiceRef.get();
+
+      if (!invoiceDoc.exists) {
+        throw new HttpsError("not-found", "Factura nu a fost găsită.");
+      }
+
+      const invoice = invoiceDoc.data();
+
+      // Creează înregistrarea de plată
+      const paymentRef = await db.collection("payments").add({
+        invoiceId,
+        userId: invoice.userId,
+        amount: parseFloat(amount),
+        currency: "RON",
+        status: "completed",
+        method: "manual",
+        bankReference: bankReference || null,
+        notes: notes || null,
+        recordedBy: adminUid,
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        createdAt: FieldValue.serverTimestamp()
+      });
+
+      // Actualizează factura
+      await invoiceRef.update({
+        status: "paid",
+        paidAt: FieldValue.serverTimestamp(),
+        paymentId: paymentRef.id
+      });
+
+      // Reactivează subscripția userului dacă era suspendată
+      await db.collection("users").doc(invoice.userId).update({
+        "subscription.status": "active",
+        "subscription.statusChangedAt": FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Manual payment recorded for invoice ${invoiceId}`);
+
+      return { success: true, paymentId: paymentRef.id };
+    } catch (error) {
+      console.error("❌ Error recording manual payment:", error);
+      throw new HttpsError("internal", error.message);
+    }
+  }
+);
+
+console.log("✅ BlocApp Cloud Functions loaded (including billing)");

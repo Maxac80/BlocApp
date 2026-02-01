@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
 async function register(email, password, userData) {
   try {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    
+
     // Actualizează profilul utilizatorului
     await updateProfile(user, {
       displayName: userData.name
@@ -56,16 +56,56 @@ async function register(email, password, userData) {
     // Determină rolul (implicit administrator asociație)
     const userRole = userData.role || 'admin_asociatie';
 
+    // Calculează datele pentru trial (90 zile)
+    const now = new Date();
+    const trialEndsAt = new Date(now);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 90);
+
+    // Construiește obiectul subscription pentru admin_asociatie
+    const subscriptionData = userRole === 'admin_asociatie' ? {
+      status: 'trial',
+      trialStartedAt: now.toISOString(),
+      trialEndsAt: trialEndsAt.toISOString(),
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+
+      // Custom pricing (poate fi setat din admin portal)
+      customPricing: {
+        enabled: false,
+        pricePerApartment: 5.00,  // default 5 RON
+        discountPercent: 0,
+        discountReason: null,
+        setBy: null,
+        setAt: null
+      },
+
+      // Billing preference
+      billingMode: 'per_user',  // 'per_user' sau 'per_organization'
+      billingOrganizationId: null,
+
+      // Payment method (va fi setat când adaugă card)
+      payuTokenRef: null,
+      payuCustomerId: null,
+
+      // Billing contact (va fi completat de user)
+      billingContact: null
+    } : null;
+
     // Salvează datele în Firestore
     const userProfileData = {
       email: email,
       name: userData.name,
       role: userRole,
+      // Legacy field pentru backward compatibility
       subscriptionStatus: userRole === 'admin_asociatie' ? 'trial' : null,
-      createdAt: new Date().toISOString(),
-      isActive: true
+      // Noua structură de subscription
+      subscription: subscriptionData,
+      createdAt: now.toISOString(),
+      isActive: true,
+      // Timestamp pentru tracking
+      lastActivityAt: now.toISOString()
     };
-    
+
     await setDoc(doc(db, 'users', user.uid), userProfileData);
 
     // ✅ ÎNCARCĂ IMEDIAT PROFILUL DUPĂ CREARE

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight } from 'lucide-react';
+import { Building2, Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight, CreditCard } from 'lucide-react';
 
 const Sidebar = ({
   sidebarOpen,
@@ -282,6 +282,30 @@ const Sidebar = ({
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Setări
+            </div>
+          )}
+        </button>
+
+        {/* Abonament și Facturare */}
+        <button
+          onClick={() => handleNavigation("subscription")}
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "subscription"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <CreditCard className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Abonament</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Facturare și plăți</div>
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Abonament
             </div>
           )}
         </button>

@@ -3,16 +3,35 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import OwnerPortalApp from './OwnerPortalApp';
+import { ConsoleApp } from './components/console';
+import { AuthProvider } from './context/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
-// Detectează modul: admin (default) sau owner
+// Detectează modul: admin (default), owner, sau console
 // Setează REACT_APP_MODE=owner pentru portal proprietari
-const isOwnerMode = process.env.REACT_APP_MODE === 'owner';
+// Setează REACT_APP_MODE=console pentru admin console (super_admin)
+const appMode = process.env.REACT_APP_MODE;
+
+// Selectează componenta bazat pe mod
+const getAppComponent = () => {
+  switch (appMode) {
+    case 'owner':
+      return <OwnerPortalApp />;
+    case 'console':
+      return (
+        <AuthProvider>
+          <ConsoleApp />
+        </AuthProvider>
+      );
+    default:
+      return <App />;
+  }
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {isOwnerMode ? <OwnerPortalApp /> : <App />}
+    {getAppComponent()}
   </React.StrictMode>
 );
 

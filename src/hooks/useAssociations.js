@@ -97,6 +97,17 @@ export const useAssociations = (userId = null) => {
       transfers: []
     },
 
+    // 💳 NOU: Billing Status (pentru suspendare/reactivare de către user)
+    // Acest câmp controlează dacă asociația e activă pentru facturare și editare
+    billingStatus: 'active', // 'active' | 'suspended'
+    billingStatusChangedAt: null,
+    billingStatusChangedBy: null,
+    suspensionReason: null,
+    suspendedAt: null,
+    reactivatedAt: null,
+    // Dacă a fost suspendată de organizație (când organizația e suspendată)
+    suspendedByOrganization: false,
+
     // Timestamps
     createdAt: null,
     updatedAt: null,
@@ -117,6 +128,8 @@ export const useAssociations = (userId = null) => {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 90);
 
+      const now = new Date();
+
       const newAssociation = {
         ...defaultAssociationStructure,
         ...associationData,
@@ -128,11 +141,19 @@ export const useAssociations = (userId = null) => {
           billedToOrganizationId: organizationId,
           status: 'trial',
           trialEndsAt: trialEndsAt.toISOString(),
-          currentPeriodStart: new Date().toISOString()
+          currentPeriodStart: now.toISOString()
         },
+        // Billing status - default active la creare
+        billingStatus: 'active',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: creatorUserId,
+        suspensionReason: null,
+        suspendedAt: null,
+        reactivatedAt: null,
+        suspendedByOrganization: false,
         createdBy: creatorUserId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
       };
 
       // Creare în Firestore
@@ -600,6 +621,82 @@ export const useAssociations = (userId = null) => {
     }
   }, []);
 
+  // 💳 SUSPENDARE ASOCIAȚIE (de către user - nu mai plătește pentru ea)
+  const suspendAssociation = async (associationId, suspendingUserId, reason = null) => {
+    if (!associationId || !suspendingUserId) {
+      throw new Error('Association ID and User ID are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const now = new Date();
+
+      await updateAssociation(associationId, {
+        billingStatus: 'suspended',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: suspendingUserId,
+        suspensionReason: reason,
+        suspendedAt: now.toISOString()
+      });
+
+      await logActivity(suspendingUserId, 'ASSOCIATION_SUSPENDED', {
+        associationId,
+        reason
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error suspending association:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 💳 REACTIVARE ASOCIAȚIE (de către user - începe să plătească iar)
+  const reactivateAssociation = async (associationId, reactivatingUserId) => {
+    if (!associationId || !reactivatingUserId) {
+      throw new Error('Association ID and User ID are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const now = new Date();
+
+      await updateAssociation(associationId, {
+        billingStatus: 'active',
+        billingStatusChangedAt: now.toISOString(),
+        billingStatusChangedBy: reactivatingUserId,
+        suspensionReason: null,
+        reactivatedAt: now.toISOString(),
+        suspendedByOrganization: false
+      });
+
+      await logActivity(reactivatingUserId, 'ASSOCIATION_REACTIVATED', {
+        associationId
+      });
+
+      return true;
+    } catch (err) {
+      console.error('❌ Error reactivating association:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 💳 VERIFICARE DACĂ ASOCIAȚIA E SUSPENDATĂ (read-only mode)
+  const isAssociationSuspended = (association) => {
+    if (!association) return false;
+    return association.billingStatus === 'suspended' || association.suspendedByOrganization === true;
+  };
+
   // 📊 OBȚINERE MEMBRI ASOCIAȚIE
   const getAssociationMembers = async (associationId) => {
     if (!associationId) return [];
@@ -855,6 +952,11 @@ export const useAssociations = (userId = null) => {
     canDeleteAssociation,
     getAssociationStats,
     setCurrentAssociation,
+
+    // 💳 Billing Status Management
+    suspendAssociation,
+    reactivateAssociation,
+    isAssociationSuspended,
 
     // Helpers
     defaultAssociationStructure
