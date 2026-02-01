@@ -7,10 +7,12 @@
  * Usage:
  * - REACT_APP_MODE=admin (sau fara) → iconite albastre (default)
  * - REACT_APP_MODE=owner → iconite verzi (portal)
+ * - REACT_APP_MODE=console → iconite violet/dark (console admin)
  *
  * Fisiere sursa (deja create in public/):
- * - Admin: logo192.png, logo512.png, favicon.ico (albastre - DEFAULT)
- * - Portal: logo192-portal.png, logo512-portal.png, favicon-portal.ico (verzi)
+ * - Admin: logo192.png, logo512.png, favicon.png (albastre - DEFAULT)
+ * - Portal: logo192-portal.png, logo512-portal.png, favicon-portal.png (verzi)
+ * - Console: logo192-console.png, logo512-console.png, favicon-console.png (violet/dark)
  */
 
 const fs = require('fs');
@@ -79,6 +81,59 @@ if (mode === 'owner') {
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log('  [OK] Updated manifest.json for Portal\n');
 
+} else if (mode === 'console') {
+  // Console mode - copiaza iconitele violet/dark pentru admin console
+  console.log('\nSetting up Console (dark/violet) icons...\n');
+
+  const iconMappings = [
+    { from: 'logo192-console.png', to: 'logo192.png' },
+    { from: 'logo512-console.png', to: 'logo512.png' },
+    { from: 'favicon-console.png', to: 'favicon.png' }
+  ];
+
+  iconMappings.forEach(({ from, to }) => {
+    const sourcePath = path.join(publicDir, from);
+    const destPath = path.join(publicDir, to);
+
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, destPath);
+      console.log('  [OK] Copied ' + from + ' -> ' + to);
+    } else {
+      console.log('  [WARN] Source not found: ' + from);
+    }
+  });
+
+  // Update manifest.json pentru Console
+  const manifestPath = path.join(publicDir, 'manifest.json');
+  const manifest = {
+    "short_name": "BlocApp",
+    "name": "BlocApp Console - Admin",
+    "icons": [
+      {
+        "src": "favicon.png",
+        "sizes": "64x64 32x32 24x24 16x16",
+        "type": "image/png"
+      },
+      {
+        "src": "logo192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "logo512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#7C3AED",
+    "background_color": "#FFFFFF"
+  };
+
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log('  [OK] Updated manifest.json for Console\n');
+
 } else {
   // Admin mode - iconitele albastre sunt deja default
   console.log('\nUsing Admin (blue) icons (default)...\n');
@@ -118,19 +173,32 @@ if (mode === 'owner') {
 // --- OG Image & Meta Tags ---
 console.log('Setting up OG metadata...\n');
 
-const ogConfig = mode === 'owner' ? {
-  ogImage: 'og-image-portal.png',
-  title: 'BlocApp Locatari',
-  description: 'Vezi \u00eentre\u021binerea, pl\u0103te\u0219te online, transmite indexuri.',
-  imageUrl: 'https://portal.blocapp.ro/og-image.png',
-  themeColor: '#10B981'
-} : {
-  ogImage: 'og-image-admin.png',
-  title: 'BlocApp Administratori',
-  description: 'Calcul \u00eentre\u021binere automat, gestiune cheltuieli, \u00eencas\u0103ri.',
-  imageUrl: 'https://app.blocapp.ro/og-image.png',
-  themeColor: '#3B82F6'
-};
+let ogConfig;
+if (mode === 'owner') {
+  ogConfig = {
+    ogImage: 'og-image-portal.png',
+    title: 'BlocApp Locatari',
+    description: 'Vezi întreținerea, plătește online, transmite indexuri.',
+    imageUrl: 'https://portal.blocapp.ro/og-image.png',
+    themeColor: '#10B981'
+  };
+} else if (mode === 'console') {
+  ogConfig = {
+    ogImage: 'og-image-console.png',
+    title: 'BlocApp Console',
+    description: 'Admin Console - Gestionare utilizatori, billing și statistici.',
+    imageUrl: 'https://console.blocapp.ro/og-image.png',
+    themeColor: '#7C3AED'
+  };
+} else {
+  ogConfig = {
+    ogImage: 'og-image-admin.png',
+    title: 'BlocApp Administratori',
+    description: 'Calcul întreținere automat, gestiune cheltuieli, încasări.',
+    imageUrl: 'https://app.blocapp.ro/og-image.png',
+    themeColor: '#3B82F6'
+  };
+}
 
 // Copy correct OG image as og-image.png
 const ogSource = path.join(publicDir, ogConfig.ogImage);
