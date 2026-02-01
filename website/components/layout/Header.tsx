@@ -66,6 +66,12 @@ export default function Header() {
             >
               Administratori
             </a>
+            <a
+              href="https://console.blocapp.ro"
+              className="text-sm font-medium text-purple-600 hover:text-purple-700 px-3 py-2 border border-purple-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
+            >
+              Console
+            </a>
           </div>
 
           {/* Mobile menu button */}
@@ -121,6 +127,13 @@ export default function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Administratori
+                </a>
+                <a
+                  href="https://console.blocapp.ro"
+                  className="block w-full text-center px-4 py-2 text-sm font-medium text-purple-600 border border-purple-300 rounded-lg hover:border-purple-400 hover:bg-purple-50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Console
                 </a>
               </div>
             </div>

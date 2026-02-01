@@ -71,32 +71,32 @@ const ConsoleLogin = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-purple-200 to-purple-300 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <img
             src="/logo-console.png"
             alt="BlocApp Console"
-            className="h-20 mx-auto mb-4"
+            className="h-32 mx-auto mb-4"
           />
-          <p className="text-purple-300 text-sm">Admin Console - Super Admin Access</p>
+          <p className="text-purple-600 text-sm font-medium">Admin Console - Super Admin Access</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-purple-200">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Console Login</h1>
-              <p className="text-purple-300 text-sm">Acces restricționat</p>
+              <h1 className="text-xl font-bold text-gray-900">Console Login</h1>
+              <p className="text-purple-600 text-sm">Acces restricționat</p>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-200">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm">{error}</span>
             </div>
@@ -104,18 +104,18 @@ const ConsoleLogin = ({ onLogin }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-purple-200 text-sm font-medium mb-1.5">
+              <label className="block text-gray-700 text-sm font-medium mb-1.5">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg
-                    text-white placeholder-purple-300 focus:outline-none focus:border-purple-400
-                    focus:ring-1 focus:ring-purple-400"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                    text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500
+                    focus:ring-1 focus:ring-purple-500"
                   placeholder="admin@blocapp.ro"
                   required
                 />
@@ -123,25 +123,25 @@ const ConsoleLogin = ({ onLogin }) => {
             </div>
 
             <div>
-              <label className="block text-purple-200 text-sm font-medium mb-1.5">
+              <label className="block text-gray-700 text-sm font-medium mb-1.5">
                 Parolă
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg
-                    text-white placeholder-purple-300 focus:outline-none focus:border-purple-400
-                    focus:ring-1 focus:ring-purple-400"
+                  className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                    text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500
+                    focus:ring-1 focus:ring-purple-500"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500 hover:text-purple-600"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -170,7 +170,7 @@ const ConsoleLogin = ({ onLogin }) => {
           </form>
         </div>
 
-        <p className="text-center text-purple-400 text-sm mt-6">
+        <p className="text-center text-purple-600 text-sm mt-6">
           © {new Date().getFullYear()} BlocApp Console
         </p>
       </div>
@@ -192,23 +192,23 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
     )}
 
     {/* Sidebar */}
-    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300
+    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300
       lg:translate-x-0 lg:static lg:inset-auto
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
     >
       <div className="flex flex-col h-full">
         {/* Header with Logo */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <img
               src="/blocapp-logo-console.png"
               alt="BlocApp Console"
-              className="h-10 w-auto"
+              className="h-14 w-auto"
             />
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white lg:hidden"
+            className="p-2 text-gray-500 hover:text-gray-700 lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
@@ -226,8 +226,8 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
                 onClick={() => { onNavigate(item.id); onClose(); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
                   ${isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-600 hover:text-purple-700 hover:bg-purple-50'
                   }`}
               >
                 <Icon className="w-5 h-5" />
@@ -238,11 +238,11 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400
-              hover:text-white hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500
+              hover:text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-5 h-5" />
             Deconectare
@@ -311,13 +311,15 @@ const ConsoleApp = () => {
     }
   };
 
-  // Loading state
-  if (loading) {
+  // Loading state - also wait for userProfile when user is logged in
+  const isProfileLoading = currentUser && !userProfile;
+
+  if (loading || isProfileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-purple-200 to-purple-300">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-purple-300">Se încarcă...</p>
+          <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-purple-700">Se încarcă...</p>
         </div>
       </div>
     );
@@ -328,7 +330,7 @@ const ConsoleApp = () => {
     return <ConsoleLogin />;
   }
 
-  // Access denied if not super_admin
+  // Access denied if not super_admin (only show after profile is loaded)
   if (!isSuperAdmin) {
     return <AccessDenied />;
   }
