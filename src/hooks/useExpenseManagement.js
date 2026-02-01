@@ -811,7 +811,6 @@ export const useExpenseManagement = ({
       alert('Eroare la ștergerea cheltuielii personalizate: ' + error.message);
       return false;
     }
-    return false;
   }, [deleteCustomExpense]);
 
   // 🗑️ ȘTERGEREA CHELTUIELILOR LUNARE - NOU
@@ -835,7 +834,6 @@ export const useExpenseManagement = ({
       alert('Eroare la ștergerea cheltuielii lunare: ' + error.message);
       return false;
     }
-    return false;
   }, [expenses, deleteMonthlyExpense]);
 
   // 📊 STATISTICI CHELTUIELI - OPTIMIZAT

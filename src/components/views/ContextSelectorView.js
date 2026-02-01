@@ -345,9 +345,9 @@ const ContextSelectorView = ({
 
       <p className="text-sm text-gray-500 mt-6">
         Nu știi ce să alegi?
-        <a href="#" className="text-blue-600 hover:underline ml-1">
+        <button type="button" className="text-blue-600 hover:underline ml-1">
           Vezi diferențele
-        </a>
+        </button>
       </p>
     </div>
   );

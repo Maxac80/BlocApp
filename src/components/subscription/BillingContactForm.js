@@ -58,7 +58,7 @@ const validateEmail = (email) => {
  */
 const validatePhone = (phone) => {
   if (!phone) return true; // Opțional
-  const cleanPhone = phone.replace(/[\s\-\.]/g, '');
+  const cleanPhone = phone.replace(/[\s\-.]/g, '');
   return /^(\+40|0)[0-9]{9}$/.test(cleanPhone);
 };
 
