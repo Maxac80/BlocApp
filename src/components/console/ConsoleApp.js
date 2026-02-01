@@ -78,7 +78,7 @@ const ConsoleLogin = ({ onLogin }) => {
           <img
             src="/logo-console.png"
             alt="BlocApp Console"
-            className="h-32 mx-auto mb-4"
+            className="h-44 mx-auto mb-4"
           />
           <p className="text-purple-600 text-sm font-medium">Admin Console - Super Admin Access</p>
         </div>
@@ -203,7 +203,7 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
             <img
               src="/blocapp-logo-console.png"
               alt="BlocApp Console"
-              className="h-14 w-auto"
+              className="h-16 w-auto"
             />
           </div>
           <button
