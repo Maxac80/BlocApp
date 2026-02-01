@@ -420,8 +420,8 @@ export const useSecurity = () => {
   // 🧹 CLEANUP SESIUNI EXPIRATE
   const cleanupExpiredSessions = async () => {
     try {
-      const expiredTime = Date.now() - (24 * 60 * 60 * 1000); // 24 ore
-      // Implementare cleanup pentru sesiuni vechi
+      // Implementare cleanup pentru sesiuni vechi (24 ore)
+      // const expiredTime = Date.now() - (24 * 60 * 60 * 1000);
       // console.log('🧹 Cleaning up expired sessions older than', new Date(expiredTime));
     } catch (error) {
       console.error('❌ Error cleaning up sessions:', error);

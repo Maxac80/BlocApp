@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  collection,
   query,
   where,
   onSnapshot,
-  doc,
   updateDoc,
   getDocs,
   serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
 import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
 
 /**
@@ -82,7 +79,7 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
     );
 
     return () => unsubscribe();
-  }, [currentSheet?.id, currentSheet?.status]);
+  }, [currentSheet?.id, currentSheet?.status, association?.id]);
 
   // 🆕 FAZA 5: Sincronizare cross-sheet automată
   // Când se înregistrează plăți în currentSheet, actualizează nextSheet automat
@@ -189,7 +186,6 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
     const remainingPenalitati = Math.max(0, initialPenalitati - totalPenalitati);
     
     // Determină statusul de plată
-    const totalInitial = initialRestante + initialIntretinere + initialPenalitati;
     const totalRemaining = remainingRestante + remainingIntretinere + remainingPenalitati;
     const totalPaid = totalRestante + totalIntretinere + totalPenalitati;
     

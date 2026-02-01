@@ -301,11 +301,9 @@ export function useOwnerData(associationId, apartmentId) {
             }
 
             let expenseConfig = null;
-            let foundKey = null;
             for (const key of possibleKeys) {
               if (expenseConfigs[key]) {
                 expenseConfig = expenseConfigs[key];
-                foundKey = key;
                 break;
               }
             }
@@ -420,11 +418,9 @@ export function useOwnerData(associationId, apartmentId) {
                   }
 
                   let fallbackExpenseConfig = null;
-                  let fallbackFoundKey = null;
                   for (const key of fallbackPossibleKeys) {
                     if (expenseConfigs[key]) {
                       fallbackExpenseConfig = expenseConfigs[key];
-                      fallbackFoundKey = key;
                       break;
                     }
                   }

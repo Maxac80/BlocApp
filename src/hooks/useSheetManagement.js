@@ -2,16 +2,14 @@
 // SISTEM NOU DE SHEET-URI PENTRU FIECARE LUNĂ PUBLICATĂ
 // Fiecare sheet = snapshot complet al unei luni publicate
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
-  doc,
   setDoc,
   getDoc,
   updateDoc,
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   serverTimestamp,
   writeBatch,
