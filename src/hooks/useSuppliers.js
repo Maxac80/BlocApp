@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  doc,
   updateDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
 import { getSheetRef } from '../utils/firestoreHelpers';
 
 const useSuppliers = (currentSheet) => {

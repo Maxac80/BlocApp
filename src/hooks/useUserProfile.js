@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { doc, updateDoc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { updateProfile, updateEmail, sendEmailVerification } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth, db, storage } from '../firebase';

@@ -145,13 +145,10 @@ const parseStairSheet = (worksheet, sheetName) => {
   // console.log(`🔍 Header găsit la index ${headerRowIndex} (rând Excel ${headerRowIndex + 1})`);
   // console.log(`🔍 Skip 2 rânduri (header + explicații), datele încep de la index ${dataStartIndex} (rând Excel ${dataStartIndex + 1})`);
   
-  let processedRows = 0;
-  let skippedEmpty = 0;
-  
   // Procesează fiecare rând de date
   for (let i = dataStartIndex; i < data.length; i++) {
     const rowData = data[i];
-    
+
     // Creează un obiect din rând folosind header-ele
     const row = {};
     headers.forEach((header, index) => {
@@ -161,17 +158,14 @@ const parseStairSheet = (worksheet, sheetName) => {
     // Skip rândurile complet goale
     const hasData = rowData.some(cell => cell && cell.toString().trim() !== '');
     if (!hasData) {
-      skippedEmpty++;
       continue;
     }
-    
+
     // Skip dacă nu are date esențiale
     if (!row['Nr_Apt*'] && !row['Proprietar*'] && !row['Nr_Persoane*']) {
       // console.log(`⚠️ Rând ${i + 1} sărit - lipsesc date esențiale`);
       continue;
     }
-    
-    processedRows++;
     // console.log(`📝 Procesez rândul ${i + 1} (apartament #${processedRows}):`, {
     //   'Nr_Apt*': row['Nr_Apt*'],
     //   'Proprietar*': row['Proprietar*'],

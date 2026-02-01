@@ -1008,7 +1008,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error adding payment with real-time correlation:', error);
       throw error;
     }
-  }, [publishedSheet, currentSheet]);
+  }, [publishedSheet, currentSheet, associationId]);
 
   /**
    * Obține sheet-ul pentru o lună specifică
@@ -1172,7 +1172,7 @@ export const useSheetManagement = (associationId) => {
 
     // Forțează reîncărcarea pentru a vedea modificările
     window.location.reload();
-  }, [currentSheet, publishedSheet]);
+  }, [currentSheet, publishedSheet, associationId]);
 
   // REMOVED: resetPublishedSheetBalances function
   // Published sheets must remain LOCKED and never be modified after publishing
@@ -1197,7 +1197,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error updating custom sheet name:', error);
       throw error;
     }
-  }, []);
+  }, [associationId]);
 
   /**
    * Actualizează setările de luni pentru un sheet specific
@@ -1220,7 +1220,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error updating sheet month settings:', error);
       throw error;
     }
-  }, []);
+  }, [associationId]);
 
   /**
    * Actualizează tabelul de întreținere al sheet-ului curent
@@ -1242,7 +1242,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Error updating current sheet maintenance table:', error);
       throw error;
     }
-  }, [currentSheet?.id]);
+  }, [currentSheet?.id, associationId]);
 
   /**
    * Resetează toate sheet-urile (pentru debug/test)
@@ -1354,7 +1354,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la adăugarea scării în sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Adaugă apartament direct în sheet-ul curent
@@ -1402,7 +1402,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la adăugarea apartamentului în sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Șterge bloc direct din sheet-ul curent
@@ -1448,7 +1448,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la ștergerea blocului din sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Șterge scară direct din sheet-ul curent
@@ -1487,7 +1487,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la ștergerea scării din sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Șterge apartament direct din sheet-ul curent
@@ -1521,7 +1521,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la ștergerea apartamentului din sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Actualizează bloc direct în sheet-ul curent
@@ -1558,7 +1558,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la actualizarea blocului în sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Actualizează scară direct în sheet-ul curent
@@ -1595,7 +1595,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la actualizarea scării în sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   /**
    * Actualizează apartament direct în sheet-ul curent
@@ -1632,7 +1632,7 @@ export const useSheetManagement = (associationId) => {
       console.error('❌ Eroare la actualizarea apartamentului în sheet:', error);
       throw error;
     }
-  }, [currentSheet]);
+  }, [currentSheet, associationId]);
 
   // 🆕 FAZA 8: Depublicare cu safeguard
   const unpublishSheet = useCallback(async (sheetId) => {
