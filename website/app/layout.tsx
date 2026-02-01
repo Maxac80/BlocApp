@@ -16,19 +16,18 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "BlocApp - Software modern pentru asociații de proprietari",
+  title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
   description: "Calcul întreținere automat, portal proprietari, plăți online.",
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/blocapp-icon-admin.png', type: 'image/png' },
+      { url: '/favicon.png', type: 'image/png' },
     ],
-    apple: '/blocapp-icon-admin.png',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: "BlocApp - Software modern pentru asociații de proprietari",
+    title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
     description: "Calcul întreținere automat, portal proprietari, plăți online.",
     url: "https://blocapp.ro",
     siteName: "BlocApp",
@@ -39,14 +38,14 @@ export const metadata: Metadata = {
         url: "https://blocapp.ro/og-image.png",
         width: 1200,
         height: 630,
-        alt: "BlocApp - Software modern pentru asociații de proprietari",
+        alt: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BlocApp - Software modern pentru asociații de proprietari",
+    title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
     description: "Calcul întreținere automat, portal proprietari, plăți online.",
     images: ["https://blocapp.ro/og-image.png"],
   },

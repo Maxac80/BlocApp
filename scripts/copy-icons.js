@@ -33,7 +33,7 @@ if (mode === 'owner') {
   const iconMappings = [
     { from: 'logo192-portal.png', to: 'logo192.png' },
     { from: 'logo512-portal.png', to: 'logo512.png' },
-    { from: 'favicon-portal.ico', to: 'favicon.ico' }
+    { from: 'favicon-portal.png', to: 'favicon.png' }
   ];
 
   iconMappings.forEach(({ from, to }) => {
@@ -55,9 +55,9 @@ if (mode === 'owner') {
     "name": "BlocApp - Portal Locatari",
     "icons": [
       {
-        "src": "favicon.ico",
+        "src": "favicon.png",
         "sizes": "64x64 32x32 24x24 16x16",
-        "type": "image/x-icon"
+        "type": "image/png"
       },
       {
         "src": "logo192.png",
@@ -90,9 +90,9 @@ if (mode === 'owner') {
     "name": "BlocApp Administratori",
     "icons": [
       {
-        "src": "favicon.ico",
+        "src": "favicon.png",
         "sizes": "64x64 32x32 24x24 16x16",
-        "type": "image/x-icon"
+        "type": "image/png"
       },
       {
         "src": "logo192.png",

@@ -35,7 +35,7 @@ export default function Footer() {
               />
             </Link>
             <p className="text-sm text-gray-400 mb-4">
-              Software modern pentru administrarea profesionistă a asociațiilor de proprietari din România.
+              Software pentru administrarea profesionistă a asociațiilor de proprietari din România.
             </p>
             {/* Social Media Icons (placeholder) */}
             <div className="flex space-x-4">
