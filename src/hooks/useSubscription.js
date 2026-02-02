@@ -250,7 +250,7 @@ export const useSubscription = (userId = null) => {
     }
   };
 
-  // Update custom pricing (doar pentru admin portal - super_admin)
+  // Update custom pricing (doar pentru master portal)
   const updateCustomPricing = async (customPricing, setByUserId) => {
     if (!userId) {
       throw new Error('User ID is required');
@@ -281,7 +281,7 @@ export const useSubscription = (userId = null) => {
     }
   };
 
-  // Extinde trial (doar pentru admin portal - super_admin)
+  // Extinde trial (doar pentru master portal)
   const extendTrial = async (additionalDays, extendedByUserId) => {
     if (!userId) {
       throw new Error('User ID is required');

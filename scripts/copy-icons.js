@@ -7,12 +7,12 @@
  * Usage:
  * - REACT_APP_MODE=admin (sau fara) → iconite albastre (default)
  * - REACT_APP_MODE=owner → iconite verzi (portal)
- * - REACT_APP_MODE=console → iconite violet/dark (console admin)
+ * - REACT_APP_MODE=master → iconite violet/dark (master portal)
  *
  * Fisiere sursa (deja create in public/):
  * - Admin: logo192.png, logo512.png, favicon.png (albastre - DEFAULT)
  * - Portal: logo192-portal.png, logo512-portal.png, favicon-portal.png (verzi)
- * - Console: logo192-console.png, logo512-console.png, favicon-console.png (violet/dark)
+ * - Master: logo192-master.png, logo512-master.png, favicon-master.png (violet/dark)
  */
 
 const fs = require('fs');
@@ -81,14 +81,14 @@ if (mode === 'owner') {
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log('  [OK] Updated manifest.json for Portal\n');
 
-} else if (mode === 'console') {
-  // Console mode - copiaza iconitele violet/dark pentru admin console
-  console.log('\nSetting up Console (dark/violet) icons...\n');
+} else if (mode === 'master') {
+  // Master mode - copiaza iconitele violet/dark pentru master portal
+  console.log('\nSetting up Master (dark/violet) icons...\n');
 
   const iconMappings = [
-    { from: 'logo192-console.png', to: 'logo192.png' },
-    { from: 'logo512-console.png', to: 'logo512.png' },
-    { from: 'favicon-console.png', to: 'favicon.png' }
+    { from: 'logo192-master.png', to: 'logo192.png' },
+    { from: 'logo512-master.png', to: 'logo512.png' },
+    { from: 'favicon-master.png', to: 'favicon.png' }
   ];
 
   iconMappings.forEach(({ from, to }) => {
@@ -103,11 +103,11 @@ if (mode === 'owner') {
     }
   });
 
-  // Update manifest.json pentru Console
+  // Update manifest.json pentru Master
   const manifestPath = path.join(publicDir, 'manifest.json');
   const manifest = {
     "short_name": "BlocApp",
-    "name": "BlocApp Console - Admin",
+    "name": "BlocApp Master",
     "icons": [
       {
         "src": "favicon.png",
@@ -132,7 +132,7 @@ if (mode === 'owner') {
   };
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  console.log('  [OK] Updated manifest.json for Console\n');
+  console.log('  [OK] Updated manifest.json for Master\n');
 
 } else {
   // Admin mode - iconitele albastre sunt deja default
@@ -182,12 +182,12 @@ if (mode === 'owner') {
     imageUrl: 'https://portal.blocapp.ro/og-image.png',
     themeColor: '#10B981'
   };
-} else if (mode === 'console') {
+} else if (mode === 'master') {
   ogConfig = {
-    ogImage: 'og-image-console.png',
-    title: 'BlocApp Console',
-    description: 'Admin Console - Gestionare utilizatori, billing și statistici.',
-    imageUrl: 'https://console.blocapp.ro/og-image.png',
+    ogImage: 'og-image-master.png',
+    title: 'BlocApp Master',
+    description: 'Master Portal - Gestionare utilizatori, billing și statistici.',
+    imageUrl: 'https://master.blocapp.ro/og-image.png',
     themeColor: '#7C3AED'
   };
 } else {

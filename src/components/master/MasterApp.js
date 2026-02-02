@@ -14,27 +14,27 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import ConsoleDashboard from './ConsoleDashboard';
+import MasterDashboard from './MasterDashboard';
 import UserManagement from './UserManagement';
 import UserBillingDetails from './UserBillingDetails';
 import PendingPayments from './PendingPayments';
 
 /**
- * 👑 CONSOLE APP - BLOCAPP OWNER PORTAL
+ * 👑 MASTER APP - BLOCAPP OWNER PORTAL
  *
- * Aplicația principală pentru console (console.blocapp.ro).
- * Aceasta este zona ta de super-admin ca owner BlocApp.
+ * Aplicația principală pentru master (master.blocapp.ro).
+ * Aceasta este zona ta de master ca owner BlocApp.
  *
  * Include:
  * - Sidebar navigation
- * - Verificare rol super_admin
+ * - Verificare rol master
  * - Routing între pagini
  *
  * IMPORTANT: Această componentă trebuie protejată să fie accesibilă
- * DOAR pentru userii cu rol super_admin!
+ * DOAR pentru userii cu rol master!
  *
  * Notă: "admin" în BlocApp = administratorii de asociații (clienții)
- *       "console/super_admin" = tu, owner-ul BlocApp
+ *       "master" = tu, owner-ul BlocApp
  */
 
 // Configurare navigare
@@ -45,9 +45,9 @@ const NAV_ITEMS = [
 ];
 
 /**
- * Console Login Form
+ * Master Login Form
  */
-const ConsoleLogin = ({ onLogin }) => {
+const MasterLogin = ({ onLogin }) => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,11 +76,11 @@ const ConsoleLogin = ({ onLogin }) => {
         {/* Logo */}
         <div className="text-center mb-8">
           <img
-            src="/logo-console.png"
-            alt="BlocApp Console"
+            src="/logo-master.png"
+            alt="BlocApp Master"
             className="h-44 mx-auto mb-4"
           />
-          <p className="text-purple-600 text-sm font-medium">Admin Console - Super Admin Access</p>
+          <p className="text-purple-600 text-sm font-medium">Master Portal - Owner Access</p>
         </div>
 
         {/* Login Card */}
@@ -90,7 +90,7 @@ const ConsoleLogin = ({ onLogin }) => {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Console Login</h1>
+              <h1 className="text-xl font-bold text-gray-900">Master Login</h1>
               <p className="text-purple-600 text-sm">Acces restricționat</p>
             </div>
           </div>
@@ -171,7 +171,7 @@ const ConsoleLogin = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-purple-600 text-sm mt-6">
-          © {new Date().getFullYear()} BlocApp Console
+          © {new Date().getFullYear()} BlocApp Master
         </p>
       </div>
     </div>
@@ -201,8 +201,8 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <img
-              src="/blocapp-logo-console.png"
-              alt="BlocApp Console"
+              src="/blocapp-logo-master.png"
+              alt="BlocApp Master"
               className="h-16 w-auto"
             />
           </div>
@@ -280,17 +280,17 @@ const AccessDenied = () => (
 );
 
 /**
- * Main Console App Component
+ * Main Master App Component
  */
-const ConsoleApp = () => {
+const MasterApp = () => {
   const { currentUser, userProfile, logout, loading } = useAuth();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedUser, setSelectedUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Verifică dacă user-ul este super_admin
-  const isSuperAdmin = userProfile?.role === 'super_admin';
+  // Verifică dacă user-ul este master
+  const isMaster = userProfile?.role === 'master';
 
   // Handler pentru navigare
   const handleNavigate = (page) => {
@@ -327,11 +327,11 @@ const ConsoleApp = () => {
 
   // Show login form if not authenticated
   if (!currentUser) {
-    return <ConsoleLogin />;
+    return <MasterLogin />;
   }
 
-  // Access denied if not super_admin (only show after profile is loaded)
-  if (!isSuperAdmin) {
+  // Access denied if not master (only show after profile is loaded)
+  if (!isMaster) {
     return <AccessDenied />;
   }
 
@@ -339,7 +339,7 @@ const ConsoleApp = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <ConsoleDashboard onNavigate={handleNavigate} />;
+        return <MasterDashboard onNavigate={handleNavigate} />;
 
       case 'users':
         return (
@@ -364,7 +364,7 @@ const ConsoleApp = () => {
         return <PendingPayments adminUserId={currentUser.uid} />;
 
       default:
-        return <ConsoleDashboard onNavigate={handleNavigate} />;
+        return <MasterDashboard onNavigate={handleNavigate} />;
     }
   };
 
@@ -389,7 +389,7 @@ const ConsoleApp = () => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="font-bold text-gray-900">BlocApp Console</div>
+          <div className="font-bold text-gray-900">BlocApp Master</div>
           <div className="w-10" /> {/* Spacer */}
         </div>
 
@@ -402,4 +402,4 @@ const ConsoleApp = () => {
   );
 };
 
-export default ConsoleApp;
+export default MasterApp;

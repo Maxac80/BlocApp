@@ -116,7 +116,7 @@ BlocApp uses a **nested collection architecture** where user and association-spe
 {
   // Auth fields (flat for performance)
   email: string,
-  role: string,  // 'admin_asociatie', 'super_admin', etc.
+  role: string,  // 'admin_asociatie', 'master', etc.
   subscriptionStatus: string,
   isActive: boolean,
   emailVerified: boolean,

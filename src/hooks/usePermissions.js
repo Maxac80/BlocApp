@@ -6,7 +6,7 @@ import { db } from '../firebase';
  * 🔐 SISTEM CENTRALIZAT DE PERMISIUNI
  *
  * Determină ce acțiuni poate face un utilizator bazat pe:
- * - Rolul global (user, super_admin)
+ * - Rolul global (user, master)
  * - Rolul în organizație (org_owner, org_admin, org_member)
  * - Rolul în asociație (assoc_admin, assoc_president, assoc_censor, assoc_owner)
  *
@@ -60,8 +60,8 @@ export const PERMISSIONS = {
 
 // 📊 MATRICEA DE PERMISIUNI PER ROL
 const PERMISSION_MATRIX = {
-  // Super Admin - toate permisiunile
-  super_admin: Object.values(PERMISSIONS),
+  // Master - toate permisiunile (owner BlocApp)
+  master: Object.values(PERMISSIONS),
 
   // Organization Owner - gestiune completă organizație + asociații din org
   org_owner: [
@@ -233,7 +233,7 @@ export const usePermissions = (userId = null) => {
       const associationRoles = {};
 
       // Global role
-      const globalRole = userData.role === 'super_admin' ? 'super_admin' : 'user';
+      const globalRole = userData.role === 'master' ? 'master' : 'user';
 
       // Organization roles din user.organizations[]
       const userOrganizations = userData.organizations || [];
@@ -312,8 +312,8 @@ export const usePermissions = (userId = null) => {
   const hasPermission = useCallback((permission, context = {}) => {
     const { organizationId, associationId } = context;
 
-    // Super admin are toate permisiunile
-    if (userRoles.globalRole === 'super_admin') {
+    // Master are toate permisiunile
+    if (userRoles.globalRole === 'master') {
       return true;
     }
 
@@ -354,8 +354,8 @@ export const usePermissions = (userId = null) => {
     const { organizationId, associationId } = context;
     const contextPermissions = new Set();
 
-    // Super admin are toate
-    if (userRoles.globalRole === 'super_admin') {
+    // Master are toate
+    if (userRoles.globalRole === 'master') {
       return Object.values(PERMISSIONS);
     }
 
@@ -402,9 +402,9 @@ export const usePermissions = (userId = null) => {
     return userRoles.associationRoles[associationId] || null;
   }, [userRoles]);
 
-  // 📊 VERIFICĂ DACĂ USER E SUPER ADMIN
-  const isSuperAdmin = useMemo(() => {
-    return userRoles.globalRole === 'super_admin';
+  // 📊 VERIFICĂ DACĂ USER E MASTER (owner BlocApp)
+  const isMaster = useMemo(() => {
+    return userRoles.globalRole === 'master';
   }, [userRoles]);
 
   // 📊 VERIFICĂ DACĂ USER E OWNER ÎN VREO ORGANIZAȚIE
@@ -414,11 +414,11 @@ export const usePermissions = (userId = null) => {
 
   // 📊 VERIFICĂ DACĂ USER ARE ACCES LA DASHBOARD GENERAL
   const hasAccessToDashboard = useMemo(() => {
-    // Super admin, org owners, sau useri cu asociații directe
-    return isSuperAdmin ||
+    // Master, org owners, sau useri cu asociații directe
+    return isMaster ||
            isOrgOwner ||
            Object.keys(userRoles.associationRoles).length > 0;
-  }, [isSuperAdmin, isOrgOwner, userRoles]);
+  }, [isMaster, isOrgOwner, userRoles]);
 
   // 🔄 EFFECT: Încarcă rolurile când userId se schimbă
   useEffect(() => {
@@ -448,7 +448,7 @@ export const usePermissions = (userId = null) => {
     // Role Checks
     getRoleInOrganization,
     getRoleInAssociation,
-    isSuperAdmin,
+    isMaster,
     isOrgOwner,
     hasAccessToDashboard,
 

@@ -27,10 +27,12 @@
   "scripts": {
     "start": "react-scripts start",
     "start:owner": "cross-env REACT_APP_MODE=owner PORT=3001 react-scripts start",
+    "start:master": "cross-env REACT_APP_MODE=master PORT=3002 react-scripts start",
     "prebuild": "node scripts/copy-icons.js",
     "build": "react-scripts build",
     "build:admin": "cross-env REACT_APP_MODE=admin node scripts/copy-icons.js && react-scripts build",
     "build:owner": "cross-env REACT_APP_MODE=owner node scripts/copy-icons.js && react-scripts build",
+    "build:master": "cross-env REACT_APP_MODE=master node scripts/copy-icons.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

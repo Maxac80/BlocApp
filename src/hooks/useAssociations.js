@@ -735,8 +735,8 @@ export const useAssociations = (userId = null) => {
       const userDoc = await getDoc(userRef);
       const userData = userDoc.exists() ? userDoc.data() : {};
 
-      // Super admin poate oricând
-      if (userData.role === 'super_admin') return true;
+      // Master poate oricând
+      if (userData.role === 'master') return true;
 
       // În funcție de billing mode
       switch (billing.mode) {

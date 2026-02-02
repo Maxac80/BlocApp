@@ -482,8 +482,8 @@ export function AuthProviderEnhanced({ children }) {
   const logout = logoutEnhanced;
 
   // Funcții de verificare roluri (păstrate pentru compatibilitate)
-  function isSuperAdmin() {
-    return userProfile?.role === 'super_admin';
+  function isMaster() {
+    return userProfile?.role === 'master';
   }
 
   function isAdminAsociatie() {
@@ -503,7 +503,7 @@ export function AuthProviderEnhanced({ children }) {
   }
 
   function canAdminister() {
-    return isSuperAdmin() || isAdminAsociatie();
+    return isMaster() || isAdminAsociatie();
   }
 
   function canReview() {
@@ -679,7 +679,7 @@ export function AuthProviderEnhanced({ children }) {
   const needsContextSelection = useCallback(() => {
     if (loading || contextsLoading) return false;
     if (!currentUser) return false;
-    if (userProfile?.role === 'super_admin') return false;
+    if (userProfile?.role === 'master') return false;
     if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
     return !currentContext;
   }, [loading, contextsLoading, currentUser, userProfile, userOrganizations, userDirectAssociations, currentContext]);
@@ -767,7 +767,7 @@ export function AuthProviderEnhanced({ children }) {
     login,
     logout,
     signup: register, // Alias
-    isSuperAdmin,
+    isMaster,
     isAdminAsociatie,
     isPresedinte,
     isCenzor,

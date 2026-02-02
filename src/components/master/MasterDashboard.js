@@ -18,7 +18,7 @@ import {
 import { useAdminBilling } from '../../hooks/useAdminBilling';
 
 /**
- * 📊 CONSOLE DASHBOARD
+ * 📊 MASTER DASHBOARD
  *
  * Dashboard principal pentru owner BlocApp cu:
  * - KPIs principale (MRR, useri, asociații)
@@ -290,9 +290,9 @@ const AlertsCard = ({ stats }) => {
 };
 
 /**
- * Componenta principală ConsoleDashboard
+ * Componenta principală MasterDashboard
  */
-const ConsoleDashboard = ({ onNavigate }) => {
+const MasterDashboard = ({ onNavigate }) => {
   const {
     getDashboardStats,
     getMrrHistory,
@@ -334,7 +334,7 @@ const ConsoleDashboard = ({ onNavigate }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Console Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Master Dashboard</h1>
           <p className="text-gray-500">Bine ai venit în panoul de administrare BlocApp</p>
         </div>
         <button
@@ -468,4 +468,4 @@ const ConsoleDashboard = ({ onNavigate }) => {
   );
 };
 
-export default ConsoleDashboard;
+export default MasterDashboard;

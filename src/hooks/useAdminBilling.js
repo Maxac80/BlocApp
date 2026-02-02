@@ -19,14 +19,14 @@ import { useSecurity } from './useSecurity';
 /**
  * 👑 HOOK PENTRU ADMIN BILLING OPERATIONS
  *
- * Funcționalități pentru super-admin (owner BlocApp):
+ * Funcționalități pentru master (owner BlocApp):
  * - Dashboard statistici (MRR, useri, churn)
  * - Gestionare useri (extend trial, set discount, suspend)
  * - Vizualizare și gestionare facturi
  * - Confirmare plăți manuale
  * - Rapoarte și export
  *
- * IMPORTANT: Acest hook trebuie folosit DOAR de super_admin!
+ * IMPORTANT: Acest hook trebuie folosit DOAR de master!
  * Verifică rolul utilizatorului înainte de a permite acces.
  */
 export const useAdminBilling = () => {

@@ -162,9 +162,9 @@ async function register(email, password, userData) {
     }
   }
 
-  // Verifică dacă utilizatorul e super admin (tu)
-  function isSuperAdmin() {
-    return userProfile?.role === 'super_admin';
+  // Verifică dacă utilizatorul e master (tu, owner BlocApp)
+  function isMaster() {
+    return userProfile?.role === 'master';
   }
 
   // Verifică dacă utilizatorul e administrator asociație (clientul)
@@ -187,9 +187,9 @@ async function register(email, password, userData) {
     return userProfile?.role === 'proprietar';
   }
 
-  // Verifică dacă are acces la administrare (super admin sau admin asociație)
+  // Verifică dacă are acces la administrare (master sau admin asociație)
   function canAdminister() {
-    return isSuperAdmin() || isAdminAsociatie();
+    return isMaster() || isAdminAsociatie();
   }
 
   // Verifică dacă poate revizui (președinte sau cenzor)
@@ -450,7 +450,7 @@ async function register(email, password, userData) {
     loadUserContexts,
 
     // Legacy role checks (păstrate pentru backward compatibility)
-    isSuperAdmin,
+    isMaster,
     isAdminAsociatie,
     isPresedinte,
     isCenzor,
@@ -472,8 +472,8 @@ async function register(email, password, userData) {
     needsContextSelection: () => {
       if (loading || contextsLoading) return false;
       if (!currentUser) return false;
-      // Super admin nu are nevoie de context selection
-      if (userProfile?.role === 'super_admin') return false;
+      // Master nu are nevoie de context selection
+      if (userProfile?.role === 'master') return false;
       // Dacă nu are nici organizații, nici asociații directe → onboarding
       if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
       // Dacă nu are context selectat → arată selector

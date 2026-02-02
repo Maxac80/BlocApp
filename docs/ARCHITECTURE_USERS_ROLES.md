@@ -87,7 +87,7 @@ Pentru organizații cu **multiple owners egali**, aplicăm următoarele reguli:
 
 | Rol | Descriere |
 |-----|-----------|
-| `super_admin` | Developeri - acces total la sistem |
+| `master` | Developeri - acces total la sistem |
 | `user` | Utilizator normal înregistrat |
 
 > **Notă**: Rolurile vechi (`admin_asociatie`, `presedinte`, `cenzor`, `proprietar`) sunt ELIMINATE.
@@ -177,7 +177,7 @@ Pentru organizații cu **multiple owners egali**, aplicăm următoarele reguli:
   phone: string,
 
   // Rol global - SIMPLIFICAT
-  role: 'user' | 'super_admin',
+  role: 'user' | 'master',
 
   // Apartenența la firme - ARRAY (poate fi în multiple firme!)
   organizations: [
@@ -583,7 +583,7 @@ Când userul face click pe "Asociațiile mele":
 
 ### User Profile - Ce poate edita
 
-| Câmp | Userul însuși | super_admin |
+| Câmp | Userul însuși | master |
 |------|---------------|-------------|
 | email | ❌ (Auth change) | ✅ |
 | displayName | ✅ Edit | ✅ |
@@ -729,8 +729,8 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    function isMaster() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'master';
     }
 
     function isOrgOwner(orgId) {
@@ -749,15 +749,15 @@ service cloud.firestore {
 
     // Users
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
-      allow write: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isMaster());
+      allow write: if isAuthenticated() && (isOwner(userId) || isMaster());
     }
 
     // Organizations
     match /organizations/{orgId} {
-      allow read: if isAuthenticated() && (isOrgOwner(orgId) || isOrgMember(orgId) || isSuperAdmin());
+      allow read: if isAuthenticated() && (isOrgOwner(orgId) || isOrgMember(orgId) || isMaster());
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (isOrgOwner(orgId) || isSuperAdmin());
+      allow update: if isAuthenticated() && (isOrgOwner(orgId) || isMaster());
       allow delete: if false; // Soft delete only
 
       // Organization members
@@ -1436,7 +1436,7 @@ const canDeleteAssociation = (userId, association) => {
   const billing = association.billing;
 
   // Super admin poate oricând
-  if (user.role === 'super_admin') return true;
+  if (user.role === 'master') return true;
 
   // În funcție de billing mode
   switch (billing.mode) {

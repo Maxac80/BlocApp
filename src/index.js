@@ -3,13 +3,13 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import OwnerPortalApp from './OwnerPortalApp';
-import { ConsoleApp } from './components/console';
+import { MasterApp } from './components/master';
 import { AuthProvider } from './context/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
-// Detectează modul: admin (default), owner, sau console
+// Detectează modul: admin (default), owner, sau master
 // Setează REACT_APP_MODE=owner pentru portal proprietari
-// Setează REACT_APP_MODE=console pentru admin console (super_admin)
+// Setează REACT_APP_MODE=master pentru master portal (owner BlocApp)
 const appMode = process.env.REACT_APP_MODE;
 
 // Selectează componenta bazat pe mod
@@ -17,10 +17,10 @@ const getAppComponent = () => {
   switch (appMode) {
     case 'owner':
       return <OwnerPortalApp />;
-    case 'console':
+    case 'master':
       return (
         <AuthProvider>
-          <ConsoleApp />
+          <MasterApp />
         </AuthProvider>
       );
     default:
