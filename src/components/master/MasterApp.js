@@ -224,7 +224,7 @@ const Sidebar = ({ currentPage, onNavigate, onLogout, isOpen, onClose }) => (
             <img
               src="/blocapp-logo-master.png"
               alt="BlocApp Master"
-              className="h-16 w-auto"
+              className="h-10 object-contain"
             />
           </div>
           <button
