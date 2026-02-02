@@ -80,7 +80,7 @@ const MasterLogin = ({ onLogin }) => {
             <img
               src="/logo-master.png"
               alt="BlocApp Master"
-              className="h-20 object-contain"
+              className="h-[72px] object-contain"
             />
           </a>
           <p className="text-gray-500 text-xs">Master Portal - Gestionare utilizatori și billing</p>
