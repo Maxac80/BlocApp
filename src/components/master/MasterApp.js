@@ -71,108 +71,113 @@ const MasterLogin = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-violet-100 p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <img
-            src="/logo-master.png"
-            alt="BlocApp Master"
-            className="h-44 mx-auto mb-4"
-          />
-          <p className="text-purple-600 text-sm font-medium">Master Portal - Owner Access</p>
+        {/* Header cu Logo */}
+        <div className="text-center mb-4 sm:mb-6">
+          <a href="https://blocapp.ro" className="flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
+            <img
+              src="/logo-master.png"
+              alt="BlocApp Master"
+              className="h-16 object-contain"
+            />
+          </a>
+          <p className="text-gray-500 text-xs">Master Portal - Gestionare utilizatori și billing</p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-purple-200">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Master Login</h1>
-              <p className="text-purple-600 text-sm">Acces restricționat</p>
-            </div>
+        {/* Card Principal */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+          {/* Header Login */}
+          <div className="text-center mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Autentificare</h2>
+            <p className="text-gray-600 text-sm mt-1">Conectează-te la contul tău de master</p>
           </div>
 
+          {/* Erori globale */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm">{error}</span>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
             </div>
           )}
 
+          {/* Formular Login */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-1.5">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
+                <Mail className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
-                    text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500
-                    focus:ring-1 focus:ring-purple-500"
-                  placeholder="admin@blocapp.ro"
+                  disabled={isLoading}
+                  className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors border-gray-300 bg-white ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="email@exemplu.ro"
+                  autoComplete="email"
                   required
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-1.5">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Parolă
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
+                <Lock className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-lg
-                    text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500
-                    focus:ring-1 focus:ring-purple-500"
-                  placeholder="••••••••"
+                  disabled={isLoading}
+                  className={`w-full pl-9 pr-10 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors border-gray-300 bg-white ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder="Parola ta"
+                  autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500 hover:text-purple-600"
+                  disabled={isLoading}
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
+            {/* Buton Login */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium
-                rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                flex items-center justify-center gap-2"
+              disabled={isLoading || !email || !password}
+              className="w-full bg-purple-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Se autentifică...
-                </>
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Se conectează...
+                </div>
               ) : (
-                <>
-                  <Lock className="w-5 h-5" />
-                  Autentificare
-                </>
+                'Conectează-te'
               )}
             </button>
           </form>
-        </div>
 
-        <p className="text-center text-purple-600 text-sm mt-6">
-          © {new Date().getFullYear()} BlocApp Master
-        </p>
+          {/* Securitate Info */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-center text-[10px] sm:text-xs text-gray-500">
+              <Shield className="w-3.5 h-3.5 mr-1" />
+              Conexiune securizată SSL • Acces restricționat
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
