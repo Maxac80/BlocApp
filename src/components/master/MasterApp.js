@@ -52,6 +52,7 @@ const MasterLogin = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -151,6 +152,21 @@ const MasterLogin = ({ onLogin }) => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+
+            {/* Remember Me */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+                className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+              />
+              <label htmlFor="rememberMe" className="ml-2 text-xs text-gray-700">
+                Ține-mă conectat
+              </label>
             </div>
 
             {/* Buton Login */}
