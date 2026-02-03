@@ -60,7 +60,7 @@ export default function OwnerSidebar({ currentView, onNavigate, isOpen, onClose 
       <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <img
-            src="/blocapp-logo-portal.png"
+            src="/blocapp-logo-locatari.png"
             alt="BlocApp"
             className="h-10 object-contain"
           />

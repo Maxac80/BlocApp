@@ -75,7 +75,7 @@ export default function OwnerLandingPage() {
         <div className="text-center mb-4 sm:mb-6">
           <a href="https://blocapp.ro" className="flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
             <img
-              src="/logo-portal.png"
+              src="/logo-locatari.png"
               alt="BlocApp Locatari"
               className="h-16 object-contain"
             />

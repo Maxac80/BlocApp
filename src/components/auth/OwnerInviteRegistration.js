@@ -185,7 +185,7 @@ export default function OwnerInviteRegistration({ token }) {
         <div className="text-center mb-6 sm:mb-8">
           <div className="mx-auto mb-3 sm:mb-4">
             <img
-              src="/logo-portal.png"
+              src="/logo-locatari.png"
               alt="BlocApp Locatari"
               className="h-16 object-contain mx-auto"
             />
