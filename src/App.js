@@ -26,8 +26,8 @@ import './services/appCheck'; // Initialize App Check for security
  * 2. Din URL parameter ?mode=owner (pentru development local)
  *
  * Production:
- *   - app.blocapp.ro → REACT_APP_MODE=admin
- *   - portal.blocapp.ro → REACT_APP_MODE=owner
+ *   - administratori.blocapp.ro → REACT_APP_MODE=admin
+ *   - locatari.blocapp.ro → REACT_APP_MODE=owner
  *
  * Development:
  *   - localhost:3000 → admin (default)
@@ -254,7 +254,7 @@ function AppContent() {
   }
 
   // 🏠 OWNER MODE: Afișează Owner Portal (folosește sesiunea Firebase curentă)
-  // Production: https://portal.blocapp.ro (REACT_APP_MODE=owner)
+  // Production: https://locatari.blocapp.ro (REACT_APP_MODE=owner)
   // Development: http://localhost:3000?mode=owner
   if (appMode === 'owner') {
     return <OwnerPortalWrapper currentUser={currentUser} />;

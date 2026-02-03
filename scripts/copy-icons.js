@@ -179,7 +179,7 @@ if (mode === 'owner') {
     ogImage: 'og-image-portal.png',
     title: 'BlocApp Locatari',
     description: 'Vezi întreținerea, plătește online, transmite indexuri.',
-    imageUrl: 'https://portal.blocapp.ro/og-image.png',
+    imageUrl: 'https://locatari.blocapp.ro/og-image.png',
     themeColor: '#10B981'
   };
 } else if (mode === 'master') {
@@ -195,7 +195,7 @@ if (mode === 'owner') {
     ogImage: 'og-image-admin.png',
     title: 'BlocApp Administratori',
     description: 'Calcul întreținere automat, gestiune cheltuieli, încasări.',
-    imageUrl: 'https://app.blocapp.ro/og-image.png',
+    imageUrl: 'https://administratori.blocapp.ro/og-image.png',
     themeColor: '#3B82F6'
   };
 }

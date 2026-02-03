@@ -25,7 +25,7 @@ export default function HomePage() {
 
                 {/* CTA Buttons */}
                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                  <Button href="https://app.blocapp.ro?register=true" size="lg">
+                  <Button href="https://administratori.blocapp.ro?register=true" size="lg">
                     Încearcă Gratuit 90 Zile
                   </Button>
                   <Button href="/demo" variant="outline" size="lg">
@@ -222,7 +222,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10">
               <a
-                href="https://app.blocapp.ro?register=true"
+                href="https://administratori.blocapp.ro?register=true"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
               >
                 Creează Cont Gratuit

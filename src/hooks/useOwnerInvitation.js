@@ -494,7 +494,7 @@ export const useOwnerInvitation = () => {
    */
   const getMagicLink = (token) => {
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? 'https://portal.blocapp.ro'
+      ? 'https://locatari.blocapp.ro'
       : 'http://localhost:3000';
 
     return `${baseUrl}/invite/${token}`;

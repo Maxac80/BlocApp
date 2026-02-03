@@ -27,7 +27,7 @@ const getResend = () => new Resend(resendApiKey.value());
 // Configurare
 const CONFIG = {
   fromEmail: "BlocApp <noreply@blocapp.ro>",
-  appUrl: "https://app.blocapp.ro",
+  appUrl: "https://administratori.blocapp.ro",
   appName: "BlocApp"
 };
 
@@ -217,7 +217,7 @@ const emailTemplates = {
 exports.sendVerificationEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
     secrets: [resendApiKey]
   },
   async (request) => {
@@ -275,7 +275,7 @@ exports.sendVerificationEmail = onCall(
 exports.sendPasswordResetEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
     secrets: [resendApiKey]
   },
   async (request) => {
@@ -345,7 +345,7 @@ exports.sendPasswordResetEmail = onCall(
 exports.resendVerificationEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://app.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
     secrets: [resendApiKey]
   },
   async (request) => {
@@ -885,7 +885,7 @@ exports.sendPaymentReminders = onSchedule(
 exports.recordManualPayment = onCall(
   {
     region: "europe-west1",
-    cors: ["https://app.blocapp.ro", "https://console.blocapp.ro", "http://localhost:3000"]
+    cors: ["https://administratori.blocapp.ro", "https://master.blocapp.ro", "http://localhost:3000"]
   },
   async (request) => {
     if (!request.auth) {

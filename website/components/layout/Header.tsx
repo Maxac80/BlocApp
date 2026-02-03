@@ -55,13 +55,13 @@ export default function Header() {
           {/* CTA Buttons */}
           <div className="hidden lg:flex lg:items-center lg:space-x-3">
             <a
-              href="https://portal.blocapp.ro"
+              href="https://locatari.blocapp.ro"
               className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
             >
               Locatari
             </a>
             <a
-              href="https://app.blocapp.ro"
+              href="https://administratori.blocapp.ro"
               className="text-sm font-medium text-gray-700 hover:text-primary-600 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-300 transition-colors"
             >
               Administratori
@@ -115,14 +115,14 @@ export default function Header() {
               ))}
               <div className="pt-4 space-y-2">
                 <a
-                  href="https://portal.blocapp.ro"
+                  href="https://locatari.blocapp.ro"
                   className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 border border-gray-200 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Locatari
                 </a>
                 <a
-                  href="https://app.blocapp.ro"
+                  href="https://administratori.blocapp.ro"
                   className="block w-full text-center px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:border-primary-300"
                   onClick={() => setMobileMenuOpen(false)}
                 >

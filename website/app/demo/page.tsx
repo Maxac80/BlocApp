@@ -310,7 +310,7 @@ export default function DemoPage() {
               90 de zile, fără card, fără obligații. Testează tot ce ai văzut în demo.
             </p>
             <a
-              href="https://app.blocapp.ro?register=true"
+              href="https://administratori.blocapp.ro?register=true"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-lg bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 transition-all shadow-lg hover:shadow-xl"
             >
               Încearcă Gratuit 90 Zile

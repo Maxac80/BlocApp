@@ -87,7 +87,7 @@ export default function OwnerInviteRegistration({ token }) {
       // Redirect după 2 secunde
       setTimeout(() => {
         window.location.href = process.env.NODE_ENV === 'production'
-          ? 'https://portal.blocapp.ro'
+          ? 'https://locatari.blocapp.ro'
           : 'http://localhost:3000?mode=owner';
       }, 2000);
     } else {
@@ -150,7 +150,7 @@ export default function OwnerInviteRegistration({ token }) {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Cont deja activ</h2>
           <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{validationError}</p>
           <a
-            href={process.env.NODE_ENV === 'production' ? 'https://portal.blocapp.ro' : 'http://localhost:3000?mode=owner'}
+            href={process.env.NODE_ENV === 'production' ? 'https://locatari.blocapp.ro' : 'http://localhost:3000?mode=owner'}
             className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-sm sm:text-base text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />

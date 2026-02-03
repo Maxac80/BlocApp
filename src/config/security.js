@@ -11,11 +11,13 @@ const ALLOWED_DOMAINS = [
   // Production - blocapp.ro
   'blocapp.ro',
   'www.blocapp.ro',
-  'app.blocapp.ro',
-  'portal.blocapp.ro',
+  'administratori.blocapp.ro',
+  'locatari.blocapp.ro',
+  'master.blocapp.ro',
   // Vercel preview domains
-  'blocapp-admin.vercel.app',
-  'blocapp-portal.vercel.app',
+  'blocapp-administratori.vercel.app',
+  'blocapp-locatari.vercel.app',
+  'blocapp-master.vercel.app',
   'blocapp-website.vercel.app',
 ];
 

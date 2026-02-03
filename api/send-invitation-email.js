@@ -7,8 +7,8 @@
 
 // Domenii permise pentru CORS
 const ALLOWED_ORIGINS = [
-  'https://app.blocapp.ro',
-  'https://portal.blocapp.ro',
+  'https://administratori.blocapp.ro',
+  'https://locatari.blocapp.ro',
   'https://blocapp.ro',
   'http://localhost:3000',
   'http://localhost:3001'
