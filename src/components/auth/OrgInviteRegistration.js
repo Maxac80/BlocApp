@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthEnhanced as useAuth } from '../../context/AuthContextEnhanced';
 import { useOrgInvitation } from '../../hooks/useOrgInvitation';
 
 /**

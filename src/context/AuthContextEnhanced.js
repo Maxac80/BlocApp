@@ -679,10 +679,10 @@ export function AuthProviderEnhanced({ children }) {
   const needsContextSelection = useCallback(() => {
     if (loading || contextsLoading) return false;
     if (!currentUser) return false;
-    if (userProfile?.role === 'master') return false;
+    // Master poate vedea și el context selector (organizații/asociații)
     if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
     return !currentContext;
-  }, [loading, contextsLoading, currentUser, userProfile, userOrganizations, userDirectAssociations, currentContext]);
+  }, [loading, contextsLoading, currentUser, userOrganizations, userDirectAssociations, currentContext]);
 
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {

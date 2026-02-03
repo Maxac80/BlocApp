@@ -13,7 +13,7 @@ import {
   Shield,
   DollarSign
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthEnhanced as useAuth } from '../../context/AuthContextEnhanced';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useBillingCalculation } from '../../hooks/useBillingCalculation';
 import { useBillingInvoices } from '../../hooks/useBillingInvoices';
