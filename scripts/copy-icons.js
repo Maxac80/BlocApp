@@ -54,7 +54,7 @@ if (mode === 'owner') {
   const manifestPath = path.join(publicDir, 'manifest.json');
   const manifest = {
     "short_name": "BlocApp",
-    "name": "BlocApp - Portal Locatari",
+    "name": "BlocApp Locatari",
     "icons": [
       {
         "src": "favicon.png",

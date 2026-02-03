@@ -17,7 +17,7 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
             </div>
             <div>
               <h1 className="text-base sm:text-lg font-bold text-gray-900">BlocApp</h1>
-              <p className="text-[10px] sm:text-xs text-gray-500">Portal Locatari</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">BlocApp Locatari</p>
             </div>
           </div>
           <button
