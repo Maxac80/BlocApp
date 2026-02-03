@@ -16,19 +16,21 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
-  description: "Calcul întreținere automat, portal proprietari, plăți online.",
+  title: "BlocApp - Aplicație software pentru administrarea asociațiilor de proprietari",
+  description: "Calcul întreținere, portal locatari, plată întreținere online.",
   keywords: ["software administrare bloc", "program asociatie proprietari", "calcul intretinere", "alternativa excel", "blocapp"],
   authors: [{ name: "BlocApp" }],
   icons: {
     icon: [
-      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
+      { url: '/favicon.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.ico',
   },
   openGraph: {
-    title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
-    description: "Calcul întreținere automat, portal proprietari, plăți online.",
+    title: "BlocApp - Aplicație software pentru administrarea asociațiilor de proprietari",
+    description: "Calcul întreținere, portal locatari, plată întreținere online.",
     url: "https://blocapp.ro",
     siteName: "BlocApp",
     locale: "ro_RO",
@@ -38,15 +40,15 @@ export const metadata: Metadata = {
         url: "https://blocapp.ro/og-image.png",
         width: 1200,
         height: 630,
-        alt: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
+        alt: "BlocApp - Aplicație software pentru administrarea asociațiilor de proprietari",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BlocApp - Software pentru administrarea asociațiilor de proprietari",
-    description: "Calcul întreținere automat, portal proprietari, plăți online.",
+    title: "BlocApp - Aplicație software pentru administrarea asociațiilor de proprietari",
+    description: "Calcul întreținere, portal locatari, plată întreținere online.",
     images: ["https://blocapp.ro/og-image.png"],
   },
   viewport: {

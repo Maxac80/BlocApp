@@ -11,7 +11,7 @@
  *
  * Fisiere sursa (deja create in public/):
  * - Admin: logo192.png, logo512.png, favicon.png (albastre - DEFAULT)
- * - Portal: logo192-portal.png, logo512-portal.png, favicon-portal.png (verzi)
+ * - Portal: logo192-locatari.png, logo512-locatari.png, favicon-locatari.png (verzi)
  * - Master: logo192-master.png, logo512-master.png, favicon-master.png (violet/dark)
  */
 
@@ -33,9 +33,10 @@ if (mode === 'owner') {
   console.log('\nSetting up Portal (green) icons...\n');
 
   const iconMappings = [
-    { from: 'logo192-portal.png', to: 'logo192.png' },
-    { from: 'logo512-portal.png', to: 'logo512.png' },
-    { from: 'favicon-portal.png', to: 'favicon.png' }
+    { from: 'logo192-locatari.png', to: 'logo192.png' },
+    { from: 'logo512-locatari.png', to: 'logo512.png' },
+    { from: 'favicon-locatari.png', to: 'favicon.png' },
+    { from: 'favicon-locatari.ico', to: 'favicon.ico' }
   ];
 
   iconMappings.forEach(({ from, to }) => {
@@ -88,7 +89,8 @@ if (mode === 'owner') {
   const iconMappings = [
     { from: 'logo192-master.png', to: 'logo192.png' },
     { from: 'logo512-master.png', to: 'logo512.png' },
-    { from: 'favicon-master.png', to: 'favicon.png' }
+    { from: 'favicon-master.png', to: 'favicon.png' },
+    { from: 'favicon-master.ico', to: 'favicon.ico' }
   ];
 
   iconMappings.forEach(({ from, to }) => {
@@ -176,7 +178,7 @@ console.log('Setting up OG metadata...\n');
 let ogConfig;
 if (mode === 'owner') {
   ogConfig = {
-    ogImage: 'og-image-portal.png',
+    ogImage: 'og-image-locatari.png',
     title: 'BlocApp Locatari',
     description: 'Vezi întreținerea, plătește online, transmite indexuri.',
     imageUrl: 'https://locatari.blocapp.ro/og-image.png',
