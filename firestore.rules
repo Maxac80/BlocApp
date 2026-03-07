@@ -55,13 +55,13 @@ service cloud.firestore {
     }
 
     // Verifică dacă utilizatorul este admin al asociației
+    // IMPORTANT: folosim exists() înainte de get().data pentru a evita erori
+    // când member doc nu există (ex: la acceptare invitație)
     function isAssocAdmin(assocId) {
       let assoc = get(/databases/$(database)/documents/associations/$(assocId)).data;
-      if (assoc.adminId == request.auth.uid) {
-        return true;
-      }
-      let memberData = get(/databases/$(database)/documents/associations/$(assocId)/members/$(request.auth.uid)).data;
-      return memberData.role == 'assoc_admin';
+      return assoc.adminId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/associations/$(assocId)/members/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/associations/$(assocId)/members/$(request.auth.uid)).data.role == 'assoc_admin');
     }
 
     // ============================================
@@ -160,8 +160,10 @@ service cloud.firestore {
       // Sub-colecția members (admini pot gestiona, toți membrii pot citi)
       match /members/{memberId} {
         allow read: if hasAssociationAccess(assocId) || isSuperAdmin();
-        allow create, update: if isAssocAdmin(assocId) || isSuperAdmin() ||
-          isOwner(memberId); // user-ul își poate crea propriul member doc (la acceptare invitație)
+        // isOwner PRIMUL - la acceptare invitație, member doc nu există încă,
+        // deci isAssocAdmin ar face get() pe null și ar crasha toată regula
+        allow create, update: if isOwner(memberId) ||
+          isAssocAdmin(assocId) || isSuperAdmin();
         allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
       }
 

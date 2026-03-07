@@ -255,9 +255,12 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
         userId = userCredential.user.uid;
 
         // Salveaza datele de profil (aceleasi ca onboarding ProfileStep)
+        // needsOnboarding: false - datele au fost completate la invite registration
         await setDoc(doc(db, 'users', userId), {
           name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
           phone: formData.phone.trim(),
+          needsOnboarding: false,
+          onboardingCompletedAt: new Date().toISOString(),
           profile: {
             personalInfo: {
               firstName: formData.firstName.trim(),
