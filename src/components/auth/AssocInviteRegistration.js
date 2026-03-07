@@ -29,11 +29,12 @@ import { useAssocInvitation } from '../../hooks/useAssocInvitation';
  *
  * URL format: /invite/assoc/{token}
  *
- * Folosește API server-side pentru validare (funcționează fără autentificare client).
+ * Folosește API server-side pentru validare (Vercel).
+ * Fallback pe client-side Firestore dacă API-ul nu e disponibil (localhost).
  */
 const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
-  const { currentUser, signup, login } = useAuth();
-  const { acceptInvitation } = useAssocInvitation();
+  const { currentUser, loading: authLoading, signup, login } = useAuth();
+  const { acceptInvitation, verifyInvitation } = useAssocInvitation();
 
   // State pentru verificare invitatie
   const [invitationStatus, setInvitationStatus] = useState('loading');
@@ -59,8 +60,11 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
   const [accepted, setAccepted] = useState(false);
   const [acceptError, setAcceptError] = useState(null);
 
-  // Verifica invitatia la mount (folosind API server-side)
+  // Verifica invitatia (API server-side pe Vercel, fallback client-side pe localhost)
   useEffect(() => {
+    // Pe fallback client-side avem nevoie de auth ready
+    if (authLoading) return;
+
     let cancelled = false;
 
     const checkInvitation = async () => {
@@ -71,19 +75,47 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
       }
 
       try {
-        const response = await fetch('/api/validate-assoc-invite-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        let result = null;
 
-        // Verifică dacă răspunsul e JSON (pe localhost poate returna HTML)
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('API_NOT_AVAILABLE');
+        // 1. Încearcă API server-side (Vercel)
+        try {
+          const response = await fetch('/api/validate-assoc-invite-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          }
+        } catch (apiErr) {
+          console.warn('API not available, trying client-side fallback');
         }
 
-        const result = await response.json();
+        // 2. Fallback: client-side Firestore (localhost / dev)
+        if (!result) {
+          console.log('Using client-side verification fallback');
+          const clientResult = await verifyInvitation(token);
+          if (clientResult.valid) {
+            result = {
+              valid: true,
+              invitation: {
+                id: clientResult.invitation.id,
+                email: clientResult.invitation.email,
+                name: clientResult.invitation.name || '',
+                role: clientResult.invitation.role,
+                associationId: clientResult.association.id
+              },
+              association: {
+                id: clientResult.association.id,
+                name: clientResult.association.name
+              }
+            };
+          } else {
+            result = { valid: false, error: clientResult.error };
+          }
+        }
 
         if (cancelled) return;
 
@@ -112,7 +144,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     checkInvitation();
 
     return () => { cancelled = true; };
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, authLoading]);
 
   // Daca user-ul e deja autentificat si invitatia e valida, accepta direct
   useEffect(() => {
