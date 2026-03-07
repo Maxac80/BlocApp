@@ -250,16 +250,20 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
         const userCredential = await signup(
           formData.email,
           formData.password,
-          `${formData.firstName} ${formData.lastName}`
+          {
+            firstName: formData.firstName.trim(),
+            lastName: formData.lastName.trim(),
+            name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+            phone: formData.phone.trim(),
+            role: 'admin_asociatie',
+            skipEmailVerification: true,
+            needsOnboarding: false
+          }
         );
         userId = userCredential.user.uid;
 
-        // Salveaza datele de profil (aceleasi ca onboarding ProfileStep)
-        // needsOnboarding: false - datele au fost completate la invite registration
+        // Salveaza datele extinse de profil (adresa, onboarding completed)
         await setDoc(doc(db, 'users', userId), {
-          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-          phone: formData.phone.trim(),
-          needsOnboarding: false,
           onboardingCompletedAt: new Date().toISOString(),
           profile: {
             personalInfo: {

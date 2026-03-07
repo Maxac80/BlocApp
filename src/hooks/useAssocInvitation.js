@@ -322,19 +322,23 @@ export const useAssocInvitation = () => {
       }
       const assocData = assocDoc.data();
 
-      // Obține datele user-ului
-      const userData = await loadUserProfile(userId);
+      // Obține datele user-ului (full user document, nu doar profile)
+      const userDocSnap = await getDoc(doc(db, 'users', userId));
+      const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+
+      // Construiește numele din profile.personalInfo sau din câmpul name
+      const memberName = userData?.profile?.personalInfo?.firstName
+        ? `${userData.profile.personalInfo.firstName} ${userData.profile.personalInfo.lastName || ''}`.trim()
+        : userData?.name || '';
 
       // Creează member doc
       const memberRef = doc(db, 'associations', foundAssocId, 'members', userId);
       await setDoc(memberRef, {
         userId,
         role: foundInvitation.role,
-        name: userData?.profile?.personalInfo?.firstName
-          ? `${userData.profile.personalInfo.firstName} ${userData.profile.personalInfo.lastName || ''}`.trim()
-          : userData?.name || '',
+        name: memberName,
         email: userData?.email || foundInvitation.email,
-        phone: userData?.profile?.personalInfo?.phone || '',
+        phone: userData?.profile?.personalInfo?.phone || userData?.phone || '',
         status: 'active',
         invitedBy: foundInvitation.createdBy,
         addedAt: foundInvitation.createdAt,

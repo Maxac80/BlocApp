@@ -85,48 +85,58 @@ export function AuthProviderEnhanced({ children }) {
         displayName: userData.name || `${userData.firstName} ${userData.lastName}`.trim()
       });
       
-      // Trimite email de verificare
-      await security.sendEmailVerificationWithLogging(user);
-      
-      // Determină rolul
+      // Trimite email de verificare (skip pentru invite registrations)
+      const skipVerification = userData.skipEmailVerification === true;
+      if (!skipVerification) {
+        await security.sendEmailVerificationWithLogging(user);
+      }
+
+      // Determină rolul și onboarding
       const userRole = userData.role || 'admin_asociatie';
-      
+      const needsOnboardingFlag = userData.needsOnboarding === false ? false : true;
+
       // Salvează profilul de bază în Firestore (compatibilitate)
       const basicProfileData = {
         email: email,
-        name: userData.name || userData.firstName || '',
+        name: userData.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || '',
         phone: userData.phone || '',
         role: userRole,
         subscriptionStatus: userRole === 'admin_asociatie' ? 'trial' : null,
         createdAt: new Date().toISOString(),
         isActive: true,
-        emailVerified: false,
-        needsOnboarding: true,
+        emailVerified: skipVerification,
+        needsOnboarding: needsOnboardingFlag,
         securityLevel: passwordValidation.strength,
         registrationIP: await security.getUserIP(),
         registrationDevice: security.deviceFingerprint
       };
-      
+
       await setDoc(doc(db, 'users', user.uid), basicProfileData);
       setUserProfile(basicProfileData);
-      
+
+      // Set states based on flags
+      if (skipVerification) {
+        setIsEmailVerified(true);
+      }
+      setNeedsOnboarding(needsOnboardingFlag);
+
       // Inițializează profilul extins
       await profileManager.loadUserProfile(user.uid);
-      
-      // Inițializează progresul onboarding
-      await onboarding.loadOnboardingProgress(user.uid);
-      setNeedsOnboarding(true);
-      
+
+      // Inițializează progresul onboarding doar dacă e necesar
+      if (needsOnboardingFlag) {
+        await onboarding.loadOnboardingProgress(user.uid);
+      }
+
       // Log înregistrare
       await security.logActivity(user.uid, 'USER_REGISTERED', {
         email,
         role: userRole,
         passwordStrength: passwordValidation.strength,
-        needsEmailVerification: true
+        needsEmailVerification: !skipVerification
       });
-      
-      // console.log('✅ Utilizator înregistrat cu funcționalități avansate:', basicProfileData);
-      return { user, needsEmailVerification: true };
+
+      return { user, needsEmailVerification: !skipVerification };
       
     } catch (error) {
       setAuthError(error.message);
@@ -408,7 +418,7 @@ export function AuthProviderEnhanced({ children }) {
         const profileData = userDoc.data();
         setUserProfile(profileData);
         
-        setIsEmailVerified(user.emailVerified);
+        setIsEmailVerified(user.emailVerified || profileData.emailVerified === true);
         
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
