@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
-  Mail,
   Lock,
   User,
+  Phone,
+  MapPin,
   Eye,
   EyeOff,
   CheckCircle,
@@ -18,6 +19,9 @@ import {
 } from 'lucide-react';
 import { useAuthEnhanced as useAuth } from '../../context/AuthContextEnhanced';
 import { useAssocInvitation } from '../../hooks/useAssocInvitation';
+import { judeteRomania } from '../../data/counties';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 /**
  * PAGINA DE ACCEPTARE INVITATIE ASOCIATIE
@@ -49,7 +53,13 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     password: '',
     confirmPassword: '',
     firstName: '',
-    lastName: ''
+    lastName: '',
+    phone: '',
+    address: {
+      county: '',
+      city: '',
+      street: ''
+    }
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -172,14 +182,28 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     }
 
     if (mode === 'register') {
-      if (!formData.firstName) {
+      if (!formData.firstName.trim()) {
         errors.firstName = 'Prenumele este obligatoriu';
       }
-      if (!formData.lastName) {
+      if (!formData.lastName.trim()) {
         errors.lastName = 'Numele este obligatoriu';
       }
       if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = 'Parolele nu coincid';
+      }
+      if (!formData.phone.trim()) {
+        errors.phone = 'Telefonul este obligatoriu';
+      } else if (!/^(\+4|4|0)[0-9]{8,9}$/.test(formData.phone.replace(/\s/g, ''))) {
+        errors.phone = 'Numarul de telefon nu este valid (ex: 0721234567)';
+      }
+      if (!formData.address.county) {
+        errors.county = 'Judetul este obligatoriu';
+      }
+      if (!formData.address.city.trim()) {
+        errors.city = 'Localitatea este obligatorie';
+      }
+      if (!formData.address.street.trim()) {
+        errors.street = 'Strada este obligatorie';
       }
     }
 
@@ -229,6 +253,24 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
           `${formData.firstName} ${formData.lastName}`
         );
         userId = userCredential.user.uid;
+
+        // Salveaza datele de profil (aceleasi ca onboarding ProfileStep)
+        await setDoc(doc(db, 'users', userId), {
+          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+          phone: formData.phone.trim(),
+          profile: {
+            personalInfo: {
+              firstName: formData.firstName.trim(),
+              lastName: formData.lastName.trim(),
+              phone: formData.phone.trim(),
+              address: {
+                street: formData.address.street.trim(),
+                city: formData.address.city.trim(),
+                county: formData.address.county
+              }
+            }
+          }
+        }, { merge: true });
       } else {
         const userCredential = await login(formData.email, formData.password);
         userId = userCredential.user.uid;
@@ -439,10 +481,16 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
 
   const RoleIcon = getRoleIcon(invitationData?.role);
 
+  // Input class helper (same as onboarding ProfileStep)
+  const inputClass = (hasError) =>
+    `w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+      hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+    }`;
+
   // Formular register/login
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
         {/* Header cu info asociatie */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
           <div className="flex items-center justify-center mb-4">
@@ -493,128 +541,298 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
           {/* Error general */}
           {formErrors.general && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+              <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
               <span className="text-sm text-red-700">{formErrors.general}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nume (doar register) */}
-            {mode === 'register' && (
-              <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {mode === 'register' ? (
+              <>
+                {/* ========== DATE PERSONALE (same as ProfileStep) ========== */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-sm">
+                    <User className="w-4 h-4 mr-2" />
+                    Date personale
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Prenume */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Prenume <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        className={inputClass(formErrors.firstName)}
+                        placeholder="Ion"
+                      />
+                      {formErrors.firstName && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.firstName}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Nume */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nume <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        className={inputClass(formErrors.lastName)}
+                        placeholder="Popescu"
+                      />
+                      {formErrors.lastName && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.lastName}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Email (read-only, pre-filled) */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Email-ul nu poate fi modificat</p>
+                    </div>
+
+                    {/* Telefon */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Telefon <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className={inputClass(formErrors.phone)}
+                        placeholder="0721234567"
+                      />
+                      {formErrors.phone && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========== ADRESA (same as ProfileStep) ========== */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-sm">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Adresa de domiciliu
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Judetul */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Județul <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.address.county}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          address: { ...formData.address, county: e.target.value }
+                        })}
+                        className={inputClass(formErrors.county)}
+                      >
+                        <option value="">Selecteaza judetul</option>
+                        {judeteRomania.map(county => (
+                          <option key={county.cod} value={county.nume}>
+                            {county.nume}
+                          </option>
+                        ))}
+                      </select>
+                      {formErrors.county && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.county}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Localitatea */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Localitatea <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.address.city}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          address: { ...formData.address, city: e.target.value }
+                        })}
+                        className={inputClass(formErrors.city)}
+                        placeholder="Bucuresti, Ploiesti, etc."
+                      />
+                      {formErrors.city && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.city}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Strada - full width */}
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Strada si numarul <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.address.street}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          address: { ...formData.address, street: e.target.value }
+                        })}
+                        className={inputClass(formErrors.street)}
+                        placeholder="Strada Exemplu nr. 123A"
+                      />
+                      {formErrors.street && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.street}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========== PAROLA (register) ========== */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-sm">
+                    <Lock className="w-4 h-4 mr-2" />
+                    Securitate cont
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Parola */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Parola <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                            formErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                          placeholder="Min 6 caractere"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {formErrors.password && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.password}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Confirma parola */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confirma parola <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                          className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                            formErrors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                          placeholder="Rescrie parola"
+                        />
+                      </div>
+                      {formErrors.confirmPassword && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {formErrors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ========== LOGIN MODE ========== */}
+                {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Prenume
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={inputClass(formErrors.email)}
+                    placeholder="email@exemplu.ro"
+                  />
+                  {formErrors.email && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {formErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                {/* Parola */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Parola <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.firstName ? 'border-red-300' : 'border-gray-300'
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
+                        formErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}
-                      placeholder="Ion"
+                      placeholder="Parola ta"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                  {formErrors.firstName && (
-                    <p className="mt-1 text-xs text-red-600">{formErrors.firstName}</p>
+                  {formErrors.password && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {formErrors.password}
+                    </p>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nume
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.lastName ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Popescu"
-                  />
-                  {formErrors.lastName && (
-                    <p className="mt-1 text-xs text-red-600">{formErrors.lastName}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    formErrors.email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="email@exemplu.ro"
-                />
-              </div>
-              {formErrors.email && (
-                <p className="mt-1 text-xs text-red-600">{formErrors.email}</p>
-              )}
-            </div>
-
-            {/* Parola */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Parola
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className={`w-full pl-10 pr-12 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    formErrors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {formErrors.password && (
-                <p className="mt-1 text-xs text-red-600">{formErrors.password}</p>
-              )}
-            </div>
-
-            {/* Confirmare parola (doar register) */}
-            {mode === 'register' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirma parola
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="••••••••"
-                  />
-                </div>
-                {formErrors.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-600">{formErrors.confirmPassword}</p>
-                )}
-              </div>
+              </>
             )}
 
             {/* Submit */}
