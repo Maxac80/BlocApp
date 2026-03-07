@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db, cloudFunctions } from '../firebase';
-import { EmailSimulator } from '../utils/emailSimulator';
 
 /**
  * 🔐 HOOK PENTRU FEATURES AVANSATE DE SECURITATE
@@ -286,16 +285,11 @@ export const useSecurity = () => {
   const sendPasswordResetWithLogging = async (email) => {
     try {
       // Folosește Cloud Function pentru email profesionist via Resend
-      const result = await cloudFunctions.sendPasswordResetEmail({ email });
+      const result = await cloudFunctions.sendPasswordResetEmail({ email, origin: window.location.origin });
       await logActivity('system', 'PASSWORD_RESET_REQUESTED', {
         email,
         method: 'cloud_function_resend'
       });
-
-      // Simulare email în development (pentru debugging)
-      if (process.env.NODE_ENV === 'development') {
-        EmailSimulator.simulatePasswordReset(email);
-      }
 
       return { success: true, message: result.data?.message };
     } catch (error) {
@@ -314,18 +308,14 @@ export const useSecurity = () => {
       // Folosește Cloud Function pentru email profesionist via Resend
       const result = await cloudFunctions.sendVerificationEmail({
         email: user.email,
-        userName: userName || user.displayName || 'Utilizator'
+        userName: userName || user.displayName || 'Utilizator',
+        origin: window.location.origin
       });
 
       await logActivity(user.uid, 'EMAIL_VERIFICATION_SENT', {
         email: user.email,
         method: 'cloud_function_resend'
       });
-
-      // Simulare email în development (pentru debugging)
-      if (process.env.NODE_ENV === 'development') {
-        EmailSimulator.simulateEmailVerification(user);
-      }
 
       return { success: true, message: result.data?.message };
     } catch (error) {

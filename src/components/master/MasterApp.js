@@ -13,7 +13,7 @@ import {
   Mail,
   AlertCircle
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import MasterDashboard from './MasterDashboard';
 import UserManagement from './UserManagement';
 import UserBillingDetails from './UserBillingDetails';
@@ -48,7 +48,7 @@ const NAV_ITEMS = [
  * Master Login Form
  */
 const MasterLogin = ({ onLogin }) => {
-  const { login } = useAuth();
+  const { login } = useAuthEnhanced();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -304,7 +304,7 @@ const AccessDenied = () => (
  * Main Master App Component
  */
 const MasterApp = () => {
-  const { currentUser, userProfile, logout, loading } = useAuth();
+  const { currentUser, userProfile, logout, loading } = useAuthEnhanced();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedUser, setSelectedUser] = useState(null);

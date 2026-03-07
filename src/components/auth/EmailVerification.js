@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Clock, Send, Zap, LogOut } from 'lucide-react';
+import { Mail, Clock, Send, LogOut } from 'lucide-react';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
-import { EmailSimulator } from '../../utils/emailSimulator';
 
 /**
  * 📧 COMPONENTA VERIFICARE EMAIL - Design Minimalist
@@ -22,8 +21,6 @@ export default function EmailVerification({ onVerified, user }) {
   const [cooldownTime, setCooldownTime] = useState(0);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState('');
-  const [isDevelopment] = useState(process.env.NODE_ENV === 'development');
-
   // ⏰ COOLDOWN TIMER
   useEffect(() => {
     let interval = null;
@@ -51,15 +48,6 @@ export default function EmailVerification({ onVerified, user }) {
 
     return () => clearInterval(interval);
   }, [checkEmailVerification, onVerified]);
-
-  // 🔗 LISTENER PENTRU SIMULARE EMAIL VERIFICARE (dev)
-  useEffect(() => {
-    const handleEmailVerificationSimulated = () => {
-      if (onVerified) onVerified();
-    };
-    window.addEventListener('emailVerificationSimulated', handleEmailVerificationSimulated);
-    return () => window.removeEventListener('emailVerificationSimulated', handleEmailVerificationSimulated);
-  }, [onVerified]);
 
   // 📡 BROADCAST CHANNEL - Comunicare între tab-uri
   useEffect(() => {
@@ -108,14 +96,6 @@ export default function EmailVerification({ onVerified, user }) {
     } finally {
       setIsResending(false);
     }
-  };
-
-  // ⚡ SIMULARE EMAIL VERIFICARE (Development only)
-  const handleSimulateEmailVerification = () => {
-    if (user?.uid) {
-      localStorage.setItem(`email_verified_simulated_${user.uid}`, 'true');
-    }
-    EmailSimulator.simulateEmailVerificationClick();
   };
 
   // 🎨 FORMATARE TIMP
@@ -202,18 +182,6 @@ export default function EmailVerification({ onVerified, user }) {
             )}
           </button>
 
-          {/* ⚡ SIMULARE EMAIL VERIFICARE (Development Only) */}
-          {isDevelopment && (
-            <button
-              onClick={handleSimulateEmailVerification}
-              className="w-full mt-2 bg-orange-500 text-white py-2 px-4 rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors"
-            >
-              <div className="flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 mr-1.5" />
-                Simulează verificare (DEV)
-              </div>
-            </button>
-          )}
 
           {/* 🛠️ FOOTER */}
           <div className="mt-5 pt-4 border-t border-gray-100">

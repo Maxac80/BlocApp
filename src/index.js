@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import OwnerPortalApp from './OwnerPortalApp';
 import { MasterApp } from './components/master';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProviderEnhanced } from './context/AuthContextEnhanced';
 import reportWebVitals from './reportWebVitals';
 
 // Detectează modul: admin (default), owner, sau master
@@ -19,9 +19,9 @@ const getAppComponent = () => {
       return <OwnerPortalApp />;
     case 'master':
       return (
-        <AuthProvider>
+        <AuthProviderEnhanced>
           <MasterApp />
-        </AuthProvider>
+        </AuthProviderEnhanced>
       );
     default:
       return <App />;

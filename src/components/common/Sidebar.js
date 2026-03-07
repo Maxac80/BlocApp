@@ -16,8 +16,15 @@ const Sidebar = ({
   setCurrentMonth,
   publishedSheet,
   currentSheet,
-  onSwitchContext // 🆕 Pentru a reveni la ecranul de selecție context
+  onSwitchContext, // 🆕 Pentru a reveni la ecranul de selecție context
+  userRole // 🆕 Rolul utilizatorului pe asociația curentă
 }) => {
+  // Roluri read-only: președinte și cenzor nu pot edita
+  const isReadOnlyRole = userRole === 'assoc_president' || userRole === 'assoc_censor';
+  const roleLabel = userRole === 'assoc_president' ? 'Președinte'
+    : userRole === 'assoc_censor' ? 'Cenzor'
+    : 'Administrator';
+
   // Funcția pentru a naviga la Dashboard și la luna publicată activă
   const handleBlocAppClick = () => {
     // Navighează la luna publicată activă (prioritate: publishedSheet, apoi currentSheet)
@@ -142,7 +149,8 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Apartamente */}
+        {/* Apartamente - doar admini */}
+        {!isReadOnlyRole && (
         <button
           onClick={() => handleNavigation("setup")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -158,15 +166,17 @@ const Sidebar = ({
               <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scări, apartamente</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Apartamente
             </div>
           )}
         </button>
+        )}
 
-        {/* Cheltuieli */}
+        {/* Cheltuieli - doar admini */}
+        {!isReadOnlyRole && (
         <button
           onClick={() => handleNavigation("expenses")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -182,13 +192,14 @@ const Sidebar = ({
               <div className="text-xs text-gray-500 hidden lg:block">Cheltuieli & furnizori</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Configurare cheltuieli
             </div>
           )}
         </button>
+        )}
 
         {/* Contabilitate */}
         <button
@@ -238,7 +249,7 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Profil Administrator */}
+        {/* Profil */}
         <button
           onClick={() => handleNavigation("profile")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -250,7 +261,7 @@ const Sidebar = ({
           <User className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Profil Administrator</div>
+              <div className="text-sm lg:text-base font-medium">Profilul meu</div>
               <div className="text-xs text-gray-500 hidden lg:block">Date personale și setări</div>
             </div>
           )}
@@ -262,7 +273,8 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Setări */}
+        {/* Setări - doar admini */}
+        {!isReadOnlyRole && (
         <button
           onClick={() => handleNavigation("settings")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -285,8 +297,10 @@ const Sidebar = ({
             </div>
           )}
         </button>
+        )}
 
-        {/* Abonament și Facturare */}
+        {/* Abonament și Facturare - doar admini */}
+        {!isReadOnlyRole && (
         <button
           onClick={() => handleNavigation("subscription")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -309,6 +323,7 @@ const Sidebar = ({
             </div>
           )}
         </button>
+        )}
 
         {/* Tutoriale */}
         <button
@@ -340,8 +355,8 @@ const Sidebar = ({
         <>
           <div className="mx-3 lg:mx-4 my-3 lg:my-6 border-t border-gray-200"></div>
 
-          {/* Buton ștergere toate datele */}
-          {association && (
+          {/* Buton ștergere toate datele - doar admini */}
+          {association && !isReadOnlyRole && (
             <div className="px-3 lg:px-4 pb-2">
               <button
                 onClick={deleteAllBlocAppData}
@@ -389,7 +404,7 @@ const Sidebar = ({
     {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
   </div>
               <div className="text-xs text-gray-500 truncate hidden lg:block">
-                Administrator
+                {roleLabel}
               </div>
             </div>
             <button

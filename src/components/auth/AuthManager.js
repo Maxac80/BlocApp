@@ -12,7 +12,7 @@ import OnboardingTabs from '../onboarding/OnboardingTabs';
  * - Onboarding wizard pentru utilizatori noi
  * - Redirect către aplicația principală la final
  */
-export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
+export default function AuthManager({ onAuthComplete }) {
   const {
     currentUser,
     isEmailVerified,
@@ -187,7 +187,6 @@ export default function AuthManager({ onAuthComplete, onDevOwnerMode }) {
         onSuccess={handleAuthSuccess}
         onSwitchToRegister={switchToRegister}
         onSwitchToReset={switchToReset}
-        onDevOwnerMode={onDevOwnerMode}
       />
     );
   }

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -52,6 +52,7 @@ export function AuthProviderEnhanced({ children }) {
   const [userOrganizations, setUserOrganizations] = useState([]);
   const [userDirectAssociations, setUserDirectAssociations] = useState([]);
   const [contextsLoading, setContextsLoading] = useState(false);
+  const autoSelectDisabledRef = useRef(false); // previne auto-select după clearContext explicit
 
   // Hooks pentru funcționalități avansate
   const security = useSecurity();
@@ -317,23 +318,6 @@ export function AuthProviderEnhanced({ children }) {
       const user = auth.currentUser;
       if (!user) return false;
 
-      // În development, verifică dacă emailul a fost simulat ca verificat
-      if (process.env.NODE_ENV === 'development') {
-        const simulatedVerification = localStorage.getItem(`email_verified_simulated_${user.uid}`);
-        if (simulatedVerification === 'true') {
-          setIsEmailVerified(true);
-
-          // Update profil că emailul e verificat
-          await updateDoc(doc(db, 'users', user.uid), {
-            emailVerified: true,
-            emailVerifiedAt: new Date().toISOString(),
-            verificationSimulated: true
-          });
-
-          return true;
-        }
-      }
-
       // Forțează reload-ul datelor utilizatorului din Firebase
       try {
         await reload(user);
@@ -424,13 +408,7 @@ export function AuthProviderEnhanced({ children }) {
         const profileData = userDoc.data();
         setUserProfile(profileData);
         
-        // Verifică email verificat (real sau simulat în development)
-        let emailVerified = user.emailVerified;
-        if (process.env.NODE_ENV === 'development' && !emailVerified) {
-          const simulatedVerification = localStorage.getItem(`email_verified_simulated_${user.uid}`);
-          emailVerified = simulatedVerification === 'true';
-        }
-        setIsEmailVerified(emailVerified);
+        setIsEmailVerified(user.emailVerified);
         
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
@@ -556,16 +534,35 @@ export function AuthProviderEnhanced({ children }) {
       }
       setUserOrganizations(orgs);
 
-      // Încarcă asociațiile directe cu date complete
+      // Încarcă asociațiile directe cu date complete + rolul utilizatorului
       const assocs = [];
       if (userData.directAssociations && userData.directAssociations.length > 0) {
         for (const assocId of userData.directAssociations) {
           try {
             const assocDoc = await getDoc(doc(db, 'associations', assocId));
             if (assocDoc.exists()) {
+              const assocData = assocDoc.data();
+
+              // Detectează rolul utilizatorului pe această asociație
+              let userRole = 'assoc_admin'; // default
+              if (assocData.adminId === userId) {
+                userRole = 'assoc_admin';
+              } else {
+                // Citește member doc pentru a determina rolul
+                try {
+                  const memberDoc = await getDoc(doc(db, 'associations', assocId, 'members', userId));
+                  if (memberDoc.exists()) {
+                    userRole = memberDoc.data().role || 'assoc_admin';
+                  }
+                } catch (memberErr) {
+                  console.warn(`Could not load member role for assoc ${assocId}:`, memberErr);
+                }
+              }
+
               assocs.push({
                 id: assocId,
-                ...assocDoc.data()
+                userRole,
+                ...assocData
               });
             }
           } catch (err) {
@@ -615,11 +612,13 @@ export function AuthProviderEnhanced({ children }) {
       return;
     }
 
+    autoSelectDisabledRef.current = false; // resetăm flag-ul la selectare explicită
+
     const context = {
       type: 'association',
       id: association.id,
       data: association,
-      role: 'assoc_admin'
+      role: association.userRole || 'assoc_admin'
     };
 
     setCurrentContext(context);
@@ -631,6 +630,7 @@ export function AuthProviderEnhanced({ children }) {
 
   // 🆕 CLEAR CONTEXT
   const clearContext = useCallback(() => {
+    autoSelectDisabledRef.current = true;
     setCurrentContext(null);
     localStorage.removeItem('blocapp_context');
   }, []);
@@ -679,10 +679,26 @@ export function AuthProviderEnhanced({ children }) {
   const needsContextSelection = useCallback(() => {
     if (loading || contextsLoading) return false;
     if (!currentUser) return false;
-    // Master poate vedea și el context selector (organizații/asociații)
     if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
-    return !currentContext;
+    if (currentContext) return false; // deja selectat
+    // Dacă user-ul a dat explicit "Schimbă asociația", arată selector chiar și cu 1 asociație
+    if (autoSelectDisabledRef.current) return true;
+    // O singură asociație directă, fără organizații → auto-select (nu arăta selector)
+    if (userOrganizations.length === 0 && userDirectAssociations.length === 1) return false;
+    // 2+ asociații sau organizații → arată selector
+    return true;
   }, [loading, contextsLoading, currentUser, userOrganizations, userDirectAssociations, currentContext]);
+
+  // 🆕 AUTO-SELECT: dacă userul are exact o singură asociație directă și nicio organizație
+  // Nu se activează dacă user-ul a dat explicit "Schimbă asociația"
+  useEffect(() => {
+    if (loading || contextsLoading || currentContext) return;
+    if (!currentUser) return;
+    if (autoSelectDisabledRef.current) return;
+    if (userOrganizations.length === 0 && userDirectAssociations.length === 1) {
+      selectDirectAssociation(userDirectAssociations[0]);
+    }
+  }, [loading, contextsLoading, currentContext, currentUser, userOrganizations, userDirectAssociations, selectDirectAssociation]);
 
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {

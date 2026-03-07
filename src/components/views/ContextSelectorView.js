@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import {
-  Building2,
-  Home,
+  Building,
   Plus,
   ChevronRight,
   Users,
@@ -66,7 +65,8 @@ const ContextSelectorView = ({
   // Aceasta previne duplicări când o asociație a fost mutată într-o organizație
   const directAssociations = (associations || []).filter(assoc => !assoc.organizationId);
 
-  const totalItems = organizations.length + directAssociations.length;
+  // La lansare: doar asociații directe (organizațiile sunt ascunse din UI)
+  const totalItems = directAssociations.length;
 
   // Determină layout-ul bazat pe numărul de items
   const getLayoutStyle = () => {
@@ -218,24 +218,26 @@ const ContextSelectorView = ({
       <div
         onClick={() => onSelectAssociation(assoc)}
         className={`
-          bg-white rounded-xl border-2 border-gray-100 hover:border-emerald-300
+          bg-white rounded-xl border-2 border-gray-100 hover:border-blue-300
           hover:shadow-lg transition-all duration-200 cursor-pointer
-          border-l-[3px] border-l-emerald-500
+          border-l-[3px] border-l-blue-500
           ${isLarge ? 'p-4 sm:p-6' : 'p-4'}
         `}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex items-center min-w-0 flex-1">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
-              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+              <Building className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div className="min-w-0">
               <h3 className={`font-semibold text-gray-900 truncate ${isLarge ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}>
                 {assoc.name}
               </h3>
               <p className="text-xs sm:text-sm text-gray-500">
-                Asociație directă
+                {assoc.userRole === 'assoc_president' ? 'Președinte' :
+                 assoc.userRole === 'assoc_censor' ? 'Cenzor' :
+                 'Administrator'}
               </p>
             </div>
           </div>
@@ -317,38 +319,20 @@ const ContextSelectorView = ({
       </h2>
 
       <p className="text-gray-600 mb-8 max-w-md mx-auto">
-        Pentru a începe, creează o organizație (firmă de administrare) sau
-        o asociație de proprietari pe care o administrezi direct.
+        Pentru a începe, creează o asociație de proprietari pe care o administrezi.
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        {hasPermission(PERMISSIONS.ORG_CREATE) && (
-          <button
-            onClick={onCreateOrganization}
-            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
-          >
-            <Building2 className="w-5 h-5 mr-2" />
-            Creează Organizație
-          </button>
-        )}
-
+      <div className="flex justify-center">
         {hasPermission(PERMISSIONS.ASSOC_CREATE) && (
           <button
             onClick={onCreateAssociation}
-            className="inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            <Home className="w-5 h-5 mr-2" />
+            <Building className="w-5 h-5 mr-2" />
             Creează Asociație
           </button>
         )}
       </div>
-
-      <p className="text-sm text-gray-500 mt-6">
-        Nu știi ce să alegi?
-        <button type="button" className="text-blue-600 hover:underline ml-1">
-          Vezi diferențele
-        </button>
-      </p>
     </div>
   );
 
@@ -382,31 +366,20 @@ const ContextSelectorView = ({
                 Dashboard
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Organizațiile și asociațiile mele
+                Asociațiile mele
               </p>
             </div>
 
-            {/* Quick Actions - Buttons aligned right on mobile */}
-            {totalItems > 0 && (
-              <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
-                {hasPermission(PERMISSIONS.ORG_CREATE) && (
-                  <button
-                    onClick={onCreateOrganization}
-                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Organizație
-                  </button>
-                )}
-                {hasPermission(PERMISSIONS.ASSOC_CREATE) && (
-                  <button
-                    onClick={onCreateAssociation}
-                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-emerald-50 text-emerald-600 text-sm font-medium rounded-lg hover:bg-emerald-100 transition-colors"
-                  >
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Asociație
-                  </button>
-                )}
+            {/* Quick Actions */}
+            {totalItems > 0 && hasPermission(PERMISSIONS.ASSOC_CREATE) && (
+              <div className="flex items-center justify-end flex-shrink-0">
+                <button
+                  onClick={onCreateAssociation}
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Asociație nouă
+                </button>
               </div>
             )}
           </div>
@@ -419,41 +392,13 @@ const ContextSelectorView = ({
           <EmptyState />
         ) : (
           <div className="space-y-8">
-            {/* Organizations Section */}
-            {organizations.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Briefcase className="w-5 h-5 mr-2 text-blue-600" />
-                    Organizații ({organizations.length})
-                  </h2>
-                </div>
-
-                <div className={`
-                  grid gap-4
-                  ${layoutStyle === 'large'
-                    ? 'grid-cols-1 md:grid-cols-2'
-                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                  }
-                `}>
-                  {organizations.map(org => (
-                    <OrganizationCard
-                      key={org.id}
-                      org={org}
-                      isLarge={layoutStyle === 'large'}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* Associations Section */}
             {directAssociations.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Home className="w-5 h-5 mr-2 text-emerald-600" />
-                    Asociații Directe ({directAssociations.length})
+                    <Building className="w-5 h-5 mr-2 text-blue-600" />
+                    Asociațiile mele ({directAssociations.length})
                   </h2>
                 </div>
 

@@ -17,7 +17,7 @@ import { useSubscription } from './useSubscription';
  * - canExportPdf: boolean - poate exporta PDF-uri
  * - canCreateAssociation: boolean - poate crea asociații noi
  */
-export const useReadOnlyMode = (userId, association = null, organization = null) => {
+export const useReadOnlyMode = (userId, association = null, organization = null, userRole = null) => {
   // Hook pentru subscription status
   const {
     status: subscriptionStatus,
@@ -42,6 +42,17 @@ export const useReadOnlyMode = (userId, association = null, organization = null)
     if (!organization) return false;
     return organization.billingStatus === 'suspended';
   }, [organization?.billingStatus]);
+
+  // Verifică dacă rolul utilizatorului e read-only (președinte/cenzor)
+  const isRoleReadOnly = useMemo(() => {
+    return userRole === 'assoc_president' || userRole === 'assoc_censor';
+  }, [userRole]);
+
+  const roleLabel = useMemo(() => {
+    if (userRole === 'assoc_president') return 'Președinte';
+    if (userRole === 'assoc_censor') return 'Cenzor';
+    return null;
+  }, [userRole]);
 
   // Determină starea finală read-only
   const readOnlyState = useMemo(() => {
@@ -69,7 +80,17 @@ export const useReadOnlyMode = (userId, association = null, organization = null)
       };
     }
 
-    // Prioritate 3: Organizația e suspendată
+    // Prioritate 3: Rolul utilizatorului e read-only (președinte/cenzor)
+    if (isRoleReadOnly) {
+      return {
+        isReadOnly: true,
+        isBlocked: false,
+        reason: `Ai acces de vizualizare ca ${roleLabel}. Doar administratorii pot edita datele.`,
+        source: 'role'
+      };
+    }
+
+    // Prioritate 4: Organizația e suspendată
     if (organizationSuspended) {
       return {
         isReadOnly: true,
@@ -103,6 +124,8 @@ export const useReadOnlyMode = (userId, association = null, organization = null)
     subscriptionIsReadOnly,
     subscriptionStatus,
     isTrialExpired,
+    isRoleReadOnly,
+    roleLabel,
     organizationSuspended,
     associationSuspended,
     association?.suspendedByOrganization

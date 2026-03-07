@@ -33,7 +33,7 @@ import {
   SettingsView
 } from './components/views';
 
-export default function BlocApp({ associationId, onSwitchContext }) {
+export default function BlocApp({ associationId, userRole, onSwitchContext }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
 
@@ -613,6 +613,7 @@ useEffect(() => {
         publishedSheet={publishedSheet}
         currentSheet={currentSheet}
         onSwitchContext={clearContext}
+        userRole={userRole}
       />
       
       {/* Overlay pentru mobile */}
@@ -878,6 +879,8 @@ useEffect(() => {
               expenses={expenses}
               isMonthReadOnly={isMonthReadOnly(currentMonth)}
               getMonthType={getMonthType}
+              userRole={userRole}
+              currentUserId={currentUser?.uid}
             />
           )}
 

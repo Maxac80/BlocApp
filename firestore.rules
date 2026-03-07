@@ -16,10 +16,11 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Verifică dacă utilizatorul este super_admin
+    // Verifică dacă utilizatorul este super_admin sau master
     function isSuperAdmin() {
+      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+        (userRole == 'super_admin' || userRole == 'master');
     }
 
     // Verifică dacă utilizatorul este owner al organizației
@@ -42,22 +43,33 @@ service cloud.firestore {
       return isAuthenticated() && membership.role in roles;
     }
 
-    // Verifică dacă utilizatorul are acces la asociație
+    // Verifică dacă utilizatorul are acces la asociație (admin, owner, sau membru)
     function hasAssociationAccess(assocId) {
       let assoc = get(/databases/$(database)/documents/associations/$(assocId)).data;
       return isAuthenticated() && (
         assoc.adminId == request.auth.uid ||
         request.auth.uid in assoc.ownerIds ||
+        exists(/databases/$(database)/documents/associations/$(assocId)/members/$(request.auth.uid)) ||
         isSuperAdmin()
       );
+    }
+
+    // Verifică dacă utilizatorul este admin al asociației
+    function isAssocAdmin(assocId) {
+      let assoc = get(/databases/$(database)/documents/associations/$(assocId)).data;
+      if (assoc.adminId == request.auth.uid) {
+        return true;
+      }
+      let memberData = get(/databases/$(database)/documents/associations/$(assocId)/members/$(request.auth.uid)).data;
+      return memberData.role == 'assoc_admin';
     }
 
     // ============================================
     // 👤 USERS COLLECTION
     // ============================================
     match /users/{userId} {
-      // Citire: propriul profil sau super_admin
-      allow read: if isOwner(userId) || isSuperAdmin();
+      // Citire: propriul profil, super_admin, sau oricine autentificat (pentru member lookup)
+      allow read: if isAuthenticated();
 
       // Creare: doar pentru propriul profil
       allow create: if isOwner(userId);
@@ -145,7 +157,24 @@ service cloud.firestore {
       // Delete: doar super_admin
       allow delete: if isSuperAdmin();
 
-      // Sub-colecții asociație
+      // Sub-colecția members (admini pot gestiona, toți membrii pot citi)
+      match /members/{memberId} {
+        allow read: if hasAssociationAccess(assocId) || isSuperAdmin();
+        allow create, update: if isAssocAdmin(assocId) || isSuperAdmin() ||
+          isOwner(memberId); // user-ul își poate crea propriul member doc (la acceptare invitație)
+        allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
+      }
+
+      // Sub-colecția invitations (admini creează, oricine autentificat poate citi/accepta)
+      match /invitations/{invitationId} {
+        allow read: if isAuthenticated(); // oricine poate verifica un token
+        allow create: if isAssocAdmin(assocId) || isSuperAdmin();
+        allow update: if isAssocAdmin(assocId) || isSuperAdmin() ||
+          isAuthenticated(); // user-ul care acceptă invitația
+        allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
+      }
+
+      // Alte sub-colecții asociație
       match /{subcollection}/{docId} {
         allow read, write: if hasAssociationAccess(assocId) || isSuperAdmin();
       }
@@ -217,12 +246,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // ============================================
-    // 🔒 CATCH-ALL RULE (temporarily permissive)
-    // Remove this in production after testing
-    // ============================================
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
+    // Login Attempts (rate limiting - pre-auth access needed)
+    match /login_attempts/{email} {
+      allow read, write: if true;
     }
+
+    // ============================================
+    // 🔒 CATCH-ALL REMOVED (was temporarily permissive)
+    // All collections now have explicit rules above
+    // ============================================
   }
 }

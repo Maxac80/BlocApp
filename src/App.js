@@ -6,6 +6,7 @@ import BlocApp from "./BlocApp";
 import OwnerPortalWrapper from "./components/owner/OwnerPortalWrapper";
 import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
 import OrgInviteRegistration from "./components/auth/OrgInviteRegistration";
+import AssocInviteRegistration from "./components/auth/AssocInviteRegistration";
 import EmailVerifiedSuccess from "./components/auth/EmailVerifiedSuccess";
 import ContextSelectorView from "./components/views/ContextSelectorView";
 import OrganizationView from "./components/views/OrganizationView";
@@ -21,58 +22,18 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
 
 /**
- * Detectează modul aplicației:
- * 1. Din variabila de mediu REACT_APP_MODE (pentru producție Vercel)
- * 2. Din URL parameter ?mode=owner (pentru development local)
- *
- * Production:
- *   - administratori.blocapp.ro → REACT_APP_MODE=admin
- *   - locatari.blocapp.ro → REACT_APP_MODE=owner
- *
- * Development:
- *   - localhost:3000 → admin (default)
- *   - localhost:3000?mode=owner → owner portal
- */
-function useAppMode() {
-  const [mode, setMode] = useState(() => {
-    // 1. Prima prioritate: variabila de mediu (setată în Vercel)
-    const envMode = process.env.REACT_APP_MODE;
-    if (envMode) {
-      return envMode;
-    }
-
-    // 2. A doua prioritate: URL parameter (pentru development)
-    const params = new URLSearchParams(window.location.search);
-    return params.get('mode') || 'admin';
-  });
-
-  useEffect(() => {
-    // În producție cu REACT_APP_MODE setat, nu schimba modul
-    if (process.env.REACT_APP_MODE) {
-      return;
-    }
-
-    // Ascultă schimbări în URL (pentru navigare browser back/forward) - doar în development
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setMode(params.get('mode') || 'admin');
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  return mode;
-}
-
-/**
  * Detectează magic link pentru invitații proprietari
  * URL format: /invite/{token}
  */
 function useInviteToken() {
   const [token] = useState(() => {
-    // Verifică dacă e invitație pentru organizație (format: /invite/org/{token})
+    // Skip - e pentru organizație (format: /invite/org/{token})
     const orgMatch = window.location.pathname.match(/\/invite\/org\/(.+)/);
-    if (orgMatch) return null; // Skip - e pentru organizație
+    if (orgMatch) return null;
+
+    // Skip - e pentru asociație (format: /invite/assoc/{token})
+    const assocMatch = window.location.pathname.match(/\/invite\/assoc\/(.+)/);
+    if (assocMatch) return null;
 
     // Invitație pentru proprietari (format: /invite/{token})
     const match = window.location.pathname.match(/\/invite\/(.+)/);
@@ -89,6 +50,19 @@ function useInviteToken() {
 function useOrgInviteToken() {
   const [token] = useState(() => {
     const match = window.location.pathname.match(/\/invite\/org\/(.+)/);
+    return match ? match[1] : null;
+  });
+
+  return token;
+}
+
+/**
+ * Detectează magic link pentru invitații asociație
+ * URL format: /invite/assoc/{token}
+ */
+function useAssocInviteToken() {
+  const [token] = useState(() => {
+    const match = window.location.pathname.match(/\/invite\/assoc\/(.+)/);
     return match ? match[1] : null;
   });
 
@@ -177,14 +151,14 @@ function AppContent() {
     return () => channel.close();
   }, []);
 
-  // Detectează modul din URL (?mode=owner)
-  const appMode = useAppMode();
-
   // Detectează magic link pentru invitații proprietari
   const inviteToken = useInviteToken();
 
   // Detectează magic link pentru invitații organizație
   const orgInviteToken = useOrgInviteToken();
+
+  // Detectează magic link pentru invitații asociație
+  const assocInviteToken = useAssocInviteToken();
 
   // Detectează link-uri Firebase Auth (verificare email, resetare parolă)
   const firebaseAuthAction = useFirebaseAuthAction();
@@ -208,6 +182,21 @@ function AppContent() {
         token={orgInviteToken}
         onSuccess={(result) => {
           // Redirecționează la organizație după acceptare
+          window.location.href = '/';
+        }}
+        onNavigateToLogin={() => {
+          window.location.href = '/';
+        }}
+      />
+    );
+  }
+
+  // 🏠 MAGIC LINK: Afișează pagina de acceptare invitație asociație
+  if (assocInviteToken) {
+    return (
+      <AssocInviteRegistration
+        token={assocInviteToken}
+        onSuccess={(result) => {
           window.location.href = '/';
         }}
         onNavigateToLogin={() => {
@@ -253,13 +242,6 @@ function AppContent() {
     );
   }
 
-  // 🏠 OWNER MODE: Afișează Owner Portal (folosește sesiunea Firebase curentă)
-  // Production: https://locatari.blocapp.ro (REACT_APP_MODE=owner)
-  // Development: http://localhost:3000?mode=owner
-  if (appMode === 'owner') {
-    return <OwnerPortalWrapper currentUser={currentUser} />;
-  }
-
   // 📧 EMAIL NECONFIRMAT SAU ONBOARDING NECESAR
   if (!isEmailVerified || needsOnboarding) {
     return <AuthManager onAuthComplete={handleAuthComplete} />;
@@ -282,7 +264,7 @@ function AppContent() {
     return <OwnerPortalWrapper currentUser={currentUser} />;
   }
 
-  // 🆕 CONTEXT SELECTOR - Dacă utilizatorul trebuie să aleagă o organizație/asociație
+  // 🆕 CONTEXT SELECTOR - Dacă utilizatorul trebuie să aleagă o asociație
   if (needsContextSelection()) {
     return (
       <>
@@ -290,28 +272,12 @@ function AppContent() {
           userId={currentUser?.uid}
           userProfile={userProfile}
           activeUser={currentUser}
-          onSelectOrganization={(org) => {
-            selectOrganization(org);
-            setOrgView('dashboard');
-          }}
           onSelectAssociation={(assoc) => {
             selectDirectAssociation(assoc);
           }}
-          onCreateOrganization={() => setShowCreateOrgModal(true)}
           onCreateAssociation={() => setShowCreateAssocModal(true)}
         />
 
-        {/* Modale pentru creare */}
-        <CreateOrganizationModal
-          isOpen={showCreateOrgModal}
-          onClose={() => setShowCreateOrgModal(false)}
-          userId={currentUser?.uid}
-          onSuccess={(org) => {
-            selectOrganization(org);
-            setOrgView('dashboard');
-          }}
-        />
-
         <CreateAssociationModal
           isOpen={showCreateAssocModal}
           onClose={() => setShowCreateAssocModal(false)}
@@ -324,140 +290,15 @@ function AppContent() {
     );
   }
 
-  // 🆕 ORGANIZATION VIEW - Dacă utilizatorul a selectat o organizație
+  // Organizațiile sunt dezactivate la lansare - dacă cumva ajunge aici, redirect la selector
   if (currentContext?.type === 'organization') {
-    // 🔹 MEMBERS VIEW
-    if (orgView === 'members') {
-      return (
-        <>
-          <OrganizationMembersView
-            organization={currentContext.data}
-            userId={currentUser?.uid}
-            userProfile={userProfile}
-            activeUser={currentUser}
-            userRole={currentContext.role}
-            onBack={() => setOrgView('dashboard')}
-            onBackToSelector={clearContext}
-            onInviteMember={() => setShowInviteMemberModal(true)}
-          />
-
-          {/* Modal invitare membru */}
-          <InviteMemberModal
-            isOpen={showInviteMemberModal}
-            onClose={() => setShowInviteMemberModal(false)}
-            organization={currentContext.data}
-            loading={invitationLoading}
-            onInvite={async (data) => {
-              await createInvitation(currentContext.data?.id, {
-                email: data.email,
-                role: data.role,
-                message: data.message
-              }, currentUser?.uid);
-            }}
-          />
-        </>
-      );
-    }
-
-    // 🔹 SETTINGS VIEW
-    if (orgView === 'settings') {
-      return (
-        <OrganizationSettingsView
-          organizationId={currentContext.data?.id}
-          userId={currentUser?.uid}
-          userProfile={userProfile}
-          activeUser={currentUser}
-          onBack={() => setOrgView('dashboard')}
-          onBackToSelector={clearContext}
-          onDeleted={() => {
-            clearContext();
-            setOrgView('dashboard');
-          }}
-        />
-      );
-    }
-
-    // 🔹 DASHBOARD VIEW (default)
-    return (
-      <>
-        <OrganizationView
-          organization={currentContext.data}
-          userId={currentUser?.uid}
-          userProfile={userProfile}
-          activeUser={currentUser}
-          userRole={currentContext.role}
-          currentView={orgView}
-          onChangeView={setOrgView}
-          onBackToSelector={clearContext}
-          onSelectAssociation={(assoc) => {
-            // Când selectează o asociație din organizație, treci la BlocApp cu acea asociație
-            selectDirectAssociation(assoc);
-          }}
-          onOpenSettings={() => {
-            setOrgView('settings');
-          }}
-          onOpenMembers={() => {
-            setOrgView('members');
-          }}
-          onInviteMember={() => {
-            setShowInviteMemberModal(true);
-          }}
-          onAllocateAssociation={() => {
-            setShowAllocateAssocModal(true);
-          }}
-          onCreateAssociation={() => {
-            setShowCreateAssocModal(true);
-          }}
-        />
-
-        {/* Modal creare asociație nouă în organizație */}
-        <CreateAssociationModal
-          isOpen={showCreateAssocModal}
-          onClose={() => setShowCreateAssocModal(false)}
-          userId={currentUser?.uid}
-          organizationId={currentContext.data?.id}
-          onSuccess={(assoc) => {
-            setShowCreateAssocModal(false);
-            // Reîncarcă lista de asociații
-            window.location.reload();
-          }}
-        />
-
-        {/* Modal invitare membru */}
-        <InviteMemberModal
-          isOpen={showInviteMemberModal}
-          onClose={() => setShowInviteMemberModal(false)}
-          organization={currentContext.data}
-          loading={invitationLoading}
-          onInvite={async (data) => {
-            await createInvitation(currentContext.data?.id, {
-              email: data.email,
-              role: data.role,
-              message: data.message
-            }, currentUser?.uid);
-          }}
-        />
-
-        {/* Modal alocare asociație existentă */}
-        <AllocateExistingAssociationModal
-          isOpen={showAllocateAssocModal}
-          onClose={() => setShowAllocateAssocModal(false)}
-          organizationId={currentContext.data?.id}
-          organizationName={currentContext.data?.name}
-          userId={currentUser?.uid}
-          onSuccess={(assoc) => {
-            setShowAllocateAssocModal(false);
-            // Reîncarcă lista de asociații
-            window.location.reload();
-          }}
-        />
-      </>
-    );
+    clearContext();
+    return null;
   }
 
-  // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (FĂRĂ HEADER!)
-  if (userProfile.role === 'admin_asociatie' || userProfile.role === 'master' || userProfile.role === 'presedinte' || userProfile.role === 'cenzor' || currentContext?.type === 'association') {
-    return <BlocApp associationId={currentContext?.data?.id} onSwitchContext={clearContext} />;
+  // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (necesită context setat!)
+  if ((userProfile.role === 'admin_asociatie' || userProfile.role === 'master' || userProfile.role === 'presedinte' || userProfile.role === 'cenzor') && currentContext?.type === 'association') {
+    return <BlocApp associationId={currentContext.data.id} userRole={currentContext.role} onSwitchContext={clearContext} />;
   }
 
   // 🚫 FALLBACK - ACCES RESTRICȚIONAT

@@ -458,7 +458,7 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
             associationData = { id: associationDoc.id, ...associationDoc.data() };
             setAssociation(associationData);
 
-            // 🆕 MIGRARE: Adaugă asociația la directAssociations[] dacă nu există
+            // Fallback: Adaugă asociația la directAssociations[] dacă nu există (useri vechi)
             try {
               const userRef = doc(db, "users", activeUser.uid);
               const userDocSnap = await getDoc(userRef);
@@ -469,17 +469,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
                   await updateDoc(userRef, {
                     directAssociations: [...currentDirectAssocs, associationDoc.id]
                   });
-                  console.log("✅ MIGRARE: Asociația adăugată la directAssociations[]");
-                  // Reîncarcă pagina pentru a aplica noile context switching features
-                  setTimeout(() => {
-                    console.log("🔄 Reîncarc pagina pentru context switching...");
-                    window.location.reload();
-                  }, 1000);
-                  return; // Oprește încărcarea datelor, pagina se va reîncărca
+                  console.log("✅ Asociația adăugată la directAssociations[] (fallback)");
                 }
               }
             } catch (migrationErr) {
-              console.warn("⚠️ MIGRARE: Nu s-a putut actualiza directAssociations:", migrationErr);
+              console.warn("⚠️ Nu s-a putut actualiza directAssociations:", migrationErr);
             }
           } else {
             console.log("❌ Nu s-a găsit asociație pentru acest utilizator");

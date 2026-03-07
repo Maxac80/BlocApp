@@ -1,7 +1,10 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users } from 'lucide-react';
+import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users, UserPlus, ShieldCheck, UserCheck, Shield, Trash2, ChevronDown, Link2 } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
 import DashboardHeader from '../dashboard/DashboardHeader';
+import { useAssocMembers } from '../../hooks/useAssocMembers';
+import { useAssocInvitation } from '../../hooks/useAssocInvitation';
+import InviteAssocMemberModal from '../modals/InviteAssocMemberModal';
 
 const AssociationView = ({
   association,
@@ -16,13 +19,24 @@ const AssociationView = ({
   getAvailableMonths,
   expenses,
   isMonthReadOnly,
-  getMonthType
+  getMonthType,
+  userRole,
+  currentUserId
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
-  const [activeTab, setActiveTab] = useState('identification'); // 'identification', 'schedule', 'financial', 'responsible'
+  const [activeTab, setActiveTab] = useState('identification');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+
+  // Membri
+  const { members, loading: membersLoading, loadMembers, removeMember, changeMemberRole } = useAssocMembers();
+  const { invitations, loading: invitationsLoading, loadInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [memberActionMenu, setMemberActionMenu] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(null);
+
+  const isAdmin = userRole === 'assoc_admin';
 
   // State consolidat pentru toate datele
   const [formData, setFormData] = useState({
@@ -56,7 +70,15 @@ const AssociationView = ({
     censor: ''
   });
 
-  // 📋 Configurația tab-urilor
+  // Incarcare membri si invitatii cand se deschide tab-ul Membri
+  useEffect(() => {
+    if (activeTab === 'members' && association?.id) {
+      loadMembers(association.id);
+      loadInvitations(association.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, association?.id]);
+
   const tabs = [
     {
       id: 'identification',
@@ -77,6 +99,11 @@ const AssociationView = ({
       id: 'responsible',
       title: 'Persoane Responsabile',
       icon: Users
+    },
+    {
+      id: 'members',
+      title: 'Membri',
+      icon: UserPlus
     }
   ];
 
@@ -776,9 +803,194 @@ const AssociationView = ({
                     </div>
                   </div>
                 )}
+
+                {/* Tab 5: Membri */}
+                {activeTab === 'members' && (
+                  <div className="space-y-4">
+                    {/* Membri activi */}
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex items-center">
+                          <Users className="w-4 h-4 mr-1.5" />
+                          Membrii asociatiei
+                        </h3>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setShowInviteModal(true)}
+                            className="inline-flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                          >
+                            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                            Invita Membru
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Lista membri */}
+                      {membersLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : members.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm">Nu exista membri inca.</p>
+                          {isAdmin && (
+                            <button
+                              onClick={() => setShowInviteModal(true)}
+                              className="mt-3 text-blue-600 text-sm hover:underline"
+                            >
+                              Invita primul membru
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {members.map((member) => {
+                            const roleConfig = {
+                              assoc_admin: { label: 'Administrator', icon: ShieldCheck, color: 'bg-purple-100 text-purple-700' },
+                              assoc_president: { label: 'Presedinte', icon: UserCheck, color: 'bg-blue-100 text-blue-700' },
+                              assoc_censor: { label: 'Cenzor', icon: Shield, color: 'bg-green-100 text-green-700' }
+                            };
+                            const config = roleConfig[member.role] || roleConfig.assoc_admin;
+                            const RoleIcon = config.icon;
+                            const isSelf = member.id === currentUserId;
+
+                            return (
+                              <div
+                                key={member.id}
+                                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center min-w-0">
+                                  <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center mr-3 flex-shrink-0 border border-gray-200">
+                                    <User className="w-4 h-4 text-gray-500" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {member.name || member.email || 'Membru'}
+                                      {isSelf && <span className="text-xs text-gray-400 ml-1">(tu)</span>}
+                                    </p>
+                                    {member.email && (
+                                      <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+                                    <RoleIcon className="w-3 h-3 mr-1" />
+                                    {config.label}
+                                  </span>
+
+                                  {isAdmin && !isSelf && (
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setMemberActionMenu(memberActionMenu === member.id ? null : member.id)}
+                                        className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                                      >
+                                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                                      </button>
+
+                                      {memberActionMenu === member.id && (
+                                        <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 w-48">
+                                          {['assoc_admin', 'assoc_president', 'assoc_censor']
+                                            .filter(r => r !== member.role)
+                                            .map(role => {
+                                              const rc = roleConfig[role];
+                                              const RIcon = rc.icon;
+                                              return (
+                                                <button
+                                                  key={role}
+                                                  onClick={async () => {
+                                                    await changeMemberRole(association.id, member.id, role, currentUserId);
+                                                    setMemberActionMenu(null);
+                                                  }}
+                                                  className="w-full flex items-center px-3 py-2 text-xs hover:bg-gray-50 text-gray-700"
+                                                >
+                                                  <RIcon className="w-3.5 h-3.5 mr-2" />
+                                                  Seteaza ca {rc.label}
+                                                </button>
+                                              );
+                                            })}
+                                          <div className="border-t border-gray-100 my-1" />
+                                          <button
+                                            onClick={() => {
+                                              setConfirmRemove(member);
+                                              setMemberActionMenu(null);
+                                            }}
+                                            className="w-full flex items-center px-3 py-2 text-xs hover:bg-red-50 text-red-600"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                            Elimina membru
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Invitatii in asteptare */}
+                    {invitations.filter(i => i.status === 'pending').length > 0 && (
+                      <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                          <Link2 className="w-4 h-4 mr-1.5" />
+                          Invitatii in asteptare
+                        </h3>
+                        <div className="space-y-2">
+                          {invitations.filter(i => i.status === 'pending').map((inv) => {
+                            const invRoleConfig = {
+                              assoc_admin: { label: 'Administrator', color: 'bg-purple-100 text-purple-700' },
+                              assoc_president: { label: 'Presedinte', color: 'bg-blue-100 text-blue-700' },
+                              assoc_censor: { label: 'Cenzor', color: 'bg-green-100 text-green-700' }
+                            };
+                            const invConfig = invRoleConfig[inv.role] || invRoleConfig.assoc_admin;
+
+                            return (
+                              <div
+                                key={inv.id}
+                                className="flex items-center justify-between bg-yellow-50 p-3 rounded-lg border border-yellow-200"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {inv.email}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Expira: {new Date(inv.expiresAt).toLocaleDateString('ro-RO')}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${invConfig.color}`}>
+                                    {invConfig.label}
+                                  </span>
+                                  {isAdmin && (
+                                    <button
+                                      onClick={async () => {
+                                        await cancelInvitation(association.id, inv.id, currentUserId);
+                                      }}
+                                      className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
+                                      title="Anuleaza invitatie"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Footer cu butoanele de editare/salvare */}
+              {/* Footer cu butoanele de editare/salvare (nu pe tab-ul Membri) */}
+              {activeTab !== 'members' && (
               <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-600 hidden sm:block">
@@ -825,11 +1037,55 @@ const AssociationView = ({
                   </div>
                 </div>
               </div>
+              )}
             </div>
             </Fragment>
           </div>
         )}
       </div>
+
+      {/* Modal invitare membru */}
+      <InviteAssocMemberModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        association={association}
+        onInvite={async (invData) => {
+          const result = await createInvitation(association.id, invData, currentUserId);
+          // Reload invitatii
+          await loadInvitations(association.id);
+          return result;
+        }}
+        loading={invitationsLoading}
+      />
+
+      {/* Dialog confirmare eliminare */}
+      {confirmRemove && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirma eliminarea</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Esti sigur ca vrei sa elimini pe <strong>{confirmRemove.name || confirmRemove.email}</strong> din asociatie?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmRemove(null)}
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+              >
+                Anuleaza
+              </button>
+              <button
+                onClick={async () => {
+                  await removeMember(association.id, confirmRemove.id, currentUserId);
+                  setConfirmRemove(null);
+                }}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Elimina
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

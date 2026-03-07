@@ -207,6 +207,46 @@ const emailTemplates = {
 };
 
 // ============================================
+// 🔗 HELPER: Rescrie link-urile Firebase Auth pe domeniul nostru
+// Firebase generează link-uri la authDomain-ul proiectului (poate fi vechi/inexistent)
+// Le rescriem pentru a duce direct la aplicația noastră care apelează applyActionCode()
+// ============================================
+
+// Origini permise pentru link-uri de verificare/resetare
+const ALLOWED_ORIGINS = [
+  "https://administratori.blocapp.ro",
+  "https://locatari.blocapp.ro",
+  "https://master.blocapp.ro",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002"
+];
+
+const rewriteFirebaseLink = (firebaseLink, targetPath, appUrl = CONFIG.appUrl) => {
+  try {
+    const url = new URL(firebaseLink);
+    const oobCode = url.searchParams.get("oobCode");
+    const mode = url.searchParams.get("mode");
+    const apiKey = url.searchParams.get("apiKey");
+
+    if (!oobCode) return firebaseLink; // fallback
+
+    return `${appUrl}${targetPath}?mode=${mode}&oobCode=${oobCode}&apiKey=${apiKey}`;
+  } catch (e) {
+    console.error("Error rewriting Firebase link:", e);
+    return firebaseLink;
+  }
+};
+
+// Validează originea trimisă de frontend (whitelist)
+const getValidOrigin = (requestOrigin) => {
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return CONFIG.appUrl;
+};
+
+// ============================================
 // 📧 FUNCȚII CLOUD
 // ============================================
 
@@ -217,7 +257,7 @@ const emailTemplates = {
 exports.sendVerificationEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "https://locatari.blocapp.ro", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     secrets: [resendApiKey]
   },
   async (request) => {
@@ -226,15 +266,19 @@ exports.sendVerificationEmail = onCall(
       throw new HttpsError("unauthenticated", "Trebuie să fii autentificat.");
     }
 
-    const { email, userName } = request.data;
+    const { email, userName, origin } = request.data;
     const uid = request.auth.uid;
+    const appUrl = getValidOrigin(origin);
 
     try {
       // Generează link de verificare custom folosind Firebase Admin
-      const verificationLink = await getAuth().generateEmailVerificationLink(email, {
-        url: `${CONFIG.appUrl}/email-verified`,
+      const firebaseLink = await getAuth().generateEmailVerificationLink(email, {
+        url: `${appUrl}/email-verified`,
         handleCodeInApp: false
       });
+
+      // Rescrie link-ul să ducă la domeniul corect (localhost sau producție)
+      const verificationLink = rewriteFirebaseLink(firebaseLink, "/email-verified", appUrl);
 
       // Trimite email prin Resend
       const template = emailTemplates.verification(userName || "Utilizator", verificationLink);
@@ -275,11 +319,12 @@ exports.sendVerificationEmail = onCall(
 exports.sendPasswordResetEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "https://locatari.blocapp.ro", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     secrets: [resendApiKey]
   },
   async (request) => {
-    const { email } = request.data;
+    const { email, origin } = request.data;
+    const appUrl = getValidOrigin(origin);
 
     if (!email) {
       throw new HttpsError("invalid-argument", "Email-ul este obligatoriu.");
@@ -302,10 +347,13 @@ exports.sendPasswordResetEmail = onCall(
         "Utilizator";
 
       // Generează link de resetare
-      const resetLink = await getAuth().generatePasswordResetLink(email, {
-        url: `${CONFIG.appUrl}/login`,
+      const firebaseResetLink = await getAuth().generatePasswordResetLink(email, {
+        url: `${appUrl}/login`,
         handleCodeInApp: false
       });
+
+      // Rescrie link-ul să ducă la domeniul corect (localhost sau producție)
+      const resetLink = rewriteFirebaseLink(firebaseResetLink, "/email-verified", appUrl);
 
       // Trimite email prin Resend
       const template = emailTemplates.passwordReset(userName, resetLink);
@@ -345,7 +393,7 @@ exports.sendPasswordResetEmail = onCall(
 exports.resendVerificationEmail = onCall(
   {
     region: "europe-west1",
-    cors: ["https://administratori.blocapp.ro", "http://localhost:3000"],
+    cors: ["https://administratori.blocapp.ro", "https://locatari.blocapp.ro", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     secrets: [resendApiKey]
   },
   async (request) => {
@@ -354,6 +402,7 @@ exports.resendVerificationEmail = onCall(
     }
 
     const uid = request.auth.uid;
+    const appUrl = getValidOrigin(request.data?.origin);
 
     try {
       // Obține datele utilizatorului
@@ -370,10 +419,13 @@ exports.resendVerificationEmail = onCall(
         "Utilizator";
 
       // Generează link nou
-      const verificationLink = await getAuth().generateEmailVerificationLink(user.email, {
-        url: `${CONFIG.appUrl}/email-verified`,
+      const firebaseLink = await getAuth().generateEmailVerificationLink(user.email, {
+        url: `${appUrl}/email-verified`,
         handleCodeInApp: false
       });
+
+      // Rescrie link-ul să ducă la domeniul corect (localhost sau producție)
+      const verificationLink = rewriteFirebaseLink(firebaseLink, "/email-verified", appUrl);
 
       // Trimite email
       const template = emailTemplates.verification(userName, verificationLink);
@@ -885,7 +937,7 @@ exports.sendPaymentReminders = onSchedule(
 exports.recordManualPayment = onCall(
   {
     region: "europe-west1",
-    cors: ["https://administratori.blocapp.ro", "https://master.blocapp.ro", "http://localhost:3000"]
+    cors: ["https://administratori.blocapp.ro", "https://locatari.blocapp.ro", "https://master.blocapp.ro", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
   },
   async (request) => {
     if (!request.auth) {

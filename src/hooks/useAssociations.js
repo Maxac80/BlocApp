@@ -4,6 +4,7 @@ import {
   doc,
   collection,
   addDoc,
+  setDoc,
   updateDoc,
   getDoc,
   getDocs,
@@ -161,6 +162,20 @@ export const useAssociations = (userId = null) => {
       const assocRef = await addDoc(collection(db, 'associations'), newAssociation);
       const associationId = assocRef.id;
 
+      // Creează member doc pentru creator (admin)
+      const memberRef = doc(db, 'associations', associationId, 'members', creatorUserId);
+      await setDoc(memberRef, {
+        userId: creatorUserId,
+        role: 'assoc_admin',
+        status: 'active',
+        name: associationData.adminProfile?.firstName
+          ? `${associationData.adminProfile.firstName} ${associationData.adminProfile.lastName || ''}`.trim()
+          : '',
+        email: associationData.email || '',
+        addedAt: now.toISOString(),
+        joinedAt: now.toISOString()
+      });
+
       // Dacă nu e parte dintr-o organizație, adaugă la directAssociations
       if (!organizationId) {
         await addDirectAssociation(creatorUserId, associationId);
@@ -251,20 +266,16 @@ export const useAssociations = (userId = null) => {
       // Dacă președintele are userId, adaugă în members subcollection
       if (president.userId) {
         const memberRef = doc(db, 'associations', associationId, 'members', president.userId);
-        await updateDoc(memberRef, {
+        await setDoc(memberRef, {
+          userId: president.userId,
           role: 'assoc_president',
-          updatedAt: new Date().toISOString()
-        }).catch(async () => {
-          // Dacă documentul nu există, creează-l
-          await addDoc(collection(db, 'associations', associationId, 'members'), {
-            id: president.userId,
-            userId: president.userId,
-            role: 'assoc_president',
-            name: president.name,
-            addedAt: new Date().toISOString(),
-            status: 'active'
-          });
-        });
+          name: president.name,
+          email: president.email || '',
+          phone: president.phone || '',
+          status: 'active',
+          addedAt: new Date().toISOString(),
+          joinedAt: new Date().toISOString()
+        }, { merge: true });
       }
 
       await logActivity(userId, 'ASSOCIATION_PRESIDENT_SET', {
@@ -331,11 +342,6 @@ export const useAssociations = (userId = null) => {
 
       const currentCensors = assocDoc.data().censors || [];
 
-      // Verifică limita de 3 cenzori
-      if (currentCensors.length >= 3) {
-        throw new Error('MAXIMUM_3_CENSORS_ALLOWED');
-      }
-
       const newCensor = {
         id: `censor-${Date.now()}`,
         userId: censorData.userId || null,
@@ -350,13 +356,17 @@ export const useAssociations = (userId = null) => {
 
       // Dacă cenzorul are userId, adaugă în members subcollection
       if (newCensor.userId) {
-        await addDoc(collection(db, 'associations', associationId, 'members'), {
+        const memberRef = doc(db, 'associations', associationId, 'members', newCensor.userId);
+        await setDoc(memberRef, {
           userId: newCensor.userId,
           role: 'assoc_censor',
           name: newCensor.name,
+          email: newCensor.email || '',
+          phone: newCensor.phone || '',
+          status: 'active',
           addedAt: new Date().toISOString(),
-          status: 'active'
-        });
+          joinedAt: new Date().toISOString()
+        }, { merge: true });
       }
 
       await logActivity(userId, 'ASSOCIATION_CENSOR_ADDED', {
@@ -395,15 +405,8 @@ export const useAssociations = (userId = null) => {
 
       // Dacă cenzorul avea userId, elimină din members
       if (censorToRemove?.userId) {
-        const membersQuery = query(
-          collection(db, 'associations', associationId, 'members'),
-          where('userId', '==', censorToRemove.userId),
-          where('role', '==', 'assoc_censor')
-        );
-        const membersSnapshot = await getDocs(membersQuery);
-        for (const memberDoc of membersSnapshot.docs) {
-          await deleteDoc(memberDoc.ref);
-        }
+        const memberRef = doc(db, 'associations', associationId, 'members', censorToRemove.userId);
+        await deleteDoc(memberRef).catch(() => {});
       }
 
       await logActivity(userId, 'ASSOCIATION_CENSOR_REMOVED', {

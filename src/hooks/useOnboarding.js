@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { doc, getDoc, setDoc, updateDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSecurity } from './useSecurity';
 import { useUserProfile } from './useUserProfile';
 import { useMonthManagement } from './useMonthManagement';
-import { EmailSimulator } from '../utils/emailSimulator';
 
 /**
  * 🚀 HOOK PENTRU WIZARD ONBOARDING COMPLET
@@ -533,9 +532,6 @@ export const useOnboarding = () => {
         totalSteps: onboardingSteps.length
       };
       
-      // Simulare email în development
-      EmailSimulator.simulateWelcomeEmail(user, completionData);
-      
       await logActivity(userId, 'WELCOME_EMAIL_SENT', {
         emailType: 'onboarding_complete',
         completionData
@@ -740,6 +736,28 @@ export const useOnboarding = () => {
           const associationsRef = collection(db, 'associations');
           const docRef = await addDoc(associationsRef, associationToSave);
           console.log('✅ Association created from tabs with ID:', docRef.id);
+
+          // Creează member doc pentru admin (creatorul asociației)
+          const memberRef = doc(db, 'associations', docRef.id, 'members', currentUser.uid);
+          await setDoc(memberRef, {
+            userId: currentUser.uid,
+            role: 'assoc_admin',
+            status: 'active',
+            name: tabData.profile
+              ? `${tabData.profile.firstName || ''} ${tabData.profile.lastName || ''}`.trim()
+              : '',
+            email: currentUser.email || '',
+            addedAt: new Date().toISOString(),
+            joinedAt: new Date().toISOString()
+          });
+          console.log('✅ Member doc created for admin');
+
+          // Adaugă asociația la directAssociations[] pe user document
+          const userRef = doc(db, 'users', currentUser.uid);
+          await updateDoc(userRef, {
+            directAssociations: arrayUnion(docRef.id)
+          });
+          console.log('✅ Association added to user directAssociations[]');
 
           // 🎯 INIȚIALIZEAZĂ SISTEM DE SHEETS PENTRU NOUA ASOCIAȚIE
           try {
