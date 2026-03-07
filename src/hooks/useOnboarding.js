@@ -472,6 +472,27 @@ export const useOnboarding = () => {
 
       console.log('✅ Association created from onboarding with ID:', docRef.id);
 
+      // Creează member doc pentru admin (fondator)
+      try {
+        const userDocSnap = await getDoc(doc(db, 'users', userId));
+        const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+        const adminName = userData.profile?.personalInfo?.firstName
+          ? `${userData.profile.personalInfo.firstName} ${userData.profile.personalInfo.lastName || ''}`.trim()
+          : userData.name || '';
+
+        await setDoc(doc(db, 'associations', docRef.id, 'members', userId), {
+          userId,
+          role: 'assoc_admin',
+          status: 'active',
+          name: adminName,
+          email: userData.email || '',
+          addedAt: new Date().toISOString(),
+          joinedAt: new Date().toISOString()
+        });
+      } catch (memberErr) {
+        console.warn('Could not create member doc for admin:', memberErr);
+      }
+
       // 🎯 Sheet-ul va fi creat automat de `initializeMonths` în `completeOnboardingWithTabs`
       // Nu mai creăm manual sheet-ul aici pentru a evita duplicarea
 

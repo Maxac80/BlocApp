@@ -163,15 +163,29 @@ export const useAssociations = (userId = null) => {
       const associationId = assocRef.id;
 
       // Creează member doc pentru creator (admin)
+      // Obține datele complete ale admin-ului din user doc
+      let adminName = '';
+      let adminEmail = '';
+      try {
+        const creatorDoc = await getDoc(doc(db, 'users', creatorUserId));
+        if (creatorDoc.exists()) {
+          const creatorData = creatorDoc.data();
+          adminName = creatorData.profile?.personalInfo?.firstName
+            ? `${creatorData.profile.personalInfo.firstName} ${creatorData.profile.personalInfo.lastName || ''}`.trim()
+            : creatorData.name || '';
+          adminEmail = creatorData.email || '';
+        }
+      } catch (e) {
+        console.warn('Could not fetch creator data for member doc:', e);
+      }
+
       const memberRef = doc(db, 'associations', associationId, 'members', creatorUserId);
       await setDoc(memberRef, {
         userId: creatorUserId,
         role: 'assoc_admin',
         status: 'active',
-        name: associationData.adminProfile?.firstName
-          ? `${associationData.adminProfile.firstName} ${associationData.adminProfile.lastName || ''}`.trim()
-          : '',
-        email: associationData.email || '',
+        name: adminName,
+        email: adminEmail,
         addedAt: now.toISOString(),
         joinedAt: now.toISOString()
       });

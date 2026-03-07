@@ -3,7 +3,6 @@ import {
   X,
   UserPlus,
   Mail,
-  User,
   Shield,
   ShieldCheck,
   UserCheck,
@@ -34,7 +33,6 @@ const InviteAssocMemberModal = ({
 }) => {
   const [formData, setFormData] = useState({
     email: '',
-    name: '',
     role: 'assoc_admin'
   });
   const [errors, setErrors] = useState({});
@@ -45,7 +43,7 @@ const InviteAssocMemberModal = ({
 
   // Reset la inchidere
   const handleClose = () => {
-    setFormData({ email: '', name: '', role: 'assoc_admin' });
+    setFormData({ email: '', role: 'assoc_admin' });
     setErrors({});
     setSuccess(false);
     setInviteLink('');
@@ -77,7 +75,6 @@ const InviteAssocMemberModal = ({
     try {
       const result = await onInvite({
         email: formData.email.trim().toLowerCase(),
-        name: formData.name.trim(),
         role: formData.role,
         associationId: association?.id,
         associationName: association?.name
@@ -259,23 +256,6 @@ const InviteAssocMemberModal = ({
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
-            </div>
-
-            {/* Nume (optional) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nume (optional)
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Numele persoanei"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
             </div>
 
             {/* Rol */}

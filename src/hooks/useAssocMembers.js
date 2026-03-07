@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   doc,
   collection,
-  getDocs,
   getDoc,
   deleteDoc,
   updateDoc,
-  arrayRemove
+  arrayRemove,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSecurity } from './useSecurity';
@@ -21,6 +21,9 @@ import { useSecurity } from './useSecurity';
  *
  * Structura Firebase:
  * /associations/{assocId}/members/{userId}
+ *
+ * Foloseste onSnapshot pentru actualizari in timp real.
+ * Daca adminId e furnizat si nu are member doc, il adauga virtual ca fondator.
  */
 export const useAssocMembers = () => {
   const { logActivity } = useSecurity();
@@ -28,38 +31,96 @@ export const useAssocMembers = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const unsubscribeRef = useRef(null);
 
-  // Incarcare membri asociatie
-  const loadMembers = useCallback(async (associationId) => {
+  // Incarcare membri asociatie (real-time cu onSnapshot)
+  // adminId: optional - daca adminId nu e in members, il adauga ca fondator
+  const loadMembers = useCallback((associationId, adminId) => {
+    // Cleanup listener anterior
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     if (!associationId) {
       setMembers([]);
-      return [];
+      return;
     }
 
     setLoading(true);
     setError(null);
 
-    try {
-      const membersSnapshot = await getDocs(
-        collection(db, 'associations', associationId, 'members')
-      );
+    const membersRef = collection(db, 'associations', associationId, 'members');
 
-      const membersData = membersSnapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+    const unsubscribe = onSnapshot(membersRef, async (snapshot) => {
+      try {
+        const membersData = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
 
-      // Filtreaza doar membrii activi
-      const activeMembers = membersData.filter(m => m.status === 'active');
+        const activeMembers = membersData.filter(m => m.status === 'active');
 
-      setMembers(activeMembers);
-      return activeMembers;
-    } catch (err) {
-      console.error('Error loading members:', err);
+        // Asigura ca adminul apare in lista cu date corecte
+        if (adminId) {
+          const existingAdminIdx = activeMembers.findIndex(m => m.id === adminId);
+
+          try {
+            const adminDoc = await getDoc(doc(db, 'users', adminId));
+            if (adminDoc.exists()) {
+              const adminData = adminDoc.data();
+              const adminName = adminData.profile?.personalInfo?.firstName
+                ? `${adminData.profile.personalInfo.firstName} ${adminData.profile.personalInfo.lastName || ''}`.trim()
+                : adminData.name || '';
+
+              if (existingAdminIdx >= 0) {
+                // Admin are member doc - imbogateste cu date din user doc daca lipsesc
+                if (!activeMembers[existingAdminIdx].name) {
+                  activeMembers[existingAdminIdx].name = adminName;
+                }
+                if (!activeMembers[existingAdminIdx].email) {
+                  activeMembers[existingAdminIdx].email = adminData.email || '';
+                }
+                activeMembers[existingAdminIdx].isFounder = true;
+              } else {
+                // Admin nu are member doc - adauga virtual
+                activeMembers.unshift({
+                  id: adminId,
+                  userId: adminId,
+                  role: 'assoc_admin',
+                  name: adminName,
+                  email: adminData.email || '',
+                  status: 'active',
+                  isFounder: true
+                });
+              }
+            }
+          } catch (adminErr) {
+            console.error('Error fetching admin data:', adminErr);
+          }
+        }
+
+        setMembers(activeMembers);
+      } catch (err) {
+        console.error('Error processing members:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }, (err) => {
+      console.error('Error in members listener:', err);
       setError(err.message);
-      return [];
-    } finally {
       setLoading(false);
+    });
+
+    unsubscribeRef.current = unsubscribe;
+  }, []);
+
+  // Cleanup listener
+  const unsubscribeMembers = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
   }, []);
 
@@ -163,6 +224,7 @@ export const useAssocMembers = () => {
     loading,
     error,
     loadMembers,
+    unsubscribeMembers,
     removeMember,
     changeMemberRole,
     getMembersByRole

@@ -30,7 +30,7 @@ const AssociationView = ({
   const [saveMessage, setSaveMessage] = useState('');
 
   // Membri
-  const { members, loading: membersLoading, loadMembers, removeMember, changeMemberRole } = useAssocMembers();
+  const { members, loading: membersLoading, loadMembers, unsubscribeMembers, removeMember, changeMemberRole } = useAssocMembers();
   const { invitations, loading: invitationsLoading, loadInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [memberActionMenu, setMemberActionMenu] = useState(null);
@@ -70,12 +70,16 @@ const AssociationView = ({
     censor: ''
   });
 
-  // Incarcare membri si invitatii cand se deschide tab-ul Membri
+  // Incarcare membri (real-time) si invitatii cand se deschide tab-ul Membri
   useEffect(() => {
     if (activeTab === 'members' && association?.id) {
-      loadMembers(association.id);
+      loadMembers(association.id, association.adminId);
       loadInvitations(association.id);
     }
+
+    return () => {
+      unsubscribeMembers();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, association?.id]);
 
@@ -881,7 +885,7 @@ const AssociationView = ({
                                     {config.label}
                                   </span>
 
-                                  {isAdmin && !isSelf && (
+                                  {isAdmin && !isSelf && !member.isFounder && (
                                     <div className="relative">
                                       <button
                                         onClick={() => setMemberActionMenu(memberActionMenu === member.id ? null : member.id)}
