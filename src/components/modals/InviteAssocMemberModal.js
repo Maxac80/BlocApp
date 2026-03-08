@@ -118,7 +118,7 @@ const InviteAssocMemberModal = ({
   const roles = [
     {
       id: 'assoc_admin',
-      label: 'Administrator (Editor)',
+      label: 'Administrator',
       description: 'Editare date — fără gestionare membri',
       icon: ShieldCheck,
       color: 'purple'
