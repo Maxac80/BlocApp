@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   doc,
   collection,
@@ -9,7 +9,8 @@ import {
   getDocs,
   query,
   where,
-  arrayUnion
+  arrayUnion,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSecurity } from './useSecurity';
@@ -29,6 +30,7 @@ export const useAssocInvitation = () => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const unsubscribeRef = useRef(null);
 
   const generateToken = () => {
     return 'assoc_inv_' + crypto.randomUUID();
@@ -82,47 +84,67 @@ export const useAssocInvitation = () => {
     return date.toISOString();
   };
 
-  // 📥 ÎNCĂRCARE INVITAȚII ASOCIAȚIE
-  const loadInvitations = useCallback(async (associationId) => {
+  // 📥 ÎNCĂRCARE INVITAȚII ASOCIAȚIE (real-time cu onSnapshot)
+  const loadInvitations = useCallback((associationId) => {
+    // Cleanup listener anterior
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     if (!associationId) {
       setInvitations([]);
-      return [];
+      return;
     }
 
     setLoading(true);
     setError(null);
 
-    try {
-      const invitationsRef = collection(db, 'associations', associationId, 'invitations');
-      const snapshot = await getDocs(invitationsRef);
+    const invitationsRef = collection(db, 'associations', associationId, 'invitations');
+    unsubscribeRef.current = onSnapshot(invitationsRef, async (snapshot) => {
+      try {
+        const invitationsData = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
 
-      const invitationsData = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+        const now = new Date();
+        const processedInvitations = await Promise.all(
+          invitationsData.map(async (inv) => {
+            if (inv.status === 'pending' && new Date(inv.expiresAt) < now) {
+              await updateDoc(
+                doc(db, 'associations', associationId, 'invitations', inv.id),
+                { status: 'expired' }
+              );
+              return { ...inv, status: 'expired' };
+            }
+            return inv;
+          })
+        );
 
-      const now = new Date();
-      const processedInvitations = await Promise.all(
-        invitationsData.map(async (inv) => {
-          if (inv.status === 'pending' && new Date(inv.expiresAt) < now) {
-            await updateDoc(
-              doc(db, 'associations', associationId, 'invitations', inv.id),
-              { status: 'expired' }
-            );
-            return { ...inv, status: 'expired' };
-          }
-          return inv;
-        })
-      );
-
-      setInvitations(processedInvitations);
-      return processedInvitations;
-    } catch (err) {
+        setInvitations(processedInvitations);
+      } catch (err) {
+        console.error('Error processing invitations:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }, (err) => {
+      if (err.code === 'permission-denied') {
+        console.warn('⏳ Invitations permission error:', associationId);
+        return;
+      }
       console.error('Error loading invitations:', err);
       setError(err.message);
-      return [];
-    } finally {
       setLoading(false);
+    });
+  }, []);
+
+  // Cleanup listener
+  const unsubscribeInvitations = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
   }, []);
 
@@ -445,6 +467,7 @@ export const useAssocInvitation = () => {
     loading,
     error,
     loadInvitations,
+    unsubscribeInvitations,
     createInvitation,
     cancelInvitation,
     verifyInvitation,

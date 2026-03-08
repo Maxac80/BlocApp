@@ -64,7 +64,7 @@ const AssociationView = ({
 
   // Membri
   const { members, loading: membersLoading, loadMembers, unsubscribeMembers, removeMember, changeMemberRole, transferOwnership } = useAssocMembers();
-  const { invitations, loading: invitationsLoading, loadInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
+  const { invitations, loading: invitationsLoading, loadInvitations, unsubscribeInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [memberActionMenu, setMemberActionMenu] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(null);
@@ -115,6 +115,7 @@ const AssociationView = ({
 
     return () => {
       unsubscribeMembers();
+      unsubscribeInvitations();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, association?.id]);

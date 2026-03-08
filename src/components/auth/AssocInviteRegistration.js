@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Building2,
   Lock,
   User,
   Phone,
@@ -68,6 +67,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
   // State pentru acceptare
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const acceptingRef = useRef(false);
   const [acceptError, setAcceptError] = useState(null);
 
   // Verifica invitatia (API server-side pe Vercel, fallback client-side pe localhost)
@@ -211,9 +211,10 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     return Object.keys(errors).length === 0;
   };
 
-  // Handler pentru acceptare invitatie
+  // Handler pentru acceptare invitatie (cu ref guard contra race condition)
   const handleAcceptInvitation = async (userId) => {
-    if (!userId) return;
+    if (!userId || acceptingRef.current) return;
+    acceptingRef.current = true;
 
     setAccepting(true);
     setAcceptError(null);
@@ -229,6 +230,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     } catch (err) {
       console.error('Error accepting invitation:', err);
       setAcceptError(err.message);
+      acceptingRef.current = false;
     } finally {
       setAccepting(false);
     }
@@ -352,9 +354,9 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
       },
       INVITATION_ACCEPTED: {
         icon: CheckCircle,
-        title: 'Invitatie deja folosita',
-        message: 'Aceasta invitatie a fost deja acceptata.',
-        color: 'text-blue-600 bg-blue-100'
+        title: 'Invitatie deja acceptata',
+        message: 'Aceasta invitatie a fost deja acceptata. Conecteaza-te pentru a accesa asociatia.',
+        color: 'text-green-600 bg-green-100'
       },
       VERIFICATION_FAILED: {
         icon: AlertCircle,
@@ -497,14 +499,19 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
   // Formular register/login
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+      <div className="max-w-lg w-full">
+        {/* Logo deasupra cardului */}
+        <div className="text-center mb-6">
+          <img
+            src="/logo-admin.png"
+            alt="BlocApp Administratori"
+            className="h-14 mx-auto"
+          />
+        </div>
+
+      <div className="bg-white rounded-2xl shadow-xl w-full overflow-hidden">
         {/* Header cu info asociatie */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
-              <Building2 className="w-7 h-7" />
-            </div>
-          </div>
           <h1 className="text-xl font-bold text-center">
             Ai fost invitat in asociatia
           </h1>
@@ -862,6 +869,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );
