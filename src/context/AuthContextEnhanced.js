@@ -681,13 +681,25 @@ export function AuthProviderEnhanced({ children }) {
   // 🆕 AUTO-SELECT: dacă userul are exact o singură asociație directă și nicio organizație
   // Nu se activează dacă user-ul a dat explicit "Schimbă asociația"
   useEffect(() => {
-    if (loading || contextsLoading || currentContext) return;
+    if (loading || contextsLoading) return;
     if (!currentUser) return;
+
+    // Dacă contextul curent e o asociație care nu mai e în lista utilizatorului, clear it
+    if (currentContext?.type === 'association' && userDirectAssociations.length >= 0) {
+      const stillExists = userDirectAssociations.some(a => a.id === currentContext.id);
+      if (!stillExists && !contextsLoading) {
+        console.log('⚠️ Asociația curentă nu mai e accesibilă, clear context');
+        clearContext();
+        return;
+      }
+    }
+
+    if (currentContext) return;
     if (autoSelectDisabledRef.current) return;
     if (userOrganizations.length === 0 && userDirectAssociations.length === 1) {
       selectDirectAssociation(userDirectAssociations[0]);
     }
-  }, [loading, contextsLoading, currentContext, currentUser, userOrganizations, userDirectAssociations, selectDirectAssociation]);
+  }, [loading, contextsLoading, currentContext, currentUser, userOrganizations, userDirectAssociations, selectDirectAssociation, clearContext]);
 
   // Effect pentru monitorizarea stării de autentificare
   useEffect(() => {
@@ -728,11 +740,31 @@ export function AuthProviderEnhanced({ children }) {
   useEffect(() => {
     if (!currentUser?.uid) return;
 
-    const unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (doc) => {
-      if (doc.exists()) {
-        const profileData = doc.data();
-        // console.log('🔄 UserProfile actualizat în timp real:', profileData);
+    const unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        const profileData = docSnap.data();
         setUserProfile(profileData);
+
+        // Detectează dacă directAssociations s-a schimbat (ex: eliminare membru)
+        const newAssocIds = profileData.directAssociations || [];
+        setUserDirectAssociations(prev => {
+          const prevIds = prev.map(a => a.id);
+          const removedIds = prevIds.filter(id => !newAssocIds.includes(id));
+          const addedIds = newAssocIds.filter(id => !prevIds.includes(id));
+
+          if (removedIds.length > 0 || addedIds.length > 0) {
+            console.log('🔄 directAssociations schimbat — removed:', removedIds, 'added:', addedIds);
+            // Reîncarcă contextele complet (inclusiv clear context dacă necesar)
+            loadUserContexts(currentUser.uid);
+          }
+
+          // Dacă s-au eliminat asociații, filtrează imediat
+          if (removedIds.length > 0) {
+            return prev.filter(a => newAssocIds.includes(a.id));
+          }
+
+          return prev;
+        });
       }
     }, (error) => {
       console.error('❌ Error listening to user profile:', error);
