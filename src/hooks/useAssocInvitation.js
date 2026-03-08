@@ -348,6 +348,11 @@ export const useAssocInvitation = () => {
       const userDocSnap = await getDoc(doc(db, 'users', userId));
       const userData = userDocSnap.exists() ? userDocSnap.data() : {};
 
+      // Verifică email match — nu permite acceptare pe cont greșit
+      if (userData?.email?.toLowerCase() !== foundInvitation.email.toLowerCase()) {
+        throw new Error('EMAIL_MISMATCH');
+      }
+
       // Construiește numele din profile.personalInfo sau din câmpul name
       const memberName = userData?.profile?.personalInfo?.firstName
         ? `${userData.profile.personalInfo.firstName} ${userData.profile.personalInfo.lastName || ''}`.trim()

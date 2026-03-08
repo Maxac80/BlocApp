@@ -36,7 +36,7 @@ import { db } from '../../firebase';
  * Fallback pe client-side Firestore dacă API-ul nu e disponibil (localhost).
  */
 const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
-  const { currentUser, loading: authLoading, signup, login } = useAuth();
+  const { currentUser, loading: authLoading, signup, login, logoutEnhanced } = useAuth();
   const { acceptInvitation, verifyInvitation } = useAssocInvitation();
 
   // State pentru verificare invitatie
@@ -167,9 +167,12 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
   }, [token, authLoading]);
 
   // Daca user-ul e deja autentificat si invitatia e valida, accepta direct
+  // DAR doar daca email-ul se potriveste (nu accepta pe contul gresit)
   useEffect(() => {
     if (currentUser && invitationStatus === 'valid' && !accepted && !accepting) {
-      handleAcceptInvitation(currentUser.uid);
+      if (currentUser.email?.toLowerCase() === invitationData?.email?.toLowerCase()) {
+        handleAcceptInvitation(currentUser.uid);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, invitationStatus]);
@@ -326,6 +329,12 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     }
   };
 
+  // Handler pentru delogare cand user-ul e logat pe alt cont
+  const handleLogoutAndContinue = async () => {
+    await logoutEnhanced();
+    // Dupa logout, componenta se re-rendeaza cu currentUser=null → arata formularul
+  };
+
   // Rol label helper
   const getRoleLabel = (role) => {
     switch (role) {
@@ -377,6 +386,12 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
         title: 'Invitatie deja acceptata',
         message: 'Aceasta invitatie a fost deja acceptata. Conecteaza-te pentru a accesa asociatia.',
         color: 'text-green-600 bg-green-100'
+      },
+      EMAIL_MISMATCH: {
+        icon: AlertCircle,
+        title: 'Email diferit',
+        message: 'Contul tau are un email diferit de cel invitat. Logheaza-te cu email-ul corect.',
+        color: 'text-yellow-600 bg-yellow-100'
       },
       VERIFICATION_FAILED: {
         icon: AlertCircle,
@@ -476,7 +491,36 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     return <SuccessState />;
   }
 
-  // User autentificat - acceptare in curs
+  // User logat pe alt cont decat cel invitat
+  if (currentUser && invitationData?.email &&
+      currentUser.email?.toLowerCase() !== invitationData.email?.toLowerCase()) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">
+            Cont diferit
+          </h1>
+          <p className="text-gray-600 mb-2">
+            Esti logat ca <strong>{currentUser.email}</strong>
+          </p>
+          <p className="text-gray-600 mb-6">
+            Invitatia este pentru <strong>{invitationData.email}</strong>
+          </p>
+          <button
+            onClick={handleLogoutAndContinue}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Delogheaza-te si continua
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // User autentificat - acceptare in curs (email se potriveste)
   if (currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
