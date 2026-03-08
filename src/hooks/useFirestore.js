@@ -1027,6 +1027,7 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     loading,
     error,
     association,
+    setAssociation,
     blocks,
     stairs,
     apartments,

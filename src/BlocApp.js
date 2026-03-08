@@ -65,6 +65,7 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     loading,
     error,
     association,
+    setAssociation,
     blocks: firestoreBlocks,
     stairs: firestoreStairs,
     apartments: firestoreApartments,
@@ -894,6 +895,7 @@ useEffect(() => {
           {currentView === "association" && (
             <AssociationView
               association={association}
+              setAssociation={setAssociation}
               newAssociation={newAssociation}
               setNewAssociation={setNewAssociation}
               handleAddAssociation={handleAssociationSubmit}

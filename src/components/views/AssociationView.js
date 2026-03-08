@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users, UserPlus, ShieldCheck, UserCheck, Shield, Trash2, ChevronDown, Link2, Calendar, Settings, Database, RefreshCw, AlertCircle } from 'lucide-react';
+import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users, UserPlus, ShieldCheck, UserCheck, Shield, Trash2, MoreVertical, Link2, Calendar, Settings, Database, RefreshCw, AlertCircle } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
 import { useAssocMembers } from '../../hooks/useAssocMembers';
 import { useAssocInvitation } from '../../hooks/useAssocInvitation';
@@ -16,6 +16,7 @@ const romanianMonths = [
 
 const AssociationView = ({
   association,
+  setAssociation,
   updateAssociation,
   blocks,
   stairs,
@@ -957,7 +958,7 @@ const AssociationView = ({
                                         onClick={() => setMemberActionMenu(memberActionMenu === member.id ? null : member.id)}
                                         className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
                                       >
-                                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                                        <MoreVertical className="w-4 h-4 text-gray-400" />
                                       </button>
 
                                       {memberActionMenu === member.id && (
@@ -1452,6 +1453,10 @@ const AssociationView = ({
                   setTransferring(true);
                   try {
                     await transferOwnership(association.id, confirmTransfer.id, currentUserId);
+                    // Actualizează local association.adminId pentru UI instant
+                    if (setAssociation) {
+                      setAssociation(prev => ({ ...prev, adminId: confirmTransfer.id }));
+                    }
                     setConfirmTransfer(null);
                     // Reload members to update founder badge
                     loadMembers(association.id, confirmTransfer.id);

@@ -214,13 +214,21 @@ function AppContent() {
         token={assocInviteToken}
         onSuccess={async (result) => {
           window.history.replaceState({}, '', '/');
-          setInviteCompleted(true);
 
           if (result?.association) {
-            await loadUserContexts(currentUser?.uid);
-            await new Promise(r => setTimeout(r, 500));
+            // Selectează asociația ÎNAINTE de a marca invitația ca completă
+            // pentru a evita race condition cu auto-select pe asociația veche
             selectDirectAssociation(result.association);
-          } else {
+            // Reload contexts în background
+            const uid = currentUser?.uid || result?.userId;
+            if (uid) {
+              loadUserContexts(uid);
+            }
+          }
+
+          setInviteCompleted(true);
+
+          if (!result?.association) {
             window.location.href = '/';
           }
         }}

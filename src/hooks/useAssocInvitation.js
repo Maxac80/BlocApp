@@ -396,7 +396,8 @@ export const useAssocInvitation = () => {
 
       return {
         association: { id: foundAssocId, ...assocData },
-        role: foundInvitation.role
+        role: foundInvitation.role,
+        userId
       };
     } catch (err) {
       console.error('Error accepting invitation:', err);

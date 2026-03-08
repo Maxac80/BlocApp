@@ -74,8 +74,9 @@ service cloud.firestore {
       // Creare: doar pentru propriul profil
       allow create: if isOwner(userId);
 
-      // Update: propriul profil sau super_admin
-      allow update: if isOwner(userId) || isSuperAdmin();
+      // Update: propriul profil, super_admin, sau doar directAssociations (pentru invite accept/member remove)
+      allow update: if isOwner(userId) || isSuperAdmin()
+        || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['directAssociations']));
 
       // Delete: doar super_admin
       allow delete: if isSuperAdmin();
