@@ -174,6 +174,7 @@ function AppContent() {
 
   // Detectează magic link pentru invitații asociație
   const assocInviteToken = useAssocInviteToken();
+  const [inviteCompleted, setInviteCompleted] = useState(false);
 
   // Detectează link-uri Firebase Auth (verificare email, resetare parolă)
   const firebaseAuthAction = useFirebaseAuthAction();
@@ -207,12 +208,21 @@ function AppContent() {
   }
 
   // 🏠 MAGIC LINK: Afișează pagina de acceptare invitație asociație
-  if (assocInviteToken) {
+  if (assocInviteToken && !inviteCompleted) {
     return (
       <AssocInviteRegistration
         token={assocInviteToken}
-        onSuccess={(result) => {
-          window.location.href = '/';
+        onSuccess={async (result) => {
+          window.history.replaceState({}, '', '/');
+          setInviteCompleted(true);
+
+          if (result?.association) {
+            await loadUserContexts(currentUser?.uid);
+            await new Promise(r => setTimeout(r, 500));
+            selectDirectAssociation(result.association);
+          } else {
+            window.location.href = '/';
+          }
         }}
         onNavigateToLogin={() => {
           window.location.href = '/';

@@ -143,7 +143,10 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
           // Daca invitatia e deja acceptata si user-ul e logat, redirect direct
           if (result.error === 'INVITATION_ACCEPTED' && currentUser) {
             console.log('Invitation already accepted and user logged in, redirecting...');
-            onSuccess && onSuccess({ alreadyAccepted: true });
+            onSuccess && onSuccess({
+              alreadyAccepted: true,
+              association: associationData ? { id: invitationData?.associationId, ...associationData } : null
+            });
             return;
           }
           setInvitationStatus('invalid');
