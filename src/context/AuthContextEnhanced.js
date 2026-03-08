@@ -402,7 +402,7 @@ export function AuthProviderEnhanced({ children }) {
         const profileData = userDoc.data();
         setUserProfile(profileData);
         
-        setIsEmailVerified(user.emailVerified || profileData.emailVerified === true);
+        setIsEmailVerified(user.emailVerified || profileData.emailVerified === true || profileData.skipEmailVerification === true);
         
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
