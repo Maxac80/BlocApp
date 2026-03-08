@@ -211,7 +211,7 @@ export const useAssocInvitation = () => {
       });
 
       const createdInvitation = { id: invitationRef.id, ...newInvitation };
-      setInvitations(prev => [...prev, createdInvitation]);
+      // Nu mai facem setInvitations manual - onSnapshot listener actualizeaza automat
 
       const inviteLink = `${window.location.origin}/invite/assoc/${token}`;
 

@@ -140,6 +140,12 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
             email: result.invitation.email
           }));
         } else {
+          // Daca invitatia e deja acceptata si user-ul e logat, redirect direct
+          if (result.error === 'INVITATION_ACCEPTED' && currentUser) {
+            console.log('Invitation already accepted and user logged in, redirecting...');
+            onSuccess && onSuccess({ alreadyAccepted: true });
+            return;
+          }
           setInvitationStatus('invalid');
           setErrorType(result.error || 'VERIFICATION_FAILED');
         }
@@ -229,6 +235,17 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
       }, 2000);
     } catch (err) {
       console.error('Error accepting invitation:', err);
+
+      // Daca invitatia a fost deja acceptata, redirect direct (nu eroare)
+      if (err.message === 'INVITATION_ACCEPTED') {
+        console.log('Invitation already accepted, redirecting...');
+        setAccepted(true);
+        setTimeout(() => {
+          onSuccess && onSuccess({ alreadyAccepted: true });
+        }, 1500);
+        return;
+      }
+
       setAcceptError(err.message);
       acceptingRef.current = false;
     } finally {

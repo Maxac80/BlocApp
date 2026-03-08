@@ -187,13 +187,9 @@ const InviteAssocMemberModal = ({
               }
             </p>
 
-            {inviteLink && (
+            {/* Link-ul se arata doar daca email-ul NU a fost trimis (fallback) */}
+            {inviteLink && !emailSent && (
               <div className="mt-4">
-                {emailSent && (
-                  <p className="text-xs text-gray-500 mb-2">
-                    Poți copia și link-ul direct:
-                  </p>
-                )}
                 <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <input
                     type="text"
