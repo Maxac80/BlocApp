@@ -505,7 +505,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
           <img
             src="/logo-admin.png"
             alt="BlocApp Administratori"
-            className="h-14 mx-auto"
+            className="h-16 object-contain mx-auto"
           />
         </div>
 
