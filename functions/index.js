@@ -31,6 +31,37 @@ const CONFIG = {
   appName: "BlocApp"
 };
 
+// Helper: detectează tipul aplicației din origin
+const getAppType = (origin) => {
+  if (origin && (origin.includes('locatari') || origin.includes('3001'))) return 'locatari';
+  return 'admin';
+};
+
+// Helper: branding per aplicație
+const getEmailBranding = (appType) => ({
+  logoUrl: appType === 'locatari'
+    ? 'https://locatari.blocapp.ro/logo-locatari.png'
+    : 'https://administratori.blocapp.ro/logo-admin.png',
+  accentColor: appType === 'locatari' ? '#2D5016' : '#2563EB',
+  buttonColor: appType === 'locatari' ? '#2D5016' : '#2563EB',
+  appName: appType === 'locatari' ? 'BlocApp Locatari' : 'BlocApp Administratori',
+});
+
+// Helper: generează header-ul email cu logo + accent bar
+const getEmailHeader = (branding) => `
+          <!-- Header: Logo pe fundal alb rezistent la dark mode -->
+          <tr>
+            <td style="background-color: #ffffff; padding: 32px 40px 24px; text-align: center;" bgcolor="#ffffff">
+              <div style="background-color: #ffffff; border-radius: 12px; padding: 20px; display: inline-block;">
+                <img src="${branding.logoUrl}" alt="${branding.appName}" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
+              </div>
+            </td>
+          </tr>
+          <!-- Accent bar -->
+          <tr>
+            <td style="background-color: ${branding.accentColor}; height: 4px; font-size: 0; line-height: 0;" bgcolor="${branding.accentColor}">&nbsp;</td>
+          </tr>`;
+
 // ============================================
 // 📧 TEMPLATE-URI EMAIL
 // ============================================
@@ -38,7 +69,9 @@ const CONFIG = {
 const emailTemplates = {
   // Template verificare email
   // CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
-  verification: (userName, verificationLink) => ({
+  verification: (userName, verificationLink, appType = 'admin') => {
+    const branding = getEmailBranding(appType);
+    return {
     subject: "Verifică-ți adresa de email - BlocApp",
     html: `
 <!DOCTYPE html>
@@ -46,6 +79,8 @@ const emailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>Verificare Email - BlocApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
@@ -54,13 +89,7 @@ const emailTemplates = {
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- Header -->
-          <tr>
-            <td bgcolor="#2563EB" style="background-color: #2563EB; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #BFDBFE; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">Management Asociații de Proprietari</p>
-            </td>
-          </tr>
+          ${getEmailHeader(branding)}
 
           <!-- Content -->
           <tr>
@@ -74,7 +103,7 @@ const emailTemplates = {
               <!-- Button -->
               <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px auto;">
                 <tr>
-                  <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; border-radius: 8px;">
+                  <td align="center" bgcolor="${branding.buttonColor}" style="background-color: ${branding.buttonColor}; border-radius: 8px;">
                     <a href="${verificationLink}" target="_blank" style="display: inline-block; color: #ffffff; text-decoration: none; padding: 16px 48px; font-size: 16px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
                       Verifică adresa de email
                     </a>
@@ -113,11 +142,13 @@ const emailTemplates = {
 </body>
 </html>
     `
-  }),
+  };},
 
   // Template resetare parolă
   // CSS simplu pentru compatibilitate cu Yahoo, Outlook, etc.
-  passwordReset: (userName, resetLink) => ({
+  passwordReset: (userName, resetLink, appType = 'admin') => {
+    const branding = getEmailBranding(appType);
+    return {
     subject: "Resetare parolă - BlocApp",
     html: `
 <!DOCTYPE html>
@@ -125,6 +156,8 @@ const emailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>Resetare Parolă - BlocApp</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
@@ -133,13 +166,7 @@ const emailTemplates = {
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- Header -->
-          <tr>
-            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; font-family: Arial, Helvetica, sans-serif;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">Resetare Parolă</p>
-            </td>
-          </tr>
+          ${getEmailHeader(branding)}
 
           <!-- Content -->
           <tr>
@@ -203,7 +230,7 @@ const emailTemplates = {
 </body>
 </html>
     `
-  })
+  };}
 };
 
 // ============================================
@@ -281,7 +308,8 @@ exports.sendVerificationEmail = onCall(
       const verificationLink = rewriteFirebaseLink(firebaseLink, "/email-verified", appUrl);
 
       // Trimite email prin Resend
-      const template = emailTemplates.verification(userName || "Utilizator", verificationLink);
+      const appType = getAppType(origin);
+      const template = emailTemplates.verification(userName || "Utilizator", verificationLink, appType);
 
       const { data, error } = await getResend().emails.send({
         from: CONFIG.fromEmail,
@@ -356,7 +384,8 @@ exports.sendPasswordResetEmail = onCall(
       const resetLink = rewriteFirebaseLink(firebaseResetLink, "/email-verified", appUrl);
 
       // Trimite email prin Resend
-      const template = emailTemplates.passwordReset(userName, resetLink);
+      const appType = getAppType(origin);
+      const template = emailTemplates.passwordReset(userName, resetLink, appType);
 
       const { data, error } = await getResend().emails.send({
         from: CONFIG.fromEmail,
@@ -428,7 +457,8 @@ exports.resendVerificationEmail = onCall(
       const verificationLink = rewriteFirebaseLink(firebaseLink, "/email-verified", appUrl);
 
       // Trimite email
-      const template = emailTemplates.verification(userName, verificationLink);
+      const appType = getAppType(request.data?.origin);
+      const template = emailTemplates.verification(userName, verificationLink, appType);
 
       const { data, error } = await getResend().emails.send({
         from: CONFIG.fromEmail,
@@ -453,6 +483,8 @@ exports.resendVerificationEmail = onCall(
 // 💰 BILLING EMAIL TEMPLATES
 // ============================================
 
+const adminBranding = getEmailBranding('admin');
+
 const billingEmailTemplates = {
   // Template trial expiring
   trialExpiring: (userName, daysRemaining) => ({
@@ -463,18 +495,15 @@ const billingEmailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-          <tr>
-            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px;">Perioada de trial</p>
-            </td>
-          </tr>
+          ${getEmailHeader({...adminBranding, accentColor: '#F59E0B'})}
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
@@ -514,18 +543,15 @@ const billingEmailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-          <tr>
-            <td bgcolor="#DC2626" style="background-color: #DC2626; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #FEE2E2; font-size: 14px;">Trial Expirat</p>
-            </td>
-          </tr>
+          ${getEmailHeader({...adminBranding, accentColor: '#DC2626'})}
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
@@ -562,18 +588,15 @@ const billingEmailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-          <tr>
-            <td bgcolor="#2563EB" style="background-color: #2563EB; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #BFDBFE; font-size: 14px;">Factură Nouă</p>
-            </td>
-          </tr>
+          ${getEmailHeader(adminBranding)}
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>
@@ -621,18 +644,15 @@ const billingEmailTemplates = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-          <tr>
-            <td bgcolor="#F59E0B" style="background-color: #F59E0B; padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">BlocApp</h1>
-              <p style="margin: 8px 0 0 0; color: #FEF3C7; font-size: 14px;">Reminder Plată</p>
-            </td>
-          </tr>
+          ${getEmailHeader({...adminBranding, accentColor: '#F59E0B'})}
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 16px 0; color: #1F2937; font-size: 24px;">Bună, ${userName}!</h2>

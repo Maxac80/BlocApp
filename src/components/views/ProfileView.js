@@ -3,10 +3,9 @@ import { User, Camera, Building, Save, AlertCircle, CheckCircle, MapPin, FileTex
 import { judeteRomania } from '../../data/counties';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useBase64Upload } from '../../hooks/useBase64Upload';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
-import DashboardHeader from '../dashboard/DashboardHeader';
-
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
+import { db, auth } from '../../firebase';
 /**
  * 👤 PROFILE VIEW - EDITAREA PROFILULUI ADMINISTRATORULUI CU TAB-URI
  *
@@ -31,7 +30,8 @@ const ProfileView = ({
   isMonthReadOnly,
   getAssociationApartments,
   handleNavigation,
-  getMonthType
+  getMonthType,
+  standalone = false
 }) => {
   const { isUploading } = useFileUpload();
   const { uploadAvatarBase64, isUploading: isUploadingBase64, getPreviewUrl } = useBase64Upload();
@@ -137,52 +137,43 @@ const ProfileView = ({
     setTimeout(scrollToTop, 100);
   }, []); // Run only once when component mounts
 
-  // Încarcă datele existente - inclusiv din wizard
+  // Incarca datele existente - sursa principala: userProfile (user doc)
+  // Fallback: association.adminProfile (backward compatibility useri vechi)
   useEffect(() => {
-    if (association?.adminProfile) {
-      // Verificăm dacă avem date din wizard (structură diferită)
-      const adminData = association.adminProfile;
+    const personalInfo = userProfile?.profile?.personalInfo;
+    const professionalInfo = userProfile?.profile?.professionalInfo;
+    const adminData = association?.adminProfile;
 
-      // Adresa poate veni fie ca obiect complet, fie ca proprietăți separate (format vechi)
-      let addressData = {
-        street: '',
-        city: '',
-        county: ''
-      };
+    // Adresa: din user doc personalInfo, fallback la adminProfile
+    let addressData = {
+      street: personalInfo?.address?.street || adminData?.address?.street || '',
+      city: personalInfo?.address?.city || adminData?.address?.city || '',
+      county: personalInfo?.address?.county || adminData?.address?.county || ''
+    };
 
-      if (adminData.address) {
-        // Format nou din wizard
-        addressData = {
-          street: adminData.address.street || '',
-          city: adminData.address.city || '',
-          county: adminData.address.county || ''
-        };
-      }
-
-      // Debugging pentru documente
-      // console.log('🔍 DEBUG: Loading admin profile with documents:', adminData.documents);
-
-      setFormData({
-        firstName: adminData.firstName || '',
-        lastName: adminData.lastName || '',
-        phone: adminData.phone || '',
-        email: adminData.email || currentUser?.email || '',
-        avatarURL: adminData.avatarURL || '',
-        companyName: adminData.companyName || '',
-        position: adminData.position || adminData.professionalInfo?.position || 'Administrator asociație',
-        licenseNumber: adminData.licenseNumber || adminData.professionalInfo?.licenseNumber || '',
-        address: addressData,
-        // Documentele pot veni din wizard sau din profilul salvat
-        documents: adminData.documents || {}
-      });
-    } else if (currentUser) {
-      // Dacă nu avem date salvate, folosim datele din currentUser
-      setFormData(prev => ({
-        ...prev,
-        email: currentUser.email || prev.email
-      }));
+    // Prenume/Nume: din personalInfo, fallback la adminProfile, apoi la name split
+    let firstName = personalInfo?.firstName || adminData?.firstName || '';
+    let lastName = personalInfo?.lastName || adminData?.lastName || '';
+    if (!firstName && userProfile?.name) {
+      const parts = userProfile.name.split(' ');
+      firstName = parts[0] || '';
+      lastName = parts.slice(1).join(' ') || '';
     }
-  }, [association, currentUser]);
+
+    setFormData({
+      firstName,
+      lastName,
+      phone: personalInfo?.phone || adminData?.phone || userProfile?.phone || '',
+      email: userProfile?.email || adminData?.email || currentUser?.email || '',
+      avatarURL: userProfile?.avatarURL || adminData?.avatarURL || '',
+      companyName: professionalInfo?.companyName || adminData?.companyName || '',
+      position: professionalInfo?.position || adminData?.position || 'Administrator asociatie',
+      licenseNumber: professionalInfo?.licenseNumber || adminData?.licenseNumber || '',
+      address: addressData,
+      // Documentele raman pe asociatie deocamdata
+      documents: adminData?.documents || {}
+    });
+  }, [userProfile, association, currentUser]);
 
   // Validare formulare
   const validateForm = () => {
@@ -213,37 +204,70 @@ const ProfileView = ({
     return Object.keys(errors).length === 0;
   };
 
-  // Salvare modificări
+  // Salvare modificari - scrie in TOATE locatiile pentru sincronizare
   const handleSave = async () => {
     if (!validateForm()) {
-      setSaveMessage('Vă rugăm completați toate câmpurile obligatorii');
+      setSaveMessage('Va rugam completati toate campurile obligatorii');
       return;
     }
 
     setIsSaving(true);
     setSaveMessage('');
 
-    try {
-      // 1. Actualizează asociația (inclusiv documentele)
-      await updateAssociation({
-        adminProfile: {
-          ...association.adminProfile,
-          ...formData,
-          documents: formData.documents || {}
-        }
-      });
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
 
-      // 2. Actualizează userProfile în Firestore pentru ca Sidebar să se actualizeze
+    try {
+      // 1. Actualizeaza user doc - sursa principala de adevar
       if (currentUser?.uid) {
-        const userProfileUpdates = {
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          name: fullName,
           phone: formData.phone,
           email: formData.email,
+          avatarURL: formData.avatarURL || '',
+          'profile.personalInfo.firstName': formData.firstName,
+          'profile.personalInfo.lastName': formData.lastName,
+          'profile.personalInfo.phone': formData.phone,
+          'profile.personalInfo.address': formData.address,
+          'profile.professionalInfo.companyName': formData.companyName,
+          'profile.professionalInfo.position': formData.position,
+          'profile.professionalInfo.licenseNumber': formData.licenseNumber,
           updatedAt: new Date().toISOString()
-        };
+        });
+      }
 
-        await updateDoc(doc(db, 'users', currentUser.uid), userProfileUpdates);
-        // console.log('✅ UserProfile actualizat în Firestore pentru Sidebar');
+      // 2. Actualizeaza Firebase Auth displayName
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: fullName
+        });
+      }
+
+      // 3. Actualizeaza association.adminProfile (copie denormalizata) - doar dacă avem asociație
+      if (association?.id && updateAssociation) {
+        await updateAssociation({
+          adminProfile: {
+            ...association?.adminProfile,
+            ...formData,
+            documents: formData.documents || {}
+          }
+        });
+      }
+
+      // 4. Actualizeaza member doc daca exista
+      if (currentUser?.uid && association?.id) {
+        try {
+          const memberRef = doc(db, 'associations', association.id, 'members', currentUser.uid);
+          const memberDoc = await getDoc(memberRef);
+          if (memberDoc.exists()) {
+            await updateDoc(memberRef, {
+              name: fullName,
+              email: formData.email,
+              updatedAt: new Date().toISOString()
+            });
+          }
+        } catch (memberErr) {
+          console.error('Error updating member doc:', memberErr);
+        }
       }
 
       setIsEditing(false);
@@ -252,7 +276,7 @@ const ProfileView = ({
 
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
-      console.error('❌ Error saving profile:', error);
+      console.error('Error saving profile:', error);
       setSaveMessage('Eroare la salvarea profilului');
     } finally {
       setIsSaving(false);
@@ -470,7 +494,9 @@ const ProfileView = ({
     <div
       id="profile-view-top"
       className={`min-h-screen px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
-        monthType === 'current'
+        standalone
+          ? "bg-transparent"
+          : monthType === 'current'
           ? "bg-gradient-to-br from-indigo-50 to-blue-100"
           : monthType === 'next'
           ? "bg-gradient-to-br from-green-50 to-emerald-100"
@@ -480,24 +506,10 @@ const ProfileView = ({
       }`}
     >
       <div className="w-full">
-        {/* Header */}
-        <DashboardHeader
-          association={association}
-          blocks={blocks}
-          stairs={stairs}
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          getAvailableMonths={getAvailableMonths}
-          expenses={expenses}
-          isMonthReadOnly={isMonthReadOnly}
-          getAssociationApartments={getAssociationApartments}
-          handleNavigation={handleNavigation}
-          getMonthType={getMonthType}
-        />
-
         {/* Page Title */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900">Profil Administrator</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Profilul meu</h1>
+          <p className="text-gray-500">Gestionează datele personale și documentele</p>
         </div>
 
         {/* Mesaj salvare */}
@@ -516,44 +528,46 @@ const ProfileView = ({
           </div>
         )}
 
-        {/* Tab Container */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Tab Navigation */}
-          <div className="border-b overflow-x-auto">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab('date')}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'date'
-                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                    : 'text-gray-600 hover:text-gray-900'
+        {/* Tab Navigation - same style as SubscriptionSettings */}
+        <div className="mb-6">
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+            <button
+              onClick={() => setActiveTab('date')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+                text-sm font-medium transition-colors
+                ${activeTab === 'date'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
                 }`}
-              >
-                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Date </span>Administrator
-              </button>
-              <button
-                onClick={() => setActiveTab('documente')}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'documente'
-                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                    : 'text-gray-600 hover:text-gray-900'
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Date Administrator</span>
+              <span className="sm:hidden">Date</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('documente')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+                text-sm font-medium transition-colors
+                ${activeTab === 'documente'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
                 }`}
-              >
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Documente </span>Administrator
-              </button>
-            </div>
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Documente Administrator</span>
+              <span className="sm:hidden">Documente</span>
+            </button>
           </div>
+        </div>
 
-          {/* Tab Content */}
-          <div className="p-3 sm:p-4 lg:p-6">
+        {/* Tab Content */}
+        <div>
             {/* Tab 1: Date Administrator */}
             {activeTab === 'date' && (
               <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Avatar Section */}
                 <div className="lg:col-span-1">
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200 text-center sticky top-4">
+                  <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm shadow-sm text-center sticky top-4">
                     <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Fotografia ta</h4>
 
                     <div className="relative inline-block mb-3">
@@ -626,36 +640,37 @@ const ProfileView = ({
                             onClick={() => {
                               setIsEditing(false);
                               setValidationErrors({});
-                              // Reset la datele originale
-                              if (association?.adminProfile) {
-                                const adminData = association.adminProfile;
-                                let addressData = {
-                                  street: '',
-                                  city: '',
-                                  county: ''
-                                };
+                              // Reset la datele originale - aceeasi logica ca useEffect
+                              const personalInfo = userProfile?.profile?.personalInfo;
+                              const professionalInfo = userProfile?.profile?.professionalInfo;
+                              const adminData = association?.adminProfile;
 
-                                if (adminData.address) {
-                                  addressData = {
-                                    street: adminData.address.street || '',
-                                    city: adminData.address.city || '',
-                                    county: adminData.address.county || ''
-                                  };
-                                }
+                              let addressData = {
+                                street: personalInfo?.address?.street || adminData?.address?.street || '',
+                                city: personalInfo?.address?.city || adminData?.address?.city || '',
+                                county: personalInfo?.address?.county || adminData?.address?.county || ''
+                              };
 
-                                setFormData({
-                                  firstName: adminData.firstName || '',
-                                  lastName: adminData.lastName || '',
-                                  phone: adminData.phone || '',
-                                  email: adminData.email || currentUser?.email || '',
-                                  avatarURL: adminData.avatarURL || '',
-                                  companyName: adminData.companyName || '',
-                                  position: adminData.position || '',
-                                  licenseNumber: adminData.licenseNumber || '',
-                                  address: addressData,
-                                  documents: adminData.documents || {}
-                                });
+                              let firstName = personalInfo?.firstName || adminData?.firstName || '';
+                              let lastName = personalInfo?.lastName || adminData?.lastName || '';
+                              if (!firstName && userProfile?.name) {
+                                const parts = userProfile.name.split(' ');
+                                firstName = parts[0] || '';
+                                lastName = parts.slice(1).join(' ') || '';
                               }
+
+                              setFormData({
+                                firstName,
+                                lastName,
+                                phone: personalInfo?.phone || adminData?.phone || userProfile?.phone || '',
+                                email: userProfile?.email || adminData?.email || currentUser?.email || '',
+                                avatarURL: userProfile?.avatarURL || adminData?.avatarURL || '',
+                                companyName: professionalInfo?.companyName || adminData?.companyName || '',
+                                position: professionalInfo?.position || adminData?.position || 'Administrator asociatie',
+                                licenseNumber: professionalInfo?.licenseNumber || adminData?.licenseNumber || '',
+                                address: addressData,
+                                documents: adminData?.documents || {}
+                              });
                             }}
                             className="w-full px-3 py-1.5 text-xs sm:text-sm bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
                           >
@@ -670,7 +685,7 @@ const ProfileView = ({
                 {/* Formular Date */}
                 <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                   {/* Date Personale */}
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
                     <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
                       <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Date personale
@@ -768,7 +783,7 @@ const ProfileView = ({
                   </div>
 
                   {/* ADRESA DE DOMICILIU */}
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
                     <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
                       <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Adresa de domiciliu
@@ -849,7 +864,7 @@ const ProfileView = ({
                   </div>
 
                   {/* Date Profesionale */}
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
                     <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
                       <Building className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Date profesionale
@@ -1076,7 +1091,6 @@ const ProfileView = ({
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

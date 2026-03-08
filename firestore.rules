@@ -191,8 +191,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // Blocs
+    // Blocs (legacy name)
     match /blocs/{blocId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Blocks (actual collection name used by code)
+    match /blocks/{blockId} {
       allow read, write: if isAuthenticated();
     }
 
@@ -203,6 +208,11 @@ service cloud.firestore {
 
     // Expenses
     match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Custom Expenses (fallback collection)
+    match /customExpenses/{customExpenseId} {
       allow read, write: if isAuthenticated();
     }
 

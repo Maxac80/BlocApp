@@ -1,16 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, RefreshCw } from 'lucide-react';
+import UserDropdownMenu from './UserDropdownMenu';
 
-const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association, userProfile, activeUser }) => {
+const MobileHeader = ({
+  onLogoClick,
+  onAvatarClick,
+  onSwitchContext,
+  association,
+  userProfile,
+  activeUser,
+  handleNavigation,
+  deleteAllBlocAppData,
+  userRole
+}) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Get avatar URL or first letter for fallback
-  const avatarURL = association?.adminProfile?.avatarURL;
-  const initials = userProfile?.displayName?.charAt(0)?.toUpperCase()
+  const isReadOnlyRole = userRole === 'assoc_president' || userRole === 'assoc_censor';
+  const isAdmin = !isReadOnlyRole;
+
+  // Rezolvare avatar din user doc cu fallback
+  const avatarURL = userProfile?.avatarURL
+    || userProfile?.profile?.documents?.avatar?.url
+    || association?.adminProfile?.avatarURL;
+
+  const initials = userProfile?.profile?.personalInfo?.firstName?.charAt(0)?.toUpperCase()
+    || userProfile?.displayName?.charAt(0)?.toUpperCase()
     || activeUser?.email?.charAt(0)?.toUpperCase()
     || 'U';
-  const userName = userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator';
+
+  const userName = userProfile?.profile?.personalInfo?.firstName
+    ? `${userProfile.profile.personalInfo.firstName} ${userProfile.profile.personalInfo.lastName || ''}`.trim()
+    : userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,13 +58,8 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association
       await signOut(auth);
       window.location.reload();
     } catch (error) {
-      console.error('❌ Eroare la deconectare:', error);
+      console.error('Eroare la deconectare:', error);
     }
-  };
-
-  const handleProfileClick = () => {
-    setIsDropdownOpen(false);
-    onAvatarClick();
   };
 
   return (
@@ -57,7 +72,7 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association
         minHeight: '3.5rem'
       }}
     >
-      {/* Logo și nume aplicație */}
+      {/* Logo si nume aplicatie */}
       <button
         onClick={onLogoClick}
         className="flex items-center hover:bg-gray-100 rounded-lg p-1 transition-colors"
@@ -90,45 +105,20 @@ const MobileHeader = ({ onLogoClick, onAvatarClick, onSwitchContext, association
 
         {/* Dropdown menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
-            {/* Nume utilizator */}
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
-              <p className="text-xs text-gray-500 truncate">{activeUser?.email}</p>
-            </div>
-
-            {/* Profil */}
-            <button
-              onClick={handleProfileClick}
-              className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <User className="w-4 h-4 mr-3 text-gray-500" />
-              Profil
-            </button>
-
-            {/* Schimbă asociația */}
-            {onSwitchContext && (
-              <button
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  onSwitchContext();
-                }}
-                className="w-full flex items-center px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 mr-3" />
-                Schimbă asociația
-              </button>
-            )}
-
-            {/* Deconectare */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              Deconectare
-            </button>
-          </div>
+          <UserDropdownMenu
+            userProfile={userProfile}
+            activeUser={activeUser}
+            isAdmin={isAdmin}
+            position="below"
+            onNavigate={(view) => {
+              if (handleNavigation) handleNavigation(view);
+              else if (view === 'profile' && onAvatarClick) onAvatarClick();
+            }}
+            onSwitchAssociation={onSwitchContext || null}
+            onDeleteData={isAdmin && association && deleteAllBlocAppData ? deleteAllBlocAppData : null}
+            onLogout={handleLogout}
+            onClose={() => setIsDropdownOpen(false)}
+          />
         )}
       </div>
     </header>

@@ -124,7 +124,7 @@ export const useAssocMembers = () => {
     }
   }, []);
 
-  // Eliminare membru
+  // Eliminare membru (protejat: fondatorul nu poate fi eliminat)
   const removeMember = async (associationId, memberId, removedByUserId) => {
     if (!associationId || !memberId) {
       throw new Error('Association ID and Member ID are required');
@@ -134,6 +134,13 @@ export const useAssocMembers = () => {
     setError(null);
 
     try {
+      // Verifică dacă membrul este fondatorul asociației
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+      if (assocDoc.exists() && assocDoc.data().adminId === memberId) {
+        throw new Error('Fondatorul asociației nu poate fi eliminat. Transferă ownership-ul mai întâi.');
+      }
+
       const memberRef = doc(db, 'associations', associationId, 'members', memberId);
       const memberDoc = await getDoc(memberRef);
 
@@ -171,7 +178,7 @@ export const useAssocMembers = () => {
     }
   };
 
-  // Schimbare rol membru
+  // Schimbare rol membru (protejat: fondatorul rămâne mereu assoc_admin)
   const changeMemberRole = async (associationId, memberId, newRole, changedByUserId) => {
     if (!associationId || !memberId || !newRole) {
       throw new Error('All parameters are required');
@@ -185,6 +192,13 @@ export const useAssocMembers = () => {
     setError(null);
 
     try {
+      // Verifică dacă membrul este fondatorul - nu se poate schimba rolul fondatorului
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+      if (assocDoc.exists() && assocDoc.data().adminId === memberId) {
+        throw new Error('Rolul fondatorului nu poate fi schimbat.');
+      }
+
       const memberRef = doc(db, 'associations', associationId, 'members', memberId);
       await updateDoc(memberRef, {
         role: newRole,
@@ -214,6 +228,68 @@ export const useAssocMembers = () => {
     }
   };
 
+  // Transfer ownership asociație
+  const transferOwnership = async (associationId, newOwnerId, currentUserId) => {
+    if (!associationId || !newOwnerId || !currentUserId) {
+      throw new Error('All parameters are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Verifică că currentUser este fondatorul
+      const assocRef = doc(db, 'associations', associationId);
+      const assocDoc = await getDoc(assocRef);
+
+      if (!assocDoc.exists()) {
+        throw new Error('Asociația nu a fost găsită');
+      }
+
+      const assocData = assocDoc.data();
+      if (assocData.adminId !== currentUserId) {
+        throw new Error('Doar fondatorul poate transfera ownership-ul');
+      }
+
+      // Verifică că noul owner este deja assoc_admin
+      const newOwnerMemberRef = doc(db, 'associations', associationId, 'members', newOwnerId);
+      const newOwnerDoc = await getDoc(newOwnerMemberRef);
+
+      if (!newOwnerDoc.exists() || newOwnerDoc.data().role !== 'assoc_admin') {
+        throw new Error('Noul proprietar trebuie să fie deja administrator');
+      }
+
+      // Transferă ownership-ul
+      await updateDoc(assocRef, {
+        adminId: newOwnerId,
+        ownershipTransferredAt: new Date().toISOString(),
+        previousAdminId: currentUserId
+      });
+
+      await logActivity(currentUserId, 'ASSOC_OWNERSHIP_TRANSFERRED', {
+        associationId,
+        fromUserId: currentUserId,
+        toUserId: newOwnerId
+      });
+
+      // Update local state - actualizează isFounder
+      setMembers(prev =>
+        prev.map(m => ({
+          ...m,
+          isFounder: m.id === newOwnerId
+        }))
+      );
+
+      return true;
+    } catch (err) {
+      console.error('Error transferring ownership:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Helpers
   const getMembersByRole = (role) => {
     return members.filter(m => m.role === role);
@@ -227,6 +303,7 @@ export const useAssocMembers = () => {
     unsubscribeMembers,
     removeMember,
     changeMemberRole,
+    transferOwnership,
     getMembersByRole
   };
 };

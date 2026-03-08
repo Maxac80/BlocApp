@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, arrayUnion } from 'firebase/firestore';
-import { db } from '../firebase';
+import { updateProfile } from 'firebase/auth';
+import { db, auth } from '../firebase';
 import { useSecurity } from './useSecurity';
 import { useUserProfile } from './useUserProfile';
 import { useMonthManagement } from './useMonthManagement';
@@ -779,6 +780,34 @@ export const useOnboarding = () => {
             directAssociations: arrayUnion(docRef.id)
           });
           console.log('✅ Association added to user directAssociations[]');
+
+          // Salvează datele de profil și în user doc (sursa de adevăr)
+          if (tabData.profile) {
+            const profileUpdate = {
+              name: `${tabData.profile.firstName || ''} ${tabData.profile.lastName || ''}`.trim(),
+              phone: tabData.profile.phone || '',
+              avatarURL: tabData.profile.avatarURL || '',
+              'profile.personalInfo.firstName': tabData.profile.firstName || '',
+              'profile.personalInfo.lastName': tabData.profile.lastName || '',
+              'profile.personalInfo.phone': tabData.profile.phone || '',
+              'profile.personalInfo.address': {
+                street: tabData.profile.address?.street || '',
+                city: tabData.profile.address?.city || '',
+                county: tabData.profile.address?.county || ''
+              },
+              'profile.professionalInfo.companyName': tabData.profile.professionalInfo?.companyName || '',
+              'profile.professionalInfo.position': tabData.profile.professionalInfo?.position || 'Administrator asociație',
+              'profile.professionalInfo.licenseNumber': tabData.profile.professionalInfo?.licenseNumber || ''
+            };
+            await updateDoc(userRef, profileUpdate);
+            // Sync Firebase Auth displayName
+            if (auth.currentUser) {
+              await updateProfile(auth.currentUser, {
+                displayName: profileUpdate.name
+              });
+            }
+            console.log('✅ Profile data synced to user doc');
+          }
 
           // 🎯 INIȚIALIZEAZĂ SISTEM DE SHEETS PENTRU NOUA ASOCIAȚIE
           try {

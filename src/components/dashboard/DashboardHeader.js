@@ -44,7 +44,7 @@ const DashboardHeader = ({
   };
 
   return (
-    <header className="mb-4 sm:mb-6 lg:mb-8">
+    <header className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 mb-4 sm:mb-6">
       <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-100">
         {/* Layout: vertical pe mobil, horizontal pe desktop */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-4">

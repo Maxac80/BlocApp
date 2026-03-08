@@ -118,14 +118,14 @@ const InviteAssocMemberModal = ({
   const roles = [
     {
       id: 'assoc_admin',
-      label: 'Administrator',
-      description: 'Acces complet la editare',
+      label: 'Administrator (Editor)',
+      description: 'Editare date — fără gestionare membri',
       icon: ShieldCheck,
       color: 'purple'
     },
     {
       id: 'assoc_president',
-      label: 'Presedinte',
+      label: 'Președinte',
       description: 'Vizualizare date (read-only)',
       icon: UserCheck,
       color: 'blue'
@@ -133,7 +133,7 @@ const InviteAssocMemberModal = ({
     {
       id: 'assoc_censor',
       label: 'Cenzor',
-      description: 'Audit si vizualizare (read-only)',
+      description: 'Audit și vizualizare (read-only)',
       icon: Shield,
       color: 'green'
     }

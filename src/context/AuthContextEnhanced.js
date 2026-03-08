@@ -91,9 +91,9 @@ export function AuthProviderEnhanced({ children }) {
         await security.sendEmailVerificationWithLogging(user);
       }
 
-      // Determină rolul și onboarding
+      // Determină rolul (onboarding eliminat - userul merge direct la Context Selector)
       const userRole = userData.role || 'admin_asociatie';
-      const needsOnboardingFlag = userData.needsOnboarding === false ? false : true;
+      const needsOnboardingFlag = false;
 
       // Salvează profilul de bază în Firestore (compatibilitate)
       const basicProfileData = {
@@ -123,10 +123,7 @@ export function AuthProviderEnhanced({ children }) {
       // Inițializează profilul extins
       await profileManager.loadUserProfile(user.uid);
 
-      // Inițializează progresul onboarding doar dacă e necesar
-      if (needsOnboardingFlag) {
-        await onboarding.loadOnboardingProgress(user.uid);
-      }
+      // Onboarding eliminat - nu mai încărcăm progresul
 
       // Log înregistrare
       await security.logActivity(user.uid, 'USER_REGISTERED', {
@@ -385,23 +382,10 @@ export function AuthProviderEnhanced({ children }) {
     return Math.round((now - loginTime) / 1000 / 60); // minute
   };
 
-  // 📊 VERIFICARE DACĂ UTILIZATORUL NECESITĂ ONBOARDING
+  // 📊 VERIFICARE DACĂ UTILIZATORUL NECESITĂ ONBOARDING (dezactivat - mereu false)
   const checkNeedsOnboarding = async (user) => {
-    if (!user) return false;
-    
-    try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const needsOnboardingCheck = userData.needsOnboarding !== false;
-        setNeedsOnboarding(needsOnboardingCheck);
-        return needsOnboardingCheck;
-      }
-      return true;
-    } catch (error) {
-      console.error('❌ Error checking onboarding status:', error);
-      return false;
-    }
+    setNeedsOnboarding(false);
+    return false;
   };
 
   // 🔄 ÎNCĂRCAREA PROFILULUI UTILIZATOR (enhanced)
@@ -423,13 +407,8 @@ export function AuthProviderEnhanced({ children }) {
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
         
-        // Verifică dacă necesită onboarding
-        await checkNeedsOnboarding(user);
-        
-        // Încarcă progresul onboarding dacă e necesar
-        if (profileData.needsOnboarding !== false) {
-          await onboarding.loadOnboardingProgress(user.uid);
-        }
+        // Onboarding dezactivat - setează mereu false
+        setNeedsOnboarding(false);
         
         // console.log('✅ Profil enhanced încărcat:', profileData);
       } else {
@@ -445,13 +424,13 @@ export function AuthProviderEnhanced({ children }) {
           createdAt: new Date().toISOString(),
           isActive: true,
           emailVerified: isEmailVerified || false,
-          needsOnboarding: true,
+          needsOnboarding: false,
           autoCreated: true
         };
-        
+
         await setDoc(doc(db, 'users', user.uid), newProfileData);
         setUserProfile(newProfileData);
-        setNeedsOnboarding(true);
+        setNeedsOnboarding(false);
         
         // Încarcă profilul extins
         await profileManager.loadUserProfile(user.uid);
@@ -689,7 +668,7 @@ export function AuthProviderEnhanced({ children }) {
   const needsContextSelection = useCallback(() => {
     if (loading || contextsLoading) return false;
     if (!currentUser) return false;
-    if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return false;
+    if (userOrganizations.length === 0 && userDirectAssociations.length === 0) return true; // arată selector cu empty state + "Creează Asociație"
     if (currentContext) return false; // deja selectat
     // Dacă user-ul a dat explicit "Schimbă asociația", arată selector chiar și cu 1 asociație
     if (autoSelectDisabledRef.current) return true;

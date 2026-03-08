@@ -9,7 +9,6 @@ import {
   Building2,
   Users,
   TrendingUp,
-  RefreshCw,
   Shield,
   DollarSign
 } from 'lucide-react';
@@ -324,13 +323,9 @@ const SubscriptionSettings = () => {
   const { payments, loadUserPayments } = usePayments();
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   // Load data on mount
   const loadData = useCallback(async () => {
     if (!currentUser?.uid) return;
-
-    setIsRefreshing(true);
     try {
       // Get discount from subscription if available
       const discountPercent = subscription?.customPricing?.enabled
@@ -344,8 +339,6 @@ const SubscriptionSettings = () => {
       ]);
     } catch (err) {
       console.error('Error loading subscription data:', err);
-    } finally {
-      setIsRefreshing(false);
     }
   }, [currentUser?.uid, subscription?.customPricing, calculateBilling, loadUserInvoices, loadUserPayments]);
 
@@ -361,23 +354,11 @@ const SubscriptionSettings = () => {
   const loading = subLoading || calcLoading;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Setări Abonament</h1>
-          <p className="text-gray-500">Gestionează abonamentul și datele de facturare</p>
-        </div>
-
-        <button
-          onClick={loadData}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg
-            text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Actualizează
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Setări Abonament</h1>
+        <p className="text-gray-500">Gestionează abonamentul și datele de facturare</p>
       </div>
 
       {/* Tab navigation */}

@@ -17,6 +17,10 @@ import CreateAssociationModal from "./components/modals/CreateAssociationModal";
 import InviteMemberModal from "./components/modals/InviteMemberModal";
 import AllocateExistingAssociationModal from "./components/modals/AllocateExistingAssociationModal";
 import { AlertCircle } from "lucide-react";
+import OrgHeader from "./components/common/OrgHeader";
+import ProfileView from "./components/views/ProfileView";
+import SubscriptionSettings from "./components/subscription/SubscriptionSettings";
+import TutorialsView from "./components/views/TutorialsView";
 import { useOrgInvitation } from "./hooks/useOrgInvitation";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import './services/appCheck'; // Initialize App Check for security
@@ -108,7 +112,6 @@ function AppContent() {
     userProfile,
     loading,
     isEmailVerified,
-    needsOnboarding,
     logoutEnhanced,
     // 🆕 Context switching
     currentContext,
@@ -118,11 +121,23 @@ function AppContent() {
     selectOrganization,
     selectDirectAssociation,
     clearContext,
-    needsContextSelection
+    needsContextSelection,
+    loadUserContexts
   } = useAuthEnhanced();
 
   // State pentru navigare organizație
   const [orgView, setOrgView] = useState('dashboard'); // dashboard, settings, members
+
+  // 📄 State pentru pagini standalone (Profil, Abonament, Tutoriale)
+  const [standalonePage, setStandalonePage] = useState(null);
+
+  const handleStandaloneNavigate = (page) => {
+    setStandalonePage(page);
+  };
+
+  const handleStandaloneBack = () => {
+    setStandalonePage(null);
+  };
 
   // 🆕 State pentru modale creare
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
@@ -206,18 +221,10 @@ function AppContent() {
     );
   }
 
-  // 🔄 HANDLE AUTH COMPLETE
+  // 🔄 HANDLE AUTH COMPLETE (email verification etc.)
   const handleAuthComplete = async (result) => {
-    // console.log('✅ Auth flow complete:', result);
-    
-    // Dacă onboarding-ul s-a completat, forțează reload-ul profilului
-    if (result.onboardingCompleted && currentUser) {
-      // console.log('🔄 Reloading user profile after onboarding...');
-      
-      // Forțează un reload al paginii după un mic delay pentru a permite actualizarea Firestore
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+    if (result?.emailVerified && currentUser) {
+      window.location.reload();
     }
   };
 
@@ -242,8 +249,8 @@ function AppContent() {
     );
   }
 
-  // 📧 EMAIL NECONFIRMAT SAU ONBOARDING NECESAR
-  if (!isEmailVerified || needsOnboarding) {
+  // 📧 EMAIL NECONFIRMAT
+  if (!isEmailVerified) {
     return <AuthManager onAuthComplete={handleAuthComplete} />;
   }
 
@@ -264,6 +271,36 @@ function AppContent() {
     return <OwnerPortalWrapper currentUser={currentUser} />;
   }
 
+  // 📄 PAGINI STANDALONE - Profil, Abonament, Tutoriale (fără sidebar)
+  if (standalonePage) {
+    const isAdmin = userProfile?.role === 'admin_asociatie' || userProfile?.role === 'master';
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <OrgHeader
+          userProfile={userProfile}
+          activeUser={currentUser}
+          onLogoClick={handleStandaloneBack}
+          showBackButton={true}
+          onBack={handleStandaloneBack}
+          backLabel="Înapoi"
+          isAdmin={isAdmin}
+          onNavigate={handleStandaloneNavigate}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {standalonePage === 'profile' && (
+            <ProfileView
+              userProfile={userProfile}
+              currentUser={currentUser}
+              standalone={true}
+            />
+          )}
+          {standalonePage === 'subscription' && <SubscriptionSettings />}
+          {standalonePage === 'tutorials' && <TutorialsView standalone={true} />}
+        </div>
+      </div>
+    );
+  }
+
   // 🆕 CONTEXT SELECTOR - Dacă utilizatorul trebuie să aleagă o asociație
   if (needsContextSelection()) {
     return (
@@ -276,13 +313,18 @@ function AppContent() {
             selectDirectAssociation(assoc);
           }}
           onCreateAssociation={() => setShowCreateAssocModal(true)}
+          isAdmin={userProfile?.role === 'admin_asociatie' || userProfile?.role === 'master'}
+          onNavigate={handleStandaloneNavigate}
         />
 
         <CreateAssociationModal
           isOpen={showCreateAssocModal}
           onClose={() => setShowCreateAssocModal(false)}
           userId={currentUser?.uid}
-          onSuccess={(assoc) => {
+          onSuccess={async (assoc) => {
+            await loadUserContexts(currentUser?.uid);
+            // Mic delay pentru propagare Firestore - evită permission errors pe subcollecții
+            await new Promise(r => setTimeout(r, 500));
             selectDirectAssociation(assoc);
           }}
         />
@@ -298,7 +340,19 @@ function AppContent() {
 
   // 🏢 DACĂ POATE GESTIONA - APLICAȚIA PRINCIPALĂ (necesită context setat!)
   if ((userProfile.role === 'admin_asociatie' || userProfile.role === 'master' || userProfile.role === 'presedinte' || userProfile.role === 'cenzor') && currentContext?.type === 'association') {
-    return <BlocApp associationId={currentContext.data.id} userRole={currentContext.role} onSwitchContext={clearContext} />;
+    return <BlocApp associationId={currentContext.data.id} userRole={currentContext.role} onSwitchContext={clearContext} onStandaloneNavigate={handleStandaloneNavigate} />;
+  }
+
+  // ⏳ CONTEXT ÎNCĂ SE ÎNCARCĂ - Nu afișa eroare
+  if (contextsLoading || (!currentContext && (userOrganizations.length > 0 || userDirectAssociations.length > 0))) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Se încarcă contextul...</p>
+        </div>
+      </div>
+    );
   }
 
   // 🚫 FALLBACK - ACCES RESTRICȚIONAT

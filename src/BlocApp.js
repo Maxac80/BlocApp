@@ -21,6 +21,7 @@ import { useSubscription } from './hooks/useSubscription';
 import SubscriptionBanner from './components/subscription/SubscriptionBanner';
 import SubscriptionSettings from './components/subscription/SubscriptionSettings';
 import Sidebar from './components/common/Sidebar';
+import DashboardHeader from './components/dashboard/DashboardHeader';
 import {
   SetupView,
   AssociationView,
@@ -29,11 +30,10 @@ import {
   MaintenanceView,
   ProfileView,
   TutorialsView,
-  AccountingView,
-  SettingsView
+  AccountingView
 } from './components/views';
 
-export default function BlocApp({ associationId, userRole, onSwitchContext }) {
+export default function BlocApp({ associationId, userRole, onSwitchContext, onStandaloneNavigate }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
 
@@ -141,6 +141,15 @@ export default function BlocApp({ associationId, userRole, onSwitchContext }) {
     startEditingApartment,
     cancelApartmentEdit
   } = useNavigationAndUI();
+
+  // Wrapper care interceptează paginile standalone (profil, abonament, tutoriale)
+  const handleNavigationWithStandalone = (view) => {
+    if (['profile', 'subscription', 'tutorials'].includes(view) && onStandaloneNavigate) {
+      onStandaloneNavigate(view);
+    } else {
+      handleNavigation(view);
+    }
+  };
 
   // 🔥 HOOK PENTRU GESTIONAREA LUNILOR (după ce avem association)
   const {
@@ -593,6 +602,13 @@ useEffect(() => {
   };
 
   // 🔥 LAYOUT PRINCIPAL
+  const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
+  const mainBgClass = monthType === 'next'
+    ? "bg-gradient-to-br from-green-50 to-emerald-100"
+    : monthType === 'historic'
+    ? "bg-gradient-to-br from-gray-50 to-gray-100"
+    : "bg-gradient-to-br from-indigo-50 to-blue-100";
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen bg-gray-100">
@@ -603,7 +619,7 @@ useEffect(() => {
         sidebarExpanded={sidebarExpanded}
         setSidebarExpanded={setSidebarExpanded}
         currentView={currentView}
-        handleNavigation={handleNavigation}
+        handleNavigation={handleNavigationWithStandalone}
         association={association}
         getAssociationApartments={getAssociationApartments}
         deleteAllBlocAppData={deleteAllBlocAppData}
@@ -622,7 +638,6 @@ useEffect(() => {
       {/* Mobile Header - visible only on mobile */}
       <MobileHeader
         onLogoClick={() => {
-          // Navighează la luna publicată activă și apoi la Dashboard
           if (publishedSheet?.monthYear) {
             setCurrentMonth(publishedSheet.monthYear);
           } else if (currentSheet?.monthYear) {
@@ -630,11 +645,14 @@ useEffect(() => {
           }
           handleNavigation("dashboard");
         }}
-        onAvatarClick={() => handleNavigation("profile")}
+        onAvatarClick={() => onStandaloneNavigate ? onStandaloneNavigate("profile") : handleNavigation("profile")}
         onSwitchContext={handleSwitchContext}
         association={association}
         userProfile={userProfile}
         activeUser={activeUser}
+        handleNavigation={handleNavigationWithStandalone}
+        deleteAllBlocAppData={deleteAllBlocAppData}
+        userRole={userRole}
       />
 
       {/* Conținut principal */}
@@ -642,7 +660,7 @@ useEffect(() => {
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
         {/* Zona de conținut - padding pentru mobile header și bottom nav cu safe-area */}
-        <main className="flex-1 overflow-y-auto main-content-mobile-padding">
+        <main className={`flex-1 overflow-y-auto main-content-mobile-padding ${mainBgClass}`}>
         <style>{`
           .main-content-mobile-padding {
             padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
@@ -658,6 +676,21 @@ useEffect(() => {
           {/* 💳 Subscription Banner - afișat când trial expiră sau cont suspendat */}
           <SubscriptionBanner
             onNavigateToSubscription={() => handleNavigation('subscription')}
+          />
+
+          {/* Header centralizat - afișat pe toate view-urile */}
+          <DashboardHeader
+            association={association}
+            blocks={blocks}
+            stairs={stairs}
+            currentMonth={currentMonth}
+            setCurrentMonth={setCurrentMonth}
+            getAvailableMonths={getAvailableMonths}
+            expenses={expenses}
+            isMonthReadOnly={isMonthReadOnly(currentMonth)}
+            getAssociationApartments={getAssociationApartments || (() => [])}
+            handleNavigation={handleNavigation}
+            getMonthType={getMonthType}
           />
 
           {/* Dashboard View */}
@@ -881,37 +914,10 @@ useEffect(() => {
               getMonthType={getMonthType}
               userRole={userRole}
               currentUserId={currentUser?.uid}
-            />
-          )}
-
-          {/* Profile View */}
-          {currentView === "profile" && (
-            <ProfileView
-              association={association}
-              blocks={blocks}
-              stairs={stairs}
-              updateAssociation={updateAssociation}
-              userProfile={userProfile}
-              currentUser={currentUser}
-              currentMonth={currentMonth}
-              setCurrentMonth={setCurrentMonth}
-              getAvailableMonths={getAvailableMonths}
-              expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments || (() => {
-                console.error('⚠️ getAssociationApartments is not available');
-                return [];
-              })}
-              handleNavigation={handleNavigation}
-              getMonthType={getMonthType}
-            />
-          )}
-
-          {/* Tutorials View */}
-          {currentView === "tutorials" && (
-            <TutorialsView
-              association={association}
-              updateAssociation={updateAssociation}
+              currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
+              sheets={sheets || []}
+              updateSheetMonthSettings={updateSheetMonthSettings}
             />
           )}
 
@@ -942,37 +948,6 @@ useEffect(() => {
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
               updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
             />
-          )}
-
-          {/* Settings View */}
-          {currentView === "settings" && (
-            <SettingsView
-              association={association}
-              blocks={blocks}
-              stairs={stairs}
-              updateAssociation={updateAssociation}
-              currentMonth={currentMonth}
-              setCurrentMonth={setCurrentMonth}
-              getAvailableMonths={getAvailableMonths}
-              expenses={expenses}
-              isMonthReadOnly={isMonthReadOnly(currentMonth)}
-              getAssociationApartments={getAssociationApartments || (() => {
-                console.error('⚠️ getAssociationApartments is not available');
-                return [];
-              })}
-              handleNavigation={handleNavigation}
-              getMonthType={getMonthType}
-              currentSheet={currentSheet}
-              publishedSheet={publishedSheet}
-              sheets={sheets || []}
-              updateSheetCustomName={updateSheetCustomName}
-              updateSheetMonthSettings={updateSheetMonthSettings}
-            />
-          )}
-
-          {/* Subscription Settings View */}
-          {currentView === "subscription" && (
-            <SubscriptionSettings />
           )}
 
         </main>

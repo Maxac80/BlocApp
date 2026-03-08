@@ -1,10 +1,18 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users, UserPlus, ShieldCheck, UserCheck, Shield, Trash2, ChevronDown, Link2 } from 'lucide-react';
+import { Building2, User, Globe, CreditCard, Edit, Save, X, MapPin, Phone, Mail, Clock, Users, UserPlus, ShieldCheck, UserCheck, Shield, Trash2, ChevronDown, Link2, Calendar, Settings, Database, RefreshCw, AlertCircle } from 'lucide-react';
 import { judeteRomania } from '../../data/counties';
-import DashboardHeader from '../dashboard/DashboardHeader';
 import { useAssocMembers } from '../../hooks/useAssocMembers';
 import { useAssocInvitation } from '../../hooks/useAssocInvitation';
 import InviteAssocMemberModal from '../modals/InviteAssocMemberModal';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+
+// Lunile în română
+const romanianMonths = [
+  'ianuarie', 'februarie', 'martie', 'aprilie',
+  'mai', 'iunie', 'iulie', 'august',
+  'septembrie', 'octombrie', 'noiembrie', 'decembrie'
+];
 
 const AssociationView = ({
   association,
@@ -21,7 +29,12 @@ const AssociationView = ({
   isMonthReadOnly,
   getMonthType,
   userRole,
-  currentUserId
+  currentUserId,
+  // Settings props
+  currentSheet,
+  publishedSheet,
+  sheets = [],
+  updateSheetMonthSettings
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
   const [activeTab, setActiveTab] = useState('identification');
@@ -29,14 +42,37 @@ const AssociationView = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  // Settings state
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [monthSettings, setMonthSettings] = useState(() => {
+    const currentDate = new Date();
+    const previousDate = new Date(currentDate);
+    previousDate.setMonth(previousDate.getMonth() - 1);
+    return {
+      workingMonth: romanianMonths[currentDate.getMonth()],
+      workingYear: currentDate.getFullYear(),
+      consumptionMonth: romanianMonths[previousDate.getMonth()],
+      consumptionYear: previousDate.getFullYear()
+    };
+  });
+  const [generalSettings, setGeneralSettings] = useState({
+    autoPublish: false,
+    requireConfirmationForPublish: true,
+    defaultPenaltyRate: 0.02,
+    daysBeforePenalty: 30
+  });
+
   // Membri
-  const { members, loading: membersLoading, loadMembers, unsubscribeMembers, removeMember, changeMemberRole } = useAssocMembers();
+  const { members, loading: membersLoading, loadMembers, unsubscribeMembers, removeMember, changeMemberRole, transferOwnership } = useAssocMembers();
   const { invitations, loading: invitationsLoading, loadInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [memberActionMenu, setMemberActionMenu] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [confirmTransfer, setConfirmTransfer] = useState(null);
+  const [transferring, setTransferring] = useState(false);
 
   const isAdmin = userRole === 'assoc_admin';
+  const isFounder = association?.adminId === currentUserId;
 
   // State consolidat pentru toate datele
   const [formData, setFormData] = useState({
@@ -66,6 +102,7 @@ const AssociationView = ({
     workingFundAccount: '',
 
     // Persoane responsabile
+    legalAdmin: '',
     president: '',
     censor: ''
   });
@@ -82,6 +119,101 @@ const AssociationView = ({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, association?.id]);
+
+  // Incarcare setari cand se deschide un tab de setari
+  useEffect(() => {
+    if (['months', 'general', 'system'].includes(activeTab) && association?.id) {
+      loadAppSettings();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, association?.id]);
+
+  const loadAppSettings = async () => {
+    if (!association?.id) return;
+    try {
+      const settingsRef = doc(db, 'associations', association.id, 'settings', 'app');
+      const settingsDoc = await getDoc(settingsRef);
+
+      const currentDate = new Date();
+      const previousDate = new Date(currentDate);
+      previousDate.setMonth(previousDate.getMonth() - 1);
+      const defaultSettings = {
+        workingMonth: romanianMonths[currentDate.getMonth()],
+        workingYear: currentDate.getFullYear(),
+        consumptionMonth: romanianMonths[previousDate.getMonth()],
+        consumptionYear: previousDate.getFullYear()
+      };
+
+      if (settingsDoc.exists()) {
+        const data = settingsDoc.data();
+        if (data.monthSettings?.workingMonth && data.monthSettings?.consumptionMonth) {
+          setMonthSettings(data.monthSettings);
+        } else {
+          setMonthSettings(defaultSettings);
+        }
+        if (data.generalSettings) {
+          setGeneralSettings(data.generalSettings);
+        }
+      } else {
+        setMonthSettings(defaultSettings);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const saveAppSettings = async () => {
+    if (!association?.id) return;
+    setSettingsSaving(true);
+    setSaveMessage('');
+    try {
+      const settingsRef = doc(db, 'associations', association.id, 'settings', 'app');
+      await setDoc(settingsRef, {
+        monthSettings,
+        generalSettings,
+        updatedAt: new Date().toISOString(),
+        updatedBy: association.adminId || 'unknown'
+      }, { merge: true });
+
+      if (currentSheet && updateSheetMonthSettings) {
+        const workingMonthName = `${monthSettings.workingMonth} ${monthSettings.workingYear}`;
+        const consumptionMonthName = `${monthSettings.consumptionMonth} ${monthSettings.consumptionYear}`;
+        await updateSheetMonthSettings(currentSheet.id, workingMonthName, consumptionMonthName);
+      }
+
+      setSaveMessage('Setările au fost salvate cu succes!');
+      if (updateAssociation) {
+        await updateAssociation({ ...association, settings: { monthSettings, generalSettings } });
+      }
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveMessage('Eroare la salvarea setărilor');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const resetSettingsToDefaults = () => {
+    if (!window.confirm('Sigur doriți să resetați toate setările la valorile implicite?')) return;
+    const currentDate = new Date();
+    const previousDate = new Date(currentDate);
+    previousDate.setMonth(previousDate.getMonth() - 1);
+    setMonthSettings({
+      workingMonth: romanianMonths[currentDate.getMonth()],
+      workingYear: currentDate.getFullYear(),
+      consumptionMonth: romanianMonths[previousDate.getMonth()],
+      consumptionYear: previousDate.getFullYear()
+    });
+    setGeneralSettings({
+      autoPublish: false,
+      requireConfirmationForPublish: true,
+      defaultPenaltyRate: 0.02,
+      daysBeforePenalty: 30
+    });
+    setSaveMessage('Setările au fost resetate la valorile implicite');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
 
   const tabs = [
     {
@@ -108,6 +240,21 @@ const AssociationView = ({
       id: 'members',
       title: 'Membri',
       icon: UserPlus
+    },
+    {
+      id: 'months',
+      title: 'Configurare Luni',
+      icon: Calendar
+    },
+    {
+      id: 'general',
+      title: 'Setări Generale',
+      icon: Settings
+    },
+    {
+      id: 'system',
+      title: 'Sistem',
+      icon: Database
     }
   ];
 
@@ -141,6 +288,10 @@ const AssociationView = ({
         workingFundAccount: association.workingFundAccount || '',
 
         // Persoane responsabile
+        legalAdmin: association.legalAdmin
+          || (association?.adminProfile?.firstName && association?.adminProfile?.lastName
+            ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
+            : association?.administrator || ''),
         president: association.president || '',
         censor: association.censor || ''
       });
@@ -222,6 +373,7 @@ const AssociationView = ({
         },
 
         // Persoane responsabile
+        legalAdmin: formData.legalAdmin,
         president: formData.president,
         censor: formData.censor
       });
@@ -267,6 +419,10 @@ const AssociationView = ({
         workingFundAccount: association.workingFundAccount || '',
 
         // Persoane responsabile
+        legalAdmin: association.legalAdmin
+          || (association?.adminProfile?.firstName && association?.adminProfile?.lastName
+            ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
+            : association?.administrator || ''),
         president: association.president || '',
         censor: association.censor || ''
       });
@@ -275,36 +431,13 @@ const AssociationView = ({
     setSaveMessage('');
   };
 
-  const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
-      monthType === 'current'
-        ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-        : monthType === 'next'
-        ? "bg-gradient-to-br from-green-50 to-emerald-100"
-        : monthType === 'historic'
-        ? "bg-gradient-to-br from-gray-50 to-gray-100"
-        : "bg-gradient-to-br from-indigo-50 to-blue-100"
-    }`}>
+    <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
-        <DashboardHeader
-          association={association}
-          blocks={blocks}
-          stairs={stairs}
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          getAvailableMonths={getAvailableMonths}
-          expenses={expenses}
-          isMonthReadOnly={isMonthReadOnly}
-          getAssociationApartments={getAssociationApartments}
-          handleNavigation={handleNavigation}
-          getMonthType={getMonthType}
-        />
-
         {/* Page Title */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900">🏛️ Date Asociație</h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏛️ Setări Asociație</h1>
         </div>
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}
@@ -353,13 +486,13 @@ const AssociationView = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <tab.icon className="w-4 h-4" />
                       {tab.title}
                     </button>
                   ))}
@@ -694,12 +827,13 @@ const AssociationView = ({
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Administrator</label>
                           <input
-                            value={association?.adminProfile?.firstName && association?.adminProfile?.lastName
-                                    ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
-                                    : association?.administrator || ""}
-                            readOnly
-                            className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
-                            placeholder="Din profil"
+                            value={formData.legalAdmin}
+                            onChange={(e) => handleInputChange('legalAdmin', e.target.value)}
+                            disabled={!isEditing}
+                            placeholder="Numele administratorului"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                              'border-gray-300'
+                            }`}
                           />
                         </div>
                         <div>
@@ -729,82 +863,6 @@ const AssociationView = ({
                       </div>
                     </div>
 
-                    {/* Informații Administrator */}
-                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
-                      <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">👤 Informații Administrator</h4>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 sm:p-4 rounded-lg gap-3">
-                        <div className="flex items-center">
-                          {/* Avatar Administrator */}
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gray-100 border-2 border-green-200 mr-3">
-                            {association?.adminProfile?.avatarURL ? (
-                              <img
-                                src={association.adminProfile.avatarURL}
-                                alt="Avatar administrator"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <User className="w-6 h-6" />
-                              </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <h5 className="text-sm sm:text-base font-semibold text-gray-900">
-                              {association?.adminProfile?.firstName && association?.adminProfile?.lastName
-                                ? `${association.adminProfile.firstName} ${association.adminProfile.lastName}`
-                                : association?.administrator || 'Administrator'
-                              }
-                            </h5>
-                            <p className="text-xs sm:text-sm text-gray-600">
-                              {association?.adminProfile?.companyName || 'Companie nespecificată'}
-                            </p>
-                            <div className="flex flex-wrap gap-x-3 mt-0.5">
-                              {association?.adminProfile?.phone && (
-                                <p className="text-xs text-gray-500 flex items-center">
-                                  <Phone className="w-3 h-3 mr-0.5" />
-                                  {association.adminProfile.phone}
-                                </p>
-                              )}
-                              {association?.adminProfile?.email && (
-                                <p className="text-xs text-gray-500 flex items-center">
-                                  <Mail className="w-3 h-3 mr-0.5" />
-                                  {association.adminProfile.email}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => handleNavigation('profile')}
-                          className="px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center self-start sm:self-center"
-                        >
-                          <User className="w-3.5 h-3.5 mr-1" />
-                          Editează Profil
-                        </button>
-                      </div>
-
-                      {/* Informații rapide */}
-                      {(association?.adminProfile?.position || association?.adminProfile?.licenseNumber) && (
-                        <div className="mt-3 bg-white p-3 rounded-md border">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
-                            {association?.adminProfile?.position && (
-                              <div>
-                                <span className="text-gray-500">Funcția:</span>
-                                <span className="font-medium ml-1">{association.adminProfile.position}</span>
-                              </div>
-                            )}
-                            {association?.adminProfile?.licenseNumber && (
-                              <div>
-                                <span className="text-gray-500">Nr. atestat:</span>
-                                <span className="font-medium ml-1">{association.adminProfile.licenseNumber}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
 
@@ -818,7 +876,7 @@ const AssociationView = ({
                           <Users className="w-4 h-4 mr-1.5" />
                           Membrii asociatiei
                         </h3>
-                        {isAdmin && (
+                        {isFounder && (
                           <button
                             onClick={() => setShowInviteModal(true)}
                             className="inline-flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -838,7 +896,7 @@ const AssociationView = ({
                         <div className="text-center py-8 text-gray-500">
                           <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                           <p className="text-sm">Nu exista membri inca.</p>
-                          {isAdmin && (
+                          {isFounder && (
                             <button
                               onClick={() => setShowInviteModal(true)}
                               className="mt-3 text-blue-600 text-sm hover:underline"
@@ -884,8 +942,18 @@ const AssociationView = ({
                                     <RoleIcon className="w-3 h-3 mr-1" />
                                     {config.label}
                                   </span>
+                                  {member.isFounder && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                      Fondator
+                                    </span>
+                                  )}
+                                  {member.role === 'assoc_admin' && !member.isFounder && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                      Editor
+                                    </span>
+                                  )}
 
-                                  {isAdmin && !isSelf && !member.isFounder && (
+                                  {isFounder && !isSelf && (
                                     <div className="relative">
                                       <button
                                         onClick={() => setMemberActionMenu(memberActionMenu === member.id ? null : member.id)}
@@ -915,6 +983,21 @@ const AssociationView = ({
                                                 </button>
                                               );
                                             })}
+                                          {isFounder && member.role === 'assoc_admin' && (
+                                            <>
+                                              <div className="border-t border-gray-100 my-1" />
+                                              <button
+                                                onClick={() => {
+                                                  setConfirmTransfer(member);
+                                                  setMemberActionMenu(null);
+                                                }}
+                                                className="w-full flex items-center px-3 py-2 text-xs hover:bg-yellow-50 text-yellow-700"
+                                              >
+                                                <ShieldCheck className="w-3.5 h-3.5 mr-2" />
+                                                Transferă Fondator
+                                              </button>
+                                            </>
+                                          )}
                                           <div className="border-t border-gray-100 my-1" />
                                           <button
                                             onClick={() => {
@@ -971,7 +1054,7 @@ const AssociationView = ({
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${invConfig.color}`}>
                                     {invConfig.label}
                                   </span>
-                                  {isAdmin && (
+                                  {isFounder && (
                                     <button
                                       onClick={async () => {
                                         await cancelInvitation(association.id, inv.id, currentUserId);
@@ -991,16 +1074,235 @@ const AssociationView = ({
                     )}
                   </div>
                 )}
+                {/* Tab: Configurare Luni */}
+                {activeTab === 'months' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                        Configurare Luni pentru Sheet-ul în Lucru
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-3">
+                        Setați luna pentru care se calculează întreținerea și luna pentru care sunt înregistrate consumurile.
+                      </p>
+
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+                        <h5 className="text-xs sm:text-sm font-medium text-blue-800 mb-1.5">💡 Despre Sheet-urile de Lucru</h5>
+                        <div className="text-xs text-blue-700 space-y-1">
+                          <p><strong>Sheet în Lucru:</strong> Luna pentru care calculați întreținerea în prezent</p>
+                          <p><strong>Sheet Publicat:</strong> Luna care a fost finalizată și publicată pentru plată</p>
+                          <p><strong>Sheet Arhivat:</strong> Lunile vechi care nu mai pot fi modificate</p>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-blue-200">
+                          <p className="text-xs text-blue-600 font-medium">
+                            🔄 La publicare, luna în lucru devine publicată și se creează automat un nou sheet pentru luna următoare
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-gray-50 rounded-md p-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">Luna în Lucru (întreținere)</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Luna întreținerii</label>
+                              <select
+                                value={monthSettings.workingMonth}
+                                onChange={(e) => setMonthSettings(prev => ({ ...prev, workingMonth: e.target.value }))}
+                                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">Selectați luna</option>
+                                {romanianMonths.map(month => (
+                                  <option key={month} value={month}>{month.charAt(0).toUpperCase() + month.slice(1)}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Anul</label>
+                              <input
+                                type="number" min="2020" max="2030"
+                                value={monthSettings.workingYear}
+                                onChange={(e) => setMonthSettings(prev => ({ ...prev, workingYear: parseInt(e.target.value) || new Date().getFullYear() }))}
+                                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-md p-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">Luna pentru Consumuri</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Luna consumurilor</label>
+                              <select
+                                value={monthSettings.consumptionMonth}
+                                onChange={(e) => setMonthSettings(prev => ({ ...prev, consumptionMonth: e.target.value }))}
+                                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">Selectați luna</option>
+                                {romanianMonths.map(month => (
+                                  <option key={month} value={month}>{month.charAt(0).toUpperCase() + month.slice(1)}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Anul</label>
+                              <input
+                                type="number" min="2020" max="2030"
+                                value={monthSettings.consumptionYear}
+                                onChange={(e) => setMonthSettings(prev => ({ ...prev, consumptionYear: parseInt(e.target.value) || new Date().getFullYear() }))}
+                                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {monthSettings.workingMonth && monthSettings.consumptionMonth && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-2">Preview Document</h3>
+                        <div className="bg-white rounded-md p-3 border border-blue-300">
+                          <p className="text-center text-sm font-bold mb-1">TABEL DE ÎNTREȚINERE</p>
+                          <p className="text-center text-xs sm:text-sm text-gray-700">
+                            Întreținere luna <strong className="text-blue-600">{monthSettings.workingMonth.charAt(0).toUpperCase() + monthSettings.workingMonth.slice(1)} {monthSettings.workingYear}</strong>
+                          </p>
+                          <p className="text-center text-xs sm:text-sm text-gray-700">
+                            Consum luna <strong className="text-blue-600">{monthSettings.consumptionMonth.charAt(0).toUpperCase() + monthSettings.consumptionMonth.slice(1)} {monthSettings.consumptionYear}</strong>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                      <div className="flex">
+                        <AlertCircle className="w-4 h-4 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+                        <div className="text-xs text-yellow-800">
+                          <p className="font-medium">Notă importantă:</p>
+                          <p>La publicarea sheet-ului curent, următorul sheet va incrementa automat ambele luni păstrând diferența dintre ele.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab: Setări Generale */}
+                {activeTab === 'general' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Comportament Publicare</h3>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={generalSettings.requireConfirmationForPublish}
+                            onChange={(e) => setGeneralSettings(prev => ({ ...prev, requireConfirmationForPublish: e.target.checked }))}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                          />
+                          <span className="text-xs sm:text-sm text-gray-700">Cere confirmare înainte de publicarea unei luni</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Penalități și Termene</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Rata penalității (%)</label>
+                          <input
+                            type="number" min="0" max="10" step="0.01"
+                            value={generalSettings.defaultPenaltyRate * 100}
+                            onChange={(e) => setGeneralSettings(prev => ({ ...prev, defaultPenaltyRate: parseFloat(e.target.value) / 100 || 0 }))}
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-0.5">Standard: 2% din suma datorată</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Zile până la aplicarea penalităților</label>
+                          <input
+                            type="number" min="0" max="90"
+                            value={generalSettings.daysBeforePenalty}
+                            onChange={(e) => setGeneralSettings(prev => ({ ...prev, daysBeforePenalty: parseInt(e.target.value) || 30 }))}
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-0.5">Standard: 30 de zile de la emitere</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab: Sistem */}
+                {activeTab === 'system' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Informații Sistem</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">Asociație</p>
+                          <p className="text-sm font-medium text-gray-900">{association?.name || 'N/A'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">CUI</p>
+                          <p className="text-sm font-medium text-gray-900">{association?.cui || 'N/A'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">Total Sheet-uri</p>
+                          <p className="text-sm font-medium text-gray-900">{sheets.length}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">Sheet în lucru</p>
+                          <p className="text-sm font-medium text-gray-900">{currentSheet?.monthYear || 'Niciunul'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">Sheet publicat</p>
+                          <p className="text-sm font-medium text-gray-900">{publishedSheet?.monthYear || 'Niciunul'}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2.5 rounded-md">
+                          <p className="text-xs text-gray-600">Data creării</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {association?.createdAt ? new Date(association.createdAt).toLocaleDateString('ro-RO') : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Acțiuni Sistem</h3>
+                      <div className="space-y-2">
+                        <button
+                          onClick={resetSettingsToDefaults}
+                          className="flex items-center px-3 py-1.5 text-xs sm:text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                          Resetează Setările la Default
+                        </button>
+                        <p className="text-xs text-gray-500">⚠️ Resetarea setărilor va reveni la valorile implicite ale aplicației</p>
+                      </div>
+                    </div>
+
+                    {(currentSheet || publishedSheet) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <div className="flex">
+                          <Database className="w-4 h-4 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-blue-800">
+                            <p className="font-medium mb-1">Status Sheet-uri</p>
+                            {currentSheet && <p>• Sheet în lucru: {currentSheet.monthYear} (ID: {currentSheet.id?.slice(-6)})</p>}
+                            {publishedSheet && <p>• Sheet publicat: {publishedSheet.monthYear} (ID: {publishedSheet.id?.slice(-6)})</p>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Footer cu butoanele de editare/salvare (nu pe tab-ul Membri) */}
-              {activeTab !== 'members' && (
+              {/* Footer: Association data tabs (editare/salvare) */}
+              {['identification', 'schedule', 'financial', 'responsible'].includes(activeTab) && (
               <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-600 hidden sm:block">
                     {isEditing ? 'Modifică datele și apasă Salvează' : 'Apasă Editează pentru a modifica datele'}
                   </div>
-
                   <div className="flex gap-2 ml-auto">
                     {!isEditing ? (
                       <button
@@ -1039,6 +1341,37 @@ const AssociationView = ({
                       </>
                     )}
                   </div>
+                </div>
+              </div>
+              )}
+
+              {/* Footer: Settings tabs (salvează setările) */}
+              {['months', 'general'].includes(activeTab) && (
+              <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => handleNavigation('dashboard')}
+                    className="px-3 py-1.5 text-xs sm:text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Anulează
+                  </button>
+                  <button
+                    onClick={saveAppSettings}
+                    disabled={settingsSaving}
+                    className="flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {settingsSaving ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Se salvează...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5 mr-1.5" />
+                        Salvează Setările
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
               )}
@@ -1085,6 +1418,49 @@ const AssociationView = ({
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Elimina
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog confirmare transfer ownership */}
+      {confirmTransfer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Transferă rolul de Fondator</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Ești sigur că vrei să transferi rolul de Fondator al asociației <strong>{association?.name || 'asociația'}</strong> către <strong>{confirmTransfer.name || confirmTransfer.email}</strong>?
+            </p>
+            <p className="text-xs text-yellow-700 bg-yellow-50 p-2 rounded-lg mb-4">
+              Vei rămâne administrator (editor), dar nu vei mai fi fondatorul asociației. Noul fondator va putea gestiona membrii și transfera rolul mai departe.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmTransfer(null)}
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={transferring}
+              >
+                Anuleaza
+              </button>
+              <button
+                onClick={async () => {
+                  setTransferring(true);
+                  try {
+                    await transferOwnership(association.id, confirmTransfer.id, currentUserId);
+                    setConfirmTransfer(null);
+                    // Reload members to update founder badge
+                    loadMembers(association.id, confirmTransfer.id);
+                  } catch (err) {
+                    console.error('Transfer failed:', err);
+                  } finally {
+                    setTransferring(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                disabled={transferring}
+              >
+                {transferring ? 'Se transferă...' : 'Transferă'}
               </button>
             </div>
           </div>

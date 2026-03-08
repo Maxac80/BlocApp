@@ -1,5 +1,6 @@
-import React from 'react';
-import { Calculator, Settings, X, User, FileText, Wallet, Users, Building, BookOpen, Coins, ArrowLeftRight, CreditCard } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Calculator, X, FileText, Wallet, Users, Building, Coins, ChevronUp } from 'lucide-react';
+import UserDropdownMenu from './UserDropdownMenu';
 
 const Sidebar = ({
   sidebarOpen,
@@ -16,41 +17,86 @@ const Sidebar = ({
   setCurrentMonth,
   publishedSheet,
   currentSheet,
-  onSwitchContext, // 🆕 Pentru a reveni la ecranul de selecție context
-  userRole // 🆕 Rolul utilizatorului pe asociația curentă
+  onSwitchContext,
+  userRole
 }) => {
-  // Roluri read-only: președinte și cenzor nu pot edita
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Roluri read-only: presedinte si cenzor nu pot edita
   const isReadOnlyRole = userRole === 'assoc_president' || userRole === 'assoc_censor';
-  const roleLabel = userRole === 'assoc_president' ? 'Președinte'
+  const isAdmin = !isReadOnlyRole;
+  const roleLabel = userRole === 'assoc_president' ? 'Presedinte'
     : userRole === 'assoc_censor' ? 'Cenzor'
     : 'Administrator';
 
-  // Funcția pentru a naviga la Dashboard și la luna publicată activă
+  // Rezolvare nume din user doc (profile.personalInfo prioritar)
+  const userName = userProfile?.profile?.personalInfo?.firstName
+    ? `${userProfile.profile.personalInfo.firstName} ${userProfile.profile.personalInfo.lastName || ''}`.trim()
+    : userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator';
+
+  // Rezolvare avatar din user doc cu fallback pe association
+  const avatarURL = userProfile?.avatarURL
+    || userProfile?.profile?.documents?.avatar?.url
+    || association?.adminProfile?.avatarURL;
+
+  const initials = userProfile?.profile?.personalInfo?.firstName?.charAt(0)?.toUpperCase()
+    || userProfile?.displayName?.charAt(0)?.toUpperCase()
+    || activeUser?.email?.charAt(0)?.toUpperCase()
+    || 'U';
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
+  // Functia pentru a naviga la Dashboard si la luna publicata activa
   const handleBlocAppClick = () => {
-    // Navighează la luna publicată activă (prioritate: publishedSheet, apoi currentSheet)
     if (publishedSheet?.monthYear) {
-      console.log('📅 Navigare la luna publicată:', publishedSheet.monthYear);
       setCurrentMonth(publishedSheet.monthYear);
     } else if (currentSheet?.monthYear) {
-      console.log('📅 Navigare la sheet-ul curent:', currentSheet.monthYear);
       setCurrentMonth(currentSheet.monthYear);
     }
-    // Navighează la Dashboard
     handleNavigation("dashboard");
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { signOut } = await import('firebase/auth');
+      const { auth } = await import('../../firebase');
+      await signOut(auth);
+      window.location.reload();
+    } catch (error) {
+      console.error('Eroare la deconectare:', error);
+    }
   };
 
   return (
   <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col ${
     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
   } ${sidebarExpanded ? 'w-64' : 'w-16'}`}>
-    
+
     {/* Header Sidebar cu buton expand/collapse */}
     <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
       {sidebarExpanded ? (
         <button
           onClick={handleBlocAppClick}
           className="flex items-center hover:bg-gray-100 rounded-lg p-1 transition-colors cursor-pointer"
-          title="Mergi la Dashboard - luna publicată activă"
+          title="Mergi la Dashboard - luna publicata activa"
         >
           <img
             src="/blocapp-logo.png"
@@ -62,7 +108,7 @@ const Sidebar = ({
         <button
           onClick={handleBlocAppClick}
           className="flex items-center justify-center w-full hover:bg-gray-100 rounded-lg p-1 transition-colors cursor-pointer"
-          title="Mergi la Dashboard - luna publicată activă"
+          title="Mergi la Dashboard - luna publicata activa"
         >
           <img
             src="/blocapp-logo.png"
@@ -76,7 +122,7 @@ const Sidebar = ({
       <button
         onClick={() => setSidebarExpanded(!sidebarExpanded)}
         className="hidden lg:block p-1 rounded-md hover:bg-gray-100 transition-colors ml-2 text-gray-600"
-        title={sidebarExpanded ? "Micșorează meniul" : "Mărește meniul"}
+        title={sidebarExpanded ? "Micsoreste meniul" : "Mareste meniul"}
       >
         {sidebarExpanded ? (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +135,7 @@ const Sidebar = ({
         )}
       </button>
 
-      {/* Buton închidere pentru mobile */}
+      {/* Buton inchidere pentru mobile */}
       <button
         onClick={() => setSidebarOpen(false)}
         className="lg:hidden p-1 rounded-md hover:bg-gray-100 text-gray-600"
@@ -101,7 +147,7 @@ const Sidebar = ({
     {/* Meniu Navigare - scrollabil */}
     <nav className="flex-1 mt-4 lg:mt-6 overflow-y-auto">
       <div className="px-2 space-y-1">
-        {/* Tabel întreținere */}
+        {/* Tabel intretinere */}
         <button
           onClick={() => handleNavigation("dashboard")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -113,19 +159,19 @@ const Sidebar = ({
           <FileText className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Tabel întreținere</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Întreţinere luna curentă</div>
+              <div className="text-sm lg:text-base font-medium">Tabel intretinere</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Intretinere luna curenta</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Tabel întreținere
+              Tabel intretinere
             </div>
           )}
         </button>
 
-        {/* Calcul întreținere */}
+        {/* Calcul intretinere */}
         <button
           onClick={() => handleNavigation("maintenance")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -137,14 +183,14 @@ const Sidebar = ({
           <Calculator className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Calcul întreținere</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Calculează întreţinerea curentă</div>
+              <div className="text-sm lg:text-base font-medium">Calcul intretinere</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Calculeaza intretinerea curenta</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Calcul întreținere
+              Calcul intretinere
             </div>
           )}
         </button>
@@ -163,7 +209,7 @@ const Sidebar = ({
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
               <div className="text-sm lg:text-base font-medium">Apartamente</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scări, apartamente</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scari, apartamente</div>
             </div>
           )}
 
@@ -214,10 +260,10 @@ const Sidebar = ({
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
               <div className="text-sm lg:text-base font-medium">Contabilitate</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Încasări & chitanțe</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Incasari & chitante</div>
             </div>
           )}
-          
+
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Contabilitate
@@ -225,7 +271,7 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Date Asociație */}
+        {/* Date Asociatie */}
         <button
           onClick={() => handleNavigation("association")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -237,243 +283,85 @@ const Sidebar = ({
           <Users className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Date Asociație</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Informații generale</div>
-            </div>
-          )}
-          
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Date Asociație
-            </div>
-          )}
-        </button>
-
-        {/* Profil */}
-        <button
-          onClick={() => handleNavigation("profile")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "profile"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <User className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Profilul meu</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Date personale și setări</div>
-            </div>
-          )}
-          
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Profil Administrator
-            </div>
-          )}
-        </button>
-
-        {/* Setări - doar admini */}
-        {!isReadOnlyRole && (
-        <button
-          onClick={() => handleNavigation("settings")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "settings"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <Settings className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Setări</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Configurări aplicație</div>
+              <div className="text-sm lg:text-base font-medium">Setări Asociație</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Date și configurări</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Setări
+              Setări Asociație
             </div>
           )}
         </button>
-        )}
 
-        {/* Abonament și Facturare - doar admini */}
-        {!isReadOnlyRole && (
-        <button
-          onClick={() => handleNavigation("subscription")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "subscription"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <CreditCard className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Abonament</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Facturare și plăți</div>
-            </div>
-          )}
-
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Abonament
-            </div>
-          )}
-        </button>
-        )}
-
-        {/* Tutoriale */}
-        <button
-          onClick={() => handleNavigation("tutorials")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "tutorials"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <BookOpen className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Tutoriale</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Ghiduri și învățare</div>
-            </div>
-          )}
-
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Tutoriale
-            </div>
-          )}
-        </button>
       </div>
-
-      {/* Separator și Development Tools */}
-      {sidebarExpanded && (
-        <>
-          <div className="mx-3 lg:mx-4 my-3 lg:my-6 border-t border-gray-200"></div>
-
-          {/* Buton ștergere toate datele - doar admini */}
-          {association && !isReadOnlyRole && (
-            <div className="px-3 lg:px-4 pb-2">
-              <button
-                onClick={deleteAllBlocAppData}
-                className="w-full bg-red-600 text-white px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg hover:bg-red-700 transition-colors text-xs font-medium flex items-center justify-center"
-                title="Șterge toate datele aplicației"
-              >
-                🗑️ Șterge TOATE datele
-              </button>
-            </div>
-          )}
-        </>
-      )}
     </nav>
 
-    {/* Footer cu utilizatorul */}
-    <div className="flex-shrink-0 border-t border-gray-200 p-3 lg:p-4 bg-white">
+    {/* Footer cu utilizatorul - click deschide dropdown */}
+    <div className="flex-shrink-0 border-t border-gray-200 bg-white relative" ref={dropdownRef}>
+      {/* Dropdown menu */}
+      {userMenuOpen && (
+        <UserDropdownMenu
+          userProfile={userProfile}
+          activeUser={activeUser}
+          isAdmin={isAdmin}
+          position="above"
+          onNavigate={(view) => {
+            handleNavigation(view);
+            setSidebarOpen(false);
+          }}
+          onSwitchAssociation={onSwitchContext || null}
+          onDeleteData={isAdmin && association ? deleteAllBlocAppData : null}
+          onLogout={handleLogout}
+          onClose={() => setUserMenuOpen(false)}
+        />
+      )}
+
       {sidebarExpanded ? (
-        <div className="space-y-2">
-          {/* 🆕 Buton Schimbă Asociație/Organizație */}
-          {onSwitchContext && (
-            <button
-              onClick={onSwitchContext}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors"
-              title="Schimbă asociația sau organizația"
-            >
-              <ArrowLeftRight className="w-4 h-4" />
-              <span>Schimbă asociația</span>
-            </button>
-          )}
-
-          <div className="flex items-center">
-            <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs lg:text-sm overflow-hidden">
-              {association?.adminProfile?.avatarURL ? (
-                <img
-                  src={association.adminProfile.avatarURL.startsWith('data:') ? association.adminProfile.avatarURL : association.adminProfile.avatarURL}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
-              )}
-            </div>
-            <div className="ml-2 lg:ml-3 flex-1 min-w-0">
-              <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">
-    {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
-  </div>
-              <div className="text-xs text-gray-500 truncate hidden lg:block">
-                {roleLabel}
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  const { signOut } = await import('firebase/auth');
-                  const { auth } = await import('../../firebase');
-                  await signOut(auth);
-                  window.location.reload();
-                } catch (error) {
-                  console.error('❌ Eroare la deconectare:', error);
-                }
-              }}
-              className="text-gray-400 hover:text-red-600 transition-colors"
-              title="Deconectare"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3v1" />
-              </svg>
-            </button>
+        <button
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          className="w-full flex items-center p-3 lg:p-4 hover:bg-gray-50 transition-colors text-left"
+          title="Meniu utilizator"
+        >
+          <div className="w-7 h-7 lg:w-8 lg:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs lg:text-sm overflow-hidden flex-shrink-0">
+            {avatarURL ? (
+              <img
+                src={avatarURL}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initials
+            )}
           </div>
-        </div>
+          <div className="ml-2 lg:ml-3 flex-1 min-w-0">
+            <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">
+              {userName}
+            </div>
+            <div className="text-xs text-gray-500 truncate hidden lg:block">
+              {roleLabel}
+            </div>
+          </div>
+          <ChevronUp className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
+        </button>
       ) : (
-        <div className="flex flex-col items-center gap-2">
-          {/* 🆕 Buton Schimbă Context (collapsed) */}
-          {onSwitchContext && (
-            <div className="group relative">
-              <button
-                onClick={onSwitchContext}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                title="Schimbă asociația"
-              >
-                <ArrowLeftRight className="w-4 h-4" />
-              </button>
-              <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                Schimbă asociația
-              </div>
-            </div>
-          )}
-
-          <div className="group relative">
-            <button
-              onClick={async () => {
-                try {
-                  const { signOut } = await import('firebase/auth');
-                  const { auth } = await import('../../firebase');
-                  await signOut(auth);
-                  window.location.reload();
-                } catch (error) {
-                  console.error('❌ Eroare la deconectare:', error);
-                }
-              }}
-              className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm hover:bg-red-500 transition-colors overflow-hidden"
-              title={`Click pentru deconectare - ${userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}`}
-            >
-              {association?.adminProfile?.avatarURL ? (
-                <img
-                  src={association.adminProfile.avatarURL}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                userProfile?.displayName?.charAt(0)?.toUpperCase() || activeUser?.email?.charAt(0)?.toUpperCase() || 'U'
-              )}
-            </button>
-            <div className="absolute left-12 bottom-0 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Click pentru deconectare - {userProfile?.name || userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator'}
-            </div>
-          </div>
+        <div className="p-3 flex justify-center">
+          <button
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm overflow-hidden hover:ring-2 hover:ring-blue-300 transition-all"
+            title={`${userName} - Meniu utilizator`}
+          >
+            {avatarURL ? (
+              <img
+                src={avatarURL}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initials
+            )}
+          </button>
         </div>
       )}
     </div>

@@ -50,6 +50,7 @@ export const PERMISSIONS = {
   ASSOC_MANAGE_SETTINGS: 'assoc.manage_settings',
   ASSOC_VIEW_BILLING: 'assoc.view_billing',
   ASSOC_MANAGE_BILLING: 'assoc.manage_billing',
+  ASSOC_TRANSFER_OWNERSHIP: 'assoc.transfer_ownership',
 
   // === OWNER LEVEL ===
   OWNER_VIEW_OWN_DATA: 'owner.view_own_data',
@@ -128,7 +129,8 @@ const PERMISSION_MATRIX = {
     PERMISSIONS.ASSOC_VIEW_PAYMENTS
   ],
 
-  // Association Admin (direct, fără firmă) - gestiune completă asociație
+  // Association Admin Fondator (direct, fără firmă) - gestiune completă asociație
+  // Fondatorul = adminId din association doc. Poate gestiona membri, setări, transfer.
   assoc_admin: [
     PERMISSIONS.ASSOC_CREATE,
     PERMISSIONS.ASSOC_DELETE,
@@ -151,6 +153,26 @@ const PERMISSION_MATRIX = {
     PERMISSIONS.ASSOC_MANAGE_SETTINGS,
     PERMISSIONS.ASSOC_VIEW_BILLING,
     PERMISSIONS.ASSOC_MANAGE_BILLING
+  ],
+
+  // Association Admin Editor (invitat) - editare date fără gestionare membri/setări
+  // Notă: În practică, distincția Fondator vs Editor se face prin isFounder check în UI.
+  // Ambii au role='assoc_admin' în member doc, dar Editorul NU vede acțiunile de management.
+  // Acest set e documentativ — UI-ul folosește isFounder (association.adminId === userId).
+  assoc_editor: [
+    PERMISSIONS.ASSOC_EDIT,
+    PERMISSIONS.ASSOC_VIEW,
+    PERMISSIONS.ASSOC_MANAGE_APARTMENTS,
+    PERMISSIONS.ASSOC_MANAGE_EXPENSES,
+    PERMISSIONS.ASSOC_CREATE_SHEET,
+    PERMISSIONS.ASSOC_EDIT_SHEET,
+    PERMISSIONS.ASSOC_PUBLISH_SHEET,
+    PERMISSIONS.ASSOC_VIEW_SHEET,
+    PERMISSIONS.ASSOC_VIEW_HISTORY,
+    PERMISSIONS.ASSOC_VIEW_AUDIT,
+    PERMISSIONS.ASSOC_EXPORT_REPORTS,
+    PERMISSIONS.ASSOC_VIEW_PAYMENTS,
+    PERMISSIONS.ASSOC_RECORD_PAYMENTS
   ],
 
   // Președinte - vizualizare + aprobare (fără editare)
@@ -187,6 +209,14 @@ const PERMISSION_MATRIX = {
     PERMISSIONS.ORG_CREATE,
     PERMISSIONS.ASSOC_CREATE
   ]
+};
+
+// 🏛️ VERIFICARE FONDATOR ASOCIAȚIE
+// Fondatorul = userul care a creat asociația (association.adminId)
+// Doar fondatorul poate transfera ownership-ul și șterge asociația
+export const isAssociationFounder = (userId, association) => {
+  if (!userId || !association) return false;
+  return association.adminId === userId;
 };
 
 /**

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
+import UserDropdownMenu from './UserDropdownMenu';
 
 /**
- * Header component for organization-related pages
+ * Header component for organization-related pages (Dashboard, etc.)
  * Shows BlocApp logo on left and user dropdown on right
- * Works on both mobile and desktop
  */
 const OrgHeader = ({
   onLogoClick,
@@ -12,20 +12,27 @@ const OrgHeader = ({
   userProfile,
   activeUser,
   showBackButton = false,
-  backLabel = ''
+  backLabel = '',
+  // Dropdown props
+  isAdmin = false,
+  onNavigate,
+  onSwitchAssociation,
+  onDeleteData
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Get avatar URL or first letter for fallback
-  const avatarURL = userProfile?.profile?.documents?.avatar?.url;
-  const initials = userProfile?.displayName?.charAt(0)?.toUpperCase()
-    || userProfile?.profile?.personalInfo?.firstName?.charAt(0)?.toUpperCase()
+  // Rezolvare avatar din user doc
+  const avatarURL = userProfile?.avatarURL
+    || userProfile?.profile?.documents?.avatar?.url;
+
+  const initials = userProfile?.profile?.personalInfo?.firstName?.charAt(0)?.toUpperCase()
+    || userProfile?.displayName?.charAt(0)?.toUpperCase()
     || activeUser?.email?.charAt(0)?.toUpperCase()
     || 'U';
 
   const userName = userProfile?.profile?.personalInfo?.firstName
-    ? `${userProfile.profile.personalInfo.firstName} ${userProfile.profile.personalInfo.lastName || ''}`
+    ? `${userProfile.profile.personalInfo.firstName} ${userProfile.profile.personalInfo.lastName || ''}`.trim()
     : userProfile?.displayName || activeUser?.displayName || activeUser?.email?.split('@')[0] || 'Utilizator';
 
   // Close dropdown when clicking outside
@@ -75,7 +82,7 @@ const OrgHeader = ({
               <button
                 onClick={onBack}
                 className="flex items-center hover:bg-gray-100 rounded-lg p-2 transition-colors mr-2 text-gray-600"
-                title="Înapoi"
+                title="Inapoi"
               >
                 <ArrowLeft className="w-5 h-5" />
                 {backLabel && (
@@ -127,37 +134,17 @@ const OrgHeader = ({
 
             {/* Dropdown menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-1 z-50 overflow-hidden">
-                {/* User info */}
-                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-                  <p className="text-xs text-gray-500 truncate">{activeUser?.email}</p>
-                </div>
-
-                {/* Profile link */}
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    // Navigate to profile - could be passed as prop if needed
-                  }}
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <User className="w-4 h-4 mr-3 text-gray-500" />
-                  Profil
-                </button>
-
-                {/* Divider */}
-                <div className="border-t border-gray-100 my-1" />
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Deconectare
-                </button>
-              </div>
+              <UserDropdownMenu
+                userProfile={userProfile}
+                activeUser={activeUser}
+                isAdmin={isAdmin}
+                position="below"
+                onNavigate={onNavigate || (() => {})}
+                onSwitchAssociation={onSwitchAssociation || null}
+                onDeleteData={onDeleteData || null}
+                onLogout={handleLogout}
+                onClose={() => setIsDropdownOpen(false)}
+              />
             )}
           </div>
         </div>

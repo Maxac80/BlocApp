@@ -165,7 +165,12 @@ export const useSheetManagement = (associationId) => {
         setLoading(false);
       },
       (error) => {
-        // Eroare la încărcarea sheet-urilor
+        // Permission errors pe asociație nouă — Firestore eventual consistency
+        // Nu setăm error state, onSnapshot va reîncerca automat
+        if (error.code === 'permission-denied') {
+          console.warn('⏳ Sheets permission error (association may still be propagating):', associationId);
+          return;
+        }
         console.error('Error loading sheets:', error);
         setError(error.message);
         setLoading(false);

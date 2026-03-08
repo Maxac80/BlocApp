@@ -5,7 +5,6 @@ import { Calculator, Plus, Settings, Info, X } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
-import DashboardHeader from '../dashboard/DashboardHeader';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
 import useInvoices from '../../hooks/useInvoices';
@@ -944,31 +943,8 @@ const MaintenanceView = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-        <div className={`min-h-screen pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
-          monthType === 'current'
-            ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-            : monthType === 'next'
-            ? "bg-gradient-to-br from-green-50 to-emerald-100"
-            : monthType === 'historic'
-            ? "bg-gradient-to-br from-gray-50 to-gray-100"
-            : "bg-gradient-to-br from-indigo-50 to-blue-100"
-        }`}>
+        <div className="pb-20 lg:pb-2">
       <div className="w-full px-3 sm:px-4 lg:px-6">
-        <DashboardHeader
-          key={`header-${publishedSheet?.id || 'no-published'}`}
-          association={association}
-          blocks={blocks}
-          stairs={stairs}
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          getAvailableMonths={getAvailableMonths}
-          expenses={expenses}
-          isMonthReadOnly={isMonthReadOnly}
-          getAssociationApartments={getAssociationApartments}
-          handleNavigation={handleNavigation}
-          getMonthType={getMonthType}
-        />
-
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🧮 Calcul întreținere</h1>

@@ -42,7 +42,11 @@ const ContextSelectorView = ({
   onSelectOrganization,
   onSelectAssociation,
   onCreateOrganization,
-  onCreateAssociation
+  onCreateAssociation,
+  // Dropdown props pentru OrgHeader
+  onNavigate,
+  onDeleteData,
+  isAdmin = false
 }) => {
   const { organizations, loading: orgsLoading, loadUserOrganizations } = useOrganizations(userId);
   const { associations, loading: assocsLoading, loadUserDirectAssociations } = useAssociations(userId);
@@ -355,6 +359,9 @@ const ContextSelectorView = ({
         userProfile={userProfile}
         activeUser={activeUser}
         onLogoClick={() => {}}
+        isAdmin={isAdmin}
+        onNavigate={onNavigate}
+        onDeleteData={onDeleteData}
       />
 
       {/* Page Header */}
@@ -402,18 +409,12 @@ const ContextSelectorView = ({
                   </h2>
                 </div>
 
-                <div className={`
-                  grid gap-4
-                  ${layoutStyle === 'large'
-                    ? 'grid-cols-1 md:grid-cols-2'
-                    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                  }
-                `}>
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                   {directAssociations.map(assoc => (
                     <AssociationCard
                       key={assoc.id}
                       assoc={assoc}
-                      isLarge={layoutStyle === 'large'}
+                      isLarge={true}
                     />
                   ))}
                 </div>

@@ -4,7 +4,6 @@ import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receip
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
-import DashboardHeader from '../dashboard/DashboardHeader';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -344,34 +343,11 @@ const AccountingView = ({
     );
   }
 
-  const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
   return (
-    <div className={`min-h-screen px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 pb-20 lg:pb-2 ${
-      monthType === 'current'
-        ? "bg-gradient-to-br from-indigo-50 to-blue-100"
-        : monthType === 'next'
-        ? "bg-gradient-to-br from-green-50 to-emerald-100"
-        : monthType === 'historic'
-        ? "bg-gradient-to-br from-gray-50 to-gray-100"
-        : "bg-gradient-to-br from-indigo-50 to-blue-100"
-    }`}>
+    <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         {/* Header standard */}
-        <DashboardHeader
-          association={association}
-          blocks={blocks}
-          stairs={stairs}
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          getAvailableMonths={getAvailableMonths}
-          expenses={expenses}
-          isMonthReadOnly={isMonthReadOnly}
-          getAssociationApartments={getAssociationApartments}
-          handleNavigation={handleNavigation}
-          getMonthType={getMonthType}
-        />
-
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
         </div>
@@ -381,24 +357,24 @@ const AccountingView = ({
             <div className="flex">
               <button
                 onClick={() => setActiveTab('incasari')}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === 'incasari'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Receipt className="w-4 h-4" />
                 Încasări ({stats.totalCount || filteredIncasari.length})
               </button>
               <button
                 onClick={() => setActiveTab('facturi')}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium transition-colors ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === 'facturi'
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                <FileText className="w-4 h-4" />
                 Facturi ({invoiceStats.total})
               </button>
             </div>

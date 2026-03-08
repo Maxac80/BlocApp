@@ -94,7 +94,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
 
       setBlocks(sortedBlocks);
     } catch (err) {
-      console.error("❌ Eroare la încărcarea blocurilor:", err);
+      if (err.code === 'permission-denied') {
+        console.warn("⏳ Blocks: permission pending, will retry...");
+      } else {
+        console.error("❌ Eroare la încărcarea blocurilor:", err);
+      }
       setBlocks([]);
     }
   };
@@ -125,7 +129,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       setStairs(stairsData);
       // console.log("✅ Scări încărcate:", stairsData.length, stairsData);
     } catch (err) {
-      console.error("❌ Eroare la încărcarea scărilor:", err);
+      if (err.code === 'permission-denied') {
+        console.warn("⏳ Stairs: permission pending, will retry...");
+      } else {
+        console.error("❌ Eroare la încărcarea scărilor:", err);
+      }
       setStairs([]);
     }
   };
@@ -178,7 +186,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       //   sortedApartments
       // );
     } catch (err) {
-      console.error("❌ Eroare la încărcarea apartamentelor:", err);
+      if (err.code === 'permission-denied') {
+        console.warn("⏳ Apartments: permission pending, will retry...");
+      } else {
+        console.error("❌ Eroare la încărcarea apartamentelor:", err);
+      }
       setApartments([]);
     }
   };
@@ -230,7 +242,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
         setCustomExpenses(customExpensesData);
       }
     } catch (err) {
-      console.error("❌ Eroare la încărcarea cheltuielilor custom:", err);
+      if (err.code === 'permission-denied') {
+        console.warn("⏳ Custom expenses: permission pending, will retry...");
+      } else {
+        console.error("❌ Eroare la încărcarea cheltuielilor custom:", err);
+      }
       setCustomExpenses([]);
     }
   };
@@ -499,6 +515,13 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
           ]);
         }
       } catch (err) {
+        // Permission errors pe asociație nouă — Firestore eventual consistency
+        // Reîncearcă după un mic delay în loc să afișeze eroare
+        if (err.code === 'permission-denied' && associationId) {
+          console.warn('⏳ Permission error (association may still be propagating), retrying in 1s...');
+          setTimeout(() => loadUserData(), 1000);
+          return;
+        }
         console.error("❌ Eroare la încărcarea datelor:", err);
         setError("Eroare la încărcarea datelor: " + err.message);
       } finally {

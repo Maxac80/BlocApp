@@ -82,8 +82,24 @@ export default function EmailVerifiedSuccess() {
           }
         } catch (error) {
           console.error('Email verification error:', error);
-          setStatus('error');
 
+          // Dacă codul e invalid/consumat, verificăm dacă emailul e deja verificat
+          if (error.code === 'auth/invalid-action-code' && auth.currentUser) {
+            await auth.currentUser.reload();
+            if (auth.currentUser.emailVerified) {
+              // Emailul e deja verificat — tratăm ca succes
+              setStatus('success');
+              if (channelRef.current) {
+                channelRef.current.postMessage({
+                  type: 'EMAIL_VERIFIED',
+                  email: auth.currentUser.email
+                });
+              }
+              return;
+            }
+          }
+
+          setStatus('error');
           if (error.code === 'auth/invalid-action-code') {
             setErrorMessage('Link-ul de verificare a expirat sau a fost deja folosit.');
           } else if (error.code === 'auth/expired-action-code') {
