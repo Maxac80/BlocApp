@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { XCircle } from 'lucide-react';
+import { XCircle, Building } from 'lucide-react';
 
 const BlockModal = ({
   isOpen,
@@ -11,9 +11,7 @@ const BlockModal = ({
   onSave
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    description: ''
+    name: ''
   });
 
   // Resetează sau populează datele când se deschide modalul
@@ -21,15 +19,11 @@ const BlockModal = ({
     if (isOpen) {
       if (mode === 'edit' && block) {
         setFormData({
-          name: block.name || '',
-          address: block.address || '',
-          description: block.description || ''
+          name: block.name || ''
         });
       } else {
         setFormData({
-          name: '',
-          address: '',
-          description: ''
+          name: ''
         });
       }
     }
@@ -47,9 +41,7 @@ const BlockModal = ({
     }
 
     const blockData = {
-      name: formData.name.trim(),
-      address: formData.address?.trim() || null,
-      description: formData.description?.trim() || null
+      name: formData.name.trim()
     };
 
     try {
@@ -68,7 +60,7 @@ const BlockModal = ({
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 sm:p-4 flex items-center justify-between text-white flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="bg-white bg-opacity-20 rounded-lg p-1.5 sm:p-2 flex-shrink-0">
-              <span className="text-xl sm:text-2xl">🏢</span>
+              <Building className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-xl font-semibold truncate">
@@ -109,35 +101,6 @@ const BlockModal = ({
               />
             </div>
 
-            {/* Adresa */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                Adresa
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
-                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="ex: Str. Mihai Eminescu nr. 25"
-              />
-              <p className="text-xs text-gray-500 mt-0.5">Opțional - adresa completă</p>
-            </div>
-
-            {/* Descrierea */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                Descriere
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                placeholder="ex: Bloc de 10 etaje, lift funcțional"
-                rows={2}
-              />
-              <p className="text-xs text-gray-500 mt-0.5">Opțional - detalii suplimentare</p>
-            </div>
           </div>
         </div>
 

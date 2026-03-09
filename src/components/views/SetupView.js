@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building2, Home, Users, Receipt } from 'lucide-react';
+import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
@@ -19,6 +19,7 @@ const SetupView = ({
   getAvailableMonths,
   expenses,
   isMonthReadOnly,
+  isReadOnlyRole,
   handleNavigation,
   setPendingMaintenanceApartmentId,
   maintenanceData,
@@ -53,6 +54,8 @@ const SetupView = ({
   // Pentru actualizarea Sheet 1 cu apartamentele
   updateStructureSnapshot
 }) => {
+  const cantEdit = isMonthReadOnly || isReadOnlyRole;
+
   // Obține currentUser pentru invitații proprietari
   const { currentUser } = useAuthEnhanced();
 
@@ -688,29 +691,24 @@ return (
               )}
               <button
                 onClick={() => {
-                  if (isMonthReadOnly) {
+                  if (cantEdit) {
                     alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                     return;
                   }
                   openAddBlockModal();
                 }}
-                className={`rounded-lg flex items-center transition-all duration-200 text-sm sm:text-base ${
+                className={`rounded-lg flex items-center transition-all duration-200 text-sm ${
                   associationBlocks.length > 0 ? 'p-1.5 sm:p-2' : 'px-3 py-1.5 sm:px-4 sm:py-2'
                 } ${
-                  isMonthReadOnly
+                  cantEdit
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:scale-105'
                 }`}
-                title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : 'Adaugă Bloc'}
-                disabled={isMonthReadOnly}
+                title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă Bloc'}
+                disabled={cantEdit}
               >
-                {associationBlocks.length > 0 ? (
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                ) : (
-                  'Adaugă Bloc'
-                )}
+                <Plus className="w-4 h-4" />
+                {associationBlocks.length === 0 && 'Adaugă Bloc'}
               </button>
             </div>
           </div>
@@ -770,7 +768,7 @@ return (
               <div className="py-3 px-3 sm:py-4 sm:px-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="hidden sm:flex w-12 h-12 bg-blue-100 rounded-full items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🏢</span>
+                    <Building className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="text-left flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -850,8 +848,8 @@ return (
                             }));
                           }}
                         >
-                          <span className="text-sm sm:text-lg font-medium text-gray-800 whitespace-nowrap">
-                            🏢 {block.name}
+                          <span className="text-sm sm:text-lg font-medium text-gray-800 whitespace-nowrap flex items-center gap-1.5">
+                            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" /> {block.name}
                           </span>
                           <span className="text-[10px] sm:text-sm text-gray-600 bg-blue-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                             {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
@@ -891,7 +889,7 @@ return (
                                 <div className="py-1">
                                   <button
                                     onClick={() => {
-                                      if (isMonthReadOnly) {
+                                      if (cantEdit) {
                                         alert('Nu poți edita blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                         return;
                                       }
@@ -899,11 +897,11 @@ return (
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                      isMonthReadOnly
+                                      cantEdit
                                         ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                         : 'text-gray-700 hover:bg-gray-100'
                                     }`}
-                                    disabled={isMonthReadOnly}
+                                    disabled={cantEdit}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -912,7 +910,7 @@ return (
                                   </button>
                                   <button
                                     onClick={() => {
-                                      if (isMonthReadOnly) {
+                                      if (cantEdit) {
                                         alert('Nu poți adăuga scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                         return;
                                       }
@@ -920,11 +918,11 @@ return (
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                      isMonthReadOnly
+                                      cantEdit
                                         ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                         : 'text-gray-700 hover:bg-gray-100'
                                     }`}
-                                    disabled={isMonthReadOnly}
+                                    disabled={cantEdit}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -934,7 +932,7 @@ return (
                                   <hr className="my-1" />
                                   <button
                                     onClick={() => {
-                                      if (isMonthReadOnly) {
+                                      if (cantEdit) {
                                         alert('Nu poți șterge blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                         return;
                                       }
@@ -944,11 +942,11 @@ return (
                                       setOpenBlockMenus(prev => ({ ...prev, [block.id]: false }));
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                      isMonthReadOnly
+                                      cantEdit
                                         ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                         : 'text-red-600 hover:bg-red-50'
                                     }`}
-                                    disabled={isMonthReadOnly}
+                                    disabled={cantEdit}
                                   >
                                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -964,19 +962,19 @@ return (
                           <>
                             <button
                               onClick={() => {
-                                if (isMonthReadOnly) {
+                                if (cantEdit) {
                                   alert('Nu poți edita blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                   return;
                                 }
                                 openEditBlockModal(block);
                               }}
                               className={`p-2 rounded-lg transition-colors ${
-                                isMonthReadOnly
+                                cantEdit
                                   ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                   : 'text-blue-600 hover:bg-blue-100'
                               }`}
-                              title={isMonthReadOnly ? 'Editare blocat - lună publicată' : `Editează blocul ${block.name}`}
-                              disabled={isMonthReadOnly}
+                              title={cantEdit ? 'Editare blocat - lună publicată' : `Editează blocul ${block.name}`}
+                              disabled={cantEdit}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -984,7 +982,7 @@ return (
                             </button>
                             <button
                               onClick={() => {
-                                if (isMonthReadOnly) {
+                                if (cantEdit) {
                                   alert('Nu poți șterge blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                   return;
                                 }
@@ -993,12 +991,12 @@ return (
                                 }
                               }}
                               className={`p-2 rounded-lg transition-colors ${
-                                isMonthReadOnly
+                                cantEdit
                                   ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                   : 'text-red-600 hover:bg-red-100'
                               }`}
-                              title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : `Șterge blocul ${block.name}`}
-                              disabled={isMonthReadOnly}
+                              title={cantEdit ? 'Ștergere blocată - lună publicată' : `Șterge blocul ${block.name}`}
+                              disabled={cantEdit}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1006,20 +1004,21 @@ return (
                             </button>
                             <button
                               onClick={() => {
-                                if (isMonthReadOnly) {
+                                if (cantEdit) {
                                   alert('Nu poți adăuga scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                   return;
                                 }
                                 openAddStairModal(block);
                               }}
                               className={`px-3 py-2 rounded-lg transition-colors flex items-center text-sm ${
-                                isMonthReadOnly
+                                cantEdit
                                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                   : 'bg-green-600 text-white hover:bg-green-700'
                               }`}
-                              title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : `Adaugă scară în ${block.name}`}
-                              disabled={isMonthReadOnly}
+                              title={cantEdit ? 'Adăugare blocată - lună publicată' : `Adaugă scară în ${block.name}`}
+                              disabled={cantEdit}
                             >
+                              <Plus className="w-4 h-4" />
                               Adaugă Scară
                             </button>
                           </>
@@ -1125,7 +1124,7 @@ return (
                                       <div className="text-green-600 text-sm sm:text-base">
                                         {isStairExpanded ? '▼' : '▸'}
                                       </div>
-                                      <Layers className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
+                                      <Home className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
                                       
                                       {editingItem?.type === 'stair' && editingItem?.id === currentStair.id ? (
                                         <div className="flex items-center space-x-2">
@@ -1216,7 +1215,7 @@ return (
                                               <div className="py-1">
                                                 <button
                                                   onClick={() => {
-                                                    if (isMonthReadOnly) {
+                                                    if (cantEdit) {
                                                       alert('Nu poți edita scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                       return;
                                                     }
@@ -1224,11 +1223,11 @@ return (
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
                                                   className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                                    isMonthReadOnly
+                                                    cantEdit
                                                       ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                       : 'text-gray-700 hover:bg-gray-100'
                                                   }`}
-                                                  disabled={isMonthReadOnly}
+                                                  disabled={cantEdit}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1237,7 +1236,7 @@ return (
                                                 </button>
                                                 <button
                                                   onClick={() => {
-                                                    if (isMonthReadOnly) {
+                                                    if (cantEdit) {
                                                       alert('Nu poți adăuga apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                       return;
                                                     }
@@ -1245,11 +1244,11 @@ return (
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
                                                   className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                                    isMonthReadOnly
+                                                    cantEdit
                                                       ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                       : 'text-gray-700 hover:bg-gray-100'
                                                   }`}
-                                                  disabled={isMonthReadOnly}
+                                                  disabled={cantEdit}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1259,7 +1258,7 @@ return (
                                                 <hr className="my-1" />
                                                 <button
                                                   onClick={() => {
-                                                    if (isMonthReadOnly) {
+                                                    if (cantEdit) {
                                                       alert('Nu poți șterge scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                       return;
                                                     }
@@ -1269,11 +1268,11 @@ return (
                                                     setOpenStairMenus(prev => ({ ...prev, [currentStair.id]: false }));
                                                   }}
                                                   className={`w-full text-left px-4 py-2 text-sm flex items-center ${
-                                                    isMonthReadOnly
+                                                    cantEdit
                                                       ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                       : 'text-red-600 hover:bg-red-50'
                                                   }`}
-                                                  disabled={isMonthReadOnly}
+                                                  disabled={cantEdit}
                                                 >
                                                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1289,19 +1288,19 @@ return (
                                         <>
                                           <button
                                             onClick={() => {
-                                              if (isMonthReadOnly) {
+                                              if (cantEdit) {
                                                 alert('Nu poți edita scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                 return;
                                               }
                                               openEditStairModal(currentStair);
                                             }}
                                             className={`p-2 rounded-lg transition-all duration-200 ${
-                                              isMonthReadOnly
+                                              cantEdit
                                                 ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                 : 'text-green-600 hover:bg-green-200 hover:text-green-800 hover:shadow-md hover:scale-105'
                                             }`}
-                                            title={isMonthReadOnly ? 'Editare blocată - lună publicată' : `Editează ${currentStair.name}`}
-                                            disabled={isMonthReadOnly}
+                                            title={cantEdit ? 'Editare blocată - lună publicată' : `Editează ${currentStair.name}`}
+                                            disabled={cantEdit}
                                           >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1309,7 +1308,7 @@ return (
                                           </button>
                                           <button
                                             onClick={() => {
-                                              if (isMonthReadOnly) {
+                                              if (cantEdit) {
                                                 alert('Nu poți șterge scări într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                 return;
                                               }
@@ -1318,12 +1317,12 @@ return (
                                               }
                                             }}
                                             className={`p-2 rounded-lg transition-all duration-200 ${
-                                              isMonthReadOnly
+                                              cantEdit
                                                 ? 'text-gray-400 hover:bg-gray-50 cursor-not-allowed'
                                                 : 'text-red-600 hover:bg-red-200 hover:text-red-800 hover:shadow-md hover:scale-105'
                                             }`}
-                                            title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : `Șterge ${currentStair.name}`}
-                                            disabled={isMonthReadOnly}
+                                            title={cantEdit ? 'Ștergere blocată - lună publicată' : `Șterge ${currentStair.name}`}
+                                            disabled={cantEdit}
                                           >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1331,20 +1330,21 @@ return (
                                           </button>
                                           <button
                                             onClick={() => {
-                                              if (isMonthReadOnly) {
+                                              if (cantEdit) {
                                                 alert('Nu poți adăuga apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                 return;
                                               }
                                               openAddApartmentModal(currentStair);
                                             }}
                                             className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center text-sm ${
-                                              isMonthReadOnly
+                                              cantEdit
                                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                 : 'bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md hover:scale-105'
                                             }`}
-                                            title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : `Adaugă apartament în ${currentStair.name}`}
-                                            disabled={isMonthReadOnly}
+                                            title={cantEdit ? 'Adăugare blocată - lună publicată' : `Adaugă apartament în ${currentStair.name}`}
+                                            disabled={cantEdit}
                                           >
+                                            <Plus className="w-4 h-4" />
                                             Adaugă Apartament
                                           </button>
                                         </>
@@ -1517,7 +1517,7 @@ return (
                                         <div className="py-2 sm:py-4 px-3 sm:px-6 bg-orange-50 border-2 border-orange-200 rounded-xl">
                                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                                             <div className="hidden sm:flex w-12 h-12 bg-orange-100 rounded-full items-center justify-center flex-shrink-0">
-                                              <span className="text-2xl">👥</span>
+                                              <DoorOpen className="w-6 h-6 text-orange-600" />
                                             </div>
                                             <div className="text-left flex-1 min-w-0">
                                               <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
@@ -1679,8 +1679,8 @@ return (
                                                     <div className="hidden lg:flex items-center">
                                                       {/* Numele cu lățime fixă pentru aliniere */}
                                                       <div className="w-96 flex-shrink-0">
-                                                        <span className="font-medium text-gray-800 text-lg">
-                                                          👥 Apt {apartment.number} - {apartment.owner}
+                                                        <span className="font-medium text-gray-800 text-lg flex items-center gap-1.5">
+                                                          <DoorOpen className="w-5 h-5 text-orange-500 flex-shrink-0" /> Apt {apartment.number} - {apartment.owner}
                                                         </span>
                                                       </div>
 
@@ -1725,8 +1725,8 @@ return (
                                                     {/* Mobile: numele sus, etichetele jos - compact */}
                                                     <div className="lg:hidden">
                                                       <div className="mb-1.5">
-                                                        <span className="font-medium text-gray-800 text-sm sm:text-base">
-                                                          👥 Apt {apartment.number} - <span className="truncate">{apartment.owner}</span>
+                                                        <span className="font-medium text-gray-800 text-sm sm:text-base flex items-center gap-1.5">
+                                                          <DoorOpen className="w-4 h-4 text-orange-500 flex-shrink-0" /> Apt {apartment.number} - <span className="truncate">{apartment.owner}</span>
                                                         </span>
                                                       </div>
 
@@ -1788,7 +1788,7 @@ return (
                                                             <Receipt className="w-4 h-4" />
                                                             Vezi Detalii Întreținere
                                                           </button>
-                                                          {isMonthReadOnly ? (
+                                                          {cantEdit ? (
                                                             <button
                                                               onClick={() => {
                                                                 openViewApartmentModal(apartment);
@@ -1826,12 +1826,12 @@ return (
                                                               return a.id.localeCompare(b.id);
                                                             });
                                                             const isLastApartment = stairApts[stairApts.length - 1]?.id === apartment.id;
-                                                            const canDelete = isLastApartment && !isMonthReadOnly;
+                                                            const canDelete = isLastApartment && !cantEdit;
 
                                                             return (
                                                               <button
                                                                 onClick={() => {
-                                                                  if (isMonthReadOnly) {
+                                                                  if (cantEdit) {
                                                                     alert('Nu poți șterge apartamente într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                                                     return;
                                                                   }
@@ -1878,7 +1878,7 @@ return (
                           <div className="py-2 sm:py-4 px-3 sm:px-6 bg-green-50 border-2 border-green-200 rounded-xl">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                               <div className="hidden sm:flex w-12 h-12 bg-green-100 rounded-full items-center justify-center flex-shrink-0">
-                                <Layers className="w-7 h-7 text-green-600" />
+                                <Home className="w-7 h-7 text-green-600" />
                               </div>
                               <div className="text-left flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">

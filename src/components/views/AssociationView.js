@@ -35,10 +35,11 @@ const AssociationView = ({
   currentSheet,
   publishedSheet,
   sheets = [],
-  updateSheetMonthSettings
+  updateSheetMonthSettings,
+  isReadOnlyRole
 }) => {
   const [availableCities, setAvailableCities] = useState([]);
-  const [activeTab, setActiveTab] = useState('identification');
+  const [activeTab, setActiveTab] = useState('members');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -182,6 +183,11 @@ const AssociationView = ({
         await updateSheetMonthSettings(currentSheet.id, workingMonthName, consumptionMonthName);
       }
 
+      // Salvează și programul de funcționare pe documentul asociației
+      if (formData.collectionSchedule !== (association.collectionSchedule || '')) {
+        await updateAssociation({ ...association, collectionSchedule: formData.collectionSchedule });
+      }
+
       setSaveMessage('Setările au fost salvate cu succes!');
       if (updateAssociation) {
         await updateAssociation({ ...association, settings: { monthSettings, generalSettings } });
@@ -218,29 +224,14 @@ const AssociationView = ({
 
   const tabs = [
     {
-      id: 'identification',
-      title: 'Date Identificare',
-      icon: Building2
-    },
-    {
-      id: 'schedule',
-      title: 'Program',
-      icon: Clock
-    },
-    {
-      id: 'financial',
-      title: 'Date Financiare',
-      icon: CreditCard
-    },
-    {
-      id: 'responsible',
-      title: 'Persoane Responsabile',
-      icon: Users
-    },
-    {
       id: 'members',
       title: 'Membri',
       icon: UserPlus
+    },
+    {
+      id: 'identification',
+      title: 'Date Asociație',
+      icon: Building2
     },
     {
       id: 'months',
@@ -249,13 +240,8 @@ const AssociationView = ({
     },
     {
       id: 'general',
-      title: 'Setări Generale',
+      title: 'Setări & Sistem',
       icon: Settings
-    },
-    {
-      id: 'system',
-      title: 'Sistem',
-      icon: Database
     }
   ];
 
@@ -714,110 +700,74 @@ const AssociationView = ({
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                    {/* Informații bancare (mutat din Date Financiare) */}
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <CreditCard className="w-4 h-4 mr-1.5" />
+                        Informații bancare
+                      </h3>
 
-                {/* Tab 2: Program */}
-                {activeTab === 'schedule' && (
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
-                      <Clock className="w-4 h-4 mr-1.5" />
-                      Program de funcționare
-                    </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Banca <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            value={formData.bank}
+                            onChange={(e) => handleInputChange('bank', e.target.value)}
+                            disabled={!isEditing}
+                            placeholder="BCR, BRD, ING"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                              'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            IBAN <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            value={formData.bankAccount}
+                            onChange={(e) => handleInputChange('bankAccount', e.target.value)}
+                            disabled={!isEditing}
+                            placeholder="RO49 AAAA 1B31..."
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                              'border-gray-300'
+                            }`}
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Orarul încasărilor <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        value={formData.collectionSchedule}
-                        onChange={(e) => handleInputChange('collectionSchedule', e.target.value)}
-                        disabled={!isEditing}
-                        placeholder={`ex:\nLuni: 09:00 - 17:00\nMarți: 09:00 - 17:00\nMiercuri: 09:00 - 17:00\nJoi: 09:00 - 17:00\nVineri: 09:00 - 17:00\nSâmbătă: 09:00 - 12:00`}
-                        rows={6}
-                        className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                          'border-gray-300'
-                        }`}
-                      />
-                      <p className="mt-1.5 text-xs text-gray-600">
-                        💡 Specifică programul în care proprietarii pot achita taxele și întâlni administratorul
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Numele contului <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            value={association?.bankAccountData?.accountName || formData.name}
+                            disabled={true}
+                            placeholder="Asociația de Proprietari..."
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50 outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Fond de rulment</label>
+                          <input
+                            value={formData.workingFundAccount}
+                            onChange={(e) => handleInputChange('workingFundAccount', e.target.value)}
+                            disabled={!isEditing}
+                            placeholder="RO49 AAAA 1B31... (opțional)"
+                            className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                              'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        💡 Numele contului se completează automat. Fondul de rulment e opțional.
                       </p>
                     </div>
-                  </div>
-                )}
 
-                {/* Tab 3: Date Financiare */}
-                {activeTab === 'financial' && (
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
-                      <CreditCard className="w-4 h-4 mr-1.5" />
-                      Informații bancare
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Banca <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          value={formData.bank}
-                          onChange={(e) => handleInputChange('bank', e.target.value)}
-                          disabled={!isEditing}
-                          placeholder="BCR, BRD, ING"
-                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                            'border-gray-300'
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          IBAN <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          value={formData.bankAccount}
-                          onChange={(e) => handleInputChange('bankAccount', e.target.value)}
-                          disabled={!isEditing}
-                          placeholder="RO49 AAAA 1B31..."
-                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                            'border-gray-300'
-                          }`}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Numele contului <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          value={association?.bankAccountData?.accountName || formData.name}
-                          disabled={true}
-                          placeholder="Asociația de Proprietari..."
-                          className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50 outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Fond de rulment</label>
-                        <input
-                          value={formData.workingFundAccount}
-                          onChange={(e) => handleInputChange('workingFundAccount', e.target.value)}
-                          disabled={!isEditing}
-                          placeholder="RO49 AAAA 1B31... (opțional)"
-                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                            'border-gray-300'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      💡 Numele contului se completează automat. Fondul de rulment e opțional.
-                    </p>
-                  </div>
-                )}
-
-                {/* Tab 4: Persoane Responsabile */}
-                {activeTab === 'responsible' && (
-                  <div className="space-y-4">
+                    {/* Conducerea asociației (mutat din Persoane Responsabile) */}
                     <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
                       <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
                         <Users className="w-4 h-4 mr-1.5" />
@@ -863,7 +813,6 @@ const AssociationView = ({
                         </div>
                       </div>
                     </div>
-
                   </div>
                 )}
 
@@ -880,10 +829,10 @@ const AssociationView = ({
                         {isFounder && (
                           <button
                             onClick={() => setShowInviteModal(true)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-                            Invita Membru
+                            <UserPlus className="w-4 h-4" />
+                            Invită Membru
                           </button>
                         )}
                       </div>
@@ -1082,6 +1031,32 @@ const AssociationView = ({
                 {/* Tab: Configurare Luni */}
                 {activeTab === 'months' && (
                   <div className="space-y-4">
+                    {/* Program încasări (mutat din tab Program) */}
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 flex items-center">
+                        <Clock className="w-4 h-4 mr-1.5" />
+                        Program de funcționare
+                      </h3>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Orarul încasărilor <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          value={formData.collectionSchedule}
+                          onChange={(e) => handleInputChange('collectionSchedule', e.target.value)}
+                          disabled={isReadOnlyRole}
+                          placeholder={`ex:\nLuni: 09:00 - 17:00\nMarți: 09:00 - 17:00\nMiercuri: 09:00 - 17:00\nJoi: 09:00 - 17:00\nVineri: 09:00 - 17:00\nSâmbătă: 09:00 - 12:00`}
+                          rows={6}
+                          className={`w-full px-2.5 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                            'border-gray-300'
+                          }`}
+                        />
+                        <p className="mt-1.5 text-xs text-gray-600">
+                          💡 Specifică programul în care proprietarii pot achita taxele și întâlni administratorul
+                        </p>
+                      </div>
+                    </div>
+
                     <div>
                       <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
                         Configurare Luni pentru Sheet-ul în Lucru
@@ -1201,6 +1176,7 @@ const AssociationView = ({
                             type="checkbox"
                             checked={generalSettings.requireConfirmationForPublish}
                             onChange={(e) => setGeneralSettings(prev => ({ ...prev, requireConfirmationForPublish: e.target.checked }))}
+                            disabled={isReadOnlyRole}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
                           <span className="text-xs sm:text-sm text-gray-700">Cere confirmare înainte de publicarea unei luni</span>
@@ -1217,6 +1193,7 @@ const AssociationView = ({
                             type="number" min="0" max="10" step="0.01"
                             value={generalSettings.defaultPenaltyRate * 100}
                             onChange={(e) => setGeneralSettings(prev => ({ ...prev, defaultPenaltyRate: parseFloat(e.target.value) / 100 || 0 }))}
+                            disabled={isReadOnlyRole}
                             className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <p className="text-xs text-gray-500 mt-0.5">Standard: 2% din suma datorată</p>
@@ -1227,18 +1204,15 @@ const AssociationView = ({
                             type="number" min="0" max="90"
                             value={generalSettings.daysBeforePenalty}
                             onChange={(e) => setGeneralSettings(prev => ({ ...prev, daysBeforePenalty: parseInt(e.target.value) || 30 }))}
+                            disabled={isReadOnlyRole}
                             className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                           <p className="text-xs text-gray-500 mt-0.5">Standard: 30 de zile de la emitere</p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {/* Tab: Sistem */}
-                {activeTab === 'system' && (
-                  <div className="space-y-4">
+                    {/* Informații Sistem (mutat din tab Sistem) */}
                     <div>
                       <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Informații Sistem</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1271,6 +1245,8 @@ const AssociationView = ({
                       </div>
                     </div>
 
+                    {/* Acțiuni Sistem */}
+                    {!isReadOnlyRole && (
                     <div>
                       <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Acțiuni Sistem</h3>
                       <div className="space-y-2">
@@ -1284,6 +1260,7 @@ const AssociationView = ({
                         <p className="text-xs text-gray-500">⚠️ Resetarea setărilor va reveni la valorile implicite ale aplicației</p>
                       </div>
                     </div>
+                    )}
 
                     {(currentSheet || publishedSheet) && (
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
@@ -1302,7 +1279,7 @@ const AssociationView = ({
               </div>
 
               {/* Footer: Association data tabs (editare/salvare) */}
-              {['identification', 'schedule', 'financial', 'responsible'].includes(activeTab) && (
+              {activeTab === 'identification' && !isReadOnlyRole && (
               <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-600 hidden sm:block">
@@ -1312,7 +1289,7 @@ const AssociationView = ({
                     {!isEditing ? (
                       <button
                         onClick={() => setIsEditing(true)}
-                        className="px-3 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
                       >
                         <Edit className="w-3.5 h-3.5" />
                         Editează
@@ -1351,7 +1328,7 @@ const AssociationView = ({
               )}
 
               {/* Footer: Settings tabs (salvează setările) */}
-              {['months', 'general'].includes(activeTab) && (
+              {['months', 'general'].includes(activeTab) && !isReadOnlyRole && (
               <div className="bg-gray-50 px-3 sm:px-6 py-2.5 border-t">
                 <div className="flex justify-end space-x-2">
                   <button

@@ -241,6 +241,7 @@ const ContextSelectorView = ({
               <p className="text-xs sm:text-sm text-gray-500">
                 {assoc.userRole === 'assoc_president' ? 'Președinte' :
                  assoc.userRole === 'assoc_censor' ? 'Cenzor' :
+                 assoc.adminId === userId ? 'Administrator Fondator' :
                  'Administrator'}
               </p>
             </div>

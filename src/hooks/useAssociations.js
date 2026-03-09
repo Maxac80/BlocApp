@@ -585,6 +585,18 @@ export const useAssociations = (userId = null) => {
             ...assocDoc.data()
           };
 
+          // Detectează rolul utilizatorului pe această asociație
+          let detectedRole = 'assoc_admin';
+          try {
+            const memberDoc = await getDoc(doc(db, 'associations', assocId, 'members', userIdToLoad));
+            if (memberDoc.exists() && memberDoc.data().role) {
+              detectedRole = memberDoc.data().role;
+            }
+          } catch (e) {
+            // silent - default to assoc_admin
+          }
+          assocData.userRole = detectedRole;
+
           // Încarcă statisticile din sheets
           try {
             const sheetsRef = collection(db, 'associations', assocId, 'sheets');

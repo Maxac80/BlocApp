@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { XCircle, Send, CheckCircle, Clock, RefreshCw, Loader2 } from 'lucide-react';
+import { XCircle, Send, CheckCircle, Clock, RefreshCw, Loader2, DoorOpen } from 'lucide-react';
 import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
 
 const ApartmentModal = ({
@@ -264,7 +264,7 @@ const ApartmentModal = ({
         }`}>
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="bg-white bg-opacity-20 rounded-lg p-1.5 sm:p-2 flex-shrink-0">
-              <span className="text-xl sm:text-2xl">{isViewMode ? '👁️' : '🏠'}</span>
+              {isViewMode ? <span className="text-xl sm:text-2xl">👁️</span> : <DoorOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-xl font-semibold truncate">

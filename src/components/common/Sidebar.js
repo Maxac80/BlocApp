@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calculator, X, FileText, Wallet, Users, Building, Coins, ChevronUp } from 'lucide-react';
+import { Calculator, X, FileText, Wrench, Users, Building, Coins, ChevronUp } from 'lucide-react';
 import UserDropdownMenu from './UserDropdownMenu';
 
 const Sidebar = ({
@@ -26,8 +26,10 @@ const Sidebar = ({
   // Roluri read-only: presedinte si cenzor nu pot edita
   const isReadOnlyRole = userRole === 'assoc_president' || userRole === 'assoc_censor';
   const isAdmin = !isReadOnlyRole;
-  const roleLabel = userRole === 'assoc_president' ? 'Presedinte'
+  const isFounder = association?.adminId === activeUser?.uid;
+  const roleLabel = userRole === 'assoc_president' ? 'Președinte'
     : userRole === 'assoc_censor' ? 'Cenzor'
+    : isFounder ? 'Administrator Fondator'
     : 'Administrator';
 
   // Rezolvare nume din user doc (profile.personalInfo prioritar)
@@ -195,8 +197,7 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Apartamente - doar admini */}
-        {!isReadOnlyRole && (
+        {/* Apartamente */}
         <button
           onClick={() => handleNavigation("setup")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -219,10 +220,8 @@ const Sidebar = ({
             </div>
           )}
         </button>
-        )}
 
-        {/* Cheltuieli - doar admini */}
-        {!isReadOnlyRole && (
+        {/* Cheltuieli */}
         <button
           onClick={() => handleNavigation("expenses")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -231,7 +230,7 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Wallet className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Wrench className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
               <div className="text-sm lg:text-base font-medium">Configurare cheltuieli</div>
@@ -245,7 +244,6 @@ const Sidebar = ({
             </div>
           )}
         </button>
-        )}
 
         {/* Contabilitate */}
         <button

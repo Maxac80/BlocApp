@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2 } from 'lucide-react';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
@@ -97,7 +97,8 @@ const MaintenanceView = ({
   handleNavigation,
 
   // Monthly balances
-  monthlyBalances
+  monthlyBalances,
+  isReadOnlyRole
 }) => {
 
   // TOATE HOOK-URILE TREBUIE SĂ FIE APELATE ÎNAINTE DE ORICE RETURN CONDIȚIONAL
@@ -168,7 +169,7 @@ const MaintenanceView = ({
     getInvoiceByNumber,
     syncSuppliersForExpenseType,
     migrateDistributionHistoryToExpenseTypeId
-  } = useInvoices(association?.id);
+  } = useInvoices(association?.id, currentSheet);
 
   // Hook pentru sincronizarea plăților cu tabelul de întreținere
   // Folosim același sheet ca pentru payments (publishedSheetForPayments)
@@ -950,7 +951,28 @@ const MaintenanceView = ({
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🧮 Calcul întreținere</h1>
         </div>
 
+        {/* Guard: no apartments configured yet */}
+        {getAssociationApartments().length === 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 text-center mb-6">
+            <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-2">
+              Configurează mai întâi structura asociației
+            </h3>
+            <p className="text-sm text-blue-600 mb-4">
+              Pentru a calcula întreținerea, trebuie să adaugi blocurile, scările și apartamentele.
+            </p>
+            {!isReadOnlyRole && (
+              <button
+                onClick={() => handleNavigation("setup")}
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+              >
+                Configurează Apartamentele
+              </button>
+            )}
+          </div>
+        )}
 
+        {getAssociationApartments().length > 0 && (
         <MaintenanceSummary
           association={association}
           blocks={blocks}
@@ -1038,24 +1060,25 @@ const MaintenanceView = ({
               {/* Butoane acțiuni - în dreapta, nu sticky */}
               <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 mb-1">
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
-                    {!isMonthReadOnly && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
+                    {!isMonthReadOnly && !isReadOnlyRole && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
                         onClick={() => {
                           setEditingExpense(null);
                           setShowExpenseEntryModal(true);
                         }}
-                        className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
+                        className={`flex items-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
                           monthType === 'next'
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
                       >
+                        <Share2 className="w-4 h-4" />
                         Distribuie Cheltuială
                       </button>
                     )}
 
                     {/* Buton Publică Luna */}
-                    {shouldShowPublishButton && shouldShowPublishButton(currentMonth, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments) && (
+                    {shouldShowPublishButton && shouldShowPublishButton(currentMonth, getAvailableExpenseTypes, areAllExpensesFullyCompleted, getAssociationApartments) && !isReadOnlyRole && (
                       <button
                         onClick={async () => {
                           const result = await publishMonth(currentMonth);
@@ -1068,7 +1091,7 @@ const MaintenanceView = ({
                     )}
 
                     {/* Buton Depublică Luna - ascuns dacă există încasări sau datele nu sunt gata */}
-                    {isMonthReadOnly && getMonthType(currentMonth) === 'current' && unpublishSheet && isDataReady && incasari.length === 0 && (
+                    {isMonthReadOnly && getMonthType(currentMonth) === 'current' && unpublishSheet && isDataReady && incasari.length === 0 && !isReadOnlyRole && (
                       <button
                         onClick={async () => {
                           if (!window.confirm(
@@ -1179,7 +1202,7 @@ const MaintenanceView = ({
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {/* Buton Ajustări Solduri - doar pentru luna în lucru */}
-                          {shouldShowAdjustButton(currentMonth) && !isMonthReadOnly && (
+                          {shouldShowAdjustButton(currentMonth) && !isMonthReadOnly && !isReadOnlyRole && (
                             <button
                               onClick={() => {
                                 const modalData = getAssociationApartments().map(apartment => {
@@ -1187,6 +1210,7 @@ const MaintenanceView = ({
                                   return {
                                     apartmentId: apartment.id,
                                     apartmentNumber: apartment.number,
+                                    owner: apartment.owner,
                                     restanteCurente: balance.restante || 0,
                                     penalitatiCurente: balance.penalitati || 0,
                                     restanteAjustate: balance.restante || 0,
@@ -1302,6 +1326,7 @@ const MaintenanceView = ({
             </div>
           }
         />
+        )}
 
         {/* Modalurile rămân în afara tab-urilor */}
         <AdjustBalancesModal
@@ -1412,6 +1437,7 @@ const MaintenanceView = ({
           association={association}
           setShowExpenseConfig={setShowExpenseConfig}
           setSelectedExpenseForConfig={setSelectedExpenseForConfig}
+          setConfigModalInitialTab={setConfigModalInitialTab}
         />
 
         <MaintenanceBreakdownModal

@@ -16,6 +16,7 @@ const AccountingView = ({
   getAvailableMonths,
   expenses,
   isMonthReadOnly,
+  isReadOnlyRole,
   getAssociationApartments,
   handleNavigation,
   getMonthType,
@@ -86,7 +87,7 @@ const AccountingView = ({
     total: monthlyInvoices.length,
     paid: monthlyInvoices.filter(inv => inv.isPaid).length,
     unpaid: monthlyInvoices.filter(inv => !inv.isPaid).length,
-    overdue: monthlyInvoices.filter(inv => !inv.isPaid && new Date(inv.dueDate) < new Date()).length,
+    overdue: monthlyInvoices.filter(inv => !inv.isPaid && inv.dueDate && new Date(inv.dueDate) < new Date()).length,
     totalAmount: monthlyInvoices.reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0),
     paidAmount: monthlyInvoices.filter(inv => inv.isPaid).reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0),
     unpaidAmount: monthlyInvoices.filter(inv => !inv.isPaid).reduce((sum, inv) => sum + (inv.totalInvoiceAmount || inv.totalAmount || 0), 0)
@@ -472,10 +473,10 @@ const AccountingView = ({
                   
                   <button
                     onClick={generateMonthlyReport}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                    className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <Download className="w-5 h-5" />
-                    <span>Raport PDF</span>
+                    <Download className="w-4 h-4" />
+                    Raport PDF
                   </button>
                 </div>
 
@@ -662,10 +663,10 @@ const AccountingView = ({
                   
                   <button
                     onClick={generateMonthlyReport}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                    className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <Download className="w-5 h-5" />
-                    <span>Raport PDF</span>
+                    <Download className="w-4 h-4" />
+                    Raport PDF
                   </button>
                 </div>
 
@@ -716,7 +717,7 @@ const AccountingView = ({
                           </tr>
                         ) : (
                           filteredInvoices.map((invoice) => {
-                            const isOverdue = !invoice.isPaid && new Date(invoice.dueDate) < new Date();
+                            const isOverdue = !invoice.isPaid && invoice.dueDate && new Date(invoice.dueDate) < new Date();
                             
                             // 🔥 OBȚINE FURNIZORUL DIN CONFIGURAȚIA CHELTUIELII
                             const expenseConfig = getExpenseConfig(invoice.expenseType);
@@ -843,12 +844,12 @@ const AccountingView = ({
                                   })()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
-                                  {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}
+                                  {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('ro-RO') : '—'}
                                 </td>
                                 <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
                                   isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'
                                 }`}>
-                                  {new Date(invoice.dueDate).toLocaleDateString('ro-RO')}
+                                  {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('ro-RO') : '—'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -871,17 +872,19 @@ const AccountingView = ({
                                       <FileText className="w-5 h-5" />
                                     </button>
                                   )}
-                                  <button
-                                    onClick={() => toggleInvoicePaymentStatus(invoice.id, invoice.isPaid)}
-                                    className={`${
-                                      invoice.isPaid 
-                                        ? 'text-red-600 hover:text-red-900' 
-                                        : 'text-green-600 hover:text-green-900'
-                                    }`}
-                                    title={invoice.isPaid ? 'Marchează ca neplătită' : 'Marchează ca plătită'}
-                                  >
-                                    {invoice.isPaid ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-                                  </button>
+                                  {!isReadOnlyRole && (
+                                    <button
+                                      onClick={() => toggleInvoicePaymentStatus(invoice.id, invoice.isPaid)}
+                                      className={`${
+                                        invoice.isPaid
+                                          ? 'text-red-600 hover:text-red-900'
+                                          : 'text-green-600 hover:text-green-900'
+                                      }`}
+                                      title={invoice.isPaid ? 'Marchează ca neplătită' : 'Marchează ca plătită'}
+                                    >
+                                      {invoice.isPaid ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             );

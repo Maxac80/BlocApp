@@ -37,6 +37,9 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
   const activeUser = currentUser;
 
+  // 🔒 Read-only role detection (president, censor)
+  const isReadOnlyRole = userRole === 'assoc_president' || userRole === 'assoc_censor';
+
   // 💳 SUBSCRIPTION STATUS (some values reserved for future use)
   // eslint-disable-next-line no-unused-vars
   const {
@@ -720,6 +723,7 @@ useEffect(() => {
               getExpenseConfig={getFirestoreExpenseConfig}
               getApartmentParticipation={getApartmentParticipation}
               calculateMaintenanceWithDetails={calculateMaintenanceWithDetails}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 
@@ -800,6 +804,7 @@ useEffect(() => {
               deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               handleNavigation={handleNavigation}
               monthlyBalances={monthlyBalances}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 
@@ -849,6 +854,7 @@ useEffect(() => {
               setApartmentBalance={setApartmentBalance}
               saveInitialBalances={saveInitialBalances}
               getMonthType={getMonthType}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 
@@ -888,6 +894,7 @@ useEffect(() => {
               publishedSheet={publishedSheet}
               sheets={sheets}
               togglePortalSubmission={togglePortalSubmission}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 
@@ -920,6 +927,7 @@ useEffect(() => {
               publishedSheet={publishedSheet}
               sheets={sheets || []}
               updateSheetMonthSettings={updateSheetMonthSettings}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 
@@ -949,6 +957,7 @@ useEffect(() => {
               markInvoiceAsPaid={markInvoiceAsPaid}
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
               updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
+              isReadOnlyRole={isReadOnlyRole}
             />
           )}
 

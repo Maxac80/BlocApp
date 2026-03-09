@@ -13,6 +13,7 @@ const ExpensesViewNew = ({
   getAvailableMonths,
   expenses,
   isMonthReadOnly,
+  isReadOnlyRole,
   getAssociationApartments,
   handleNavigation,
   newCustomExpense,
@@ -38,6 +39,8 @@ const ExpensesViewNew = ({
   stairs,
   togglePortalSubmission
 }) => {
+  const cantEdit = isMonthReadOnly || isReadOnlyRole;
+
   const [activeTab, setActiveTab] = useState('expenses');
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -209,20 +212,21 @@ const ExpensesViewNew = ({
                 <div className="flex justify-end mb-3 sm:mb-4">
                   <button
                     onClick={() => {
-                      if (isMonthReadOnly) {
+                      if (cantEdit) {
                         alert('Nu poți adăuga cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                         return;
                       }
                       setAddModalOpen(true);
                     }}
-                    className={`px-3 py-1.5 sm:px-6 sm:py-3 text-sm sm:text-base rounded-lg transition-colors shadow-lg ${
-                      isMonthReadOnly
+                    className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg transition-colors ${
+                      cantEdit
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
-                    disabled={isMonthReadOnly}
-                    title={isMonthReadOnly ? 'Adăugare blocată - lună publicată' : 'Adaugă cheltuială nouă'}
+                    disabled={cantEdit}
+                    title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă cheltuială nouă'}
                   >
+                    <Plus className="w-4 h-4" />
                     Adaugă cheltuială
                   </button>
                 </div>
@@ -282,7 +286,7 @@ const ExpensesViewNew = ({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (isMonthReadOnly) {
+                                      if (cantEdit) {
                                         alert('Nu poți modifica setările într-o lună publicată.');
                                         return;
                                       }
@@ -292,7 +296,7 @@ const ExpensesViewNew = ({
                                       config.indexConfiguration?.portalSubmission?.isOpen
                                         ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                    } ${isMonthReadOnly ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    } ${cantEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                     title={config.indexConfiguration?.portalSubmission?.isOpen
                                       ? 'Portal deschis - Click pentru a închide'
                                       : 'Portal închis - Click pentru a deschide'}
@@ -343,7 +347,7 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isMonthReadOnly) {
+                                        if (cantEdit) {
                                           alert('Nu poți configura cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                           setOpenDropdown(null);
                                           return;
@@ -352,11 +356,11 @@ const ExpensesViewNew = ({
                                         setOpenDropdown(null);
                                       }}
                                       className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                        isMonthReadOnly
+                                        cantEdit
                                           ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                           : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
                                       }`}
-                                      disabled={isMonthReadOnly}
+                                      disabled={cantEdit}
                                     >
                                       <Settings className="w-4 h-4" />
                                       Configurare
@@ -364,7 +368,7 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isMonthReadOnly) {
+                                        if (cantEdit) {
                                           alert('Nu poți elimina cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                           setOpenDropdown(null);
                                           return;
@@ -373,12 +377,12 @@ const ExpensesViewNew = ({
                                         setOpenDropdown(null);
                                       }}
                                       className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                        isMonthReadOnly
+                                        cantEdit
                                           ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                           : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700'
                                       }`}
-                                      title={isMonthReadOnly ? 'Operație blocată - lună publicată' : 'Elimină pentru această lună'}
-                                      disabled={isMonthReadOnly}
+                                      title={cantEdit ? 'Operație blocată - lună publicată' : 'Elimină pentru această lună'}
+                                      disabled={cantEdit}
                                     >
                                       <span className="w-4 h-4 flex items-center justify-center">🚫</span>
                                       Elimină
@@ -387,7 +391,7 @@ const ExpensesViewNew = ({
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          if (isMonthReadOnly) {
+                                          if (cantEdit) {
                                             alert('Nu poți șterge cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                             setOpenDropdown(null);
                                             return;
@@ -396,12 +400,12 @@ const ExpensesViewNew = ({
                                           setOpenDropdown(null);
                                         }}
                                         className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                          isMonthReadOnly
+                                          cantEdit
                                             ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                             : 'text-red-700 hover:bg-red-50'
                                         }`}
-                                        title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : 'Șterge definitiv cheltuiala'}
-                                        disabled={isMonthReadOnly}
+                                        title={cantEdit ? 'Ștergere blocată - lună publicată' : 'Șterge definitiv cheltuiala'}
+                                        disabled={cantEdit}
                                       >
                                         <Trash2 className="w-4 h-4" />
                                         Șterge cheltuiala
@@ -499,7 +503,7 @@ const ExpensesViewNew = ({
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          if (isMonthReadOnly) {
+                                          if (cantEdit) {
                                             alert('Nu poți reactiva cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                             setOpenDropdown(null);
                                             return;
@@ -508,12 +512,12 @@ const ExpensesViewNew = ({
                                           setOpenDropdown(null);
                                         }}
                                         className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                          isMonthReadOnly
+                                          cantEdit
                                             ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                             : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
                                         }`}
-                                        title={isMonthReadOnly ? 'Reactivare blocată - lună publicată' : 'Reactivează pentru această lună'}
-                                        disabled={isMonthReadOnly}
+                                        title={cantEdit ? 'Reactivare blocată - lună publicată' : 'Reactivează pentru această lună'}
+                                        disabled={cantEdit}
                                       >
                                         <span className="w-4 h-4 flex items-center justify-center">✅</span>
                                         Reactivează
@@ -522,7 +526,7 @@ const ExpensesViewNew = ({
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            if (isMonthReadOnly) {
+                                            if (cantEdit) {
                                               alert('Nu poți șterge cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
                                               setOpenDropdown(null);
                                               return;
@@ -531,12 +535,12 @@ const ExpensesViewNew = ({
                                             setOpenDropdown(null);
                                           }}
                                           className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                            isMonthReadOnly
+                                            cantEdit
                                               ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                               : 'text-red-700 hover:bg-red-50'
                                           }`}
-                                          title={isMonthReadOnly ? 'Ștergere blocată - lună publicată' : 'Șterge definitiv cheltuiala'}
-                                          disabled={isMonthReadOnly}
+                                          title={cantEdit ? 'Ștergere blocată - lună publicată' : 'Șterge definitiv cheltuiala'}
+                                          disabled={cantEdit}
                                         >
                                           <Trash2 className="w-4 h-4" />
                                           Șterge cheltuiala
@@ -561,20 +565,21 @@ const ExpensesViewNew = ({
                 <div className="flex justify-end mb-3 sm:mb-4">
                   <button
                     onClick={() => {
-                      if (isMonthReadOnly) {
+                      if (cantEdit) {
                         alert('Nu poți adăuga furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
                         return;
                       }
                       handleAddSupplier();
                     }}
-                    className={`px-3 py-1.5 sm:px-6 sm:py-3 text-sm sm:text-base rounded-lg transition-colors shadow-lg ${
-                      isMonthReadOnly
+                    className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg transition-colors ${
+                      cantEdit
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
-                    disabled={isMonthReadOnly}
-                    title={isMonthReadOnly ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor nou'}
+                    disabled={cantEdit}
+                    title={cantEdit ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor nou'}
                   >
+                    <Plus className="w-4 h-4" />
                     Adaugă furnizor
                   </button>
                 </div>
@@ -636,7 +641,7 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isMonthReadOnly) {
+                                        if (cantEdit) {
                                           alert('Nu poți edita furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
                                           setOpenDropdown(null);
                                           return;
@@ -645,11 +650,11 @@ const ExpensesViewNew = ({
                                         setOpenDropdown(null);
                                       }}
                                       className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                        isMonthReadOnly
+                                        cantEdit
                                           ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                           : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                                       }`}
-                                      disabled={isMonthReadOnly}
+                                      disabled={cantEdit}
                                     >
                                       <Settings className="w-4 h-4" />
                                       Editează
@@ -657,7 +662,7 @@ const ExpensesViewNew = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isMonthReadOnly) {
+                                        if (cantEdit) {
                                           alert('Nu poți șterge furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
                                           setOpenDropdown(null);
                                           return;
@@ -666,11 +671,11 @@ const ExpensesViewNew = ({
                                         setOpenDropdown(null);
                                       }}
                                       className={`w-full px-4 py-2 text-left flex items-center gap-2 ${
-                                        isMonthReadOnly
+                                        cantEdit
                                           ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
                                           : 'text-red-700 hover:bg-red-50'
                                       }`}
-                                      disabled={isMonthReadOnly}
+                                      disabled={cantEdit}
                                     >
                                       <Trash2 className="w-4 h-4" />
                                       Șterge furnizor

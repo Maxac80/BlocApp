@@ -534,18 +534,14 @@ export function AuthProviderEnhanced({ children }) {
 
               // Detectează rolul utilizatorului pe această asociație
               let userRole = 'assoc_admin'; // default
-              if (assocData.adminId === userId) {
-                userRole = 'assoc_admin';
-              } else {
-                // Citește member doc pentru a determina rolul
-                try {
-                  const memberDoc = await getDoc(doc(db, 'associations', assocId, 'members', userId));
-                  if (memberDoc.exists()) {
-                    userRole = memberDoc.data().role || 'assoc_admin';
-                  }
-                } catch (memberErr) {
-                  console.warn(`Could not load member role for assoc ${assocId}:`, memberErr);
+              // Citește member doc pentru a determina rolul (chiar și pentru fondator)
+              try {
+                const memberDoc = await getDoc(doc(db, 'associations', assocId, 'members', userId));
+                if (memberDoc.exists() && memberDoc.data().role) {
+                  userRole = memberDoc.data().role;
                 }
+              } catch (memberErr) {
+                console.warn(`Could not load member role for assoc ${assocId}:`, memberErr);
               }
 
               assocs.push({

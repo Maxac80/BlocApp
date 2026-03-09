@@ -7,6 +7,7 @@ import {
 import { PaymentModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
+import { Building } from 'lucide-react';
 
 const DashboardView = ({
   // Association data
@@ -38,7 +39,10 @@ const DashboardView = ({
   // Expense configuration
   getExpenseConfig,
   getApartmentParticipation,
-  calculateMaintenanceWithDetails
+  calculateMaintenanceWithDetails,
+
+  // Role-based access
+  isReadOnlyRole
 }) => {
   // 🎯 DETERMINĂ SHEET-UL ACTIV bazat pe luna selectată
   const activeSheet = (publishedSheet?.monthYear === currentMonth)
@@ -203,21 +207,52 @@ const DashboardView = ({
           </div>
         )}
 
-        {/* Dacă există asociație fără apartamente */}
+        {/* Dacă există asociație fără apartamente - ghid pas cu pas */}
         {association && getAssociationApartments().length === 0 && (
-          <div className="bg-green-50 border border-green-200 p-4 sm:p-6 rounded-xl mb-6 sm:mb-8">
-            <h3 className="text-base sm:text-lg font-semibold text-green-800 mb-2">
-              ✅ Asociația "{association.name}" a fost creată!
-            </h3>
-            <p className="text-sm sm:text-base text-green-700 mb-3 sm:mb-4">
-              Acum să adaugăm structura: blocurile, scările și apartamentele.
-            </p>
-            <button
-              onClick={() => handleNavigation("setup")}
-              className="bg-green-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-green-700 text-sm sm:text-base font-medium"
-            >
-              📋 Configurează Blocurile și Apartamentele
-            </button>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 mb-6 sm:mb-8">
+            <div className="text-center mb-6">
+              <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+              <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-1">
+                Configurează asociația pentru a genera tabelul de întreținere
+              </h3>
+              <p className="text-sm text-blue-500">Urmează pașii de mai jos pentru a începe</p>
+            </div>
+            <div className="space-y-3 mb-6 max-w-md mx-auto">
+              {/* Pas 1 - curent */}
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">1</div>
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">Configurează blocurile, scările și apartamentele</p>
+                  <p className="text-xs text-blue-500">Adaugă structura asociației tale</p>
+                </div>
+              </div>
+              {/* Pas 2 - viitor */}
+              <div className="flex items-start gap-3 opacity-50">
+                <div className="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">2</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Calculează întreținerea lunară</p>
+                  <p className="text-xs text-gray-400">Configurează cheltuielile și distribuie pe apartamente</p>
+                </div>
+              </div>
+              {/* Pas 3 - viitor */}
+              <div className="flex items-start gap-3 opacity-50">
+                <div className="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Publică luna și vizualizează tabelul</p>
+                  <p className="text-xs text-gray-400">Tabelul de întreținere va apărea aici</p>
+                </div>
+              </div>
+            </div>
+            {!isReadOnlyRole && (
+              <div className="text-center">
+                <button
+                  onClick={() => handleNavigation("setup")}
+                  className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+                >
+                  Configurează Apartamentele
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -230,31 +265,52 @@ const DashboardView = ({
 
               if (!isCurrentMonthPublished) {
                 return (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-                    <div className="flex items-center mb-3 sm:mb-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-full flex items-center justify-center mr-3 sm:mr-4">
-                        <span className="text-xl sm:text-2xl">📊</span>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 mb-6 sm:mb-8">
+                    <div className="text-center mb-6">
+                      <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                      <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-1">
+                        Tabel Întreținere — {currentMonth}
+                      </h3>
+                      <p className="text-sm text-blue-500">Calculează și publică întreținerea pentru a vizualiza tabelul</p>
+                    </div>
+                    <div className="space-y-3 mb-6 max-w-md mx-auto">
+                      {/* Pas 1 - completat */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-400 line-through">Configurează blocurile, scările și apartamentele</p>
+                          <p className="text-xs text-green-500">Completat</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-base sm:text-lg font-semibold text-amber-800">Tabel Întreținere - {currentMonth}</h3>
-                        <p className="text-sm sm:text-base text-amber-700">Va fi disponibil după publicarea acestei luni</p>
+                      {/* Pas 2 - curent */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">2</div>
+                        <div>
+                          <p className="text-sm font-semibold text-blue-800">Calculează și publică întreținerea lunară</p>
+                          <p className="text-xs text-blue-500">Distribuie cheltuielile și publică luna {currentMonth}</p>
+                        </div>
+                      </div>
+                      {/* Pas 3 - viitor */}
+                      <div className="flex items-start gap-3 opacity-50">
+                        <div className="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Vizualizează tabelul de întreținere</p>
+                          <p className="text-xs text-gray-400">Tabelul va apărea aici după publicare</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="bg-amber-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-                      <p className="text-sm sm:text-base text-amber-800 font-medium mb-2">📝 Pentru a vedea tabelul de întreținere pentru {currentMonth}:</p>
-                      <ol className="text-amber-700 text-xs sm:text-sm space-y-1 ml-4">
-                        <li>1. Mergi la secțiunea <strong>Întreținere</strong></li>
-                        <li>2. Calculează întreținerea pentru {currentMonth}</li>
-                        <li>3. Publică luna când este gata</li>
-                        <li>4. Tabelul va apărea aici în Dashboard</li>
-                      </ol>
-                    </div>
-                    <button
-                      onClick={() => handleNavigation("maintenance")}
-                      className="bg-amber-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-amber-700 transition-colors text-sm sm:text-base font-medium"
-                    >
-                      📊 Mergi la Întreținere
-                    </button>
+                    {!isReadOnlyRole && (
+                      <div className="text-center">
+                        <button
+                          onClick={() => handleNavigation("maintenance")}
+                          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+                        >
+                          Mergi la Calcul Întreținere
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { XCircle, Layers } from 'lucide-react';
+import { XCircle, Home } from 'lucide-react';
 
 const StairModal = ({
   isOpen,
@@ -12,7 +12,6 @@ const StairModal = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     floors: '',
     hasElevator: false
   });
@@ -23,14 +22,12 @@ const StairModal = ({
       if (mode === 'edit' && stair) {
         setFormData({
           name: stair.name || '',
-          description: stair.description || '',
           floors: stair.floors || '',
           hasElevator: stair.hasElevator || false
         });
       } else {
         setFormData({
           name: '',
-          description: '',
           floors: '',
           hasElevator: false
         });
@@ -51,7 +48,6 @@ const StairModal = ({
 
     const stairData = {
       name: formData.name.trim(),
-      description: formData.description?.trim() || null,
       floors: formData.floors ? parseInt(formData.floors) : null,
       hasElevator: formData.hasElevator
     };
@@ -77,7 +73,7 @@ const StairModal = ({
         <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 sm:p-4 flex items-center justify-between text-white flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="bg-white bg-opacity-20 rounded-lg p-1.5 sm:p-2 flex-shrink-0">
-              <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-xl font-semibold truncate">
@@ -153,20 +149,6 @@ const StairModal = ({
                   </div>
                 </div>
 
-                {/* Descrierea */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    Descriere
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none resize-none"
-                    placeholder="ex: Scară principală cu acces auto"
-                    rows={2}
-                  />
-                  <p className="text-xs text-gray-500 mt-0.5">Opțional - detalii suplimentare</p>
-                </div>
               </div>
         </div>
 
