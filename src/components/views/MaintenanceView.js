@@ -1177,6 +1177,7 @@ const MaintenanceView = ({
                       );
                     }}
                     maintenanceData={maintenanceData}
+                    isReadOnlyRole={isReadOnlyRole}
                   />
                 </div>
               </div>

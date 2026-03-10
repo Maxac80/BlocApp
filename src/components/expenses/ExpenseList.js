@@ -42,7 +42,8 @@ const ExpenseList = ({
   invoices,
   getInvoiceForExpense,
   // Props pentru ajustarea rotunjirilor
-  maintenanceData // 🆕 Date din tabelul de întreținere cu ajustare rotunjire
+  maintenanceData, // 🆕 Date din tabelul de întreținere cu ajustare rotunjire
+  isReadOnlyRole // 🔒 Președinte/Cenzor nu poate edita/șterge
 }) => {
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -1844,8 +1845,8 @@ const ExpenseList = ({
                         <ChevronDown className="w-4 h-4 text-gray-500" />
                       )}
 
-                      {/* Meniu acțiuni (trei puncte verticale) - doar dacă nu este read-only */}
-                      {!isMonthReadOnly && (onEditExpense || handleDeleteMonthlyExpense) && (
+                      {/* Meniu acțiuni (trei puncte verticale) - doar dacă nu este read-only și nu e rol read-only */}
+                      {!isMonthReadOnly && !isReadOnlyRole && (onEditExpense || handleDeleteMonthlyExpense) && (
                         <div className="relative" ref={(el) => dropdownRefs.current[expense.id] = el}>
                           <button
                             onClick={(e) => {
