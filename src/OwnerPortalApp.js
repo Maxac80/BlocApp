@@ -6,7 +6,7 @@ import OwnerLandingPage from "./components/owner/OwnerLandingPage";
 import OwnerApartmentSelector from "./components/owner/OwnerApartmentSelector";
 import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import './services/appCheck';
 
@@ -55,11 +55,11 @@ function OwnerPortalContent() {
     }
   });
 
-  // Când user-ul se loghează, caută apartamentele după email
-  // Dar nu caută dacă deja avem un apartament selectat (restaurat din localStorage)
+  // Când user-ul se loghează, caută apartamentele
+  // Prioritate: 1. owners collection (firebaseUid) → 2. sheets (email match)
   useEffect(() => {
-    if (currentUser?.email && !quickAccessApartment && !selectedApartment) {
-      findApartmentsByEmail(currentUser.email);
+    if (currentUser?.uid && !quickAccessApartment && !selectedApartment) {
+      findOwnerApartments(currentUser.uid, currentUser.email);
     }
   }, [currentUser, quickAccessApartment, selectedApartment]);
 
@@ -79,25 +79,65 @@ function OwnerPortalContent() {
     return <OwnerInviteRegistration token={inviteToken} />;
   }
 
-  // Caută apartamentele în toate asociațiile unde email-ul match-uiește
-  const findApartmentsByEmail = async (email) => {
+  /**
+   * Căutare principală: owners collection (firebaseUid) → fallback sheets (email)
+   */
+  const findOwnerApartments = async (uid, email) => {
     setLoadingApartments(true);
     try {
-      const foundApartments = [];
+      // 1. Caută în colecția owners după firebaseUid
+      const ownerApartments = await findApartmentsFromOwnersCollection(uid);
 
-      // Obține toate asociațiile
-      const associationsRef = collection(db, 'associations');
-      const associationsSnap = await getDocs(associationsRef);
+      if (ownerApartments.length > 0) {
+        setUserApartments(ownerApartments);
+        if (ownerApartments.length === 1) {
+          setSelectedApartment(ownerApartments[0]);
+          localStorage.setItem('ownerPortal_selectedApartment', JSON.stringify(ownerApartments[0]));
+        }
+        return;
+      }
 
-      // Pentru fiecare asociație, caută în sheets pentru apartamente cu acest email
-      for (const assocDoc of associationsSnap.docs) {
-        const associationData = { id: assocDoc.id, ...assocDoc.data() };
+      // 2. Fallback: caută după email în sheets
+      if (email) {
+        await findApartmentsByEmail(email);
+      }
+    } catch (error) {
+      console.error('[OwnerPortal] Error finding apartments:', error);
+    } finally {
+      setLoadingApartments(false);
+    }
+  };
 
-        // Caută în sheets - apartamentele sunt stocate acolo
-        const sheetsRef = collection(db, `associations/${assocDoc.id}/sheets`);
+  /**
+   * Caută în colecția owners după firebaseUid (proprietari invitați și activați)
+   */
+  const findApartmentsFromOwnersCollection = async (uid) => {
+    const foundApartments = [];
+    try {
+      const ownersQuery = query(
+        collection(db, 'owners'),
+        where('firebaseUid', '==', uid)
+      );
+      const ownersSnap = await getDocs(ownersQuery);
+
+      if (ownersSnap.empty) return [];
+
+      const ownerDoc = ownersSnap.docs[0];
+      const owner = { id: ownerDoc.id, ...ownerDoc.data() };
+
+      for (const assoc of owner.associations || []) {
+        // Obține date asociație
+        const associationsRef = collection(db, 'associations');
+        const assocSnap = await getDocs(associationsRef);
+        const associationDoc = assocSnap.docs.find(doc => doc.id === assoc.associationId);
+        if (!associationDoc) continue;
+
+        const associationData = { id: associationDoc.id, ...associationDoc.data() };
+
+        // Obține sheet-ul activ
+        const sheetsRef = collection(db, `associations/${assoc.associationId}/sheets`);
         const sheetsSnap = await getDocs(sheetsRef);
 
-        // Ia cel mai recent sheet (in_progress sau ultimul)
         let latestSheet = null;
         for (const sheetDoc of sheetsSnap.docs) {
           const sheetData = sheetDoc.data();
@@ -110,16 +150,78 @@ function OwnerPortalContent() {
           }
         }
 
-        // Apartamentele sunt în associationSnapshot.apartments (array)
-        const apartments = latestSheet?.associationSnapshot?.apartments || [];
+        const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
 
+        for (const apt of assoc.apartments || []) {
+          const fullAptData = sheetApartments.find(a => a.id === apt.apartmentId) || apt;
+
+          // Calculează totalStairSurface
+          const sameStairApartments = sheetApartments.filter(a =>
+            (fullAptData.stairId && a.stairId === fullAptData.stairId) ||
+            (fullAptData.stair && a.stair === fullAptData.stair)
+          );
+          const totalStairSurface = sameStairApartments.reduce(
+            (sum, a) => sum + (parseFloat(a.surface) || 0), 0
+          );
+
+          foundApartments.push({
+            apartmentId: apt.apartmentId,
+            apartmentNumber: apt.number || fullAptData.number,
+            apartmentData: { ...fullAptData, totalStairSurface },
+            associationId: assoc.associationId,
+            associationName: assoc.associationName || associationData.name,
+            associationData: associationData,
+            sheetId: latestSheet?.id
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[OwnerPortal] Error searching owners collection:', err);
+    }
+    return foundApartments;
+  };
+
+  /**
+   * Fallback: caută în sheets după email
+   */
+  const findApartmentsByEmail = async (email) => {
+    try {
+      const foundApartments = [];
+      const associationsRef = collection(db, 'associations');
+      const associationsSnap = await getDocs(associationsRef);
+
+      for (const assocDoc of associationsSnap.docs) {
+        const associationData = { id: assocDoc.id, ...assocDoc.data() };
+        const sheetsRef = collection(db, `associations/${assocDoc.id}/sheets`);
+        const sheetsSnap = await getDocs(sheetsRef);
+
+        let latestSheet = null;
+        for (const sheetDoc of sheetsSnap.docs) {
+          const sheetData = sheetDoc.data();
+          if (sheetData.status === 'in_progress') {
+            latestSheet = { id: sheetDoc.id, ...sheetData };
+            break;
+          }
+          if (!latestSheet || (sheetData.createdAt > latestSheet.createdAt)) {
+            latestSheet = { id: sheetDoc.id, ...sheetData };
+          }
+        }
+
+        const apartments = latestSheet?.associationSnapshot?.apartments || [];
         apartments.forEach(aptData => {
-          // Match pe email (case insensitive)
           if (aptData.email?.toLowerCase() === email.toLowerCase()) {
+            const sameStairApartments = apartments.filter(a =>
+              (aptData.stairId && a.stairId === aptData.stairId) ||
+              (aptData.stair && a.stair === aptData.stair)
+            );
+            const totalStairSurface = sameStairApartments.reduce(
+              (sum, a) => sum + (parseFloat(a.surface) || 0), 0
+            );
+
             foundApartments.push({
               apartmentId: aptData.id,
               apartmentNumber: aptData.number,
-              apartmentData: aptData,
+              apartmentData: { ...aptData, totalStairSurface },
               associationId: assocDoc.id,
               associationName: associationData.name,
               associationData: associationData,
@@ -130,17 +232,12 @@ function OwnerPortalContent() {
       }
 
       setUserApartments(foundApartments);
-
-      // Dacă are un singur apartament, selectează-l automat
       if (foundApartments.length === 1) {
         setSelectedApartment(foundApartments[0]);
         localStorage.setItem('ownerPortal_selectedApartment', JSON.stringify(foundApartments[0]));
       }
-
     } catch (error) {
-      console.error('Error finding apartments:', error);
-    } finally {
-      setLoadingApartments(false);
+      console.error('[OwnerPortal] Error finding apartments by email:', error);
     }
   };
 
