@@ -177,6 +177,12 @@ service cloud.firestore {
         allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
       }
 
+      // Sheets - locatarii invitați trebuie să poată citi (pentru date apartament)
+      match /sheets/{sheetId} {
+        allow read: if isAuthenticated();
+        allow write: if hasAssociationAccess(assocId) || isSuperAdmin();
+      }
+
       // Alte sub-colecții asociație
       match /{subcollection}/{docId} {
         allow read, write: if hasAssociationAccess(assocId) || isSuperAdmin();
