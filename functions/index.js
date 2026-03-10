@@ -40,26 +40,29 @@ const getAppType = (origin) => {
 // Helper: branding per aplicație
 const getEmailBranding = (appType) => ({
   logoUrl: appType === 'locatari'
-    ? 'https://locatari.blocapp.ro/logo-locatari.png'
-    : 'https://administratori.blocapp.ro/logo-admin.png',
+    ? 'https://locatari.blocapp.ro/blocapp-logo-locatari.png'
+    : 'https://administratori.blocapp.ro/blocapp-logo.png',
   accentColor: appType === 'locatari' ? '#2D5016' : '#2563EB',
   buttonColor: appType === 'locatari' ? '#2D5016' : '#2563EB',
   appName: appType === 'locatari' ? 'BlocApp Locatari' : 'BlocApp Administratori',
+  subtitle: appType === 'locatari' ? 'Portal pentru proprietari' : 'Administrare Asociații de Proprietari',
 });
 
-// Helper: generează header-ul email cu logo + accent bar
+// Helper: generează header-ul email cu logo pe alb + header colorat cu subtitlu
 const getEmailHeader = (branding) => `
-          <!-- Header: Logo pe fundal alb rezistent la dark mode -->
+          <!-- Logo pe fundal alb -->
           <tr>
-            <td style="background-color: #ffffff; padding: 32px 40px 24px; text-align: center;" bgcolor="#ffffff">
-              <div style="background-color: #ffffff; border-radius: 12px; padding: 20px; display: inline-block;">
-                <img src="${branding.logoUrl}" alt="${branding.appName}" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
-              </div>
+            <td style="background-color: #ffffff; padding: 32px 40px 16px; text-align: center;" bgcolor="#ffffff">
+              <img src="${branding.logoUrl}" alt="${branding.appName}" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
             </td>
           </tr>
-          <!-- Accent bar -->
+          <!-- Header colorat cu subtitlu -->
           <tr>
-            <td style="background-color: ${branding.accentColor}; height: 4px; font-size: 0; line-height: 0;" bgcolor="${branding.accentColor}">&nbsp;</td>
+            <td style="padding: 16px 40px; text-align: center; background-color: ${branding.accentColor};" bgcolor="${branding.accentColor}">
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                ${branding.subtitle}
+              </p>
+            </td>
           </tr>`;
 
 // ============================================
@@ -525,6 +528,17 @@ const billingEmailTemplates = {
               </p>
             </td>
           </tr>
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
@@ -568,6 +582,17 @@ const billingEmailTemplates = {
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
             </td>
           </tr>
         </table>
@@ -626,6 +651,17 @@ const billingEmailTemplates = {
               </table>
             </td>
           </tr>
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
@@ -669,6 +705,17 @@ const billingEmailTemplates = {
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
+              </p>
             </td>
           </tr>
         </table>

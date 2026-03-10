@@ -57,21 +57,26 @@ export default async function handler(req, res) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>Invitație BlocApp</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
-      <td align="center" style="padding: 40px 0;">
-        <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- Header -->
+          <!-- Logo pe fundal alb -->
           <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; background-color: #2563eb; border-radius: 12px 12px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
-                BlocApp
-              </h1>
-              <p style="margin: 10px 0 0; color: #bfdbfe; font-size: 14px;">
+            <td style="background-color: #ffffff; padding: 32px 40px 16px; text-align: center;" bgcolor="#ffffff">
+              <img src="https://locatari.blocapp.ro/blocapp-logo-locatari.png" alt="BlocApp" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
+            </td>
+          </tr>
+          <!-- Header colorat cu subtitlu -->
+          <tr>
+            <td style="padding: 16px 40px; text-align: center; background-color: #2D5016;" bgcolor="#2D5016">
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
                 Portal pentru proprietari
               </p>
             </td>
@@ -81,7 +86,7 @@ export default async function handler(req, res) {
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px;">
-                Bună${ownerName ? `, ${ownerName}` : ''}! 👋
+                Bună${ownerName ? `, ${ownerName}` : ''}!
               </h2>
 
               <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
@@ -91,12 +96,12 @@ export default async function handler(req, res) {
               <!-- Info Box -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0 0 30px;">
                 <tr>
-                  <td style="padding: 20px; background-color: #f0f9ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                    <p style="margin: 0 0 8px; color: #1e40af; font-size: 14px; font-weight: 600;">
+                  <td style="padding: 20px; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #16a34a;">
+                    <p style="margin: 0 0 8px; color: #166534; font-size: 14px; font-weight: 600;">
                       ${associationName || 'Asociația ta'}
                     </p>
                     ${apartmentNumber ? `
-                    <p style="margin: 0; color: #3b82f6; font-size: 18px; font-weight: 700;">
+                    <p style="margin: 0; color: #16a34a; font-size: 18px; font-weight: 700;">
                       Apartament ${apartmentNumber}
                     </p>
                     ` : ''}
@@ -114,20 +119,12 @@ export default async function handler(req, res) {
                 <tr>
                   <td align="center">
                     <a href="${magicLink}"
-                       style="display: inline-block; padding: 16px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
+                       style="display: inline-block; padding: 16px 40px; background-color: #2D5016; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
                       Activează Contul
                     </a>
                   </td>
                 </tr>
               </table>
-
-              <!-- Alternative Link -->
-              <p style="margin: 30px 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
-                Sau copiază acest link în browser:
-              </p>
-              <p style="margin: 8px 0 0; color: #6b7280; font-size: 12px; word-break: break-all; text-align: center; background: #f3f4f6; padding: 12px; border-radius: 6px;">
-                ${magicLink}
-              </p>
 
               <!-- Expiry Notice -->
               <p style="margin: 30px 0 0; color: #ef4444; font-size: 13px; text-align: center;">
@@ -138,13 +135,16 @@ export default async function handler(req, res) {
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 30px 40px; background-color: #f9fafb; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0 0 10px; color: #6b7280; font-size: 13px; text-align: center;">
+            <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px; font-family: Arial, Helvetica, sans-serif;">
                 Ai primit acest email pentru că administratorul asociației
                 te-a invitat în platforma BlocApp.
               </p>
-              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                © ${new Date().getFullYear()} BlocApp - Administrare Asociații de Proprietari
+              <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+                Cu drag,<br><strong>Echipa BlocApp</strong>
+              </p>
+              <p style="margin: 0; color: #9CA3AF; font-size: 12px; font-family: Arial, Helvetica, sans-serif;">
+                © ${new Date().getFullYear()} BlocApp. Toate drepturile rezervate.
               </p>
             </td>
           </tr>
