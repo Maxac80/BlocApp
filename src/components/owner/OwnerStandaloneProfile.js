@@ -102,7 +102,12 @@ export default function OwnerStandaloneProfile({ ownerProfile, selectedApartment
               <ChevronDown className={`w-4 h-4 text-gray-500 hidden sm:block transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {dropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+              <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+                {/* Header: nume + email */}
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+                  <p className="text-xs text-gray-500 truncate">{ownerProfile?.email || userEmail}</p>
+                </div>
                 {onLogout && (
                   <button
                     onClick={onLogout}
@@ -279,7 +284,7 @@ export default function OwnerStandaloneProfile({ ownerProfile, selectedApartment
                       <span className="text-emerald-700 font-bold">{apt.apartmentNumber}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Apartamentul {apt.apartmentNumber}</p>
+                      <p className="text-sm font-medium text-gray-900">Ap. {apt.apartmentNumber}</p>
                       <p className="text-xs text-gray-500">{apt.associationName}</p>
                     </div>
                   </div>

@@ -82,7 +82,7 @@ export default function OwnerProfileView() {
               <span className="text-emerald-700 font-bold">{apartmentNumber}</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Apartamentul {apartmentNumber}</p>
+              <p className="text-sm font-medium text-gray-900">Ap. {apartmentNumber}</p>
               <p className="text-xs text-gray-500">{associationName}</p>
             </div>
           </div>

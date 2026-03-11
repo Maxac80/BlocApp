@@ -150,7 +150,7 @@ export default function OwnerPaymentModal({
               <CreditCard className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold">Plată Online</h3>
-            <p className="text-emerald-100 mt-1 text-sm sm:text-base">Apartamentul {apartmentNumber}</p>
+            <p className="text-emerald-100 mt-1 text-sm sm:text-base">Ap. {apartmentNumber}</p>
           </div>
           <div className="p-4 sm:p-6">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
@@ -219,7 +219,7 @@ export default function OwnerPaymentModal({
             <CreditCard className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <h3 className="text-lg sm:text-xl font-bold">Plată Online</h3>
-          <p className="text-emerald-100 mt-1 text-sm sm:text-base">Apartamentul {apartmentNumber}</p>
+          <p className="text-emerald-100 mt-1 text-sm sm:text-base">Ap. {apartmentNumber}</p>
         </div>
 
         {/* Content - scrollabil */}

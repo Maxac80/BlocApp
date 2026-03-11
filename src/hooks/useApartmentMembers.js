@@ -76,7 +76,7 @@ export const useApartmentMembers = () => {
         const assoc = ownerData.associations?.find(a => a.associationId === associationId);
         if (assoc) {
           const apt = assoc.apartments?.find(a => a.apartmentId === apartmentId);
-          if (apt) {
+          if (apt && ownerData.status === 'active') {
             apartmentMembers.push({
               ...ownerData,
               apartmentRole: apt.role || 'proprietar'
@@ -86,6 +86,9 @@ export const useApartmentMembers = () => {
       });
 
       setMembers(apartmentMembers);
+      // Curăță invitațiile orfane: exclude emailurile care au deja un cont activ
+      const activeEmails = new Set(apartmentMembers.map(m => m.email).filter(Boolean));
+      setInvitations(prev => prev.filter(inv => !activeEmails.has(inv.email)));
     } catch (err) {
       console.error('Error loading apartment members:', err);
       setError(err.message);

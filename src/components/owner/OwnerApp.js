@@ -54,6 +54,7 @@ export default function OwnerApp({
     associationData: apartmentInfo.associationData,
     userApartments,
     hasMultipleApartments: userApartments.length > 1,
+    role: apartmentInfo.role || 'proprietar',
     onChangeApartment,
     onLogout,
     isDevMode,
@@ -136,9 +137,7 @@ export default function OwnerApp({
  */
 function OwnerContentHeader({ apartmentInfo, ownerProfile }) {
   const address = apartmentInfo.associationData?.address;
-  const ownerName = ownerProfile?.firstName && ownerProfile?.lastName
-    ? `${ownerProfile.firstName} ${ownerProfile.lastName}`
-    : apartmentInfo.apartmentData?.ownerName || apartmentInfo.apartmentData?.owner || null;
+  const ownerName = apartmentInfo.apartmentData?.ownerName || apartmentInfo.apartmentData?.owner || null;
 
   const aptData = apartmentInfo.apartmentData;
   const blockName = aptData?.block || aptData?.blockName || null;
@@ -174,7 +173,7 @@ function OwnerContentHeader({ apartmentInfo, ownerProfile }) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">
-              Apartamentul {apartmentInfo.apartmentNumber}{ownerName ? ` — ${ownerName}` : ''}
+              Ap. {apartmentInfo.apartmentNumber}{ownerName ? ` — ${ownerName}` : ''}
             </h1>
             <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
               {[apartmentInfo.associationName, locationParts.join(', ')].filter(Boolean).join(' • ')}

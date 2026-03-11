@@ -23,11 +23,19 @@ export default function OwnerSidebar({ currentView, onNavigate }) {
     associationId,
     associationName,
     hasMultipleApartments,
+    role,
     onChangeApartment,
     onLogout,
     ownerProfile,
     onNavigateStandalone
   } = useOwnerContext();
+
+  const getRoleLabel = (r) => ({
+    proprietar: 'Proprietar',
+    chirias: 'Chiriaș',
+    membru_familie: 'Membru familie',
+    altul: 'Alt rol',
+  }[r] || 'Proprietar');
 
   const { currentUser } = useAuthEnhanced();
   const { subscribeToConversations, getOwnerUnreadCount } = useOwnerMessaging(associationId, apartmentId);
@@ -199,7 +207,7 @@ export default function OwnerSidebar({ currentView, onNavigate }) {
             </div>
             <div className="ml-2 lg:ml-3 flex-1 min-w-0">
               <div className="text-xs lg:text-sm font-medium text-gray-900 truncate">{userName}</div>
-              <div className="text-xs text-gray-500 truncate">Locatar</div>
+              <div className="text-xs text-gray-500 truncate">{getRoleLabel(role)}</div>
             </div>
             <ChevronUp className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${userMenuOpen ? 'rotate-180' : ''}`} />
           </button>

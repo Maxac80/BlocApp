@@ -65,6 +65,14 @@ function OwnerPortalContent() {
     }
   });
 
+  // Încarcă profilul owner-ului (necesar după refresh când selectedApartment vine din localStorage)
+  useEffect(() => {
+    if (currentUser?.uid && !ownerProfile && !quickAccessApartment) {
+      loadOwnerProfileOnly(currentUser.uid);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.uid]);
+
   // Când user-ul se loghează, caută apartamentele
   // Prioritate: 1. owners collection (firebaseUid) → 2. sheets (email match)
   useEffect(() => {
@@ -88,6 +96,28 @@ function OwnerPortalContent() {
   if (inviteToken) {
     return <OwnerInviteRegistration token={inviteToken} />;
   }
+
+  /**
+   * Încarcă doar profilul owner-ului (fără apartamente) — folosit la refresh
+   */
+  const loadOwnerProfileOnly = async (uid) => {
+    try {
+      const ownersQuery = query(collection(db, 'owners'), where('firebaseUid', '==', uid));
+      const ownersSnap = await getDocs(ownersQuery);
+      if (!ownersSnap.empty) {
+        const owner = { id: ownersSnap.docs[0].id, ...ownersSnap.docs[0].data() };
+        setOwnerProfile({
+          id: owner.id,
+          firstName: owner.firstName || '',
+          lastName: owner.lastName || '',
+          phone: owner.phone || '',
+          email: owner.email || ''
+        });
+      }
+    } catch (err) {
+      console.error('[OwnerPortal] Error loading owner profile:', err);
+    }
+  };
 
   /**
    * Căutare principală: owners collection (firebaseUid) → fallback sheets (email)
@@ -157,17 +187,16 @@ function OwnerPortalContent() {
         const sheetsRef = collection(db, `associations/${assoc.associationId}/sheets`);
         const sheetsSnap = await getDocs(sheetsRef);
 
-        let latestSheet = null;
-        for (const sheetDoc of sheetsSnap.docs) {
-          const sheetData = sheetDoc.data();
-          if (sheetData.status === 'in_progress') {
-            latestSheet = { id: sheetDoc.id, ...sheetData };
-            break;
-          }
-          if (!latestSheet || (sheetData.createdAt > latestSheet.createdAt)) {
-            latestSheet = { id: sheetDoc.id, ...sheetData };
-          }
-        }
+        const allSheets = sheetsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const inProgressSheet = allSheets.find(s => s.status === 'in_progress');
+        const sortedPublished = allSheets
+          .filter(s => s.status === 'published')
+          .sort((a, b) => ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        const latestPublishedSheet = sortedPublished[0] || null;
+        const latestSheet = inProgressSheet || latestPublishedSheet || allSheets[0] || null;
+        // Sursa pentru maintenanceTable cu date financiare: preferă published (are totalDatorat)
+        // Identic cu logica din useOwnerData.js: activeSheet = published || current
+        const maintenanceSource = latestPublishedSheet || inProgressSheet || latestSheet;
 
         const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
         const sheetStairs = latestSheet?.associationSnapshot?.stairs || [];
@@ -221,7 +250,11 @@ function OwnerPortalContent() {
             (sum, a) => sum + (parseFloat(a.surface) || 0), 0
           );
 
-          const maintenanceEntry = latestSheet?.maintenanceTable?.find(row => row.apartmentId === apt.apartmentId);
+          const aptId = apt.apartmentId;
+          const maintenanceEntry = maintenanceSource?.maintenanceTable?.find(row =>
+            row.apartmentId === aptId ||
+            String(row.apartmentNumber) === String(apt.number || fullAptData.number)
+          );
           foundApartments.push({
             apartmentId: apt.apartmentId,
             apartmentNumber: apt.number || fullAptData.number,
@@ -232,7 +265,7 @@ function OwnerPortalContent() {
             sheetId: latestSheet?.id,
             role: apt.role || 'proprietar',
             totalDatorat: maintenanceEntry?.totalDatorat ?? null,
-            monthYear: latestSheet?.monthYear ?? null,
+            monthYear: maintenanceEntry ? (maintenanceSource?.monthYear ?? null) : (latestSheet?.monthYear ?? null),
             currentMaintenance: maintenanceEntry?.currentMaintenance ?? null,
             paymentRemaining: latestSheet?.balances?.apartmentBalances?.[apt.apartmentId]?.remaining ?? null,
           });

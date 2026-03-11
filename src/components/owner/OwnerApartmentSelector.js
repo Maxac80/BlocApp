@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DoorOpen, MapPin, Users, LogOut, ChevronRight, Ruler, ChevronDown, User, BedDouble } from 'lucide-react';
+import { DoorOpen, MapPin, Users, LogOut, Ruler, ChevronDown, User, BedDouble } from 'lucide-react';
 
 const getRoleLabel = (role) => ({
   proprietar: 'Proprietar',
@@ -56,7 +56,12 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
               <ChevronDown className={`w-4 h-4 text-gray-500 hidden sm:block transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {dropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+              <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+                {/* Header: nume + email */}
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+                  <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                </div>
                 {onNavigateStandalone && (
                   <button
                     onClick={() => { setDropdownOpen(false); onNavigateStandalone('profile'); }}
@@ -131,7 +136,7 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-                        Apartamentul {apt.apartmentNumber}
+                        Ap. {apt.apartmentNumber}
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-500 truncate">
                         {apt.associationName || 'Asociație'}
@@ -145,7 +150,7 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
 
                 {/* Owner name */}
                 {ownerName && (
-                  <p className="text-sm text-gray-700 mb-3 flex items-center gap-1.5">
+                  <p className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                     {ownerName}
                   </p>
@@ -212,13 +217,6 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
                   </div>
                 )}
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
-                  <span className="text-xs sm:text-sm text-gray-400">
-                    Selectează apartamentul
-                  </span>
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                </div>
               </div>
             );
           })}
