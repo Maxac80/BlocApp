@@ -25,7 +25,8 @@ export default function OwnerSidebar({ currentView, onNavigate }) {
     hasMultipleApartments,
     onChangeApartment,
     onLogout,
-    ownerProfile
+    ownerProfile,
+    onNavigateStandalone
   } = useOwnerContext();
 
   const { currentUser } = useAuthEnhanced();
@@ -82,7 +83,8 @@ export default function OwnerSidebar({ currentView, onNavigate }) {
   const handleDropdownAction = (action) => {
     setUserMenuOpen(false);
     if (action === 'profile') {
-      onNavigate('profile');
+      if (onNavigateStandalone) onNavigateStandalone('profile');
+      else onNavigate('profile');
     } else if (action === 'switch') {
       if (onChangeApartment) onChangeApartment();
     } else if (action === 'logout') {

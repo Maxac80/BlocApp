@@ -38,7 +38,8 @@ export default function OwnerApp({
   onChangeApartment,
   onLogout,
   isDevMode = false,
-  ownerProfile = null
+  ownerProfile = null,
+  onNavigateStandalone = null
 }) {
   const [currentView, setCurrentView] = useState('dashboard');
   const { currentUser } = useAuthEnhanced();
@@ -56,7 +57,8 @@ export default function OwnerApp({
     onChangeApartment,
     onLogout,
     isDevMode,
-    ownerProfile
+    ownerProfile,
+    onNavigateStandalone
   };
 
   const renderCurrentView = () => {

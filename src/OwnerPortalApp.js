@@ -5,6 +5,7 @@ import OwnerApp from "./components/owner/OwnerApp";
 import OwnerLandingPage from "./components/owner/OwnerLandingPage";
 import OwnerApartmentSelector from "./components/owner/OwnerApartmentSelector";
 import OwnerInviteRegistration from "./components/auth/OwnerInviteRegistration";
+import OwnerStandaloneProfile from "./components/owner/OwnerStandaloneProfile";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
@@ -37,6 +38,12 @@ function OwnerPortalContent() {
 
   // Profilul owner-ului logat (firstName, lastName, phone, email)
   const [ownerProfile, setOwnerProfile] = useState(null);
+
+  // State pentru pagini standalone (Profil)
+  const [standalonePage, setStandalonePage] = useState(null);
+
+  const handleStandaloneNavigate = (page) => setStandalonePage(page);
+  const handleStandaloneBack = () => setStandalonePage(null);
 
   // Restaurează apartamentul din localStorage la încărcare
   const [selectedApartment, setSelectedApartment] = useState(() => {
@@ -214,6 +221,7 @@ function OwnerPortalContent() {
             (sum, a) => sum + (parseFloat(a.surface) || 0), 0
           );
 
+          const maintenanceEntry = latestSheet?.maintenanceTable?.find(row => row.apartmentId === apt.apartmentId);
           foundApartments.push({
             apartmentId: apt.apartmentId,
             apartmentNumber: apt.number || fullAptData.number,
@@ -221,7 +229,12 @@ function OwnerPortalContent() {
             associationId: assoc.associationId,
             associationName: assoc.associationName || associationData.name,
             associationData: associationData,
-            sheetId: latestSheet?.id
+            sheetId: latestSheet?.id,
+            role: apt.role || 'proprietar',
+            totalDatorat: maintenanceEntry?.totalDatorat ?? null,
+            monthYear: latestSheet?.monthYear ?? null,
+            currentMaintenance: maintenanceEntry?.currentMaintenance ?? null,
+            paymentRemaining: latestSheet?.balances?.apartmentBalances?.[apt.apartmentId]?.remaining ?? null,
           });
         }
       }
@@ -304,6 +317,7 @@ function OwnerPortalContent() {
               (sum, a) => sum + (parseFloat(a.surface) || 0), 0
             );
 
+            const maintenanceEntry2 = latestSheet?.maintenanceTable?.find(row => row.apartmentId === aptData.id);
             foundApartments.push({
               apartmentId: aptData.id,
               apartmentNumber: aptData.number,
@@ -311,7 +325,12 @@ function OwnerPortalContent() {
               associationId: assocDoc.id,
               associationName: associationData.name,
               associationData: associationData,
-              sheetId: latestSheet.id
+              sheetId: latestSheet.id,
+              role: 'proprietar',
+              totalDatorat: maintenanceEntry2?.totalDatorat ?? null,
+              monthYear: latestSheet?.monthYear ?? null,
+              currentMaintenance: maintenanceEntry2?.currentMaintenance ?? null,
+              paymentRemaining: latestSheet?.balances?.apartmentBalances?.[aptData.id]?.remaining ?? null,
             });
           }
         });
@@ -379,6 +398,20 @@ function OwnerPortalContent() {
     );
   }
 
+  // Pagina standalone de profil (accesibilă din selector și din aplicație)
+  if (standalonePage === 'profile' && currentUser) {
+    return (
+      <OwnerStandaloneProfile
+        ownerProfile={ownerProfile}
+        selectedApartment={selectedApartment}
+        onBack={handleStandaloneBack}
+        onLogout={handleLogout}
+        userEmail={currentUser.email}
+        onProfileUpdated={(updated) => setOwnerProfile(prev => ({ ...prev, ...updated }))}
+      />
+    );
+  }
+
   // Dacă avem apartament selectat (din login real sau acces rapid), afișează aplicația
   // IMPORTANT: verifică și că userul e autentificat (previne erori la revenire cu sesiune expirată)
   if (selectedApartment && currentUser) {
@@ -390,6 +423,7 @@ function OwnerPortalContent() {
         onLogout={handleLogout}
         isDevMode={false}
         ownerProfile={ownerProfile}
+        onNavigateStandalone={handleStandaloneNavigate}
       />
     );
   }
@@ -440,6 +474,8 @@ function OwnerPortalContent() {
         onSelect={handleSelectApartment}
         onLogout={handleLogout}
         userEmail={currentUser.email}
+        ownerProfile={ownerProfile}
+        onNavigateStandalone={handleStandaloneNavigate}
       />
     );
   }

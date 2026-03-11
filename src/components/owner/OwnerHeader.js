@@ -13,7 +13,8 @@ export default function OwnerHeader({ onNavigate }) {
     hasMultipleApartments,
     onChangeApartment,
     onLogout,
-    ownerProfile
+    ownerProfile,
+    onNavigateStandalone
   } = useOwnerContext();
 
   const displayName = ownerProfile?.firstName && ownerProfile?.lastName
@@ -43,8 +44,9 @@ export default function OwnerHeader({ onNavigate }) {
 
   const handleAction = (action) => {
     setShowDropdown(false);
-    if (action === 'profile' && onNavigate) {
-      onNavigate('profile');
+    if (action === 'profile') {
+      if (onNavigateStandalone) onNavigateStandalone('profile');
+      else if (onNavigate) onNavigate('profile');
     } else if (action === 'switch' && onChangeApartment) {
       onChangeApartment();
     } else if (action === 'logout' && onLogout) {
