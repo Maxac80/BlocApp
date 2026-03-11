@@ -2,6 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, Share2, FileText, Wrench } from 'lucide-react';
 
+// Helper: formatează dată din YYYY-MM-DD în DD/MM/YYYY
+const formatDateRo = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return dateStr;
+};
+
 const ExpenseEntryModal = ({
   isOpen,
   onClose,
@@ -58,15 +66,68 @@ const ExpenseEntryModal = ({
 
   // Pentru facturi separate (per bloc/scară)
   const [separateInvoices, setSeparateInvoices] = useState({}); // { stairId/blockId: { invoiceNumber, date, pdf, notes } }
-  const [singleInvoice, setSingleInvoice] = useState(null); // Pentru factură unică { invoiceNumber, date, pdf, notes }
 
-  // Inline document state (înlocuiește InvoiceDetailsModal)
-  const [documentType, setDocumentType] = useState('factura');
-  const [selectedExistingInvoice, setSelectedExistingInvoice] = useState(null);
-  const [newDocNumber, setNewDocNumber] = useState('');
-  const [newDocAmount, setNewDocAmount] = useState('');
-  const [newDocDate, setNewDocDate] = useState('');
-  const [newDocDueDate, setNewDocDueDate] = useState('');
+  // 🏢 Per-supplier multi-document invoice state
+  // { [supplierId]: { documents: [{ documentType, selectedExistingInvoice, newDocNumber, newDocAmount, newDocDate, newDocDueDate, singleInvoice, distributeAmount }] } }
+  const [supplierInvoices, setSupplierInvoices] = useState({});
+
+  // Default document template
+  const defaultDoc = () => ({
+    documentType: 'factura', selectedExistingInvoice: null,
+    newDocNumber: '', newDocAmount: '', newDocDate: '', newDocDueDate: '',
+    singleInvoice: null, distributeAmount: ''
+  });
+
+  // Helper: get effective suppliers list from config (backward compat)
+  const getEffectiveSuppliers = (cfg) => {
+    if (cfg?.suppliers?.length > 0) return cfg.suppliers;
+    if (cfg?.supplierId) return [{ supplierId: cfg.supplierId, supplierName: cfg.supplierName || '' }];
+    return [];
+  };
+
+  // Helper: get documents for a supplier (always returns at least empty array)
+  const getSupplierDocs = (supplierId) => {
+    return supplierInvoices[supplierId]?.documents || [];
+  };
+
+  // Helper: update a specific document within a supplier
+  const updateSupplierDocument = (supplierId, docIndex, updates) => {
+    setSupplierInvoices(prev => {
+      const supplier = prev[supplierId] || { documents: [defaultDoc()] };
+      const docs = [...supplier.documents];
+      docs[docIndex] = { ...(docs[docIndex] || defaultDoc()), ...updates };
+      return { ...prev, [supplierId]: { documents: docs } };
+    });
+  };
+
+  // Helper: add a new document to a supplier
+  const addDocumentToSupplier = (supplierId) => {
+    setSupplierInvoices(prev => {
+      const supplier = prev[supplierId] || { documents: [defaultDoc()] };
+      return { ...prev, [supplierId]: { documents: [...supplier.documents, defaultDoc()] } };
+    });
+  };
+
+  // Helper: remove a document from a supplier (keep minimum 1)
+  const removeDocumentFromSupplier = (supplierId, docIndex) => {
+    setSupplierInvoices(prev => {
+      const supplier = prev[supplierId] || { documents: [defaultDoc()] };
+      if (supplier.documents.length <= 1) return prev;
+      const docs = supplier.documents.filter((_, i) => i !== docIndex);
+      return { ...prev, [supplierId]: { documents: docs } };
+    });
+  };
+
+  // Helper: check if we're in multi-document mode (more than 1 supplier or more than 1 document anywhere)
+  const isMultiDocumentMode = () => {
+    const suppliers = getEffectiveSuppliers(config);
+    if (suppliers.length > 1) return true;
+    for (const s of suppliers) {
+      const docs = getSupplierDocs(s.supplierId);
+      if (docs.length > 1) return true;
+    }
+    return false;
+  };
 
   // Reset când se deschide/închide modalul
   useEffect(() => {
@@ -74,6 +135,24 @@ const ExpenseEntryModal = ({
       resetForm();
     }
   }, [isOpen]);
+
+  // 🏢 Auto-sum distribute amounts from all documents across all suppliers
+  useEffect(() => {
+    if (!selectedExpense || !config) return;
+    if (!isMultiDocumentMode()) return;
+
+    const total = getEffectiveSuppliers(config).reduce((sum, s) => {
+      const docs = getSupplierDocs(s.supplierId);
+      return sum + docs.reduce((dSum, d) => dSum + (parseFloat(d.distributeAmount) || 0), 0);
+    }, 0);
+
+    const totalStr = total > 0 ? total.toString() : '';
+    if (config.distributionType === 'consumption') {
+      setBillAmount(totalStr);
+    } else {
+      setTotalAmount(totalStr);
+    }
+  }, [supplierInvoices, selectedExpense]);
 
   // Sincronizează invoiceMode cu config când se selectează cheltuială
   useEffect(() => {
@@ -119,29 +198,69 @@ const ExpenseEntryModal = ({
       }
 
       // Populează invoice data din editingExpense (salvate în sheet)
-      if (editingExpense.invoiceData) {
-        console.log('📋 Loading invoice data from editingExpense:', editingExpense.invoiceData);
+      if (editingExpense.invoicesData && editingExpense.invoicesData.length > 0) {
+        // Multi-document invoices — group by supplierId
+        console.log('📋 Loading multi invoices from editingExpense:', editingExpense.invoicesData);
+        const newSupplierInvoices = {};
+        for (const invData of editingExpense.invoicesData) {
+          const invAmount = invData.invoiceAmount?.toString() || invData.totalInvoiceAmount?.toString() || '';
+          const docEntry = {
+            documentType: invData.documentType || 'factura',
+            selectedExistingInvoice: null,
+            newDocNumber: invData.invoiceNumber || '',
+            newDocAmount: invAmount,
+            newDocDate: invData.invoiceDate || '',
+            newDocDueDate: invData.dueDate || '',
+            distributeAmount: invData.distributeAmount?.toString() || invAmount,
+            singleInvoice: {
+              invoiceNumber: invData.invoiceNumber || '',
+              invoiceAmount: invAmount,
+              invoiceDate: invData.invoiceDate || '',
+              dueDate: invData.dueDate || '',
+              notes: invData.notes || '',
+              pdfFile: null,
+              isExisting: !!invData.existingInvoiceId,
+              existingInvoiceId: invData.existingInvoiceId || null
+            }
+          };
+          if (!newSupplierInvoices[invData.supplierId]) {
+            newSupplierInvoices[invData.supplierId] = { documents: [] };
+          }
+          newSupplierInvoices[invData.supplierId].documents.push(docEntry);
+        }
+        setSupplierInvoices(newSupplierInvoices);
+      } else if (editingExpense.invoiceData) {
+        // Single invoice — backward compat: wrap in documents array
+        console.log('📋 Loading single invoice from editingExpense:', editingExpense.invoiceData);
         const invData = editingExpense.invoiceData;
         const invAmount = invData.invoiceAmount?.toString() || invData.totalInvoiceAmount?.toString() || '';
-
-        // Populează câmpurile inline
-        setDocumentType(invData.documentType || 'factura');
-        setNewDocNumber(invData.invoiceNumber || '');
-        setNewDocAmount(invAmount);
-        setNewDocDate(invData.invoiceDate || '');
-        setNewDocDueDate(invData.dueDate || '');
-
-        // Populează și singleInvoice pentru handleSubmit
-        setSingleInvoice({
-          invoiceNumber: invData.invoiceNumber || '',
-          invoiceAmount: invAmount,
-          invoiceDate: invData.invoiceDate || '',
-          dueDate: invData.dueDate || '',
-          notes: invData.notes || '',
-          pdfFile: null,
-          isExisting: !!invData.existingInvoiceId,
-          existingInvoiceId: invData.existingInvoiceId || null
-        });
+        const suppliers = getEffectiveSuppliers(expenseConfig);
+        const targetSupplierId = invData.supplierId || suppliers[0]?.supplierId;
+        if (targetSupplierId) {
+          setSupplierInvoices({
+            [targetSupplierId]: {
+              documents: [{
+                documentType: invData.documentType || 'factura',
+                selectedExistingInvoice: null,
+                newDocNumber: invData.invoiceNumber || '',
+                newDocAmount: invAmount,
+                newDocDate: invData.invoiceDate || '',
+                newDocDueDate: invData.dueDate || '',
+                distributeAmount: invAmount,
+                singleInvoice: {
+                  invoiceNumber: invData.invoiceNumber || '',
+                  invoiceAmount: invAmount,
+                  invoiceDate: invData.invoiceDate || '',
+                  dueDate: invData.dueDate || '',
+                  notes: invData.notes || '',
+                  pdfFile: null,
+                  isExisting: !!invData.existingInvoiceId,
+                  existingInvoiceId: invData.existingInvoiceId || null
+                }
+              }]
+            }
+          });
+        }
       }
 
       if (editingExpense.separateInvoicesData) {
@@ -159,13 +278,7 @@ const ExpenseEntryModal = ({
     setBillAmount('');
     setInvoiceMode('single');
     setSeparateInvoices({});
-    setSingleInvoice(null);
-    setDocumentType('factura');
-    setSelectedExistingInvoice(null);
-    setNewDocNumber('');
-    setNewDocAmount('');
-    setNewDocDate('');
-    setNewDocDueDate('');
+    setSupplierInvoices({});
   };
 
 
@@ -187,127 +300,176 @@ const ExpenseEntryModal = ({
     { value: 'altul', label: 'Altul' }
   ];
 
-  // Obține lista de documente parțial distribuite
-  // Pentru facturi: filtrează pe furnizor/expenseType; pentru alte tipuri: arată toate de acel tip
-  const availableInvoices = selectedExpense && getPartiallyDistributedInvoices
-    ? (getPartiallyDistributedInvoices(
-        documentType === 'factura' ? selectedExpense : null,
-        documentType
-      ) || [])
-    : [];
+  // 🏢 Per-supplier per-document: get available invoices for a specific supplier/doc
+  // Excludes invoices already selected in other documents of the same supplier
+  const getAvailableInvoicesForSupplier = (supplierId, docIndex) => {
+    if (!selectedExpense || !getPartiallyDistributedInvoices) return [];
+    const docs = getSupplierDocs(supplierId);
+    const doc = docs[docIndex] || {};
+    const docType = doc.documentType || 'factura';
+    const all = getPartiallyDistributedInvoices(
+      docType === 'factura' ? selectedExpense : null,
+      docType,
+      supplierId
+    ) || [];
+    // Exclude invoices already selected in OTHER documents of this supplier
+    const selectedIds = docs
+      .filter((_, i) => i !== docIndex)
+      .map(d => d.selectedExistingInvoice?.id)
+      .filter(Boolean);
+    return all.filter(inv => !selectedIds.includes(inv.id));
+  };
 
-  // Handler pentru selectarea unei facturi existente
-  const handleSelectExistingInvoice = (invoiceId) => {
+  // 🏢 Handler: select existing invoice for a supplier's document
+  const handleSelectExistingInvoice = (supplierId, docIndex, invoiceId) => {
     if (!invoiceId) {
-      setSelectedExistingInvoice(null);
+      updateSupplierDocument(supplierId, docIndex, { selectedExistingInvoice: null, distributeAmount: '', singleInvoice: null });
       return;
     }
-    const invoice = availableInvoices.find(inv => inv.id === invoiceId);
+    const available = getAvailableInvoicesForSupplier(supplierId, docIndex);
+    const invoice = available.find(inv => inv.id === invoiceId);
     if (invoice) {
-      setSelectedExistingInvoice(invoice);
-      // Auto-fill suma din factură
       const remaining = invoice.remainingAmount || invoice.totalInvoiceAmount || 0;
-      // Completează suma în câmpul corespunzător
-      if (config?.distributionType === 'consumption') {
-        setBillAmount(remaining.toString());
-      } else {
-        setTotalAmount(remaining.toString());
+      // Auto-fill total doar dacă e un singur furnizor + un singur document
+      if (!isMultiDocumentMode()) {
+        if (config?.distributionType === 'consumption') {
+          setBillAmount(remaining.toString());
+        } else {
+          setTotalAmount(remaining.toString());
+        }
       }
-      // Populează singleInvoice pentru compatibilitate cu handleSubmit
-      setSingleInvoice({
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceAmount: (invoice.totalInvoiceAmount || 0).toString(),
-        invoiceDate: invoice.invoiceDate || '',
-        dueDate: invoice.dueDate || '',
-        notes: invoice.notes || '',
-        pdfFile: null,
-        isExisting: true,
-        existingInvoiceId: invoice.id
+      updateSupplierDocument(supplierId, docIndex, {
+        selectedExistingInvoice: invoice,
+        newDocNumber: '',
+        newDocAmount: '',
+        newDocDate: '',
+        newDocDueDate: '',
+        distributeAmount: remaining.toString(),
+        singleInvoice: {
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceAmount: (invoice.totalInvoiceAmount || 0).toString(),
+          invoiceDate: invoice.invoiceDate || '',
+          dueDate: invoice.dueDate || '',
+          notes: invoice.notes || '',
+          pdfFile: null,
+          isExisting: true,
+          existingInvoiceId: invoice.id
+        }
       });
-      // Resetează câmpurile de document nou
-      setNewDocNumber('');
-      setNewDocAmount('');
-      setNewDocDate('');
     }
   };
 
-  // Handler pentru completarea unui document nou inline
-  const handleNewDocAmountChange = (value) => {
-    setNewDocAmount(value);
-    // Auto-fill suma de distribuit
+  // 🏢 Handler: new document amount change
+  const handleDocAmountChange = (supplierId, docIndex, value) => {
+    const docs = getSupplierDocs(supplierId);
+    const doc = docs[docIndex] || {};
+    const updates = { newDocAmount: value, selectedExistingInvoice: null };
     const numValue = parseFloat(value) || 0;
     if (numValue > 0) {
+      updates.singleInvoice = {
+        invoiceNumber: doc.newDocNumber || '',
+        invoiceAmount: value,
+        invoiceDate: doc.newDocDate || '',
+        dueDate: doc.newDocDueDate || '',
+        notes: '', pdfFile: null, isExisting: false
+      };
+      // Auto-fill distributeAmount doar dacă e gol sau egal cu suma anterioară (nu suprascrie editări manuale)
+      const currentDistribute = doc.distributeAmount || '';
+      const previousDocAmount = doc.newDocAmount || '';
+      if (!currentDistribute || currentDistribute === previousDocAmount) {
+        updates.distributeAmount = value;
+      }
+    }
+    updateSupplierDocument(supplierId, docIndex, updates);
+    // Auto-fill total doar dacă e un singur furnizor + un singur document
+    if (!isMultiDocumentMode() && numValue > 0) {
       if (config?.distributionType === 'consumption') {
         setBillAmount(value);
       } else {
         setTotalAmount(value);
       }
-      // Resetează selecția de document existent
-      setSelectedExistingInvoice(null);
-      // Populează singleInvoice cu datele noi
-      setSingleInvoice({
-        invoiceNumber: newDocNumber,
-        invoiceAmount: value,
-        invoiceDate: newDocDate,
-        dueDate: newDocDueDate,
-        notes: '',
-        pdfFile: null,
-        isExisting: false
-      });
     }
   };
 
-  // Sync newDocNumber/newDocDate cu singleInvoice
-  const handleNewDocNumberChange = (value) => {
-    setNewDocNumber(value);
-    if (newDocAmount) {
-      setSingleInvoice(prev => prev
-        ? { ...prev, invoiceNumber: value }
-        : { invoiceNumber: value, invoiceAmount: newDocAmount, invoiceDate: newDocDate, dueDate: newDocDueDate, notes: '', pdfFile: null, isExisting: false }
-      );
+  // 🏢 Handler: new document number change
+  const handleDocNumberChange = (supplierId, docIndex, value) => {
+    const docs = getSupplierDocs(supplierId);
+    const doc = docs[docIndex] || {};
+    const updates = { newDocNumber: value };
+    if (doc.newDocAmount) {
+      updates.singleInvoice = doc.singleInvoice
+        ? { ...doc.singleInvoice, invoiceNumber: value }
+        : { invoiceNumber: value, invoiceAmount: doc.newDocAmount, invoiceDate: doc.newDocDate || '', dueDate: doc.newDocDueDate || '', notes: '', pdfFile: null, isExisting: false };
     }
-    if (value) setSelectedExistingInvoice(null);
+    if (value) updates.selectedExistingInvoice = null;
+    updateSupplierDocument(supplierId, docIndex, updates);
   };
 
-  const handleNewDocDateChange = (value) => {
-    setNewDocDate(value);
-    if (newDocAmount) {
-      setSingleInvoice(prev => prev
-        ? { ...prev, invoiceDate: value }
-        : { invoiceNumber: newDocNumber, invoiceAmount: newDocAmount, invoiceDate: value, dueDate: newDocDueDate, notes: '', pdfFile: null, isExisting: false }
-      );
+  // 🏢 Handler: document date change
+  const handleDocDateChange = (supplierId, docIndex, value) => {
+    const docs = getSupplierDocs(supplierId);
+    const doc = docs[docIndex] || {};
+    const updates = { newDocDate: value };
+    // Dacă data documentului depășește scadența, resetăm scadența
+    if (doc.newDocDueDate && value && value > doc.newDocDueDate) {
+      updates.newDocDueDate = '';
     }
+    if (doc.newDocAmount) {
+      updates.singleInvoice = doc.singleInvoice
+        ? { ...doc.singleInvoice, invoiceDate: value, ...(updates.newDocDueDate === '' ? { dueDate: '' } : {}) }
+        : { invoiceNumber: doc.newDocNumber || '', invoiceAmount: doc.newDocAmount, invoiceDate: value, dueDate: updates.newDocDueDate === '' ? '' : (doc.newDocDueDate || ''), notes: '', pdfFile: null, isExisting: false };
+    }
+    updateSupplierDocument(supplierId, docIndex, updates);
   };
 
-  const handleNewDocDueDateChange = (value) => {
-    setNewDocDueDate(value);
-    if (newDocAmount) {
-      setSingleInvoice(prev => prev
-        ? { ...prev, dueDate: value }
-        : { invoiceNumber: newDocNumber, invoiceAmount: newDocAmount, invoiceDate: newDocDate, dueDate: value, notes: '', pdfFile: null, isExisting: false }
-      );
+  // 🏢 Handler: due date change
+  const handleDocDueDateChange = (supplierId, docIndex, value) => {
+    const docs = getSupplierDocs(supplierId);
+    const doc = docs[docIndex] || {};
+    // Scadența nu poate fi mai mică decât data documentului
+    if (doc.newDocDate && value && value < doc.newDocDate) {
+      return;
     }
+    const updates = { newDocDueDate: value };
+    if (doc.newDocAmount) {
+      updates.singleInvoice = doc.singleInvoice
+        ? { ...doc.singleInvoice, dueDate: value }
+        : { invoiceNumber: doc.newDocNumber || '', invoiceAmount: doc.newDocAmount, invoiceDate: doc.newDocDate || '', dueDate: value, notes: '', pdfFile: null, isExisting: false };
+    }
+    updateSupplierDocument(supplierId, docIndex, updates);
   };
 
-  // Verifică dacă avem un document valid (pentru butonul Distribuie)
-  const hasValidDocument = !!(selectedExistingInvoice || (newDocNumber && newDocAmount));
-
-  // Render secțiunea inline de document justificativ
-  const renderInlineDocument = () => {
-    if (!config?.supplierId) return null;
+  // 🏢 Render a single document card
+  const renderDocumentCard = (supplier, doc, docIndex, totalDocs) => {
+    const sid = supplier.supplierId;
+    const docType = doc.documentType || 'factura';
+    const selExisting = doc.selectedExistingInvoice;
+    const available = getAvailableInvoicesForSupplier(sid, docIndex);
+    const multiDoc = isMultiDocumentMode();
 
     return (
-      <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-3">
-        <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <FileText className="w-4 h-4" />
-          Document justificativ *
+      <div key={docIndex} className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            {totalDocs > 1 ? `Document ${docIndex + 1}` : 'Document justificativ *'}
+          </div>
+          {totalDocs > 1 && (
+            <button
+              onClick={() => removeDocumentFromSupplier(sid, docIndex)}
+              className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              title="Șterge document"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Tip document */}
         <div>
           <select
-            value={documentType}
-            onChange={(e) => { setDocumentType(e.target.value); setSelectedExistingInvoice(null); }}
+            value={docType}
+            onChange={(e) => updateSupplierDocument(sid, docIndex, { documentType: e.target.value, selectedExistingInvoice: null, newDocNumber: '', newDocAmount: '', newDocDate: '', newDocDueDate: '', distributeAmount: '', singleInvoice: null })}
             className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
           >
             {documentTypes.map(dt => (
@@ -317,17 +479,17 @@ const ExpenseEntryModal = ({
         </div>
 
         {/* Selectează document existent */}
-        {availableInvoices.length > 0 && (
+        {available.length > 0 && (
           <div>
             <select
-              value={selectedExistingInvoice?.id || ''}
-              onChange={(e) => handleSelectExistingInvoice(e.target.value)}
+              value={selExisting?.id || ''}
+              onChange={(e) => handleSelectExistingInvoice(sid, docIndex, e.target.value)}
               className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
             >
               <option value="">Selectează document existent...</option>
-              {availableInvoices.map(inv => (
-                <option key={inv.id} value={inv.id}>
-                  {inv.invoiceNumber} — {documentType !== 'factura' ? (inv.expenseName || 'Fără cheltuială') : (inv.supplierName || 'Fără furnizor')} — Rămas: {(inv.remainingAmount || 0).toFixed(2)} RON
+              {available.map(avInv => (
+                <option key={avInv.id} value={avInv.id}>
+                  {avInv.invoiceNumber} — {docType !== 'factura' ? (avInv.expenseName || 'Fără cheltuială') : (avInv.supplierName || 'Fără furnizor')} — Total: {(avInv.totalInvoiceAmount || avInv.totalAmount || avInv.amount || 0).toFixed(2)} RON — Rămas: {(avInv.remainingAmount || 0).toFixed(2)} RON
                 </option>
               ))}
             </select>
@@ -335,7 +497,7 @@ const ExpenseEntryModal = ({
         )}
 
         {/* Separator */}
-        {availableInvoices.length > 0 && !selectedExistingInvoice && (
+        {available.length > 0 && !selExisting && (
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <div className="flex-1 border-t border-gray-300"></div>
             <span>sau document nou</span>
@@ -343,17 +505,16 @@ const ExpenseEntryModal = ({
           </div>
         )}
 
-        {/* Câmpuri document nou (ascunse dacă e selectat document existent) */}
-        {!selectedExistingInvoice && (
+        {/* Câmpuri document nou */}
+        {!selExisting && (
           <div className="space-y-2">
-            {/* Rând 1: Nr. document + Sumă document */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Nr. document *</label>
                 <input
                   type="text"
-                  value={newDocNumber}
-                  onChange={(e) => handleNewDocNumberChange(e.target.value)}
+                  value={doc.newDocNumber || ''}
+                  onChange={(e) => handleDocNumberChange(sid, docIndex, e.target.value)}
                   placeholder="FAC-001"
                   className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
@@ -363,21 +524,20 @@ const ExpenseEntryModal = ({
                 <input
                   type="text"
                   inputMode="decimal"
-                  value={newDocAmount}
-                  onChange={(e) => handleNewDocAmountChange(e.target.value)}
+                  value={doc.newDocAmount || ''}
+                  onChange={(e) => handleDocAmountChange(sid, docIndex, e.target.value)}
                   placeholder="0.00"
                   className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
             </div>
-            {/* Rând 2: Data factură + Data scadență */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Data document</label>
                 <input
                   type="date"
-                  value={newDocDate}
-                  onChange={(e) => handleNewDocDateChange(e.target.value)}
+                  value={doc.newDocDate || ''}
+                  onChange={(e) => handleDocDateChange(sid, docIndex, e.target.value)}
                   className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
@@ -385,8 +545,8 @@ const ExpenseEntryModal = ({
                 <label className="block text-xs text-gray-600 mb-1">Data scadență</label>
                 <input
                   type="date"
-                  value={newDocDueDate}
-                  onChange={(e) => handleNewDocDueDateChange(e.target.value)}
+                  value={doc.newDocDueDate || ''}
+                  onChange={(e) => handleDocDueDateChange(sid, docIndex, e.target.value)}
                   className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
@@ -394,22 +554,106 @@ const ExpenseEntryModal = ({
           </div>
         )}
 
-        {/* Info document selectat */}
-        {selectedExistingInvoice && (
-          <div className="text-xs text-green-700 bg-green-50 p-2 rounded-lg">
-            ✓ Document selectat: #{selectedExistingInvoice.invoiceNumber} — Rămas: {(selectedExistingInvoice.remainingAmount || 0).toFixed(2)} RON
+        {/* Sumă de distribuit per document nou (doar în multi-document mode) */}
+        {!selExisting && multiDoc && (
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Sumă de distribuit (RON) *</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={doc.distributeAmount || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                const maxAmount = parseFloat(doc.newDocAmount) || 0;
+                if (maxAmount > 0 && parseFloat(val) > maxAmount) {
+                  updateSupplierDocument(sid, docIndex, { distributeAmount: maxAmount.toString() });
+                } else {
+                  updateSupplierDocument(sid, docIndex, { distributeAmount: val });
+                }
+              }}
+              placeholder="0.00"
+              className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
+            />
           </div>
+        )}
+
+        {/* Info document selectat + sumă distribuit */}
+        {selExisting && (
+          <>
+            <div className="text-xs text-green-700 bg-green-50 p-2 rounded-lg space-y-0.5">
+              <div>✓ #{selExisting.invoiceNumber} — Total: {(selExisting.totalInvoiceAmount || selExisting.totalAmount || selExisting.amount || 0).toFixed(2)} RON — Rămas: {(selExisting.remainingAmount || 0).toFixed(2)} RON</div>
+              {(selExisting.invoiceDate || selExisting.dueDate) && (
+                <div className="text-green-600">
+                  {selExisting.invoiceDate && `Data: ${formatDateRo(selExisting.invoiceDate)}`}
+                  {selExisting.invoiceDate && selExisting.dueDate && ' — '}
+                  {selExisting.dueDate && `Scadență: ${formatDateRo(selExisting.dueDate)}`}
+                </div>
+              )}
+            </div>
+            {multiDoc && (
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Sumă de distribuit (RON) *</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={doc.distributeAmount || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const maxAmount = selExisting.remainingAmount || 0;
+                    if (maxAmount > 0 && parseFloat(val) > maxAmount) {
+                      updateSupplierDocument(sid, docIndex, { distributeAmount: maxAmount.toString() });
+                    } else {
+                      updateSupplierDocument(sid, docIndex, { distributeAmount: val });
+                    }
+                  }}
+                  placeholder="0.00"
+                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     );
+  };
+
+  // Render all supplier document sections
+  const renderInlineDocuments = () => {
+    const suppliers = getEffectiveSuppliers(config);
+    if (suppliers.length === 0) return null;
+
+    return suppliers.map(supplier => {
+      const sid = supplier.supplierId;
+      const docs = getSupplierDocs(sid);
+      // Ensure at least one document exists for rendering
+      const docsToRender = docs.length > 0 ? docs : [defaultDoc()];
+
+      return (
+        <div key={sid}>
+          {suppliers.length >= 1 && supplier.supplierName && (
+            <div className={`text-sm font-medium flex items-center gap-1.5 mt-2 mb-1 ${suppliers.length > 1 ? 'text-gray-600' : 'text-gray-500'}`}>
+              <span>🏢</span> {supplier.supplierName}
+            </div>
+          )}
+          <div className="space-y-3">
+            {docsToRender.map((doc, idx) => renderDocumentCard(supplier, doc, idx, docsToRender.length))}
+          </div>
+          <button
+            onClick={() => addDocumentToSupplier(sid)}
+            className="mt-1 px-3 py-1.5 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors flex items-center gap-1"
+          >
+            <span>+</span> Adaugă document
+          </button>
+        </div>
+      );
+    });
   };
 
   const handleSubmit = async () => {
     console.log('🚀 handleSubmit START', {
       selectedExpense,
       editingExpense: !!editingExpense,
-      hasSingleInvoice: !!(singleInvoice?.invoiceNumber),
-      singleInvoice
+      supplierInvoices
     });
 
     if (!selectedExpense) {
@@ -533,60 +777,105 @@ const ExpenseEntryModal = ({
       }
     }
 
-    // Adaugă invoice data dacă există
-    // Fallback: dacă singleInvoice nu e setat dar avem date inline, creează-l
-    const effectiveInvoice = singleInvoice || (newDocNumber && newDocAmount ? {
-      invoiceNumber: newDocNumber,
-      invoiceAmount: newDocAmount,
-      invoiceDate: newDocDate,
-      dueDate: newDocDueDate,
-      notes: '',
-      pdfFile: null,
-      isExisting: false
-    } : null);
+    // 🏢 Build invoices data from all suppliers
+    let currentDist;
+    if (config.receptionMode === 'per_block' || config.receptionMode === 'per_stair') {
+      currentDist = Object.values(amounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toString();
+    } else {
+      currentDist = config.distributionType === 'consumption' ? billAmount : totalAmount;
+    }
 
-    console.log('🧾 handleSubmit - invoice check:', {
-      singleInvoice: !!singleInvoice,
-      effectiveInvoice: !!effectiveInvoice,
-      newDocNumber, newDocAmount, documentType,
-      selectedExistingInvoice: selectedExistingInvoice?.id
-    });
-    if (effectiveInvoice && effectiveInvoice.invoiceNumber && effectiveInvoice.invoiceNumber.trim()) {
-      // Folosim singleInvoice pentru toate cazurile (total, per_block, per_stair cu factură unică)
-      let currentDist;
+    const suppliers = getEffectiveSuppliers(config);
+    const invoicesDataArray = [];
+    const multiDoc = isMultiDocumentMode();
 
-      // Calculează suma curentă bazată pe receptionMode și distributionType
-      if (config.receptionMode === 'per_block' || config.receptionMode === 'per_stair') {
-        // Pentru per_block/per_stair, suma totală = suma tuturor câmpurilor
-        currentDist = Object.values(amounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toString();
-      } else {
-        // Pentru total mode
-        if (config.distributionType === 'consumption') {
-          currentDist = billAmount;
-        } else {
-          currentDist = totalAmount;
+    // Validare documente parțial completate
+    for (const supplier of suppliers) {
+      const docs = getSupplierDocs(supplier.supplierId);
+      const sName = supplier.supplierName || 'furnizor necunoscut';
+      for (let i = 0; i < docs.length; i++) {
+        const doc = docs[i];
+        const hasNumber = doc.newDocNumber && doc.newDocNumber.trim();
+        const hasAmount = doc.newDocAmount && parseFloat(doc.newDocAmount) > 0;
+        const hasExisting = !!doc.selectedExistingInvoice;
+        const isEmpty = !hasNumber && !hasAmount && !hasExisting;
+        if (isEmpty) continue;
+        if (hasExisting) {
+          // Validare distributeAmount pentru document existent în multi-doc mode
+          if (multiDoc) {
+            const distAmt = parseFloat(doc.distributeAmount) || 0;
+            if (distAmt <= 0) {
+              alert(`Documentul "${doc.selectedExistingInvoice?.invoiceNumber || `Document ${i + 1}`}" de la ${sName} nu are sumă de distribuit completată.`);
+              return;
+            }
+          }
+          continue;
+        }
+        if (hasNumber && !hasAmount) {
+          alert(`Documentul "${doc.newDocNumber}" de la ${sName} nu are sumă completată.`);
+          return;
+        }
+        if (!hasNumber && hasAmount) {
+          alert(`Un document de la ${sName} are sumă (${doc.newDocAmount} RON) dar nu are număr de document.`);
+          return;
+        }
+        // Document complet (hasNumber && hasAmount) - validare distributeAmount în multi-doc
+        if (multiDoc) {
+          const distAmt = parseFloat(doc.distributeAmount) || 0;
+          if (distAmt <= 0) {
+            alert(`Documentul "${doc.newDocNumber}" de la ${sName} nu are sumă de distribuit completată.`);
+            return;
+          }
         }
       }
-
-      console.log('🔍 ExpenseEntryModal - handleSubmit - Building invoiceData from effectiveInvoice:', effectiveInvoice);
-
-      newExpense.invoiceData = {
-        invoiceNumber: effectiveInvoice.invoiceNumber,
-        invoiceAmount: effectiveInvoice.invoiceAmount,
-        invoiceDate: effectiveInvoice.invoiceDate,
-        dueDate: newDocDueDate || effectiveInvoice.dueDate || '',
-        notes: effectiveInvoice.notes || '',
-        documentType: documentType,
-        currentDistribution: currentDist,
-        totalInvoiceAmount: effectiveInvoice.invoiceAmount || currentDist,
-        isPartialDistribution: false,
-        isExistingInvoice: effectiveInvoice.isExisting || false,
-        existingInvoiceId: effectiveInvoice.existingInvoiceId || null
-      };
-      newExpense.pdfFile = effectiveInvoice.pdfFile || null;
-
-      console.log('🔍 ExpenseEntryModal - handleSubmit - newExpense.invoiceData:', newExpense.invoiceData);
     }
+
+    for (const supplier of suppliers) {
+      const docs = getSupplierDocs(supplier.supplierId);
+      const docsToProcess = docs.length > 0 ? docs : [defaultDoc()];
+
+      for (const doc of docsToProcess) {
+        const effectiveInvoice = doc.singleInvoice || (doc.newDocNumber && doc.newDocAmount ? {
+          invoiceNumber: doc.newDocNumber,
+          invoiceAmount: doc.newDocAmount,
+          invoiceDate: doc.newDocDate || '',
+          dueDate: doc.newDocDueDate || '',
+          notes: '', pdfFile: null, isExisting: false
+        } : null);
+
+        if (effectiveInvoice && effectiveInvoice.invoiceNumber && effectiveInvoice.invoiceNumber.trim()) {
+          const docDist = multiDoc ? (doc.distributeAmount || '0') : currentDist;
+          invoicesDataArray.push({
+            supplierId: supplier.supplierId,
+            supplierName: supplier.supplierName,
+            invoiceNumber: effectiveInvoice.invoiceNumber,
+            invoiceAmount: effectiveInvoice.invoiceAmount,
+            invoiceDate: effectiveInvoice.invoiceDate,
+            dueDate: doc.newDocDueDate || effectiveInvoice.dueDate || '',
+            notes: effectiveInvoice.notes || '',
+            documentType: doc.documentType || 'factura',
+            currentDistribution: docDist,
+            distributeAmount: docDist,
+            totalInvoiceAmount: effectiveInvoice.invoiceAmount || docDist,
+            isPartialDistribution: false,
+            isExistingInvoice: effectiveInvoice.isExisting || false,
+            existingInvoiceId: effectiveInvoice.existingInvoiceId || null
+          });
+        }
+      }
+    }
+
+    // Backward compat: set invoiceData to first invoice
+    if (invoicesDataArray.length > 0) {
+      newExpense.invoiceData = invoicesDataArray[0];
+      newExpense.pdfFile = null;
+    }
+    // Multi-supplier: set invoicesData array
+    if (invoicesDataArray.length > 1) {
+      newExpense.invoicesData = invoicesDataArray;
+    }
+
+    console.log('🧾 handleSubmit - invoices:', { count: invoicesDataArray.length, invoicesDataArray });
 
     // Adaugă facturi separate per bloc/scară dacă există
     if (Object.keys(separateInvoices).length > 0) {
@@ -720,25 +1009,28 @@ const ExpenseEntryModal = ({
                         config.distributionType === 'cotaParte' ? 'Pe cotă parte indiviză' : config.distributionType
                       }
                     </div>
-                    {config.supplierName ? (
-                      <div className="text-xs text-blue-700">
-                        🏢 Furnizor: {config.supplierName}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-orange-700 font-medium">
-                        ⚠️ Furnizor neconfigurat - apasă Configurare cheltuială
-                      </div>
-                    )}
+                    {(() => {
+                      const suppliers = getEffectiveSuppliers(config);
+                      return suppliers.length > 0 ? (
+                        <div className="text-xs text-blue-700">
+                          🏢 Furnizor{suppliers.length > 1 ? 'i' : ''}: {suppliers.map(s => s.supplierName).join(', ')}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-orange-700 font-medium">
+                          ⚠️ Furnizor neconfigurat - apasă Configurare cheltuială
+                        </div>
+                      );
+                    })()}
                   </div>
                   <button
                     onClick={() => {
                       if (setConfigModalInitialTab) {
-                        setConfigModalInitialTab(config.supplierName ? 'general' : 'supplier');
+                        setConfigModalInitialTab(getEffectiveSuppliers(config).length > 0 ? 'general' : 'supplier');
                       }
                       setSelectedExpenseForConfig(selectedExpense);
                       setShowExpenseConfig(true);
                     }}
-                    className={`px-2 py-1.5 ${config.supplierName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'} text-white rounded-md transition-colors flex items-center gap-1.5 whitespace-nowrap text-xs`}
+                    className={`px-2 py-1.5 ${getEffectiveSuppliers(config).length > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'} text-white rounded-md transition-colors flex items-center gap-1.5 whitespace-nowrap text-xs`}
                     title="Configurează cheltuiala"
                   >
                     <Wrench className="w-3.5 h-3.5" />
@@ -749,7 +1041,7 @@ const ExpenseEntryModal = ({
             )}
 
             {/* Document justificativ inline */}
-            {selectedExpense && config && renderInlineDocument()}
+            {selectedExpense && config && renderInlineDocuments()}
 
             {/* Input-uri sume - DINAMIC bazat pe receptionMode și distributionType */}
             {selectedExpense && config && (
@@ -767,8 +1059,9 @@ const ExpenseEntryModal = ({
                           type="text"
                           inputMode="decimal"
                           value={billAmount}
-                          onChange={(e) => setBillAmount(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                          onChange={(e) => { if (!isMultiDocumentMode()) setBillAmount(e.target.value); }}
+                          readOnly={isMultiDocumentMode()}
+                          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none ${isMultiDocumentMode() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     )}
@@ -861,8 +1154,9 @@ const ExpenseEntryModal = ({
                           type="text"
                           inputMode="decimal"
                           value={totalAmount}
-                          onChange={(e) => setTotalAmount(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                          onChange={(e) => { if (!isMultiDocumentMode()) setTotalAmount(e.target.value); }}
+                          readOnly={isMultiDocumentMode()}
+                          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none ${isMultiDocumentMode() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     )}
@@ -942,8 +1236,9 @@ const ExpenseEntryModal = ({
                           type="text"
                           inputMode="decimal"
                           value={totalAmount}
-                          onChange={(e) => setTotalAmount(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                          onChange={(e) => { if (!isMultiDocumentMode()) setTotalAmount(e.target.value); }}
+                          readOnly={isMultiDocumentMode()}
+                          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none ${isMultiDocumentMode() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     )}
@@ -1027,8 +1322,9 @@ const ExpenseEntryModal = ({
                           type="text"
                           inputMode="decimal"
                           value={totalAmount}
-                          onChange={(e) => setTotalAmount(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                          onChange={(e) => { if (!isMultiDocumentMode()) setTotalAmount(e.target.value); }}
+                          readOnly={isMultiDocumentMode()}
+                          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none ${isMultiDocumentMode() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     )}
@@ -1114,9 +1410,9 @@ const ExpenseEntryModal = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!selectedExpense || !config?.supplierId}
+            disabled={!selectedExpense || getEffectiveSuppliers(config).length === 0}
             className="px-3 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
-            title={!config?.supplierId ? 'Configurează furnizorul mai întâi' : ''}
+            title={getEffectiveSuppliers(config).length === 0 ? 'Configurează furnizorul mai întâi' : ''}
           >
             <Share2 className="w-3.5 h-3.5" />
             {editingExpense ? 'Salvează Modificări' : 'Distribuie Cheltuială'}

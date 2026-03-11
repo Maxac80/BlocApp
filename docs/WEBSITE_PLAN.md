@@ -117,9 +117,9 @@
 
 ### Redirects către Aplicație
 
-- **Login** → `/login` redirects la `app.blocapp.ro/login`
-- **Înregistrare** → `/inregistrare` redirects la `app.blocapp.ro/register`
-- **Trial** → `/trial` redirects la `app.blocapp.ro/register?trial=true`
+- **Login** → `/login` redirects la `administratori.blocapp.ro/login`
+- **Înregistrare** → `/inregistrare` redirects la `administratori.blocapp.ro/register`
+- **Trial** → `/trial` redirects la `administratori.blocapp.ro/register?trial=true`
 
 ---
 

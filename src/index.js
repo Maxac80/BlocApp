@@ -12,6 +12,22 @@ import reportWebVitals from './reportWebVitals';
 // Setează REACT_APP_MODE=master pentru master portal (owner BlocApp)
 const appMode = process.env.REACT_APP_MODE;
 
+// Setează titlul paginii bazat pe mod
+const appTitles = {
+  owner: 'BlocApp Locatari',
+  master: 'BlocApp Master',
+  default: 'BlocApp Administratori'
+};
+document.title = appTitles[appMode] || appTitles.default;
+
+// Setează favicon-ul bazat pe mod
+const faviconSuffix = { owner: '-locatari', master: '-master' };
+const suffix = faviconSuffix[appMode] || '';
+const faviconPng = document.querySelector('link[rel="icon"]');
+const faviconIco = document.querySelector('link[rel="shortcut icon"]');
+if (faviconPng) faviconPng.href = `${process.env.PUBLIC_URL}/favicon${suffix}.png`;
+if (faviconIco) faviconIco.href = `${process.env.PUBLIC_URL}/favicon${suffix}.ico`;
+
 // Selectează componenta bazat pe mod
 const getAppComponent = () => {
   switch (appMode) {

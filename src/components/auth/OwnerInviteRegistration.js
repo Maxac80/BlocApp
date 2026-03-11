@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail, User, Phone } from 'lucide-react';
 import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
 
 /**
@@ -18,6 +18,9 @@ export default function OwnerInviteRegistration({ token }) {
   const [validationError, setValidationError] = useState('');
   const [hasExistingAccount, setHasExistingAccount] = useState(false); // Flag pentru admin care e și proprietar
 
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +74,8 @@ export default function OwnerInviteRegistration({ token }) {
   const passwordStrength = getPasswordStrength(password);
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
   // Pentru conturi existente, nu cerem confirmare parolă
-  const canSubmit = password.length >= 6 && (hasExistingAccount || passwordsMatch) && !loading;
+  const hasName = firstName.trim().length > 0 && lastName.trim().length > 0;
+  const canSubmit = hasName && password.length >= 6 && (hasExistingAccount || passwordsMatch) && !loading;
 
   // Handler pentru înregistrare
   const handleSubmit = async (e) => {
@@ -80,7 +84,11 @@ export default function OwnerInviteRegistration({ token }) {
 
     if (!canSubmit) return;
 
-    const result = await completeRegistration(token, password);
+    const result = await completeRegistration(token, password, {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone.trim()
+    });
 
     if (result.success) {
       setRegistrationSuccess(true);
@@ -230,6 +238,56 @@ export default function OwnerInviteRegistration({ token }) {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          {/* Prenume și Nume */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                Prenume *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Prenume"
+                  className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                Nume *
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Nume"
+                className="w-full px-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Telefon (opțional) */}
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              Număr de telefon <span className="text-gray-400 font-normal">(opțional)</span>
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="ex: 0721234567"
+                className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
           {/* Password */}
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">

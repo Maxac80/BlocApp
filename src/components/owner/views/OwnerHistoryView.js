@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import {
   Calendar, CheckCircle, AlertCircle, Clock, ChevronRight,
-  Filter, TrendingUp, TrendingDown, X, FileText
+  Filter, TrendingUp, TrendingDown, X, FileText,
+  Download, Receipt
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
-import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
+import { useOwnerData, formatCurrency, formatDate, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
 
 /**
- * View pentru istoricul lunilor
+ * View pentru istoric luni + plăți (consolidat)
+ * Tab "Luni" = vizualizare pe luni cu filtre și detalii cheltuieli
+ * Tab "Plăți" = lista plăților individuale cu breakdown
  */
 export default function OwnerHistoryView({ onNavigate }) {
   const { apartmentId, apartmentNumber, apartmentData, associationId } = useOwnerContext();
@@ -17,13 +20,17 @@ export default function OwnerHistoryView({ onNavigate }) {
     loading,
     error,
     monthlyHistory,
+    paymentHistory,
     selectedMonth,
     switchMonth,
     getExpenseDetailsForMonth
   } = useOwnerData(associationId, apartmentId);
 
-  // State pentru filtrare
-  const [filterStatus, setFilterStatus] = useState('all'); // all | paid | partial | unpaid
+  // Tab activ
+  const [activeTab, setActiveTab] = useState('months'); // 'months' | 'payments'
+
+  // State pentru filtrare (tab Luni)
+  const [filterStatus, setFilterStatus] = useState('all');
 
   // State pentru modal detalii
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -35,7 +42,6 @@ export default function OwnerHistoryView({ onNavigate }) {
     setSelectedMonthDetails(month);
     setShowDetailsModal(true);
 
-    // Încarcă detaliile cheltuielilor pentru luna selectată
     if (getExpenseDetailsForMonth) {
       const details = await getExpenseDetailsForMonth(month.monthYear);
       setMonthExpenseDetails(details || []);
@@ -63,7 +69,7 @@ export default function OwnerHistoryView({ onNavigate }) {
   // Error state
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full p-3 sm:p-4 lg:p-6">
+      <div className="flex items-center justify-center h-full px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-3 sm:mb-4" />
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Eroare la încărcare</h2>
@@ -73,18 +79,18 @@ export default function OwnerHistoryView({ onNavigate }) {
     );
   }
 
-  // Calculează statistici
+  // Statistici
   const totalMonths = monthlyHistory.length;
   const paidMonths = monthlyHistory.filter(m => m.paymentStatus === 'paid').length;
   const totalAmount = monthlyHistory.reduce((sum, m) => sum + (m.totalDatorat || 0), 0);
   const totalPaid = monthlyHistory.reduce((sum, m) => sum + (m.totalPaid || 0), 0);
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Istoric Luni</h1>
-        <p className="text-sm sm:text-base text-gray-600">Vizualizează toate lunile anterioare</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Istoric</h1>
+        <p className="text-sm sm:text-base text-gray-600">Vizualizează lunile și plățile tale</p>
       </div>
 
       {/* Statistici rapide */}
@@ -130,144 +136,256 @@ export default function OwnerHistoryView({ onNavigate }) {
         </div>
       </div>
 
-      {/* Filtre */}
-      <div className="bg-white rounded-xl shadow p-3 sm:p-4">
-        <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
-          <div className="flex items-center">
-            <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mr-2" />
-            <span className="text-sm sm:text-base text-gray-700 font-medium">Filtrează după status:</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'all', label: 'Toate' },
-              { value: 'paid', label: 'Plătite', color: 'green' },
-              { value: 'partial', label: 'Parțial', color: 'orange' },
-              { value: 'unpaid', label: 'Neplătite', color: 'red' }
-            ].map(option => (
-              <button
-                key={option.value}
-                onClick={() => setFilterStatus(option.value)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                  filterStatus === option.value
-                    ? option.color === 'green' ? 'bg-green-100 text-green-700' :
-                      option.color === 'orange' ? 'bg-orange-100 text-orange-700' :
-                      option.color === 'red' ? 'bg-red-100 text-red-700' :
-                      'bg-emerald-100 text-emerald-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Tab-uri Luni / Plăți */}
+      <div className="flex bg-gray-100 rounded-lg p-1">
+        <button
+          onClick={() => setActiveTab('months')}
+          className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
+            activeTab === 'months'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          Luni
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
+            activeTab === 'payments'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          Plăți
+          {paymentHistory.length > 0 && (
+            <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full ${
+              activeTab === 'payments' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'
+            }`}>
+              {paymentHistory.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Lista Luni */}
-      {filteredHistory.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center">
-          <Clock className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Niciun rezultat</h3>
-          <p className="text-sm sm:text-base text-gray-500">
-            {filterStatus === 'all'
-              ? 'Nu există încă date istorice pentru acest apartament.'
-              : `Nu există luni cu status "${filterStatus === 'paid' ? 'plătit' : filterStatus === 'partial' ? 'parțial' : 'neplătit'}".`}
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredHistory.map((month, index) => {
-            const statusInfo = getPaymentStatusInfo(month.paymentStatus);
-            const paymentPercentage = month.totalDatorat > 0
-              ? Math.round((month.totalPaid / month.totalDatorat) * 100)
-              : 0;
+      {/* ═══════════ TAB LUNI ═══════════ */}
+      {activeTab === 'months' && (
+        <>
+          {/* Filtre */}
+          <div className="bg-white rounded-xl shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+              <div className="flex items-center">
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mr-2" />
+                <span className="text-sm sm:text-base text-gray-700 font-medium">Filtrează după status:</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'all', label: 'Toate' },
+                  { value: 'paid', label: 'Plătite', color: 'green' },
+                  { value: 'partial', label: 'Parțial', color: 'orange' },
+                  { value: 'unpaid', label: 'Neplătite', color: 'red' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setFilterStatus(option.value)}
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                      filterStatus === option.value
+                        ? option.color === 'green' ? 'bg-green-100 text-green-700' :
+                          option.color === 'orange' ? 'bg-orange-100 text-orange-700' :
+                          option.color === 'red' ? 'bg-red-100 text-red-700' :
+                          'bg-emerald-100 text-emerald-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-            return (
-              <div
-                key={month.monthYear}
-                className={`bg-white rounded-xl shadow hover:shadow-lg transition-all cursor-pointer ${
-                  selectedMonth === month.monthYear ? 'ring-2 ring-emerald-500' : ''
-                }`}
-                onClick={() => switchMonth(month.monthYear)}
-              >
-                {/* Header Card */}
-                <div className="p-3 sm:p-4 border-b border-gray-100">
+          {/* Lista Luni */}
+          {filteredHistory.length === 0 ? (
+            <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center">
+              <Clock className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Niciun rezultat</h3>
+              <p className="text-sm sm:text-base text-gray-500">
+                {filterStatus === 'all'
+                  ? 'Nu există încă date istorice pentru acest apartament.'
+                  : `Nu există luni cu status "${filterStatus === 'paid' ? 'plătit' : filterStatus === 'partial' ? 'parțial' : 'neplătit'}".`}
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredHistory.map((month, index) => {
+                const statusInfo = getPaymentStatusInfo(month.paymentStatus);
+                const paymentPercentage = month.totalDatorat > 0
+                  ? Math.round((month.totalPaid / month.totalDatorat) * 100)
+                  : 0;
+
+                return (
+                  <div
+                    key={month.monthYear}
+                    className={`bg-white rounded-xl shadow hover:shadow-lg transition-all cursor-pointer ${
+                      selectedMonth === month.monthYear ? 'ring-2 ring-emerald-500' : ''
+                    }`}
+                    onClick={() => switchMonth(month.monthYear)}
+                  >
+                    {/* Header Card */}
+                    <div className="p-3 sm:p-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 capitalize">
+                              {month.monthYear}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-500">
+                              {month.status === 'published' ? 'Luna curentă' : 'Arhivată'}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.textColor}`}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Body Card */}
+                    <div className="p-3 sm:p-4">
+                      {/* Total */}
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <span className="text-sm sm:text-base text-gray-500">Total de plată</span>
+                        <span className="text-base sm:text-lg font-bold text-gray-900">
+                          {formatCurrency(month.totalDatorat)}
+                        </span>
+                      </div>
+
+                      {/* Progress */}
+                      <div className="mb-3 sm:mb-4">
+                        <div className="flex justify-between text-xs sm:text-sm mb-1">
+                          <span className="text-gray-500">Plătit</span>
+                          <span className="text-emerald-600 font-medium">
+                            {formatCurrency(month.totalPaid)} ({paymentPercentage}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 sm:h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              month.paymentStatus === 'paid' ? 'bg-green-500' :
+                              month.paymentStatus === 'partial' ? 'bg-orange-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${paymentPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Remaining */}
+                      {month.remaining > 0 && (
+                        <div className="flex items-center justify-between text-xs sm:text-sm">
+                          <span className="text-gray-500">Rămas</span>
+                          <span className="text-red-600 font-medium">
+                            {formatCurrency(month.remaining)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer Card */}
+                    <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShowDetails(month);
+                        }}
+                        className="w-full flex items-center justify-center py-1.5 sm:py-2 text-xs sm:text-sm text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                      >
+                        Vezi detalii
+                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ═══════════ TAB PLĂȚI ═══════════ */}
+      {activeTab === 'payments' && (
+        <div className="bg-white rounded-xl shadow">
+          <div className="p-3 sm:p-4 border-b border-gray-100">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Istoric Plăți</h3>
+          </div>
+
+          {paymentHistory.length === 0 ? (
+            <div className="p-8 sm:p-12 text-center">
+              <Receipt className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nicio plată încă</h3>
+              <p className="text-sm sm:text-base text-gray-500">
+                Plățile efectuate vor apărea aici automat.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {paymentHistory.map((payment, index) => (
+                <div
+                  key={payment.id || index}
+                  className="p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-4">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="text-sm sm:text-base font-semibold text-gray-900 capitalize">
-                          {month.monthYear}
+                        <p className="text-sm sm:text-base font-medium text-gray-900">
+                          Plată #{payment.receiptNumber || index + 1}
                         </p>
-                        <p className="text-[10px] sm:text-xs text-gray-500">
-                          {month.status === 'published' ? 'Luna curentă' : 'Arhivată'}
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          {formatDate(payment.paymentDate)}
+                          {payment.sheetMonth && ` \u2022 ${payment.sheetMonth}`}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.textColor}`}>
-                      {statusInfo.label}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Body Card */}
-                <div className="p-3 sm:p-4">
-                  {/* Total */}
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <span className="text-sm sm:text-base text-gray-500">Total de plată</span>
-                    <span className="text-base sm:text-lg font-bold text-gray-900">
-                      {formatCurrency(month.totalDatorat)}
-                    </span>
-                  </div>
-
-                  {/* Progress */}
-                  <div className="mb-3 sm:mb-4">
-                    <div className="flex justify-between text-xs sm:text-sm mb-1">
-                      <span className="text-gray-500">Plătit</span>
-                      <span className="text-emerald-600 font-medium">
-                        {formatCurrency(month.totalPaid)} ({paymentPercentage}%)
-                      </span>
-                    </div>
-                    <div className="h-1.5 sm:h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          month.paymentStatus === 'paid' ? 'bg-green-500' :
-                          month.paymentStatus === 'partial' ? 'bg-orange-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${paymentPercentage}%` }}
-                      />
+                    <div className="text-right">
+                      <p className="text-sm sm:text-base font-bold text-gray-900">{formatCurrency(payment.total)}</p>
+                      <button className="text-xs sm:text-sm text-emerald-600 hover:text-emerald-700 flex items-center mt-1">
+                        <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        Chitanță
+                      </button>
                     </div>
                   </div>
 
-                  {/* Remaining */}
-                  {month.remaining > 0 && (
-                    <div className="flex items-center justify-between text-xs sm:text-sm">
-                      <span className="text-gray-500">Rămas</span>
-                      <span className="text-red-600 font-medium">
-                        {formatCurrency(month.remaining)}
-                      </span>
+                  {/* Breakdown plată */}
+                  {(payment.restante > 0 || payment.intretinere > 0 || payment.penalitati > 0) && (
+                    <div className="mt-2 sm:mt-3 ml-10 sm:ml-14 flex flex-wrap gap-2 sm:gap-3 text-[10px] sm:text-xs">
+                      {payment.restante > 0 && (
+                        <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-50 text-red-700 rounded">
+                          Restanțe: {formatCurrency(payment.restante)}
+                        </span>
+                      )}
+                      {payment.intretinere > 0 && (
+                        <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-50 text-blue-700 rounded">
+                          Întreținere: {formatCurrency(payment.intretinere)}
+                        </span>
+                      )}
+                      {payment.penalitati > 0 && (
+                        <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-orange-50 text-orange-700 rounded">
+                          Penalități: {formatCurrency(payment.penalitati)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {/* Footer Card */}
-                <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Previne declanșarea onClick pe card
-                      handleShowDetails(month);
-                    }}
-                    className="w-full flex items-center justify-center py-1.5 sm:py-2 text-xs sm:text-sm text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                  >
-                    Vezi detalii
-                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -276,12 +394,12 @@ export default function OwnerHistoryView({ onNavigate }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header Modal */}
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 sm:p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold">Detalii Cheltuieli</h3>
                   <p className="text-emerald-100 text-xs sm:text-sm mt-1 capitalize">
-                    {selectedMonthDetails.monthYear} • Ap. {apartmentNumber}
+                    {selectedMonthDetails.monthYear} &bull; Ap. {apartmentNumber}
                   </p>
                 </div>
                 <button
@@ -348,7 +466,6 @@ export default function OwnerHistoryView({ onNavigate }) {
                         -{formatCurrency(selectedMonthDetails.totalPaid)}
                       </span>
                     </div>
-                    {/* Breakdown plăți - afișăm detalii dacă există payments */}
                     {selectedMonthDetails.sheet?.payments && (() => {
                       const aptPayments = selectedMonthDetails.sheet.payments.filter(p =>
                         p.apartmentId === apartmentId ||
@@ -359,19 +476,19 @@ export default function OwnerHistoryView({ onNavigate }) {
                           <div key={idx} className="ml-4 text-sm space-y-1">
                             {payment.intretinere > 0 && (
                               <div className="flex justify-between text-gray-500">
-                                <span>• Întreținere</span>
+                                <span>&bull; Întreținere</span>
                                 <span>-{formatCurrency(payment.intretinere)}</span>
                               </div>
                             )}
                             {payment.restante > 0 && (
                               <div className="flex justify-between text-gray-500">
-                                <span>• Restanță</span>
+                                <span>&bull; Restanță</span>
                                 <span>-{formatCurrency(payment.restante)}</span>
                               </div>
                             )}
                             {payment.penalitati > 0 && (
                               <div className="flex justify-between text-gray-500">
-                                <span>• Penalități</span>
+                                <span>&bull; Penalități</span>
                                 <span>-{formatCurrency(payment.penalitati)}</span>
                               </div>
                             )}
@@ -409,65 +526,56 @@ export default function OwnerHistoryView({ onNavigate }) {
               <div className="space-y-2 sm:space-y-3">
                 {monthExpenseDetails.length > 0 ? (
                   monthExpenseDetails.map((expense, index) => {
-                    // Verifică dacă e cheltuială pe consum
                     const isConsumptionBased =
                       expense.distributionType === 'byConsumption' ||
                       expense.distributionType === 'consumption' ||
                       expense.label?.toLowerCase().includes('consum');
 
-                    // Verifică dacă are consum valid
                     const hasConsumption = expense.consumption !== null &&
                       expense.consumption !== undefined &&
                       expense.consumption > 0;
 
-                    // Verifică dacă are diferență (pierderi/scurgeri)
                     const hasDifference = expense.difference && expense.difference !== 0;
 
-                    // Generează badge-ul pentru tipul de distribuție
                     const getDistributionBadge = () => {
                       const dt = expense.distributionType;
                       const label = expense.label?.toLowerCase() || '';
                       const amount = expense.amount;
 
-                      // Pentru consum cu date complete: afișează detalii consum
                       if (isConsumptionBased && hasConsumption && expense.unitPrice) {
                         return {
-                          icon: '📊',
-                          text: `${expense.consumption.toFixed(2)} ${expense.consumptionUnit || 'mc'} × ${expense.unitPrice.toFixed(2)} lei/${expense.consumptionUnit || 'mc'}`,
+                          icon: '\u{1F4CA}',
+                          text: `${expense.consumption.toFixed(2)} ${expense.consumptionUnit || 'mc'} \u00D7 ${expense.unitPrice.toFixed(2)} lei/${expense.consumptionUnit || 'mc'}`,
                           className: 'text-orange-600'
                         };
                       }
 
-                      // Verifică pe consum (fără date complete)
                       if (dt === 'byConsumption' || dt === 'consumption' || label.includes('consum')) {
                         return {
-                          icon: '💧',
+                          icon: '\u{1F4A7}',
                           text: `Pe consum`,
                           className: 'text-orange-600'
                         };
                       }
 
-                      // Verifică pe număr persoane
                       if (dt === 'byPersons' || dt === 'perPerson' || label.includes('persoan')) {
                         return {
-                          icon: '👥',
+                          icon: '\u{1F465}',
                           text: `Pe număr persoane`,
                           className: 'text-purple-600'
                         };
                       }
 
-                      // Verifică pe cotă parte / suprafață
                       if (dt === 'byArea' || dt === 'cotaParte' || label.includes('cotă') || label.includes('suprafață')) {
                         return {
-                          icon: '📐',
+                          icon: '\u{1F4D0}',
                           text: `Pe cotă parte`,
                           className: 'text-indigo-600'
                         };
                       }
 
-                      // Default: pe apartament (include 'equal', 'perApartment', 'standard', undefined, etc.)
                       return {
-                        icon: '⏱',
+                        icon: '\u23F1',
                         text: `${formatCurrency(amount)}/apartament`,
                         className: 'text-blue-600'
                       };
@@ -480,13 +588,11 @@ export default function OwnerHistoryView({ onNavigate }) {
                         key={expense.id || index}
                         className="p-2.5 sm:p-3 bg-white border border-gray-100 rounded-lg"
                       >
-                        {/* Header: Nume și Sumă */}
                         <div className="flex items-center justify-between">
                           <p className="text-sm sm:text-base text-gray-900 font-medium">{expense.name}</p>
                           <span className="text-sm sm:text-base font-semibold text-gray-900">{formatCurrency(expense.amount)}</span>
                         </div>
 
-                        {/* Badge distribuție sub numele cheltuielii */}
                         {badge && (
                           <div className={`mt-1 flex items-center text-xs sm:text-sm ${badge.className}`}>
                             <span className="mr-1">{badge.icon}</span>
@@ -494,7 +600,6 @@ export default function OwnerHistoryView({ onNavigate }) {
                           </div>
                         )}
 
-                        {/* Diferență (pierderi/scurgeri) - doar pentru consum */}
                         {hasDifference && (
                           <div className="mt-1 text-xs sm:text-sm text-orange-600">
                             <span>Diferență: {formatCurrency(expense.difference)}</span>

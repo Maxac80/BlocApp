@@ -1,24 +1,20 @@
 import React from 'react';
-import { Building2, MapPin, Users, LogOut, ArrowRight } from 'lucide-react';
+import { Building2, MapPin, Users, LogOut, ChevronRight, Ruler, Home } from 'lucide-react';
 
 /**
  * Selector pentru proprietari cu mai multe apartamente
  * Afișează toate apartamentele asociate email-ului și permite selectarea
+ *
+ * Pattern similar cu ContextSelectorView.js (admin), dar cu emerald theme
  */
 export default function OwnerApartmentSelector({ apartments, onSelect, onLogout, userEmail }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-2 sm:mr-3">
-              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-gray-900">BlocApp</h1>
-              <p className="text-[10px] sm:text-xs text-gray-500">BlocApp Locatari</p>
-            </div>
+            <img src="/blocapp-logo-locatari.png" alt="BlocApp" className="h-9 sm:h-10 object-contain" />
           </div>
           <button
             onClick={onLogout}
@@ -30,80 +26,110 @@ export default function OwnerApartmentSelector({ apartments, onSelect, onLogout,
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Welcome message */}
-        <div className="text-center mb-4 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Bine ai venit!
-          </h2>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Ai acces la <strong>{apartments.length}</strong> apartamente. Selectează unul pentru a continua.
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Ai acces la <strong>{apartments.length}</strong> {apartments.length === 1 ? 'apartament' : 'apartamente'}. Selectează unul pentru a continua.
           </p>
           {userEmail && (
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Conectat ca: {userEmail}
             </p>
           )}
         </div>
+      </div>
 
-        {/* Apartments grid */}
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-          {apartments.map((apt, index) => (
-            <button
-              key={`${apt.associationId}-${apt.apartmentId}`}
-              onClick={() => onSelect(apt)}
-              className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 p-4 sm:p-6 text-left group border-2 border-transparent hover:border-emerald-500"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  {/* Association name */}
-                  <div className="flex items-center text-emerald-600 mb-1.5 sm:mb-2">
-                    <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm font-medium truncate">
-                      {apt.associationName || 'Asociație'}
-                    </span>
+          {apartments.map((apt) => {
+            const address = apt.associationData?.address;
+            const addressStr = typeof address === 'string'
+              ? address
+              : address
+                ? `${address.street || ''} ${address.number || ''}, ${address.city || ''}, ${address.county || ''}`.trim()
+                : null;
+
+            return (
+              <div
+                key={`${apt.associationId}-${apt.apartmentId}`}
+                onClick={() => onSelect(apt)}
+                className="bg-white rounded-xl border-2 border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all duration-200 cursor-pointer border-l-[3px] border-l-emerald-500 p-4 sm:p-6"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                      <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                        {apt.associationName || 'Asociație'}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500">Proprietar</p>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Apartment number - main highlight */}
-                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">
-                    Ap. {apt.apartmentNumber}
-                  </h3>
-
-                  {/* Details */}
-                  <div className="space-y-0.5 sm:space-y-1">
-                    {apt.associationData?.address && (
-                      <div className="flex items-center text-gray-500 text-xs sm:text-sm">
-                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
-                        <span className="truncate">{apt.associationData.address}</span>
-                      </div>
-                    )}
+                {/* Apartment Number - prominent */}
+                <div className="flex items-center gap-3 mb-3 sm:mb-4 px-1">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 border-2 border-emerald-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl sm:text-2xl font-bold text-emerald-700">{apt.apartmentNumber}</span>
+                  </div>
+                  <div>
+                    <p className="text-lg sm:text-xl font-bold text-gray-900">Apartamentul {apt.apartmentNumber}</p>
                     {apt.apartmentData?.ownerName && (
-                      <div className="flex items-center text-gray-500 text-xs sm:text-sm">
-                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
-                        <span className="truncate">{apt.apartmentData.ownerName}</span>
-                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500">{apt.apartmentData.ownerName}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Arrow indicator */}
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-emerald-500 transition-colors ml-3 sm:ml-4 flex-shrink-0">
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-white transition-colors" />
+                {/* Stats Grid */}
+                {(apt.apartmentData?.surface || apt.apartmentData?.persons) && (
+                  <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
+                    {apt.apartmentData?.surface && (
+                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                        <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 flex items-center gap-1">
+                          <Ruler className="w-3 h-3" />
+                          Suprafață
+                        </p>
+                        <p className="text-sm sm:text-base font-bold text-gray-900">{apt.apartmentData.surface} m²</p>
+                      </div>
+                    )}
+                    {apt.apartmentData?.persons && (
+                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                        <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          Persoane
+                        </p>
+                        <p className="text-sm sm:text-base font-bold text-gray-900">{apt.apartmentData.persons}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Address */}
+                {addressStr && (
+                  <div className="flex items-start text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                    <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
+                    <span className="line-clamp-2">{addressStr}</span>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
+                  <span className="text-xs sm:text-sm text-gray-400">
+                    Selectează apartamentul
+                  </span>
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 </div>
               </div>
-
-              {/* Bottom indicator */}
-              <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-gray-400">
-                  Click pentru a selecta
-                </span>
-                <span className="text-[10px] sm:text-xs font-medium text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Deschide
-                </span>
-              </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* Help text */}

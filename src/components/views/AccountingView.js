@@ -1,8 +1,10 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receipt, CreditCard, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
+import useSuppliers from '../../hooks/useSuppliers';
+import AddInvoiceModal from '../modals/AddInvoiceModal';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -24,11 +26,13 @@ const AccountingView = ({
   sheets = [],
   // Props pentru facturi
   invoices,
+  addInvoice,
   getInvoicesByMonth,
   getInvoiceStats,
   markInvoiceAsPaid,
   markInvoiceAsUnpaid,
-  updateMissingSuppliersForExistingInvoices
+  updateMissingSuppliersForExistingInvoices,
+  currentSheet
 }) => {
   const apartments = getAssociationApartments();
 
@@ -70,11 +74,15 @@ const AccountingView = ({
   // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
   const { getExpenseConfig } = useExpenseConfigurations(association?.id);
 
+  // Hook pentru gestionarea furnizorilor (creare furnizor nou din modal factura)
+  const { addSupplier } = useSuppliers(currentSheet);
+
   const [activeTab, setActiveTab] = useState('incasari'); // 'incasari' sau 'facturi'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, paid, unpaid
   const [selectedIncasare, setSelectedIncasare] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showAddInvoiceModal, setShowAddInvoiceModal] = useState(false);
 
   // Obține statisticile
   const stats = getIncasariStats(apartments);
@@ -660,7 +668,17 @@ const AccountingView = ({
                     <option value="paid">Plătite</option>
                     <option value="unpaid">Neplătite</option>
                   </select>
-                  
+
+                  {!isReadOnlyRole && !isMonthReadOnly && (
+                    <button
+                      onClick={() => setShowAddInvoiceModal(true)}
+                      className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Adauga factura
+                    </button>
+                  )}
+
                   <button
                     onClick={generateMonthlyReport}
                     className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors"
@@ -982,6 +1000,16 @@ const AccountingView = ({
         </div>
       )}
       </div>
+
+      {/* Modal Adauga Factura */}
+      <AddInvoiceModal
+        isOpen={showAddInvoiceModal}
+        onClose={() => setShowAddInvoiceModal(false)}
+        onSave={addInvoice}
+        suppliers={currentSheet?.configSnapshot?.suppliers || []}
+        onAddSupplier={addSupplier}
+        currentMonth={currentMonth}
+      />
     </div>
   );
 };

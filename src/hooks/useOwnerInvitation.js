@@ -127,7 +127,8 @@ export const useOwnerInvitation = () => {
               apartmentId: apartmentData.id || null,
               number: apartmentData.number || '',
               stairId: apartmentData.stairId || null,
-              blocId: apartmentData.blocId || null
+              blocId: apartmentData.blocId || null,
+              role: apartmentData.role || 'proprietar'
             }]
           }],
 
@@ -271,7 +272,7 @@ export const useOwnerInvitation = () => {
    * @param {string} password - Parola setată de proprietar
    * @returns {Object} - {success: boolean, user: Object, error: string}
    */
-  const completeRegistration = async (token, password) => {
+  const completeRegistration = async (token, password, userInfo = {}) => {
     setLoading(true);
     setError(null);
 
@@ -318,14 +319,21 @@ export const useOwnerInvitation = () => {
       }
 
       // Actualizează owner în Firestore
-      await updateDoc(doc(db, 'owners', owner.id), {
+      const updateData = {
         status: 'active',
         firebaseUid: firebaseUser.uid,
         registeredAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
         'invitation.token': null, // Invalidează token-ul
         updatedAt: serverTimestamp()
-      });
+      };
+
+      // Actualizează numele și telefonul dacă sunt furnizate de utilizator
+      if (userInfo.firstName) updateData.firstName = userInfo.firstName;
+      if (userInfo.lastName) updateData.lastName = userInfo.lastName;
+      if (userInfo.phone) updateData.phone = userInfo.phone;
+
+      await updateDoc(doc(db, 'owners', owner.id), updateData);
 
       return {
         success: true,
@@ -469,7 +477,8 @@ export const useOwnerInvitation = () => {
           apartmentId: apartmentData.id || null,
           number: apartmentData.number || '',
           stairId: apartmentData.stairId || null,
-          blocId: apartmentData.blocId || null
+          blocId: apartmentData.blocId || null,
+          role: apartmentData.role || 'proprietar'
         });
       }
     } else {
@@ -481,7 +490,8 @@ export const useOwnerInvitation = () => {
           apartmentId: apartmentData.id || null,
           number: apartmentData.number || '',
           stairId: apartmentData.stairId || null,
-          blocId: apartmentData.blocId || null
+          blocId: apartmentData.blocId || null,
+          role: apartmentData.role || 'proprietar'
         }]
       });
     }

@@ -17,30 +17,16 @@ const DashboardHeader = ({
   const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
   const isReadOnly = isMonthReadOnly;
 
-  // Helper pentru badge-ul tipului lunii
-  const getMonthTypeBadge = () => {
-    const baseClasses = "text-[11px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded text-center whitespace-nowrap";
-
-    if (monthType === 'current') {
-      return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>LUNA ACTIVĂ</span>;
-    } else if (monthType === 'next') {
-      return <span className={`${baseClasses} bg-green-100 text-green-800`}>LUNA URMĂTOARE</span>;
-    } else if (monthType === 'historic') {
-      return <span className={`${baseClasses} bg-gray-600 text-white`}>LUNĂ ISTORICĂ</span>;
-    }
-    return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>LUNA ACTIVĂ</span>;
-  };
-
-  // Helper pentru badge-ul statusului
+  // Helper pentru badge-ul statusului (singur badge)
   const getStatusBadge = () => {
     const baseClasses = "text-[11px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded text-center whitespace-nowrap";
 
     if (monthType === 'historic' && isReadOnly) {
       return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>ARHIVATĂ</span>;
     } else if (isReadOnly) {
-      return <span className={`${baseClasses} bg-purple-100 text-purple-800`}>PUBLICATĂ</span>;
+      return <span className={`${baseClasses} bg-green-100 text-green-800`}>PUBLICATĂ</span>;
     }
-    return <span className={`${baseClasses} bg-orange-100 text-orange-800`}>ÎN LUCRU</span>;
+    return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>ÎN LUCRU</span>;
   };
 
   return (
@@ -86,10 +72,7 @@ const DashboardHeader = ({
             </select>
 
             {/* Badge-uri status - la dreapta */}
-            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap">
-              {getMonthTypeBadge()}
-              {getStatusBadge()}
-            </div>
+            {getStatusBadge()}
           </div>
         </div>
       </div>

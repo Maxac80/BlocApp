@@ -32,8 +32,9 @@ BlocApp este o platformă web modernă pentru administrarea asociațiilor de pro
 
 **URL Structure:**
 - Website marketing: https://blocapp.ro
-- Aplicație admin: https://app.blocapp.ro
-- Portal proprietari: https://portal.blocapp.ro (în viitor)
+- Aplicație admin: https://administratori.blocapp.ro
+- Portal locatari: https://locatari.blocapp.ro
+- Master console: https://master.blocapp.ro
 - Docs: https://docs.blocapp.ro (opțional)
 
 ### 2. Site-ul de prezentare

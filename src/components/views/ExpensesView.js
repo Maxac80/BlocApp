@@ -233,7 +233,7 @@ const ExpensesViewNew = ({
 
                 <div>
                   <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-3 sm:mb-4">Cheltuieli active pentru {currentMonth}</h3>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {getAssociationExpenseTypes().map((expenseType, index, array) => {
                       const config = getExpenseConfig(expenseType.id || expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
@@ -275,9 +275,6 @@ const ExpensesViewNew = ({
                                 <span className="font-medium text-sm sm:text-base text-gray-900">{expenseType.name}</span>
                                 {isCustom && (
                                   <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">Custom</span>
-                                )}
-                                {isDistributed && (
-                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">Distribuită</span>
                                 )}
                                 {/* Buton toggle Portal pentru cheltuieli cu perioadă manuală */}
                                 {config.distributionType === 'consumption' &&
@@ -324,6 +321,12 @@ const ExpensesViewNew = ({
                                 )}
                               </div>
                             </div>
+                            <div className="flex items-center gap-2">
+                              {isDistributed ? (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded whitespace-nowrap">Distribuită</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded whitespace-nowrap">Nedistribuită</span>
+                              )}
                             <div className="relative" data-dropdown-container>
                               <button
                                 onClick={(e) => {
@@ -415,6 +418,7 @@ const ExpensesViewNew = ({
                                 </div>
                               )}
                             </div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -425,7 +429,7 @@ const ExpensesViewNew = ({
                 {getDisabledExpenseTypes().length > 0 && (
                   <div>
                     <h3 className="font-semibold text-gray-500 mb-4">Cheltuieli dezactivate pentru {currentMonth}</h3>
-                    <div className="space-y-3 opacity-60">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60">
                       {getDisabledExpenseTypes().map((expenseType, index, array) => {
                         const config = getExpenseConfig(expenseType.id || expenseType.name);
                         const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
@@ -591,7 +595,7 @@ const ExpensesViewNew = ({
                   ) : suppliers.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">Nu există furnizori adăugați</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {suppliers.map((supplier, index, array) => {
                         const isLastItem = index >= array.length - 2; // ultimele 2 iteme
                         const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);

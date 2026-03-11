@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import {
   TrendingUp, Users, Home, FileText, Download,
-  AlertCircle, CheckCircle, Clock, X, ChevronDown, Flame
+  AlertCircle, CheckCircle, Clock, X, ChevronDown, Flame,
+  CreditCard
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
+import OwnerPaymentModal from '../modals/OwnerPaymentModal';
 
 /**
  * Dashboard pentru proprietar - vizualizare situație curentă
@@ -34,6 +36,7 @@ export default function OwnerDashboardView({ onNavigate }) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPdfMessage, setShowPdfMessage] = useState(false);
   const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Loading state
   if (loading) {
@@ -113,11 +116,11 @@ export default function OwnerDashboardView({ onNavigate }) {
   };
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2 space-y-4 sm:space-y-6">
       {/* Header cu luna curentă + selector */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Întreținere</h1>
           <p className="text-gray-600 text-sm sm:text-base">
             {selectedMonth || 'Luna curentă'}
           </p>
@@ -166,7 +169,7 @@ export default function OwnerDashboardView({ onNavigate }) {
       {/* Card Principal - Total de Plată */}
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
         {/* Header cu gradient */}
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 sm:p-6 text-white">
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
               <p className="text-emerald-100 text-xs sm:text-sm">Total de plată</p>
@@ -252,21 +255,33 @@ export default function OwnerDashboardView({ onNavigate }) {
         </div>
 
         {/* Actions */}
-        <div className="px-4 sm:px-6 pb-4 sm:pb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <button
-            onClick={() => setShowDetailsModal(true)}
-            className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm sm:text-base hover:bg-emerald-700 transition-colors"
-          >
-            <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-            Vezi Detalii
-          </button>
-          <button
-            onClick={handleDownloadPdf}
-            className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
-          >
-            <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-            Descarcă PDF
-          </button>
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-2 sm:space-y-3">
+          {/* Plătește Online - buton principal când există sumă de plată */}
+          {remaining > 0 && (
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="w-full flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm sm:text-base hover:bg-emerald-700 transition-colors"
+            >
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+              Plătește Online
+            </button>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={() => setShowDetailsModal(true)}
+              className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
+            >
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+              Vezi Detalii
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
+            >
+              <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+              Descarcă PDF
+            </button>
+          </div>
         </div>
 
         {/* Toast PDF */}
@@ -345,12 +360,23 @@ export default function OwnerDashboardView({ onNavigate }) {
         </div>
       </div>
 
+      {/* Modal Plată Online */}
+      <OwnerPaymentModal
+        show={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        apartmentNumber={apartmentNumber}
+        intretinereTotal={restante + currentMaintenance}
+        restante={restante}
+        currentMaintenance={currentMaintenance}
+        penalitati={penalitati}
+      />
+
       {/* Modal Detalii Cheltuieli */}
       {showDetailsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header Modal */}
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 sm:p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 sm:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold">Detalii Cheltuieli</h3>

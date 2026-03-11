@@ -148,7 +148,7 @@ export default function OwnerMetersView() {
   }
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -170,7 +170,7 @@ export default function OwnerMetersView() {
 
       {/* Status Card */}
       <div className={`rounded-2xl shadow-lg overflow-hidden ${
-        isSubmissionOpen ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-gradient-to-r from-gray-500 to-gray-600'
+        isSubmissionOpen ? 'bg-gradient-to-r from-emerald-600 to-teal-700' : 'bg-gradient-to-r from-gray-500 to-gray-600'
       }`}>
         <div className="p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between mb-3 sm:mb-4">

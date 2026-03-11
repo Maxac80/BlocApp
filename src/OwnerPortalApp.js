@@ -35,6 +35,9 @@ function OwnerPortalContent() {
   const [userApartments, setUserApartments] = useState([]);
   const [loadingApartments, setLoadingApartments] = useState(false);
 
+  // Profilul owner-ului logat (firstName, lastName, phone, email)
+  const [ownerProfile, setOwnerProfile] = useState(null);
+
   // Restaurează apartamentul din localStorage la încărcare
   const [selectedApartment, setSelectedApartment] = useState(() => {
     try {
@@ -125,6 +128,15 @@ function OwnerPortalContent() {
       const ownerDoc = ownersSnap.docs[0];
       const owner = { id: ownerDoc.id, ...ownerDoc.data() };
 
+      // Salvează profilul owner-ului logat
+      setOwnerProfile({
+        id: owner.id,
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        phone: owner.phone || '',
+        email: owner.email || ''
+      });
+
       for (const assoc of owner.associations || []) {
         // Obține date asociație
         const associationsRef = collection(db, 'associations');
@@ -151,9 +163,47 @@ function OwnerPortalContent() {
         }
 
         const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
+        const sheetStairs = latestSheet?.associationSnapshot?.stairs || [];
+        const sheetBlocks = latestSheet?.associationSnapshot?.blocks || [];
+
+        // Fallback: load from Firestore root collections if sheet snapshot doesn't have stairs/blocks
+        let allStairs = sheetStairs;
+        let allBlocks = sheetBlocks;
+        if (sheetStairs.length === 0 || sheetBlocks.length === 0) {
+          try {
+            const blocksQuery = query(collection(db, 'blocks'), where('associationId', '==', assoc.associationId));
+            const blocksSnap = await getDocs(blocksQuery);
+            const fbBlocks = blocksSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (fbBlocks.length > 0) {
+              const blockIds = fbBlocks.map(b => b.id);
+              const stairsQuery = query(collection(db, 'stairs'), where('blockId', 'in', blockIds));
+              const stairsSnap = await getDocs(stairsQuery);
+              const fbStairs = stairsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+              if (sheetStairs.length === 0) allStairs = fbStairs;
+              if (sheetBlocks.length === 0) allBlocks = fbBlocks;
+            }
+          } catch (e) {
+            console.warn('[OwnerPortal] Could not load stairs/blocks:', e);
+          }
+        }
 
         for (const apt of assoc.apartments || []) {
           const fullAptData = sheetApartments.find(a => a.id === apt.apartmentId) || apt;
+
+          // Resolve block/stair names
+          let blockName = fullAptData.block || '';
+          let stairName = fullAptData.stair || '';
+
+          if ((!blockName || !stairName) && fullAptData.stairId) {
+            const stairObj = allStairs.find(s => s.id === fullAptData.stairId);
+            if (stairObj) {
+              if (!stairName) stairName = stairObj.name || '';
+              if (!blockName && stairObj.blockId) {
+                const blockObj = allBlocks.find(b => b.id === stairObj.blockId);
+                if (blockObj) blockName = blockObj.name || '';
+              }
+            }
+          }
 
           // Calculează totalStairSurface
           const sameStairApartments = sheetApartments.filter(a =>
@@ -167,7 +217,7 @@ function OwnerPortalContent() {
           foundApartments.push({
             apartmentId: apt.apartmentId,
             apartmentNumber: apt.number || fullAptData.number,
-            apartmentData: { ...fullAptData, totalStairSurface },
+            apartmentData: { ...fullAptData, blockName, stairName, totalStairSurface },
             associationId: assoc.associationId,
             associationName: assoc.associationName || associationData.name,
             associationData: associationData,
@@ -208,8 +258,44 @@ function OwnerPortalContent() {
         }
 
         const apartments = latestSheet?.associationSnapshot?.apartments || [];
+        const sheetStairs2 = latestSheet?.associationSnapshot?.stairs || [];
+        const sheetBlocks2 = latestSheet?.associationSnapshot?.blocks || [];
+
+        // Fallback: load from Firestore if sheet doesn't have stairs/blocks
+        let allStairs2 = sheetStairs2;
+        let allBlocks2 = sheetBlocks2;
+        if (sheetStairs2.length === 0 || sheetBlocks2.length === 0) {
+          try {
+            const blQuery = query(collection(db, 'blocks'), where('associationId', '==', assocDoc.id));
+            const blSnap = await getDocs(blQuery);
+            const fbBlocks = blSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (fbBlocks.length > 0) {
+              const bIds = fbBlocks.map(b => b.id);
+              const stQuery = query(collection(db, 'stairs'), where('blockId', 'in', bIds));
+              const stSnap = await getDocs(stQuery);
+              const fbStairs = stSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+              if (sheetStairs2.length === 0) allStairs2 = fbStairs;
+              if (sheetBlocks2.length === 0) allBlocks2 = fbBlocks;
+            }
+          } catch (e) { /* ignore */ }
+        }
+
         apartments.forEach(aptData => {
           if (aptData.email?.toLowerCase() === email.toLowerCase()) {
+            // Resolve block/stair names
+            let blockName = aptData.block || '';
+            let stairName = aptData.stair || '';
+            if ((!blockName || !stairName) && aptData.stairId) {
+              const stairObj = allStairs2.find(s => s.id === aptData.stairId);
+              if (stairObj) {
+                if (!stairName) stairName = stairObj.name || '';
+                if (!blockName && stairObj.blockId) {
+                  const blockObj = allBlocks2.find(b => b.id === stairObj.blockId);
+                  if (blockObj) blockName = blockObj.name || '';
+                }
+              }
+            }
+
             const sameStairApartments = apartments.filter(a =>
               (aptData.stairId && a.stairId === aptData.stairId) ||
               (aptData.stair && a.stair === aptData.stair)
@@ -221,7 +307,7 @@ function OwnerPortalContent() {
             foundApartments.push({
               apartmentId: aptData.id,
               apartmentNumber: aptData.number,
-              apartmentData: { ...aptData, totalStairSurface },
+              apartmentData: { ...aptData, blockName, stairName, totalStairSurface },
               associationId: assocDoc.id,
               associationName: associationData.name,
               associationData: associationData,
@@ -303,6 +389,7 @@ function OwnerPortalContent() {
         onChangeApartment={handleChangeApartment}
         onLogout={handleLogout}
         isDevMode={false}
+        ownerProfile={ownerProfile}
       />
     );
   }

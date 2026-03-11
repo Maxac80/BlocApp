@@ -50,8 +50,8 @@ initAppCheck();
 ### 3. Verificare Configurație reCAPTCHA
 - **Status**: ✅ CORECT CONFIGURAT
 - Domenii înregistrate:
-  - `app.blocapp.ro`
-  - `portal.blocapp.ro`
+  - `administratori.blocapp.ro`
+  - `locatari.blocapp.ro`
   - `blocapp.ro`
   - `localhost`
 
@@ -152,8 +152,8 @@ res.setHeader('Access-Control-Allow-Origin', '*');
 **Recomandat:**
 ```javascript
 const allowedOrigins = [
-  'https://app.blocapp.ro',
-  'https://portal.blocapp.ro',
+  'https://administratori.blocapp.ro',
+  'https://locatari.blocapp.ro',
   'http://localhost:3000'
 ];
 const origin = req.headers.origin;
@@ -196,7 +196,7 @@ if (allowedOrigins.includes(origin)) {
 ### reCAPTCHA Admin Console
 - Label: BlocApp Production
 - Type: v3
-- Domenii: app.blocapp.ro, portal.blocapp.ro, blocapp.ro, localhost
+- Domenii: administratori.blocapp.ro, locatari.blocapp.ro, blocapp.ro, localhost
 
 ### Environment Variables Necesare
 ```

@@ -412,6 +412,7 @@ export const useExpenseManagement = ({
         isDistributed: true,  // Marchează cheltuiala ca fiind distribuită
         // Salvează datele facturii în expense pentru acces rapid la editare
         invoiceData: expenseData.invoiceData || null,
+        invoicesData: expenseData.invoicesData || null,
         separateInvoicesData: expenseData.separateInvoicesData || null
       };
 
@@ -442,57 +443,61 @@ export const useExpenseManagement = ({
       //   conditionResult: !!(newExpense.invoiceData && newExpense.invoiceData.invoiceNumber && addInvoiceFn)
       // });
 
-      // Salvează/actualizează factura în colecția invoices
-      if (expenseData.invoiceData && expenseData.invoiceData.invoiceNumber && invoiceFunctions) {
+      // Salvează/actualizează facturile în colecția invoices
+      // Construiește lista de facturi de salvat (multi-supplier sau single)
+      const invoicesToSave = expenseData.invoicesData && expenseData.invoicesData.length > 0
+        ? expenseData.invoicesData
+        : (expenseData.invoiceData && expenseData.invoiceData.invoiceNumber
+          ? [expenseData.invoiceData]
+          : []);
+
+      if (invoicesToSave.length > 0 && invoiceFunctions) {
         const { updateInvoiceDistribution, getInvoiceByNumber } = invoiceFunctions;
         const currentDistribution = parseFloat(expenseData.amount || expenseData.billAmount || 0);
 
-        try {
-          if (expenseData.invoiceData.isExistingInvoice && expenseData.invoiceData.existingInvoiceId) {
-            // DOCUMENT EXISTENT selectat din dropdown → actualizează distribuția
-            console.log('📊 Actualizare distribuție pentru document existent:', expenseData.invoiceData.existingInvoiceId);
-            await updateInvoiceDistribution(expenseData.invoiceData.existingInvoiceId, {
-              sheetId: currentSheet?.id || null,
-              month: currentMonth,
-              amount: currentDistribution,
-              expenseId: expenseId,
-              expenseTypeId: expenseSettings.id,
-              expenseName: expenseData.name,
-              notes: `Distribuție pentru ${expenseData.name}`
-            });
-            console.log('✅ Distribuție actualizată pentru document existent');
-          } else if (addInvoiceFn) {
-            // DOCUMENT NOU → creează în colecția invoices
-            console.log('📝 Creare document nou în colecția invoices:', expenseData.invoiceData.invoiceNumber);
-            await addInvoiceFn({
-              expenseId: expenseId,
-              expenseTypeId: expenseSettings.id,
-              expenseName: expenseData.name,
-              supplierId: expenseSettings.supplierId || null,
-              supplierName: expenseSettings.supplierName || null,
-              invoiceNumber: expenseData.invoiceData.invoiceNumber,
-              invoiceDate: expenseData.invoiceData.invoiceDate || null,
-              dueDate: expenseData.invoiceData.dueDate || null,
-              invoiceAmount: expenseData.invoiceData.invoiceAmount || currentDistribution,
-              amount: currentDistribution,
-              totalAmount: currentDistribution,
-              totalInvoiceAmount: parseFloat(expenseData.invoiceData.totalInvoiceAmount || expenseData.invoiceData.invoiceAmount) || currentDistribution,
-              currentDistribution: currentDistribution,
-              documentType: expenseData.invoiceData.documentType || 'factura',
-              month: currentMonth,
-              sheetId: currentSheet?.id || null,
-              notes: expenseData.invoiceData.notes || ''
-            });
-            console.log('✅ Document nou salvat în colecția invoices');
-          } else {
-            // Fallback: încearcă să găsească factura după număr (backward compatibility)
-            if (updateInvoiceDistribution && getInvoiceByNumber) {
-              const invoice = await getInvoiceByNumber(expenseData.invoiceData.invoiceNumber);
+        for (const invoiceEntry of invoicesToSave) {
+          if (!invoiceEntry.invoiceNumber) continue;
+          const invoiceAmount = parseFloat(invoiceEntry.invoiceAmount || 0);
+          try {
+            if (invoiceEntry.isExistingInvoice && invoiceEntry.existingInvoiceId) {
+              console.log('📊 Actualizare distribuție pentru document existent:', invoiceEntry.existingInvoiceId);
+              await updateInvoiceDistribution(invoiceEntry.existingInvoiceId, {
+                sheetId: currentSheet?.id || null,
+                month: currentMonth,
+                amount: invoiceAmount || currentDistribution,
+                expenseId: expenseId,
+                expenseTypeId: expenseSettings.id,
+                expenseName: expenseData.name,
+                notes: `Distribuție pentru ${expenseData.name}`
+              });
+            } else if (addInvoiceFn) {
+              console.log('📝 Creare document nou:', invoiceEntry.invoiceNumber, 'furnizor:', invoiceEntry.supplierName || expenseSettings.supplierName);
+              await addInvoiceFn({
+                expenseId: expenseId,
+                expenseTypeId: expenseSettings.id,
+                expenseName: expenseData.name,
+                supplierId: invoiceEntry.supplierId || expenseSettings.supplierId || null,
+                supplierName: invoiceEntry.supplierName || expenseSettings.supplierName || null,
+                invoiceNumber: invoiceEntry.invoiceNumber,
+                invoiceDate: invoiceEntry.invoiceDate || null,
+                dueDate: invoiceEntry.dueDate || null,
+                invoiceAmount: invoiceEntry.invoiceAmount || currentDistribution,
+                amount: invoiceAmount || currentDistribution,
+                totalAmount: invoiceAmount || currentDistribution,
+                totalInvoiceAmount: parseFloat(invoiceEntry.totalInvoiceAmount || invoiceEntry.invoiceAmount) || currentDistribution,
+                currentDistribution: invoiceAmount || currentDistribution,
+                documentType: invoiceEntry.documentType || 'factura',
+                month: currentMonth,
+                sheetId: currentSheet?.id || null,
+                notes: invoiceEntry.notes || ''
+              });
+            } else if (updateInvoiceDistribution && getInvoiceByNumber) {
+              const invoice = await getInvoiceByNumber(invoiceEntry.invoiceNumber);
               if (invoice) {
                 await updateInvoiceDistribution(invoice.id, {
                   sheetId: currentSheet?.id || null,
                   month: currentMonth,
-                  amount: currentDistribution,
+                  amount: invoiceAmount || currentDistribution,
                   expenseId: expenseId,
                   expenseTypeId: expenseSettings.id,
                   expenseName: expenseData.name,
@@ -500,9 +505,9 @@ export const useExpenseManagement = ({
                 });
               }
             }
+          } catch (error) {
+            console.error('❌ Eroare la salvare/actualizare document:', invoiceEntry.invoiceNumber, error);
           }
-        } catch (error) {
-          console.error('❌ Eroare la salvare/actualizare document:', error);
         }
       }
 

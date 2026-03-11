@@ -48,8 +48,8 @@ const ExpenseConfigModal = ({
     },
     supplierId: null,
     supplierName: '',
-    contractNumber: '',
-    contactPerson: '',
+    // 🏢 Multi-furnizor
+    suppliers: [], // [{ supplierId, supplierName }]
     // 💰 Mod calcul sumă fixă (pentru distribuție pe persoană)
     fixedAmountMode: 'apartment', // 'apartment' | 'person'
     // 📊 Configurare indecși
@@ -95,7 +95,8 @@ const ExpenseConfigModal = ({
   // 🔧 State local pentru configurarea contoarelor per apartament
   const [localApartmentMeters, setLocalApartmentMeters] = useState({});
 
-  const { suppliers, loading, addSupplier } = useSuppliers(currentSheet);
+  const { suppliers, loading, addSupplier, updateSupplier } = useSuppliers(currentSheet);
+  const [editingSupplier, setEditingSupplier] = useState(null); // { id, name } pentru editare
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const justAddedSupplierRef = React.useRef(false);
 
@@ -130,8 +131,6 @@ const ExpenseConfigModal = ({
         },
         supplierId: null,
         supplierName: '',
-        contractNumber: '',
-        contactPerson: '',
         fixedAmountMode: 'apartment',
         indexConfiguration: {
           enabled: false,
@@ -181,8 +180,12 @@ const ExpenseConfigModal = ({
         },
         supplierId: expenseConfig.supplierId || null,
         supplierName: expenseConfig.supplierName || '',
-        contractNumber: expenseConfig.contractNumber || '',
-        contactPerson: expenseConfig.contactPerson || '',
+        // 🏢 Multi-furnizor — backward compat: construiește din câmpurile vechi dacă lipsește
+        suppliers: expenseConfig.suppliers?.length > 0
+          ? expenseConfig.suppliers.map(s => ({ supplierId: s.supplierId, supplierName: s.supplierName }))
+          : (expenseConfig.supplierId
+            ? [{ supplierId: expenseConfig.supplierId, supplierName: expenseConfig.supplierName || '' }]
+            : []),
         // 💰 Mod calcul sumă fixă (pentru distribuție pe persoană)
         // Default: 'person' dacă distributionType e 'person', altfel 'apartment'
         fixedAmountMode: expenseConfig.fixedAmountMode || defaultFixedAmountMode,
@@ -286,11 +289,17 @@ const ExpenseConfigModal = ({
       // Setează flag-ul că tocmai am adăugat un furnizor
       justAddedSupplierRef.current = true;
 
-      // Update local config with new supplier
-      setLocalConfig(prev => ({
-        ...prev,
+      // Update local config with new supplier — adaugă în lista suppliers
+      const isFirst = !localConfig.suppliers || localConfig.suppliers.length === 0;
+      const newEntry = {
         supplierId: newSupplier.id,
         supplierName: newSupplier.name
+      };
+      setLocalConfig(prev => ({
+        ...prev,
+        suppliers: [...(prev.suppliers || []), newEntry],
+        // Sync root cu primul furnizor (backward compat)
+        ...(isFirst ? { supplierId: newSupplier.id, supplierName: newSupplier.name } : {})
       }));
 
       // Resetează flag-ul după 2 secunde
@@ -1240,61 +1249,98 @@ const ExpenseConfigModal = ({
 
           {activeTab === 'supplier' && (
             <div className="space-y-3 sm:space-y-4">
+              {/* Lista furnizori configurați */}
+              {localConfig.suppliers.length > 0 && (
+                <div className="space-y-2">
+                  {localConfig.suppliers.map((supplierEntry, index) => (
+                    <div key={supplierEntry.supplierId || index} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-sm font-medium text-gray-900">
+                        {supplierEntry.supplierName || 'Furnizor necunoscut'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingSupplier({ id: supplierEntry.supplierId, name: supplierEntry.supplierName });
+                            setIsSupplierModalOpen(true);
+                          }}
+                          className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                          title="Editează furnizor"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!window.confirm(`Vrei să elimini furnizorul "${supplierEntry.supplierName}" de la această cheltuială?`)) return;
+                            const updated = localConfig.suppliers.filter((_, i) => i !== index);
+                            const first = updated[0];
+                            setLocalConfig({
+                              ...localConfig,
+                              suppliers: updated,
+                              supplierId: first?.supplierId || null,
+                              supplierName: first?.supplierName || ''
+                            });
+                          }}
+                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Elimină furnizor"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Adaugă furnizor */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Selectează furnizor
+                  Adaugă furnizor
                 </label>
                 <div className="flex gap-2">
                   <select
-                    value={localConfig.supplierId || ''}
-                    onChange={(e) => handleSupplierChange(e.target.value)}
+                    value=""
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      const supplier = suppliers.find(s => s.id === e.target.value);
+                      if (!supplier) return;
+                      if (localConfig.suppliers.some(s => s.supplierId === supplier.id)) {
+                        alert('Acest furnizor este deja adăugat.');
+                        return;
+                      }
+                      const isFirst = localConfig.suppliers.length === 0;
+                      const newEntry = { supplierId: supplier.id, supplierName: supplier.name };
+                      const updated = [...localConfig.suppliers, newEntry];
+                      setLocalConfig({
+                        ...localConfig,
+                        suppliers: updated,
+                        ...(isFirst ? { supplierId: supplier.id, supplierName: supplier.name } : {})
+                      });
+                    }}
                     className="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     disabled={loading}
                   >
-                    <option value="">Fără furnizor</option>
-                    {suppliers.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
+                    <option value="">Selectează furnizor...</option>
+                    {suppliers
+                      .filter(s => !localConfig.suppliers.some(ls => ls.supplierId === s.id))
+                      .map(supplier => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
                   </select>
                   <button
                     onClick={() => setIsSupplierModalOpen(true)}
-                    className="px-3 py-1.5 text-xs sm:text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
+                    className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
                   >
-                    + Adaugă furnizor
+                    Creează furnizor
                   </button>
                 </div>
               </div>
 
-              {localConfig.supplierId && (
-                <>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Număr contract
-                    </label>
-                    <input
-                      type="text"
-                      value={localConfig.contractNumber}
-                      onChange={(e) => setLocalConfig({ ...localConfig, contractNumber: e.target.value })}
-                      placeholder="ex: 12345/2024"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Persoană de contact
-                    </label>
-                    <input
-                      type="text"
-                      value={localConfig.contactPerson}
-                      onChange={(e) => setLocalConfig({ ...localConfig, contactPerson: e.target.value })}
-                      placeholder="ex: Ion Popescu"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-                </>
+              {localConfig.suppliers.length === 0 && (
+                <p className="text-xs text-gray-500 italic">
+                  Niciun furnizor selectat. Selectați un furnizor pentru a putea asocia facturi la distribuție.
+                </p>
               )}
             </div>
           )}
@@ -2236,10 +2282,27 @@ const ExpenseConfigModal = ({
 
       <SupplierModal
         isOpen={isSupplierModalOpen}
-        onClose={() => setIsSupplierModalOpen(false)}
-        onSave={handleAddNewSupplier}
-        supplier={null}
-        title="Adaugă furnizor nou"
+        onClose={() => { setIsSupplierModalOpen(false); setEditingSupplier(null); }}
+        onSave={async (data) => {
+          if (editingSupplier) {
+            // Edit mode — update supplier name
+            await updateSupplier(editingSupplier.id, data);
+            // Update local config suppliers list
+            setLocalConfig(prev => ({
+              ...prev,
+              suppliers: prev.suppliers.map(s =>
+                s.supplierId === editingSupplier.id ? { ...s, supplierName: data.name } : s
+              ),
+              ...(prev.supplierId === editingSupplier.id ? { supplierName: data.name } : {})
+            }));
+            setEditingSupplier(null);
+          } else {
+            // Add mode
+            await handleAddNewSupplier(data);
+          }
+        }}
+        supplier={editingSupplier ? { name: editingSupplier.name } : null}
+        title={editingSupplier ? 'Editează furnizor' : 'Creează furnizor'}
       />
     </div>
   );

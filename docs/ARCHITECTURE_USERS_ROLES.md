@@ -125,7 +125,7 @@ Pentru organizații cu **multiple owners egali**, aplicăm următoarele reguli:
 
 ## Matrice permisiuni detaliată
 
-### Pentru app.blocapp.ro (Administrare)
+### Pentru administratori.blocapp.ro (Administrare)
 
 | Acțiune | org_owner | org_admin | org_member | assoc_admin | president | censor |
 |---------|-----------|-----------|------------|-------------|-----------|--------|
@@ -152,7 +152,7 @@ Pentru organizații cu **multiple owners egali**, aplicăm următoarele reguli:
 ***Doar pentru asociațiile alocate
 ****Configurabil în setări (aprobare sau doar notificare)
 
-### Pentru portal.blocapp.ro (Proprietari)
+### Pentru locatari.blocapp.ro (Proprietari)
 
 | Acțiune | owner |
 |---------|-------|
@@ -374,7 +374,7 @@ Pentru organizații cu **multiple owners egali**, aplicăm următoarele reguli:
 1. org_owner/org_admin → Organizație → Angajați → "Invită"
 2. Introduce email și rol (org_admin sau org_member)
 3. Se creează /organizations/{orgId}/invitations/{id} cu token
-4. Se trimite email cu link: app.blocapp.ro/invite/{token}
+4. Se trimite email cu link: administratori.blocapp.ro/invite/{token}
 5. Destinatar click pe link:
    - Dacă are cont → login → redirect la accept
    - Dacă nu are cont → register → redirect la accept

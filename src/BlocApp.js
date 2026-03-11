@@ -30,7 +30,8 @@ import {
   MaintenanceView,
   ProfileView,
   TutorialsView,
-  AccountingView
+  AccountingView,
+  MessagesView
 } from './components/views';
 
 export default function BlocApp({ associationId, userRole, onSwitchContext, onStandaloneNavigate }) {
@@ -61,6 +62,9 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
 
   // 🆕 STATE pentru a preveni crearea multiplă a sheet-ului inițial
   const [initialSheetCreationAttempted, setInitialSheetCreationAttempted] = useState(false);
+
+  // 📨 STATE pentru navigare la mesaje cu apartament pre-selectat
+  const [messagesTargetApartmentId, setMessagesTargetApartmentId] = useState(null);
 
   // 🔥 HOOK PRINCIPAL PENTRU DATE FIRESTORE (primul pentru a obține association)
   // Dacă avem associationId din props (din context selector), îl transmitem pentru a încărca asociația corectă
@@ -607,10 +611,12 @@ useEffect(() => {
 
   // 🔥 LAYOUT PRINCIPAL
   const monthType = getMonthType ? getMonthType(currentMonth) : 'current';
-  const mainBgClass = monthType === 'next'
-    ? "bg-gradient-to-br from-green-50 to-emerald-100"
-    : monthType === 'historic'
+  // Culori fundal bazate pe status: albastru=în lucru, verde=publicată, gri=arhivată
+  const isCurrentMonthReadOnly = isMonthReadOnly ? isMonthReadOnly(currentMonth) : false;
+  const mainBgClass = (monthType === 'historic' && isCurrentMonthReadOnly)
     ? "bg-gradient-to-br from-gray-50 to-gray-100"
+    : isCurrentMonthReadOnly
+    ? "bg-gradient-to-br from-green-50 to-emerald-100"
     : "bg-gradient-to-br from-indigo-50 to-blue-100";
 
   return (
@@ -664,7 +670,7 @@ useEffect(() => {
         sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
       }`}>
         {/* Zona de conținut - padding pentru mobile header și bottom nav cu safe-area */}
-        <main className={`flex-1 overflow-y-auto main-content-mobile-padding ${mainBgClass}`}>
+        <main className={`flex-1 overflow-y-auto main-content-mobile-padding ${mainBgClass}`} style={{ scrollbarGutter: 'stable' }}>
         <style>{`
           .main-content-mobile-padding {
             padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
@@ -720,6 +726,8 @@ useEffect(() => {
               userProfile={userProfile}
               getMonthType={getMonthType}
               currentSheet={activeSheet}
+              publishedSheet={publishedSheet}
+              sheets={sheets || []}
               getExpenseConfig={getFirestoreExpenseConfig}
               getApartmentParticipation={getApartmentParticipation}
               calculateMaintenanceWithDetails={calculateMaintenanceWithDetails}
@@ -952,12 +960,33 @@ useEffect(() => {
               sheets={sheets || []}
               // Props pentru facturi
               invoices={invoices}
+              addInvoice={addInvoice}
               getInvoicesByMonth={getInvoicesByMonth}
               getInvoiceStats={getInvoiceStats}
               markInvoiceAsPaid={markInvoiceAsPaid}
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
               updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
+              currentSheet={currentSheet}
               isReadOnlyRole={isReadOnlyRole}
+              onNavigateToApartmentMessages={(apartmentId) => {
+                setMessagesTargetApartmentId(apartmentId);
+                handleNavigation('messages');
+              }}
+            />
+          )}
+
+          {/* Messages View */}
+          {currentView === "messages" && (
+            <MessagesView
+              association={association}
+              blocks={blocks}
+              stairs={stairs}
+              apartments={getAssociationApartments ? getAssociationApartments() : []}
+              currentUser={activeUser}
+              userRole={userRole}
+              handleNavigation={handleNavigation}
+              preFilterApartmentId={messagesTargetApartmentId}
+              onClearPreFilter={() => setMessagesTargetApartmentId(null)}
             />
           )}
 

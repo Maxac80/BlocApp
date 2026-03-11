@@ -1,12 +1,13 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus } from 'lucide-react';
+import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
 import BlockModal from '../modals/BlockModal';
 import StairModal from '../modals/StairModal';
 import MaintenanceBreakdownModal from '../modals/MaintenanceBreakdownModal';
+import ApartmentMembersModal from '../modals/ApartmentMembersModal';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 const SetupView = ({
@@ -52,7 +53,9 @@ const SetupView = ({
   saveInitialBalances,
   getMonthType,
   // Pentru actualizarea Sheet 1 cu apartamentele
-  updateStructureSnapshot
+  updateStructureSnapshot,
+  // Navigare la mesaje cu apartament pre-selectat
+  onNavigateToApartmentMessages
 }) => {
   const cantEdit = isMonthReadOnly || isReadOnlyRole;
 
@@ -90,6 +93,12 @@ const SetupView = ({
   // State pentru modalul de breakdown întreținere
   const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
   const [selectedApartmentForBreakdown, setSelectedApartmentForBreakdown] = useState(null);
+
+  // State pentru modalul de membri apartament
+  const [showApartmentMembersModal, setShowApartmentMembersModal] = useState(false);
+  const [selectedApartmentForMembers, setSelectedApartmentForMembers] = useState(null);
+  const [selectedStairForMembers, setSelectedStairForMembers] = useState(null);
+  const [selectedBlockForMembers, setSelectedBlockForMembers] = useState(null);
 
   // Effect pentru închiderea dropdown-urilor când se face click în afara lor
   useEffect(() => {
@@ -1816,6 +1825,36 @@ return (
                                                             </button>
                                                           )}
 
+                                                          {/* Membri Apartament */}
+                                                          <button
+                                                            onClick={() => {
+                                                              setSelectedApartmentForMembers(apartment);
+                                                              setSelectedStairForMembers(currentStair);
+                                                              setSelectedBlockForMembers(block);
+                                                              setShowApartmentMembersModal(true);
+                                                              setOpenApartmentMenus({});
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-purple-700 hover:bg-purple-50 cursor-pointer"
+                                                          >
+                                                            <Users className="w-4 h-4" />
+                                                            Membri Apartament
+                                                          </button>
+
+                                                          {/* Mesaje Apartament */}
+                                                          <button
+                                                            onClick={() => {
+                                                              if (onNavigateToApartmentMessages) {
+                                                                onNavigateToApartmentMessages(apartment.id);
+                                                              } else {
+                                                                handleNavigation('messages');
+                                                              }
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-teal-700 hover:bg-teal-50 cursor-pointer"
+                                                          >
+                                                            <MessageSquare className="w-4 h-4" />
+                                                            Mesaje Apartament
+                                                          </button>
+
                                                           {(() => {
                                                             const stairApts = stairApartments.sort((a, b) => {
                                                               const numberDiff = a.number - b.number;
@@ -1945,8 +1984,6 @@ return (
         blocks={blocks}
         stairs={stairs}
         apartments={associationApartments}
-        association={association}
-        currentUserId={currentUser?.uid}
         onSave={handleSaveApartment}
       />
 
@@ -1972,6 +2009,21 @@ return (
         stairs={stairs}
         payments={activeSheet?.payments || []} // 🆕 Trimite plățile din sheet-ul activ
         currentMonth={currentMonth}
+      />
+
+      {/* Modal Membri Apartament */}
+      <ApartmentMembersModal
+        isOpen={showApartmentMembersModal}
+        onClose={() => {
+          setShowApartmentMembersModal(false);
+          setSelectedApartmentForMembers(null);
+        }}
+        apartment={selectedApartmentForMembers}
+        association={association}
+        currentUserId={currentUser?.uid}
+        cantEdit={cantEdit}
+        stair={selectedStairForMembers}
+        block={selectedBlockForMembers}
       />
     </div>
   );

@@ -7,7 +7,7 @@ import {
 import { PaymentModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
-import { Building } from 'lucide-react';
+import { Building, Calculator, Coins } from 'lucide-react';
 
 const DashboardView = ({
   // Association data
@@ -31,7 +31,8 @@ const DashboardView = ({
   expenses,
   maintenanceData,
   currentSheet,
-  publishedSheet, // 🆕 Necesar pentru încasări
+  publishedSheet,
+  sheets = [],
 
   // User profile
   userProfile,
@@ -264,6 +265,58 @@ const DashboardView = ({
               const isCurrentMonthPublished = isMonthReadOnly || activeSheet?.status === 'archived';
 
               if (!isCurrentMonthPublished) {
+                // Verifică dacă există luni publicate anterior
+                const hasPublishedHistory = sheets?.some(s =>
+                  s.status === 'published' || s.status === 'archived'
+                );
+
+                // Găsește ultima lună publicată
+                const lastPublishedSheet = sheets
+                  ?.filter(s => s.status === 'published' || s.status === 'archived')
+                  ?.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+                  ?.[0];
+
+                if (hasPublishedHistory) {
+                  // Utilizator cu experiență - mesaj adaptat cu 2 acțiuni
+                  return (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 mb-6 sm:mb-8">
+                      <div className="text-center mb-6">
+                        <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                        <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-1">
+                          Tabel Întreținere — {currentMonth}
+                        </h3>
+                        <p className="text-sm text-blue-500">
+                          Luna {currentMonth} nu este încă publicată. Calculează întreținerea sau gestionează încasările pe luna publicată.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        {!isReadOnlyRole && (
+                          <button
+                            onClick={() => handleNavigation("maintenance")}
+                            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+                          >
+                            <Calculator className="w-4 h-4" />
+                            Calcul întreținere {currentMonth}
+                          </button>
+                        )}
+                        {lastPublishedSheet && (
+                          <button
+                            onClick={() => {
+                              setCurrentMonth(lastPublishedSheet.monthYear);
+                            }}
+                            className="flex items-center justify-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-lg hover:bg-green-700 font-medium text-sm"
+                          >
+                            <Coins className="w-4 h-4" />
+                            Încasări {lastPublishedSheet.monthYear}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Prima utilizare - pași de onboarding
                 return (
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 mb-6 sm:mb-8">
                     <div className="text-center mb-6">

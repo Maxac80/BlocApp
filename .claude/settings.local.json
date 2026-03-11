@@ -118,7 +118,11 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(firebase use:*)",
-      "Bash(REACT_APP_MODE=owner PORT=3001 npm start)"
+      "Bash(REACT_APP_MODE=owner PORT=3001 npm start)",
+      "Bash(REACT_APP_MODE=owner PORT=3001 npx react-scripts start)",
+      "Bash(cmd.exe /c \"netstat -ano | findstr :3001 | findstr LISTENING\")",
+      "Bash(cmd.exe /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :3001 ^| findstr LISTENING''\\) do @echo PID: %a\")",
+      "Bash(BROWSER=none REACT_APP_MODE=owner PORT=3001 node node_modules/react-scripts/scripts/start.js)"
     ],
     "deny": [],
     "ask": [],

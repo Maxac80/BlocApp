@@ -322,22 +322,34 @@ const useInvoices = (associationId, currentSheet) => {
 
       // Calculează sumele pentru distribuție parțială - PENTRU FACTURĂ NOUĂ
       const totalInvoiceAmount = parseFloat(invoiceData.totalInvoiceAmount || invoiceData.totalAmount) || 0;
-      const currentDistribution = parseFloat(invoiceData.currentDistribution || invoiceData.totalAmount) || 0;
-      const distributedAmount = currentDistribution; // Pentru factură nouă, distributedAmount = currentDistribution
-      const remainingAmount = totalInvoiceAmount - distributedAmount;
-      const isFullyDistributed = remainingAmount <= 0;
+      const isStandalone = invoiceData.isStandalone === true;
 
-      // Creează istoricul distribuției
-      const distributionEntry = {
-        sheetId: invoiceData.sheetId || null,  // SHEET-BASED: folosim sheetId
-        month: invoiceData.month,  // Păstrăm și month pentru compatibilitate
-        amount: currentDistribution,
-        expenseId: invoiceData.expenseId || null,
-        expenseTypeId: invoiceData.expenseTypeId || null,  // ID-ul tipului de cheltuială
-        expenseName: invoiceData.expenseName || invoiceData.expenseType || null,  // Păstrăm numele pentru afișare
-        distributedAt: new Date().toISOString(),
-        notes: invoiceData.distributionNotes || ''
-      };
+      let distributedAmount, remainingAmount, isFullyDistributed, distributionEntry;
+
+      if (isStandalone) {
+        // Factură standalone (adăugată din Contabilitate) - fără distribuție
+        distributedAmount = 0;
+        remainingAmount = totalInvoiceAmount;
+        isFullyDistributed = false;
+        distributionEntry = null;
+      } else {
+        const currentDistribution = parseFloat(invoiceData.currentDistribution || invoiceData.totalAmount) || 0;
+        distributedAmount = currentDistribution;
+        remainingAmount = totalInvoiceAmount - distributedAmount;
+        isFullyDistributed = remainingAmount <= 0;
+
+        // Creează istoricul distribuției
+        distributionEntry = {
+          sheetId: invoiceData.sheetId || null,
+          month: invoiceData.month,
+          amount: currentDistribution,
+          expenseId: invoiceData.expenseId || null,
+          expenseTypeId: invoiceData.expenseTypeId || null,
+          expenseName: invoiceData.expenseName || invoiceData.expenseType || null,
+          distributedAt: new Date().toISOString(),
+          notes: invoiceData.distributionNotes || ''
+        };
+      }
 
       // Creează documentul facturii
 
@@ -365,7 +377,7 @@ const useInvoices = (associationId, currentSheet) => {
         distributedAmount: distributedAmount,
         remainingAmount: remainingAmount,
         isFullyDistributed: isFullyDistributed,
-        distributionHistory: [distributionEntry],
+        distributionHistory: distributionEntry ? [distributionEntry] : [],
         
         // Status plată
         isPaid: false,
@@ -656,8 +668,8 @@ const useInvoices = (associationId, currentSheet) => {
   }, [invoices]);
   
   // 🆕 OBȚINE FACTURILE PARȚIAL DISTRIBUITE
-  const getPartiallyDistributedInvoices = useCallback((expenseType = null, documentType = null) => {
-    console.log('🔍 getPartiallyDistributedInvoices:', { expenseType, documentType, totalInvoices: invoices.length });
+  const getPartiallyDistributedInvoices = useCallback((expenseType = null, documentType = null, supplierId = null) => {
+    console.log('🔍 getPartiallyDistributedInvoices:', { expenseType, documentType, supplierId, totalInvoices: invoices.length });
     if (invoices.length > 0) {
       console.log('🔍 Facturi în memorie:', invoices.map(inv => ({
         id: inv.id, num: inv.invoiceNumber, supplier: inv.supplierName,
@@ -683,6 +695,11 @@ const useInvoices = (associationId, currentSheet) => {
       if (documentType && documentType !== 'factura') {
         const invoiceDocType = invoice.documentType || 'factura';
         return hasRemaining && (invoiceDocType === documentType);
+      }
+
+      // Filtrare pe supplierId specific (pentru multi-furnizor)
+      if (supplierId && invoice.supplierId && invoice.supplierId !== supplierId) {
+        return false;
       }
 
       // Pentru facturi: match pe expenseTypeId/expenseName SAU pe furnizor

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import OwnerApp from './OwnerApp';
 import OwnerApartmentSelector from './OwnerApartmentSelector';
@@ -112,11 +112,52 @@ export default function OwnerPortalWrapper({ currentUser }) {
         }
 
         const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
+        const sheetStairs = latestSheet?.associationSnapshot?.stairs || [];
+        const sheetBlocks = latestSheet?.associationSnapshot?.blocks || [];
+
+        // Pre-load stairs/blocks from Firestore as fallback (sheet snapshot may not have them)
+        let firestoreStairs = [];
+        let firestoreBlocks = [];
+        if (sheetStairs.length === 0 || sheetBlocks.length === 0) {
+          try {
+            // Blocks and stairs are root-level collections filtered by associationId
+            const blocksQuery = query(collection(db, 'blocks'), where('associationId', '==', assoc.associationId));
+            const blocksSnap = await getDocs(blocksQuery);
+            firestoreBlocks = blocksSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            if (firestoreBlocks.length > 0) {
+              const blockIds = firestoreBlocks.map(b => b.id);
+              const stairsQuery = query(collection(db, 'stairs'), where('blockId', 'in', blockIds));
+              const stairsSnap = await getDocs(stairsQuery);
+              firestoreStairs = stairsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+          } catch (e) {
+            console.warn('[OwnerPortalWrapper] Could not load stairs/blocks from Firestore:', e);
+          }
+        }
+
+        const allStairs = sheetStairs.length > 0 ? sheetStairs : firestoreStairs;
+        const allBlocks = sheetBlocks.length > 0 ? sheetBlocks : firestoreBlocks;
 
         // Pentru fiecare apartament din owner.associations
         for (const apt of assoc.apartments || []) {
           // Găsește datele complete din sheet
           const fullAptData = sheetApartments.find(a => a.id === apt.apartmentId) || apt;
+
+          // Resolve block/stair names
+          let blockName = fullAptData.block || '';
+          let stairName = fullAptData.stair || '';
+
+          if ((!blockName || !stairName) && fullAptData.stairId) {
+            const stairObj = allStairs.find(s => s.id === fullAptData.stairId);
+            if (stairObj) {
+              if (!stairName) stairName = stairObj.name || '';
+              if (!blockName && stairObj.blockId) {
+                const blockObj = allBlocks.find(b => b.id === stairObj.blockId);
+                if (blockObj) blockName = blockObj.name || '';
+              }
+            }
+          }
 
           // Calculează totalStairSurface
           const sameStairApartments = sheetApartments.filter(a =>
@@ -132,6 +173,8 @@ export default function OwnerPortalWrapper({ currentUser }) {
             apartmentNumber: apt.number || fullAptData.number,
             apartmentData: {
               ...fullAptData,
+              blockName,
+              stairName,
               totalStairSurface
             },
             associationId: assoc.associationId,
@@ -180,10 +223,44 @@ export default function OwnerPortalWrapper({ currentUser }) {
 
         // Apartamentele sunt în associationSnapshot.apartments
         const sheetApartments = latestSheet?.associationSnapshot?.apartments || [];
+        const sheetStairs2 = latestSheet?.associationSnapshot?.stairs || [];
+        const sheetBlocks2 = latestSheet?.associationSnapshot?.blocks || [];
+
+        // Fallback: load from Firestore root collections if sheet snapshot doesn't have stairs/blocks
+        let fbStairs2 = sheetStairs2;
+        let fbBlocks2 = sheetBlocks2;
+        if (sheetStairs2.length === 0 || sheetBlocks2.length === 0) {
+          try {
+            const blQuery = query(collection(db, 'blocks'), where('associationId', '==', assocDoc.id));
+            const blSnap = await getDocs(blQuery);
+            fbBlocks2 = blSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (fbBlocks2.length > 0) {
+              const bIds = fbBlocks2.map(b => b.id);
+              const stQuery = query(collection(db, 'stairs'), where('blockId', 'in', bIds));
+              const stSnap = await getDocs(stQuery);
+              fbStairs2 = stSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+          } catch (e) { /* ignore */ }
+        }
 
         sheetApartments.forEach(aptData => {
           // Match pe email (case insensitive)
           if (aptData.email?.toLowerCase() === email.toLowerCase()) {
+            // Resolve block/stair names
+            let blockName = aptData.block || '';
+            let stairName = aptData.stair || '';
+
+            if ((!blockName || !stairName) && aptData.stairId) {
+              const stairObj = fbStairs2.find(s => s.id === aptData.stairId);
+              if (stairObj) {
+                if (!stairName) stairName = stairObj.name || '';
+                if (!blockName && stairObj.blockId) {
+                  const blockObj = fbBlocks2.find(b => b.id === stairObj.blockId);
+                  if (blockObj) blockName = blockObj.name || '';
+                }
+              }
+            }
+
             // Calculează totalStairSurface pentru apartamentele din aceeași scară
             const sameStairApartments = sheetApartments.filter(apt =>
               (aptData.stairId && apt.stairId === aptData.stairId) ||
@@ -198,7 +275,9 @@ export default function OwnerPortalWrapper({ currentUser }) {
               apartmentNumber: aptData.number,
               apartmentData: {
                 ...aptData,
-                totalStairSurface // Adaugă suprafața totală a scării
+                blockName,
+                stairName,
+                totalStairSurface
               },
               associationId: assocDoc.id,
               associationName: associationData.name,

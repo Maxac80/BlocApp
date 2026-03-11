@@ -177,6 +177,29 @@ service cloud.firestore {
         allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
       }
 
+      // Sub-colecția apartment_invitations (invitații locatari per apartament)
+      match /apartment_invitations/{invitationId} {
+        allow read: if isAuthenticated();
+        allow create: if isAssocAdmin(assocId) || isSuperAdmin() ||
+          isAuthenticated(); // locatarii pot invita alți locatari
+        allow update: if isAssocAdmin(assocId) || isSuperAdmin() ||
+          isAuthenticated(); // pentru acceptare/anulare
+        allow delete: if isAssocAdmin(assocId) || isSuperAdmin();
+      }
+
+      // Sub-colecția conversations (mesagerie locatari-admin)
+      match /conversations/{convId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAssocAdmin(assocId) || isSuperAdmin() ||
+          isAuthenticated(); // locatarii pot răspunde/marca ca citit
+
+        match /messages/{msgId} {
+          allow read: if isAuthenticated();
+          allow create: if isAuthenticated();
+        }
+      }
+
       // Sheets - locatarii invitați trebuie să poată citi (pentru date apartament)
       match /sheets/{sheetId} {
         allow read: if isAuthenticated();

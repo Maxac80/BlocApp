@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calculator, X, FileText, Wrench, Users, Building, Coins, ChevronUp } from 'lucide-react';
+import { Calculator, X, FileText, Wrench, Users, Building, Coins, ChevronUp, MessageSquare } from 'lucide-react';
 import UserDropdownMenu from './UserDropdownMenu';
+import { useMessaging } from '../../hooks/useMessaging';
 
 const Sidebar = ({
   sidebarOpen,
@@ -65,6 +66,17 @@ const Sidebar = ({
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [userMenuOpen]);
+
+  // Mesaje necitite
+  const { conversations, subscribeToConversations, getUnreadCount } = useMessaging(association?.id);
+  useEffect(() => {
+    if (association?.id) {
+      const unsub = subscribeToConversations();
+      return () => { if (unsub) unsub(); };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [association?.id]);
+  const unreadMessages = activeUser?.uid ? getUnreadCount(activeUser.uid) : 0;
 
   // Functia pentru a naviga la Dashboard si la luna publicata activa
   const handleBlocAppClick = () => {
@@ -289,6 +301,47 @@ const Sidebar = ({
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Setări Asociație
+            </div>
+          )}
+        </button>
+
+        {/* Separator */}
+        <div className="my-1 mx-2 lg:mx-3 border-t border-gray-200"></div>
+
+        {/* Mesaje */}
+        <button
+          onClick={() => handleNavigation("messages")}
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "messages"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <div className="relative">
+            <MessageSquare className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+            {unreadMessages > 0 && !sidebarExpanded && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadMessages > 9 ? '9+' : unreadMessages}
+              </span>
+            )}
+          </div>
+          {sidebarExpanded && (
+            <div className="ml-2 lg:ml-3 flex-1 flex items-center justify-between">
+              <div>
+                <div className="text-sm lg:text-base font-medium">Mesaje</div>
+                <div className="text-xs text-gray-500 hidden lg:block">Comunicare cu locatarii</div>
+              </div>
+              {unreadMessages > 0 && (
+                <span className="ml-2 min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              )}
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Mesaje
             </div>
           )}
         </button>
