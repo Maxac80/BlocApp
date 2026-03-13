@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -63,6 +63,22 @@ const MasterLogin = ({ onLogin }) => {
       setIsAutofilled(true);
     }
   };
+
+  // Fallback: verifică periodic dacă browserul a completat câmpurile
+  useEffect(() => {
+    const checkAutofill = () => {
+      const autofilled = document.querySelector('input:-webkit-autofill');
+      if (autofilled) {
+        setIsAutofilled(true);
+        return true;
+      }
+      return false;
+    };
+    const timers = [100, 500, 1000].map(delay =>
+      setTimeout(() => checkAutofill(), delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

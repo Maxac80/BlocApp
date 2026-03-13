@@ -37,6 +37,23 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
     }
   };
 
+  // Fallback: verifică periodic dacă browserul a completat câmpurile (animația CSS nu se aplică întotdeauna imediat)
+  useEffect(() => {
+    const checkAutofill = () => {
+      const autofilled = document.querySelector('input:-webkit-autofill');
+      if (autofilled) {
+        setIsAutofilled(true);
+        return true;
+      }
+      return false;
+    };
+    // Verifică la 100ms, 500ms și 1s după mount
+    const timers = [100, 500, 1000].map(delay =>
+      setTimeout(() => checkAutofill(), delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   // ⏰ COUNTDOWN PENTRU BLOCARE
   useEffect(() => {
     let interval = null;

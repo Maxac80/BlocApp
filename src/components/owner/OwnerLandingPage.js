@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye, EyeOff, Lock, Mail, AlertCircle, Home, Shield
 } from 'lucide-react';
@@ -28,6 +28,22 @@ export default function OwnerLandingPage() {
       setIsAutofilled(true);
     }
   };
+
+  // Fallback: verifică periodic dacă browserul a completat câmpurile
+  useEffect(() => {
+    const checkAutofill = () => {
+      const autofilled = document.querySelector('input:-webkit-autofill');
+      if (autofilled) {
+        setIsAutofilled(true);
+        return true;
+      }
+      return false;
+    };
+    const timers = [100, 500, 1000].map(delay =>
+      setTimeout(() => checkAutofill(), delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   // Handler pentru input changes
   const handleInputChange = (e) => {
