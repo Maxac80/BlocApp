@@ -6,3 +6,7 @@ html, body {
   overflow: hidden;
   height: 100%;
 }
+
+/* Detectare browser autofill pentru React (Chrome/Edge/Safari) */
+@keyframes onAutoFillStart { from {} to {} }
+input:-webkit-autofill { animation-name: onAutoFillStart; }

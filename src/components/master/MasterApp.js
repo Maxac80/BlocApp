@@ -55,6 +55,14 @@ const MasterLogin = ({ onLogin }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAutofilled, setIsAutofilled] = useState(false);
+
+  // Detectare browser autofill
+  const handleAnimationStart = (e) => {
+    if (e.animationName === 'onAutoFillStart') {
+      setIsAutofilled(true);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,6 +125,7 @@ const MasterLogin = ({ onLogin }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading}
                   className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors border-gray-300 bg-white ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="email@exemplu.ro"
@@ -137,6 +146,7 @@ const MasterLogin = ({ onLogin }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading}
                   className={`w-full pl-9 pr-10 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors border-gray-300 bg-white ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Parola ta"
@@ -172,7 +182,7 @@ const MasterLogin = ({ onLogin }) => {
             {/* Buton Login */}
             <button
               type="submit"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading || (!isAutofilled && (!email || !password))}
               className="w-full bg-purple-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

@@ -20,6 +20,14 @@ export default function OwnerLandingPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [isAutofilled, setIsAutofilled] = useState(false);
+
+  // Detectare browser autofill
+  const handleAnimationStart = (e) => {
+    if (e.animationName === 'onAutoFillStart') {
+      setIsAutofilled(true);
+    }
+  };
 
   // Handler pentru input changes
   const handleInputChange = (e) => {
@@ -118,6 +126,7 @@ export default function OwnerLandingPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading}
                   className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
@@ -147,6 +156,7 @@ export default function OwnerLandingPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading}
                   className={`w-full pl-9 pr-10 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
                     validationErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
@@ -198,7 +208,7 @@ export default function OwnerLandingPage() {
             {/* Buton Login */}
             <button
               type="submit"
-              disabled={isLoading || !formData.email || !formData.password}
+              disabled={isLoading || (!isAutofilled && (!formData.email || !formData.password))}
               className="w-full bg-emerald-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

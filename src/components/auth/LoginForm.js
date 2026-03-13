@@ -28,6 +28,14 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
   const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [isAutofilled, setIsAutofilled] = useState(false);
+
+  // Detectare browser autofill (Chrome/Edge/Safari aplică animație CSS pe :-webkit-autofill)
+  const handleAnimationStart = (e) => {
+    if (e.animationName === 'onAutoFillStart') {
+      setIsAutofilled(true);
+    }
+  };
 
   // ⏰ COUNTDOWN PENTRU BLOCARE
   useEffect(() => {
@@ -241,6 +249,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading || isBlocked}
                   className={`w-full pl-9 pr-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                     validationErrors.email
@@ -272,6 +281,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  onAnimationStart={handleAnimationStart}
                   disabled={isLoading || isBlocked}
                   className={`w-full pl-9 pr-10 py-2 sm:py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                     validationErrors.password
@@ -328,7 +338,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
             {/* 🚀 BUTON LOGIN */}
             <button
               type="submit"
-              disabled={isLoading || isBlocked || !formData.email || !formData.password}
+              disabled={isLoading || isBlocked || (!isAutofilled && (!formData.email || !formData.password))}
               className="w-full bg-blue-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
