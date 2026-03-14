@@ -335,6 +335,28 @@ export const useOwnerInvitation = () => {
 
       await updateDoc(doc(db, 'owners', owner.id), updateData);
 
+      // Marchează invitația din apartment_invitations ca accepted
+      try {
+        if (owner.associations?.length > 0) {
+          const assocId = owner.associations[0].associationId;
+          const invQuery = query(
+            collection(db, 'associations', assocId, 'apartment_invitations'),
+            where('email', '==', owner.email.toLowerCase()),
+            where('status', '==', 'pending')
+          );
+          const invSnap = await getDocs(invQuery);
+          for (const invDoc of invSnap.docs) {
+            await updateDoc(invDoc.ref, {
+              status: 'accepted',
+              acceptedAt: new Date().toISOString(),
+              acceptedBy: firebaseUser.uid
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Could not update apartment_invitations:', e);
+      }
+
       return {
         success: true,
         user: firebaseUser,

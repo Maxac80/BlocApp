@@ -140,7 +140,8 @@ export const useApartmentMembers = () => {
           })
         );
 
-        setInvitations(processed);
+        const pending = processed.filter(inv => inv.status === 'pending');
+        setInvitations(pending);
       } catch (err) {
         console.error('Error processing apartment invitations:', err);
         setError(err.message);

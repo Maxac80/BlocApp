@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail, User, Phone } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Home, Mail, User, Phone, LogOut } from 'lucide-react';
 import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
+import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 /**
  * Pagina de înregistrare pentru proprietari invitați
@@ -12,6 +13,7 @@ import { useOwnerInvitation } from '../../hooks/useOwnerInvitation';
  */
 export default function OwnerInviteRegistration({ token }) {
   const { validateToken, completeRegistration, loading } = useOwnerInvitation();
+  const { currentUser, logout } = useAuthEnhanced();
 
   const [validationState, setValidationState] = useState('loading'); // loading, valid, invalid, already-active
   const [owner, setOwner] = useState(null);
@@ -180,6 +182,36 @@ export default function OwnerInviteRegistration({ token }) {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Cont creat cu succes!</h2>
           <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Vei fi redirecționat către BlocApp Locatari...</p>
           <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  // User logat pe alt cont decât cel invitat
+  if (currentUser && owner?.email &&
+      currentUser.email?.toLowerCase() !== owner.email?.toLowerCase()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 max-w-md w-full text-center">
+          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-7 h-7 text-yellow-600" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">
+            Cont diferit
+          </h1>
+          <p className="text-gray-600 mb-2">
+            Ești logat ca <strong>{currentUser.email}</strong>
+          </p>
+          <p className="text-gray-600 mb-6">
+            Invitația este pentru <strong>{owner.email}</strong>
+          </p>
+          <button
+            onClick={async () => { await logout(); }}
+            className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Deloghează-te și continuă
+          </button>
         </div>
       </div>
     );

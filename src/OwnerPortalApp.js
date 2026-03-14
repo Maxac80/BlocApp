@@ -65,6 +65,28 @@ function OwnerPortalContent() {
     }
   });
 
+  /**
+   * Încarcă doar profilul owner-ului (fără apartamente) — folosit la refresh
+   */
+  const loadOwnerProfileOnly = async (uid) => {
+    try {
+      const ownersQuery = query(collection(db, 'owners'), where('firebaseUid', '==', uid));
+      const ownersSnap = await getDocs(ownersQuery);
+      if (!ownersSnap.empty) {
+        const owner = { id: ownersSnap.docs[0].id, ...ownersSnap.docs[0].data() };
+        setOwnerProfile({
+          id: owner.id,
+          firstName: owner.firstName || '',
+          lastName: owner.lastName || '',
+          phone: owner.phone || '',
+          email: owner.email || ''
+        });
+      }
+    } catch (err) {
+      console.error('[OwnerPortal] Error loading owner profile:', err);
+    }
+  };
+
   // Încarcă profilul owner-ului (necesar după refresh când selectedApartment vine din localStorage)
   useEffect(() => {
     if (currentUser?.uid && !ownerProfile && !quickAccessApartment) {
@@ -96,28 +118,6 @@ function OwnerPortalContent() {
   if (inviteToken) {
     return <OwnerInviteRegistration token={inviteToken} />;
   }
-
-  /**
-   * Încarcă doar profilul owner-ului (fără apartamente) — folosit la refresh
-   */
-  const loadOwnerProfileOnly = async (uid) => {
-    try {
-      const ownersQuery = query(collection(db, 'owners'), where('firebaseUid', '==', uid));
-      const ownersSnap = await getDocs(ownersQuery);
-      if (!ownersSnap.empty) {
-        const owner = { id: ownersSnap.docs[0].id, ...ownersSnap.docs[0].data() };
-        setOwnerProfile({
-          id: owner.id,
-          firstName: owner.firstName || '',
-          lastName: owner.lastName || '',
-          phone: owner.phone || '',
-          email: owner.email || ''
-        });
-      }
-    } catch (err) {
-      console.error('[OwnerPortal] Error loading owner profile:', err);
-    }
-  };
 
   /**
    * Căutare principală: owners collection (firebaseUid) → fallback sheets (email)

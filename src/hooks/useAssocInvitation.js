@@ -408,6 +408,70 @@ export const useAssocInvitation = () => {
     }
   };
 
+  // 🔄 RETRIMITERE INVITAȚIE
+  const resendInvitation = async (associationId, invitationId, resendByUserId) => {
+    if (!associationId || !invitationId) {
+      throw new Error('Association ID and invitation ID are required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const invitationRef = doc(db, 'associations', associationId, 'invitations', invitationId);
+      const invitationDoc = await getDoc(invitationRef);
+
+      if (!invitationDoc.exists()) {
+        throw new Error('Invitation not found');
+      }
+
+      const invData = invitationDoc.data();
+      if (invData.status !== 'pending') {
+        throw new Error('Only pending invitations can be resent');
+      }
+
+      // Generează token nou și expiră nouă
+      const newToken = generateToken();
+      const newExpiry = calculateExpiryDate();
+
+      await updateDoc(invitationRef, {
+        token: newToken,
+        expiresAt: newExpiry,
+        resentAt: new Date().toISOString(),
+        resentBy: resendByUserId
+      });
+
+      const inviteLink = `${window.location.origin}/invite/assoc/${newToken}`;
+
+      // Trimite email-ul
+      const emailResult = await sendInvitationEmail(
+        invData.email,
+        invData.name,
+        invData.associationName,
+        invData.role || 'assoc_admin',
+        inviteLink
+      );
+
+      await logActivity(resendByUserId, 'ASSOC_INVITATION_RESENT', {
+        associationId,
+        invitationId,
+        email: invData.email
+      });
+
+      return {
+        success: true,
+        inviteLink,
+        emailSent: emailResult.sent
+      };
+    } catch (err) {
+      console.error('Error resending invitation:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ❌ ANULARE INVITAȚIE
   const cancelInvitation = async (associationId, invitationId, cancelledByUserId) => {
     if (!associationId || !invitationId) {
@@ -476,6 +540,7 @@ export const useAssocInvitation = () => {
     unsubscribeInvitations,
     createInvitation,
     cancelInvitation,
+    resendInvitation,
     verifyInvitation,
     acceptInvitation,
     getInvitationStats

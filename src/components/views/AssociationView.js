@@ -66,7 +66,7 @@ const AssociationView = ({
 
   // Membri
   const { members, loading: membersLoading, loadMembers, unsubscribeMembers, removeMember, changeMemberRole, transferOwnership } = useAssocMembers();
-  const { invitations, loading: invitationsLoading, loadInvitations, unsubscribeInvitations, createInvitation, cancelInvitation } = useAssocInvitation();
+  const { invitations, loading: invitationsLoading, loadInvitations, unsubscribeInvitations, createInvitation, cancelInvitation, resendInvitation } = useAssocInvitation();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [memberActionMenu, setMemberActionMenu] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(null);
@@ -1009,15 +1009,26 @@ const AssociationView = ({
                                     {invConfig.label}
                                   </span>
                                   {isFounder && (
-                                    <button
-                                      onClick={async () => {
-                                        await cancelInvitation(association.id, inv.id, currentUserId);
-                                      }}
-                                      className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
-                                      title="Anuleaza invitatie"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
+                                    <>
+                                      <button
+                                        onClick={async () => {
+                                          await resendInvitation(association.id, inv.id, currentUserId);
+                                        }}
+                                        className="p-1.5 hover:bg-yellow-100 rounded text-yellow-700 transition-colors"
+                                        title="Retrimite invitatie"
+                                      >
+                                        <RefreshCw className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={async () => {
+                                          await cancelInvitation(association.id, inv.id, currentUserId);
+                                        }}
+                                        className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
+                                        title="Anuleaza invitatie"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               </div>
