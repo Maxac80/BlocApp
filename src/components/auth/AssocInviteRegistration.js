@@ -3,7 +3,7 @@ import {
   Lock,
   User,
   Phone,
-  MapPin,
+
   Eye,
   EyeOff,
   CheckCircle,
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useAuthEnhanced as useAuth } from '../../context/AuthContextEnhanced';
 import { useAssocInvitation } from '../../hooks/useAssocInvitation';
-import { judeteRomania } from '../../data/counties';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
@@ -53,12 +52,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    phone: '',
-    address: {
-      county: '',
-      city: '',
-      street: ''
-    }
+    phone: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -208,15 +202,6 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
       } else if (!/^(\+4|4|0)[0-9]{8,9}$/.test(formData.phone.replace(/\s/g, ''))) {
         errors.phone = 'Numarul de telefon nu este valid (ex: 0721234567)';
       }
-      if (!formData.address.county) {
-        errors.county = 'Judetul este obligatoriu';
-      }
-      if (!formData.address.city.trim()) {
-        errors.city = 'Localitatea este obligatorie';
-      }
-      if (!formData.address.street.trim()) {
-        errors.street = 'Strada este obligatorie';
-      }
     }
 
     setFormErrors(errors);
@@ -294,12 +279,7 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
             personalInfo: {
               firstName: formData.firstName.trim(),
               lastName: formData.lastName.trim(),
-              phone: formData.phone.trim(),
-              address: {
-                street: formData.address.street.trim(),
-                city: formData.address.city.trim(),
-                county: formData.address.county
-              }
+              phone: formData.phone.trim()
             }
           }
         }, { merge: true });
@@ -712,89 +692,6 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                         <p className="mt-1 text-xs text-red-600 flex items-center">
                           <AlertCircle className="w-3 h-3 mr-1" />
                           {formErrors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* ========== ADRESA (same as ProfileStep) ========== */}
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-sm">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Adresa de domiciliu
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Judetul */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Județul <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={formData.address.county}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          address: { ...formData.address, county: e.target.value }
-                        })}
-                        className={inputClass(formErrors.county)}
-                      >
-                        <option value="">Selecteaza judetul</option>
-                        {judeteRomania.map(county => (
-                          <option key={county.cod} value={county.nume}>
-                            {county.nume}
-                          </option>
-                        ))}
-                      </select>
-                      {formErrors.county && (
-                        <p className="mt-1 text-xs text-red-600 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          {formErrors.county}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Localitatea */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Localitatea <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.address.city}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          address: { ...formData.address, city: e.target.value }
-                        })}
-                        className={inputClass(formErrors.city)}
-                        placeholder="Bucuresti, Ploiesti, etc."
-                      />
-                      {formErrors.city && (
-                        <p className="mt-1 text-xs text-red-600 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          {formErrors.city}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Strada - full width */}
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Strada si numarul <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.address.street}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          address: { ...formData.address, street: e.target.value }
-                        })}
-                        className={inputClass(formErrors.street)}
-                        placeholder="Strada Exemplu nr. 123A"
-                      />
-                      {formErrors.street && (
-                        <p className="mt-1 text-xs text-red-600 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          {formErrors.street}
                         </p>
                       )}
                     </div>
