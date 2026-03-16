@@ -270,6 +270,9 @@ export default function OwnerInviteRegistration({ token }) {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          {/* Hidden email field for browser password manager */}
+          <input type="hidden" name="email" autoComplete="username" value={owner?.email || ''} />
+
           {/* Prenume și Nume */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -280,6 +283,8 @@ export default function OwnerInviteRegistration({ token }) {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <input
                   type="text"
+                  name="firstName"
+                  autoComplete="given-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Prenume"
@@ -294,6 +299,8 @@ export default function OwnerInviteRegistration({ token }) {
               </label>
               <input
                 type="text"
+                name="lastName"
+                autoComplete="family-name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Nume"
@@ -335,6 +342,8 @@ export default function OwnerInviteRegistration({ token }) {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={hasExistingAccount ? "Parola contului existent" : "Minim 6 caractere"}
@@ -384,6 +393,8 @@ export default function OwnerInviteRegistration({ token }) {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repetă parola"

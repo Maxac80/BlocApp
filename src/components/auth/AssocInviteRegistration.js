@@ -641,6 +641,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       </label>
                       <input
                         type="text"
+                        name="firstName"
+                        autoComplete="given-name"
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         className={inputClass(formErrors.firstName)}
@@ -661,6 +663,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       </label>
                       <input
                         type="text"
+                        name="lastName"
+                        autoComplete="family-name"
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         className={inputClass(formErrors.lastName)}
@@ -681,6 +685,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       </label>
                       <input
                         type="email"
+                        name="email"
+                        autoComplete="username"
                         value={formData.email}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
@@ -695,6 +701,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       </label>
                       <input
                         type="tel"
+                        name="phone"
+                        autoComplete="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className={inputClass(formErrors.phone)}
@@ -808,6 +816,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
+                          name="password"
+                          autoComplete="new-password"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
@@ -839,6 +849,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
+                          name="confirmPassword"
+                          autoComplete="new-password"
                           value={formData.confirmPassword}
                           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                           className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
@@ -867,6 +879,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    autoComplete="username"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className={inputClass(formErrors.email)}
@@ -888,6 +902,8 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      autoComplete="current-password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className={`w-full px-3 pr-9 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm ${
