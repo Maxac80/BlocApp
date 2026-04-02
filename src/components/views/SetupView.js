@@ -499,32 +499,6 @@ return (
             </div>
 
             <div className="flex flex-wrap gap-2 sm:gap-3">
-              {/* Butoane Excel - vizibile doar când există cel puțin o scară fără apartamente */}
-              {stairsWithoutApartments > 0 && (
-                <>
-                  <button
-                    onClick={handleDownloadExcelTemplate}
-                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm font-medium shadow-lg"
-                    title="Descarcă template Excel pentru import masiv apartamente"
-                  >
-                    <svg className="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="hidden sm:inline">Template </span>Excel
-                  </button>
-                  <button
-                    onClick={() => setShowExcelUploadModal(true)}
-                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm font-medium shadow-lg"
-                    title="Încarcă fișier Excel completat pentru import masiv"
-                  >
-                    <svg className="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="hidden sm:inline">Încarcă </span>Excel
-                  </button>
-                </>
-              )}
-
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
@@ -551,15 +525,34 @@ return (
           {/* Mesaj informativ pentru template Excel când nu există apartamente */}
           {stairsWithoutApartments > 0 && !searchTerm && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl">📥</div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-blue-800 mb-2">Import masiv cu Excel</h4>
-                    <p className="text-sm text-blue-700">
-                      Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru scările care nu au apartamente definite. <strong>Notă:</strong> Template-ul Excel va conține doar scările care nu au apartamente și se poate folosi pentru import doar în aceste scări.
-                    </p>
-                  </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                <h4 className="font-medium text-blue-800 mb-1.5 flex items-center gap-2 text-sm sm:text-base">
+                  <span className="text-xl">📥</span> Import masiv cu Excel
+                </h4>
+                <p className="text-xs sm:text-sm text-blue-700 mb-3">
+                  Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru scările care nu au apartamente definite. <strong>Notă:</strong> Template-ul Excel va conține doar scările care nu au apartamente și se poate folosi pentru import doar în aceste scări.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownloadExcelTemplate}
+                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm font-medium"
+                    title="Descarcă template Excel pentru import masiv apartamente"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Template Excel
+                  </button>
+                  <button
+                    onClick={() => setShowExcelUploadModal(true)}
+                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm font-medium"
+                    title="Încarcă fișier Excel completat pentru import masiv"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Încarcă Excel
+                  </button>
                 </div>
               </div>
             </div>
@@ -662,9 +655,9 @@ return (
 
         {/* Structura ierarhică */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+          <div className="flex items-center justify-between gap-2 mb-3 sm:mb-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-800">📋 Structura Asociației</h3>
-            <div className="flex gap-2 sm:gap-3 flex-wrap self-end sm:self-auto">
+            <div className="flex gap-2 sm:gap-3 flex-wrap items-center">
               {associationBlocks.length > 3 && (
                 <div className="flex gap-2">
                   <button
@@ -833,7 +826,7 @@ return (
                   <div key={block.id} className="border border-gray-200 rounded-lg">
                     {/* Header Bloc */}
                     <div
-                      className="flex items-center justify-between p-2 sm:p-4 bg-blue-50 border-b cursor-pointer hover:bg-blue-100 transition-colors"
+                      className="px-2 pt-2 pb-0.5 sm:p-4 bg-blue-50 border-b cursor-pointer hover:bg-blue-100 transition-colors"
                       onClick={() => {
                         setExpandedBlocks(prev => ({
                           ...prev,
@@ -841,29 +834,21 @@ return (
                         }));
                       }}
                     >
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className="text-blue-600 text-base sm:text-xl">
+                      {/* Rând 1: săgeată + nume + butoane (pe mobil și desktop) */}
+                      <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                        <div className="text-blue-600 text-base sm:text-xl flex-shrink-0">
                           {isExpanded ? '▼' : '▸'}
                         </div>
 
-                        <div
-                          className="flex flex-wrap items-center gap-1 sm:gap-2 cursor-pointer hover:bg-blue-100 rounded-lg p-1 sm:p-2 -m-1 sm:-m-2 transition-colors"
-                          onClick={() => {
-                            setExpandedBlocks(prev => ({
-                              ...prev,
-                              [block.id]: !isExpanded
-                            }));
-                          }}
-                        >
-                          <span className="text-sm sm:text-lg font-medium text-gray-800 whitespace-nowrap flex items-center gap-1.5">
-                            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" /> {block.name}
-                          </span>
-                          <span className="text-[10px] sm:text-sm text-gray-600 bg-blue-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
-                            {blockStairs.length} scări • {blockStairs.reduce((sum, currentStair) => {
-                              return sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length;
-                            }, 0)} apartamente
-                          </span>
-                        </div>
+                        <span className="text-sm sm:text-lg font-medium text-gray-800 whitespace-nowrap flex items-center gap-1.5">
+                          <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" /> {block.name}
+                        </span>
+
+                        {/* Info scări/apartamente - doar pe desktop, inline */}
+                        <span className="hidden sm:inline text-sm text-gray-600 bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">
+                          {blockStairs.length === 1 ? '1 scară' : `${blockStairs.length} scări`} • {(() => { const count = blockStairs.reduce((sum, currentStair) => sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length, 0); return count === 1 ? '1 apartament' : `${count} apartamente`; })()}
+                        </span>
                       </div>
                       
                       <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -1017,7 +1002,7 @@ return (
                                 }
                                 openAddStairModal(block);
                               }}
-                              className={`px-3 py-2 rounded-lg transition-colors flex items-center text-sm ${
+                              className={`p-1.5 sm:px-3 sm:py-2 rounded-lg transition-colors flex items-center text-sm ${
                                 cantEdit
                                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                   : 'bg-green-600 text-white hover:bg-green-700'
@@ -1025,11 +1010,19 @@ return (
                               title={cantEdit ? 'Adăugare blocată - lună publicată' : `Adaugă scară în ${block.name}`}
                               disabled={cantEdit}
                             >
-                              <Plus className="w-4 h-4" />
-                              Adaugă Scară
+                              <Plus className="w-4 h-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Adaugă Scară</span>
                             </button>
                           </>
                         )}
+                      </div>
+                      </div>
+
+                      {/* Rând 2: info scări/apartamente - doar pe mobil */}
+                      <div className="sm:hidden ml-7">
+                        <span className="text-[10px] text-gray-500">
+                          {blockStairs.length === 1 ? '1 scară' : `${blockStairs.length} scări`} • {(() => { const count = blockStairs.reduce((sum, currentStair) => sum + associationApartments.filter(apt => apt.stairId === currentStair.id).length, 0); return count === 1 ? '1 apartament' : `${count} apartamente`; })()}
+                        </span>
                       </div>
                     </div>
 
@@ -1117,9 +1110,9 @@ return (
                               const isStairExpanded = expandedStairs[currentStair.id] ?? shouldExpandStair();
                               
                               return (
-                                <div key={currentStair.id} className="ml-2 sm:ml-6 border-l-2 border-green-200 pl-2 sm:pl-4">
+                                <div key={currentStair.id} className="sm:ml-6 border-l-2 border-green-200 pl-0.5 sm:pl-4">
                                   <div
-                                    className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                                    className="px-2 pt-2 pb-0.5 sm:p-3 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
                                     onClick={() => {
                                       setExpandedStairs(prev => ({
                                         ...prev,
@@ -1127,11 +1120,12 @@ return (
                                       }));
                                     }}
                                   >
-                                    <div className="flex items-center space-x-1.5 sm:space-x-3">
-                                      <div className="text-green-600 text-sm sm:text-base">
+                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0">
+                                      <div className="text-green-600 text-sm sm:text-base flex-shrink-0">
                                         {isStairExpanded ? '▼' : '▸'}
                                       </div>
-                                      <Home className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
+                                      <Home className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 flex-shrink-0" />
                                       
                                       {editingItem?.type === 'stair' && editingItem?.id === currentStair.id ? (
                                         <div className="flex items-center space-x-2">
@@ -1173,22 +1167,16 @@ return (
                                           </button>
                                         </div>
                                       ) : (
-                                        <div
-                                          className="flex flex-wrap items-center gap-1 sm:gap-2 cursor-pointer hover:bg-green-100 rounded-lg p-1 sm:p-2 -m-1 sm:-m-2 transition-colors"
-                                          onClick={() => {
-                                            setExpandedStairs(prev => ({
-                                              ...prev,
-                                              [currentStair.id]: !isStairExpanded
-                                            }));
-                                          }}
-                                        >
-                                          <span className="font-medium text-gray-800 text-sm sm:text-lg whitespace-nowrap">
-                                            {currentStair.name}
-                                          </span>
-                                          <span className="text-[10px] sm:text-sm text-gray-600 bg-green-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
-                                            {stairApartments.length} apartamente • {stairApartments.reduce((sum, apt) => sum + apt.persons, 0)} persoane
-                                          </span>
-                                        </div>
+                                        <>
+                                        <span className="font-medium text-gray-800 text-sm sm:text-lg whitespace-nowrap">
+                                          {currentStair.name}
+                                        </span>
+
+                                        {/* Info apartamente/persoane - doar pe desktop, inline */}
+                                        <span className="hidden sm:inline text-sm text-gray-600 bg-green-100 px-2 py-1 rounded-full whitespace-nowrap">
+                                          {stairApartments.length === 1 ? '1 apartament' : `${stairApartments.length} apartamente`} • {stairApartments.reduce((sum, apt) => sum + apt.persons, 0) === 1 ? '1 persoană' : `${stairApartments.reduce((sum, apt) => sum + apt.persons, 0)} persoane`}
+                                        </span>
+                                        </>
                                       )}
                                     </div>
                                     
@@ -1343,7 +1331,7 @@ return (
                                               }
                                               openAddApartmentModal(currentStair);
                                             }}
-                                            className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center text-sm ${
+                                            className={`p-1.5 sm:px-3 sm:py-2 rounded-lg transition-all duration-200 flex items-center text-sm ${
                                               cantEdit
                                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                 : 'bg-orange-600 text-white hover:bg-orange-700 hover:shadow-md hover:scale-105'
@@ -1351,17 +1339,25 @@ return (
                                             title={cantEdit ? 'Adăugare blocată - lună publicată' : `Adaugă apartament în ${currentStair.name}`}
                                             disabled={cantEdit}
                                           >
-                                            <Plus className="w-4 h-4" />
-                                            Adaugă Apartament
+                                            <Plus className="w-4 h-4 sm:mr-1" />
+                                            <span className="hidden sm:inline">Adaugă Apartament</span>
                                           </button>
                                         </>
                                       )}
+                                    </div>
+                                    </div>
+
+                                    {/* Rând 2: info apartamente/persoane - doar pe mobil */}
+                                    <div className="sm:hidden ml-7">
+                                      <span className="text-[10px] text-gray-500">
+                                        {stairApartments.length === 1 ? '1 apartament' : `${stairApartments.length} apartamente`} • {stairApartments.reduce((sum, apt) => sum + apt.persons, 0) === 1 ? '1 persoană' : `${stairApartments.reduce((sum, apt) => sum + apt.persons, 0)} persoane`}
+                                      </span>
                                     </div>
                                   </div>
 
                                   {/* Conținutul scării expandat */}
                                   {isStairExpanded && (
-                                    <div className="mt-3 ml-6 space-y-3">
+                                    <div className="mt-2 sm:mt-3 ml-1 sm:ml-6 space-y-2 sm:space-y-3">
                                       {/* Form adăugare apartament */}
                                       {showAddForm?.type === 'apartment' && showAddForm.parentId === currentStair.id && (
                                         <div className="bg-white border-2 border-orange-400 rounded-xl p-6 shadow-lg ring-2 ring-orange-200">
@@ -1737,25 +1733,25 @@ return (
                                                         </span>
                                                       </div>
 
-                                                      <div className="flex flex-wrap items-center gap-1">
-                                                        <span className="text-[10px] sm:text-xs bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded">
+                                                      <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
+                                                        <span className="text-[9px] sm:text-xs bg-orange-200 text-orange-800 px-1 sm:px-1.5 py-0.5 rounded">
                                                           {apartment.persons} pers.
                                                         </span>
 
                                                         {apartment.apartmentType && (
-                                                          <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                                          <span className="text-[9px] sm:text-xs bg-blue-100 text-blue-700 px-1 sm:px-1.5 py-0.5 rounded">
                                                             🏠 {apartment.apartmentType}
                                                           </span>
                                                         )}
 
                                                         {apartment.surface && (
-                                                          <span className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                                                          <span className="text-[9px] sm:text-xs bg-green-100 text-green-700 px-1 sm:px-1.5 py-0.5 rounded">
                                                             📐 {apartment.surface} mp
                                                           </span>
                                                         )}
 
                                                         {apartment.heatingSource && (
-                                                          <span className="text-[10px] sm:text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                                                          <span className="text-[9px] sm:text-xs bg-red-100 text-red-700 px-1 sm:px-1.5 py-0.5 rounded">
                                                             🔥 {apartment.heatingSource}
                                                           </span>
                                                         )}
@@ -1764,7 +1760,7 @@ return (
                                                   </div>
 
                                                   {/* Hamburger menu pentru apartament */}
-                                                  <div className="relative ml-4 apartment-menu-container">
+                                                  <div className="relative ml-1 sm:ml-4 apartment-menu-container">
                                                     <button
                                                       onClick={() => {
                                                         // Arată meniul pentru TOATE apartamentele
