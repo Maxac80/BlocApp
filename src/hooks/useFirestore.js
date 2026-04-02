@@ -262,7 +262,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('📝 COLLECTION-FALLBACK: Actualizăm blocul în colecții...');
 
       const updateData = {
         ...updates,
@@ -272,7 +271,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       await updateDoc(doc(db, "blocks", blockId), updateData);
       await loadBlocks(association.id);
 
-      console.log("✅ Bloc actualizat în colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la actualizarea blocului:", err);
       throw err;
@@ -285,14 +283,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.deleteBlockFromSheet) {
-        console.log('🗑️ SHEET-BASED: Ștergem blocul direct din sheet...');
         await sheetOperationsRef.current.deleteBlockFromSheet(blockId);
-        console.log('✅ Bloc șters direct din sheet:', blockId);
         return;
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('🗑️ COLLECTION-FALLBACK: Ștergem blocul din colecții...');
 
       // Șterge toate scările și apartamentele din bloc
       const stairsQuery = query(collection(db, "stairs"), where("blockId", "==", blockId));
@@ -320,7 +315,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
         loadApartments(association.id),
       ]);
 
-      console.log("✅ Bloc șters complet din colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la ștergerea blocului:", err);
       throw err;
@@ -333,14 +327,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.updateStairInSheet) {
-        console.log('📝 SHEET-BASED: Actualizăm scara direct în sheet...');
         await sheetOperationsRef.current.updateStairInSheet(stairId, updates);
-        console.log('✅ Scară actualizată direct în sheet:', stairId);
         return;
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('📝 COLLECTION-FALLBACK: Actualizăm scara în colecții...');
 
       const updateData = {
         ...updates,
@@ -350,7 +341,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       await updateDoc(doc(db, "stairs", stairId), updateData);
       await loadStairs(association.id);
 
-      console.log("✅ Scară actualizată în colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la actualizarea scării:", err);
       throw err;
@@ -363,14 +353,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.deleteStairFromSheet) {
-        console.log('🗑️ SHEET-BASED: Ștergem scara direct din sheet...');
         await sheetOperationsRef.current.deleteStairFromSheet(stairId);
-        console.log('✅ Scară ștearsă direct din sheet:', stairId);
         return;
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('🗑️ COLLECTION-FALLBACK: Ștergem scara din colecții...');
 
       // Șterge toate apartamentele din scară
       const apartmentsQuery = query(collection(db, "apartments"), where("stairId", "==", stairId));
@@ -384,7 +371,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
 
       await Promise.all([loadStairs(association.id), loadApartments(association.id)]);
 
-      console.log("✅ Scară ștearsă complet din colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la ștergerea scării:", err);
       throw err;
@@ -397,19 +383,15 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.deleteApartmentFromSheet) {
-        console.log('🗑️ SHEET-BASED: Ștergem apartamentul direct din sheet...');
         await sheetOperationsRef.current.deleteApartmentFromSheet(apartmentId);
-        console.log('✅ Apartament șters direct din sheet:', apartmentId);
         return;
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('🗑️ COLLECTION-FALLBACK: Ștergem apartamentul din colecții...');
 
       await deleteDoc(doc(db, "apartments", apartmentId));
       await loadApartments(association.id);
 
-      console.log("✅ Apartament șters din colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la ștergerea apartamentului:", err);
       throw err;
@@ -445,7 +427,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
 
         // 🆕 Dacă avem associationId din props, încarcă acea asociație specifică
         if (associationId) {
-          console.log("📍 Încarcă asociația specifică din context:", associationId);
           const associationDoc = await getDoc(doc(db, "associations", associationId));
           if (associationDoc.exists()) {
             associationData = { id: associationDoc.id, ...associationDoc.data() };
@@ -485,14 +466,12 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
                   await updateDoc(userRef, {
                     directAssociations: [...currentDirectAssocs, associationDoc.id]
                   });
-                  console.log("✅ Asociația adăugată la directAssociations[] (fallback)");
                 }
               }
             } catch (migrationErr) {
               console.warn("⚠️ Nu s-a putut actualiza directAssociations:", migrationErr);
             }
           } else {
-            console.log("❌ Nu s-a găsit asociație pentru acest utilizator");
             setAssociation(null);
             setBlocks([]);
             setStairs([]);
@@ -570,7 +549,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
             await updateDoc(userRef, {
               directAssociations: [...currentDirectAssocs, docRef.id]
             });
-            console.log("✅ Asociația adăugată la directAssociations[]");
           }
         }
       } catch (userUpdateErr) {
@@ -617,14 +595,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🆕 SHEET-BASED: Adaugă blocul direct în sheet în loc de colecții
       if (sheetOperationsRef?.current?.addBlockToSheet) {
-        console.log('🏗️ SHEET-BASED: Adăugăm blocul direct în sheet...');
         const newBlock = await sheetOperationsRef.current.addBlockToSheet(data);
-        console.log('✅ Bloc adăugat direct în sheet:', newBlock);
         return newBlock;
       }
 
       // 🔄 FALLBACK: Salvare în colecții (compatibilitate cu versiuni vechi)
-      console.log('⚠️ FALLBACK: Salvez blocul în colecții (nu este recomandat)');
       const blockData = {
         ...data,
         associationId: association.id,
@@ -637,7 +612,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă blocurile pentru sincronizare
       await loadBlocks(association.id);
 
-      console.log("✅ Bloc adăugat în colecții și date reîncărcate:", newBlock);
       return newBlock;
     } catch (err) {
       console.error("❌ Eroare la adăugarea blocului:", err);
@@ -651,14 +625,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🆕 SHEET-BASED: Adaugă scara direct în sheet în loc de colecții
       if (sheetOperationsRef?.current?.addStairToSheet) {
-        console.log('🏗️ SHEET-BASED: Adăugăm scara direct în sheet...');
         const newStair = await sheetOperationsRef.current.addStairToSheet(data);
-        console.log('✅ Scară adăugată direct în sheet:', newStair);
         return newStair;
       }
 
       // 🔄 FALLBACK: Salvare în colecții (compatibilitate cu versiuni vechi)
-      console.log('⚠️ FALLBACK: Salvez scara în colecții (nu este recomandat)');
       const stairData = {
         ...data,
         createdAt: new Date().toISOString(),
@@ -670,7 +641,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă scările pentru sincronizare
       await loadStairs(association.id);
 
-      console.log("✅ Scară adăugată în colecții și date reîncărcate:", newStair);
       return newStair;
     } catch (err) {
       console.error("❌ Eroare la adăugarea scării:", err);
@@ -684,14 +654,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🆕 SHEET-BASED: Adaugă apartamentul direct în sheet în loc de colecții
       if (sheetOperationsRef?.current?.addApartmentToSheet) {
-        console.log('🏗️ SHEET-BASED: Adăugăm apartamentul direct în sheet...');
         const newApartment = await sheetOperationsRef.current.addApartmentToSheet(data);
-        console.log('✅ Apartament adăugat direct în sheet:', newApartment);
         return newApartment;
       }
 
       // 🔄 FALLBACK: Salvare în colecții (compatibilitate cu versiuni vechi)
-      console.log('⚠️ FALLBACK: Salvez apartamentul în colecții (nu este recomandat)');
       const apartmentData = {
         ...data,
         // Adaugă solduri inițiale dacă sunt furnizate, altfel valori default
@@ -710,7 +677,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă apartamentele pentru sincronizare
       await loadApartments(association.id);
 
-      console.log("✅ Apartament adăugat în colecții și date reîncărcate:", newApartment);
       return newApartment;
     } catch (err) {
       console.error("❌ Eroare la adăugarea apartamentului:", err);
@@ -724,14 +690,11 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
     try {
       // 🎯 PRIORITATE: Folosește sheet operations dacă sunt disponibile
       if (sheetOperationsRef?.current?.updateApartmentInSheet) {
-        console.log('📝 SHEET-BASED: Actualizăm apartamentul direct în sheet...');
         await sheetOperationsRef.current.updateApartmentInSheet(apartmentId, updates);
-        console.log('✅ Apartament actualizat direct în sheet:', apartmentId);
         return;
       }
 
       // 📦 FALLBACK: Folosește colecțiile Firebase (pentru compatibilitate)
-      console.log('📝 COLLECTION-FALLBACK: Actualizăm apartamentul în colecții...');
 
       const updateData = {
         ...updates,
@@ -743,7 +706,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă apartamentele pentru sincronizare
       await loadApartments(association.id);
 
-      console.log("✅ Apartament actualizat în colecții și date reîncărcate");
     } catch (err) {
       console.error("❌ Eroare la actualizarea apartamentului:", err);
       throw err;
@@ -812,7 +774,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
           // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
         });
 
-        console.log("✅ [SHEET-BASED] Cheltuială custom adăugată în expenseConfigurations:", newExpenseConfig);
 
         // Returnează obiectul în formatul așteptat (cu id și name)
         return {
@@ -839,7 +800,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă cheltuielile custom pentru sincronizare
       await loadCustomExpenses(association.id);
 
-      console.log("✅ [FALLBACK] Cheltuială custom adăugată în colecție:", newExpense);
       return newExpense;
     } catch (err) {
       console.error("❌ Eroare la adăugarea cheltuielii custom:", err);
@@ -872,7 +832,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
         const updatedExpenseConfigs = { ...currentExpenseConfigs };
         if (expenseId && updatedExpenseConfigs[expenseId]) {
           delete updatedExpenseConfigs[expenseId];
-          console.log(`🗑️ Cheltuială custom ștearsă: "${expenseName}" (${expenseId})`);
         } else {
           console.warn(`⚠️ Nu s-a găsit cheltuiala "${expenseName}" în expenseConfigurations`);
         }
@@ -888,7 +847,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
           // NU mai includem customExpenses sau disabledExpenses - folosim doar expenseConfigurations
         });
 
-        console.log(`✅ Cheltuială custom "${expenseName}" ștearsă cu succes`);
 
         return;
       }
@@ -911,7 +869,6 @@ export const useAssociationData = (sheetOperationsRef = null, associationId = nu
       // Reîncarcă cheltuielile custom pentru sincronizare
       await loadCustomExpenses(association.id);
 
-      console.log(`✅ [FALLBACK] Cheltuială custom "${expenseName}" ștearsă din colecție`);
     } catch (err) {
       console.error("❌ Eroare la ștergerea cheltuielii custom:", err);
       throw err;

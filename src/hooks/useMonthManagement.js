@@ -59,7 +59,6 @@ export const useMonthManagement = (associationId) => {
   useEffect(() => {
     // La încărcarea sheet-urilor, setează ÎNTOTDEAUNA luna publicată
     if (!hasInitialized.current && (publishedSheet || currentSheet)) {
-      console.log('📅 Setare lună la sheet publicat (activ):', publishedSheet?.monthYear || currentSheet?.monthYear);
       if (publishedSheet) {
         setCurrentMonth(publishedSheet.monthYear);
       } else if (currentSheet) {
@@ -72,7 +71,6 @@ export const useMonthManagement = (associationId) => {
   // Salvează luna curentă în localStorage când se schimbă
   useEffect(() => {
     if (currentMonth) {
-      console.log('💾 Salvare lună în localStorage:', currentMonth);
       localStorage.setItem('selectedMonth', currentMonth);
     }
   }, [currentMonth]);
@@ -141,7 +139,6 @@ export const useMonthManagement = (associationId) => {
 
     // Pentru a evita race conditions, verificăm sheet-urile direct din Firebase
     // în loc să ne bazăm pe state-ul local care poate fi învechit
-    console.log(`🎯 Inițializez sheet-ul pentru asociația ${idToUse}`);
 
     try {
       // Creează sheet-ul folosind ID-ul explicit
@@ -206,11 +203,6 @@ export const useMonthManagement = (associationId) => {
 
     try {
       // Validări de bază
-      console.log('🔍 Verificare date întreținere:', {
-        hasMaintenanceData: !!maintenanceData,
-        maintenanceDataLength: maintenanceData?.length,
-        maintenanceData: maintenanceData
-      });
 
       if (!maintenanceData || maintenanceData.length === 0) {
         if (!window.confirm('Nu există date de întreținere. Continuați cu publicarea?')) {
@@ -261,7 +253,6 @@ export const useMonthManagement = (associationId) => {
             `Acestea sunt soldurile corecte pentru începutul activității?`
           );
           if (!confirmBalances) {
-        console.log('❌ User cancelled balance confirmation');
         return false;
       }
         }
@@ -287,8 +278,6 @@ export const useMonthManagement = (associationId) => {
         return false;
       }
 
-      console.log('📋 Publică sheet-ul existent:', currentSheet.monthYear);
-
       // Publică sheet-ul curent cu datele calculate (SNAPSHOT COMPLET la publicare)
       const result = await publishCurrentSheet(maintenanceData, association.adminId);
 
@@ -296,7 +285,6 @@ export const useMonthManagement = (associationId) => {
         alert(`✅ Luna ${month} a fost publicată cu succes!`);
         return true;
       } else {
-        console.log('⚠️ publishCurrentSheet returned falsy value:', result);
         return false;
       }
     } catch (error) {
@@ -543,13 +531,11 @@ export const useMonthManagement = (associationId) => {
 
   // Save to Firebase - deprecated, se face automat
   const saveStatusToFirebase = useCallback(async () => {
-    console.log('saveStatusToFirebase deprecated - auto-saved through sheets');
     return true;
   }, []);
 
   // Reset months - pentru debug
   const resetMonths = useCallback(() => {
-    console.log('Reset months - reload sheets');
     window.location.reload();
   }, []);
 
@@ -627,11 +613,6 @@ export const useMonthManagement = (associationId) => {
       if (apartmentBalance) {
         // Restanțele = soldul rămas după plăți din luna precedentă
         const restante = apartmentBalance.remaining || 0;
-        console.log(`🏠 Sheet balance for apartment ${apartmentId}:`, {
-          original: apartmentBalance.original,
-          paid: apartmentBalance.paid,
-          remaining: restante
-        });
         
         return {
           restante: Math.round(restante * 100) / 100,

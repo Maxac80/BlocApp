@@ -271,7 +271,6 @@ const useExpenseConfigurations = (currentSheet) => {
       // Dacă cheia veche (name-based) este diferită de noua cheie (ID-based), șterge cheia veche
       if (expenseType !== expenseId && existingConfigs[expenseType]) {
         delete updatedConfigs[expenseType];
-        console.log(`🔄 Migrare configurație: "${expenseType}" → "${expenseId}"`);
       }
 
       // Salvează în sheet-ul curent
@@ -438,8 +437,6 @@ const useExpenseConfigurations = (currentSheet) => {
         return; // Nu e nevoie de migrație
       }
 
-      console.log(`🔄 Migrare participări: ${oldKeys.length} chei vechi găsite`);
-
       const updatedParticipations = { ...allParticipations };
       let migratedCount = 0;
 
@@ -459,14 +456,13 @@ const useExpenseConfigurations = (currentSheet) => {
           // Copiază participarea la noua cheie (doar dacă nu există deja)
           if (!updatedParticipations[newKey]) {
             updatedParticipations[newKey] = allParticipations[oldKey];
-            console.log(`  ✓ ${oldKey} → ${newKey}`, allParticipations[oldKey]);
             migratedCount++;
           }
 
           // Șterge cheia veche
           delete updatedParticipations[oldKey];
         } else {
-          console.warn(`  ⚠️ Nu s-a găsit ID pentru "${expenseName}" - cheia ${oldKey} rămâne`);
+          console.warn(`Nu s-a găsit ID pentru "${expenseName}" - cheia ${oldKey} rămâne`);
         }
       });
 
@@ -478,7 +474,6 @@ const useExpenseConfigurations = (currentSheet) => {
             'configSnapshot.updatedAt': serverTimestamp()
           });
 
-          console.log(`✅ Migrare participări completă: ${migratedCount} chei actualizate`);
         } catch (error) {
           console.error('❌ Eroare la migrarea participărilor:', error);
         }

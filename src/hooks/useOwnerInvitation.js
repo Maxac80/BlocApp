@@ -544,12 +544,6 @@ export const useOwnerInvitation = () => {
   const sendInvitationEmail = async (email, token, firstName, associationName = '', apartmentNumber = '') => {
     const magicLink = getMagicLink(token);
 
-    // Log pentru debugging
-    console.log('📧 [SENDING EMAIL]');
-    console.log('To:', email);
-    console.log('Name:', firstName || 'Proprietar');
-    console.log('Magic Link:', magicLink);
-
     try {
       // Determină URL-ul API-ului
       const apiUrl = process.env.NODE_ENV === 'production'
@@ -577,14 +571,12 @@ export const useOwnerInvitation = () => {
 
         // Fallback pentru development - salvează în localStorage
         if (process.env.NODE_ENV === 'development') {
-          console.log('💡 [DEV FALLBACK] Email API unavailable, saving to localStorage');
           saveToLocalStorage(email, firstName, magicLink);
         }
 
         return { success: false, error: data.error || 'Failed to send email' };
       }
 
-      console.log('✅ Email sent successfully:', data.messageId);
       return { success: true, messageId: data.messageId };
 
     } catch (error) {
@@ -592,9 +584,7 @@ export const useOwnerInvitation = () => {
 
       // Fallback pentru development când API-ul nu e disponibil
       if (process.env.NODE_ENV === 'development') {
-        console.log('💡 [DEV FALLBACK] Saving invitation to localStorage');
         saveToLocalStorage(email, firstName, magicLink);
-        console.log('💡 [DEV] Deschide direct:', magicLink);
         return { success: true, fallback: true };
       }
 

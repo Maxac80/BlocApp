@@ -28,6 +28,11 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
   const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [loginError, setLoginError] = useState(null);
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
+
+  // Folosim authError din context (persistă la remontare) sau loginError local
+  const displayError = loginError || authError;
   const [isAutofilled, setIsAutofilled] = useState(false);
 
   // Detectare browser autofill (Chrome/Edge/Safari aplică animație CSS pe :-webkit-autofill)
@@ -74,6 +79,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
 
   // 🔍 VERIFICARE LIMITĂRI LOGIN LA SCHIMBAREA EMAIL-ULUI
   useEffect(() => {
+    // Nu verifica dacă deja avem eroare de cont inexistent
+    if (displayError?.startsWith('NOT_FOUND:')) return;
+
     const checkLimitations = async () => {
       if (formData.email && formData.email.includes('@')) {
         const result = await security.checkLoginAttempts(formData.email);
@@ -89,7 +97,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
 
     const debounceTimer = setTimeout(checkLimitations, 500);
     return () => clearTimeout(debounceTimer);
-  }, [formData.email, security]);
+  }, [formData.email, security, displayError]);
 
   // 📝 GESTIONARE SCHIMBĂRI INPUT
   const handleInputChange = (e) => {
@@ -101,13 +109,15 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
       [name]: inputValue
     }));
     
-    // Șterge eroarea pentru câmpul curent
+    // Șterge erorile la editare
     if (validationErrors[name]) {
       setValidationErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
+    if (loginError) setLoginError(null);
+    if (authError) setAuthError(null);
     
     // Șterge eroarea globală
     if (authError) {
@@ -143,7 +153,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
     if (isBlocked) return;
     
     setIsLoading(true);
-    
+    setLoginError(null);
+    setHasAttemptedLogin(true);
+
     try {
       const result = await loginEnhanced(
         formData.email.trim(),
@@ -159,8 +171,11 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
       }
 
     } catch (error) {
-      console.error('❌ Login error:', error);
-      // Error-ul este gestionat automat de AuthContext
+      setLoginError(error.message);
+      // Cont inexistent - resetăm încercările (nu sunt relevante)
+      if (error.message?.startsWith('NOT_FOUND:')) {
+        setLoginAttempts(0);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +236,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
           )}
 
           {/* 📊 AFIȘARE ÎNCERCĂRI RĂMASE */}
-          {!isBlocked && loginAttempts > 0 && (
+          {hasAttemptedLogin && !isBlocked && !isLoading && loginAttempts > 0 && !displayError && (
             <div className="mb-3 p-2.5 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -240,12 +255,25 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToRes
             </div>
           )}
 
-          {/* 🚨 AFIȘARE ERORI GLOBALE */}
-          {authError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
-                <p className="text-red-800 text-sm">{authError}</p>
+          {/* 🚨 AFIȘARE ERORI */}
+          {displayError && (
+            <div className={`mb-4 p-3 border rounded-lg ${displayError.startsWith('NOT_FOUND:') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-start">
+                <AlertCircle className={`w-4 h-4 mr-2 flex-shrink-0 mt-0.5 ${displayError.startsWith('NOT_FOUND:') ? 'text-blue-500' : 'text-red-500'}`} />
+                <div>
+                  <p className={`text-sm ${displayError.startsWith('NOT_FOUND:') ? 'text-blue-800' : 'text-red-800'}`}>
+                    {displayError.startsWith('NOT_FOUND:') ? displayError.replace('NOT_FOUND:', '') : displayError}
+                  </p>
+                  {displayError.startsWith('NOT_FOUND:') && onSwitchToRegister && (
+                    <button
+                      type="button"
+                      onClick={onSwitchToRegister}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-1 underline"
+                    >
+                      Creează un cont nou
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -176,7 +176,6 @@ export const useOrgInvitation = () => {
       // În producție: Aici s-ar trimite email-ul prin Cloud Functions
       // Pentru development: returnăm link-ul direct
       const inviteLink = `${window.location.origin}/invite/${token}`;
-      console.log('🔗 Invite link:', inviteLink);
 
       return {
         invitation: createdInvitation,
@@ -448,7 +447,6 @@ export const useOrgInvitation = () => {
       );
 
       const inviteLink = `${window.location.origin}/invite/${newToken}`;
-      console.log('🔗 New invite link:', inviteLink);
 
       return { inviteLink, newToken };
     } catch (err) {

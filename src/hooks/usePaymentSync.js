@@ -152,7 +152,6 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
           updatedAt: serverTimestamp()
         });
 
-        console.log(`✅ Sincronizare cross-sheet: Sheet ${currentSheet.month} → Sheet ${nextMonthStr}`);
       } catch (err) {
         console.error('Eroare la sincronizarea cross-sheet:', err);
       }

@@ -126,12 +126,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         const key = `${association.id}-${sheetData.monthYear}`;
         loadedDisabledExpenses[key] = sheetDisabledExpenses;
 
-        console.log('✅ Configurații încărcate din sheet:', {
-          sheetId: sheetDoc.id,
-          monthYear: sheetData.monthYear,
-          balances: Object.keys(loadedBalances).length,
-          disabledExpenses: sheetDisabledExpenses.length
-        });
       }
 
       // 3. Actualizează state-urile
@@ -166,7 +160,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     }
 
     try {
-      console.log('💾 Salvez soldurile inițiale în sheet...');
 
       const currentMonthStr = currentMonth || new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
       const monthKey = `${association.id}-${currentMonthStr}`;
@@ -192,7 +185,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       await sheetOperations.updateConfigSnapshot(updatedConfigData);
 
       setHasInitialBalances(true);
-      console.log('✅ Solduri inițiale salvate în sheet:', Object.keys(balanceAdjustments).length, 'apartamente');
 
       return true;
     } catch (error) {
@@ -232,7 +224,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       };
 
       await sheetOperations.updateConfigSnapshot(updatedConfigData);
-      console.log(`✅ Ajustări solduri salvate în sheet pentru ${month}:`, adjustmentData.length, 'apartamente');
 
       return true;
     } catch (error) {
@@ -281,16 +272,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
 
   // 🚫 GESTIONAREA CHELTUIELILOR ELIMINATE - UNIFIED STRUCTURE: Folosește isEnabled flag
   const toggleExpenseStatus = useCallback(async (expenseName, currentMonth, disable = true, targetSheetId = null) => {
-    console.log('🔧 toggleExpenseStatus called:', {
-      expenseName,
-      currentMonth,
-      disable,
-      targetSheetId,
-      currentSheetId: sheetOperations?.currentSheet?.id,
-      currentSheetMonth: sheetOperations?.currentSheet?.monthYear,
-      publishedSheetId: sheetOperations?.publishedSheet?.id,
-      publishedSheetMonth: sheetOperations?.publishedSheet?.monthYear
-    });
 
     // 🎯 SCRIERE: Folosește targetSheetId dacă e furnizat, altfel currentSheet
     // Acest parametru permite specificarea exactă a sheet-ului în care se scrie
@@ -301,12 +282,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       ? (sheetOperations?.currentSheet?.id === targetSheetId ? sheetOperations.currentSheet : sheetOperations?.publishedSheet)
       : sheetOperations?.currentSheet;
 
-    console.log('🎯 Working sheet determined:', {
-      workingSheetId,
-      workingSheetMonth: workingSheet?.monthYear,
-      usingCurrentSheet: workingSheet === sheetOperations?.currentSheet,
-      usingPublishedSheet: workingSheet === sheetOperations?.publishedSheet
-    });
 
     if (!association?.id || !workingSheetId || !workingSheet) return;
 
@@ -332,7 +307,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         }
       }
 
-      console.log(`🔄 Toggle expense status: "${expenseName}" (ID: ${expenseId}) - disable: ${disable}`);
 
       // 🆕 UNIFIED STRUCTURE: Actualizează isEnabled în expenseConfigurations
       const existingConfig = expenseConfigurations[expenseId] || {};
@@ -351,13 +325,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         [expenseId]: updatedConfig
       };
 
-      console.log('💾 Saving to Firebase:', {
-        associationId: association.id,
-        sheetId: workingSheetId,
-        expenseId,
-        expenseName,
-        newIsEnabled: !disable
-      });
 
       // Salvează în Firebase
       await updateDoc(getSheetRef(association.id, workingSheetId), {
@@ -365,7 +332,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
         'configSnapshot.updatedAt': serverTimestamp()
       });
 
-      console.log(`✅ Expense status toggled successfully in sheet ${workingSheetId}: "${expenseName}" - isEnabled: ${!disable}`);
 
     } catch (error) {
       console.error('❌ Eroare la actualizarea statusului cheltuielii:', error);
@@ -378,11 +344,9 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
     if (!association?.id) return {};
 
     try {
-      console.log('📋 Încarc ajustările de solduri...');
 
       // 🎯 PRIORITATE: Citește din sheet dacă sunt disponibile
       if (sheetOperations?.currentSheet?.configSnapshot?.balanceAdjustments) {
-        console.log('📖 SHEET-BASED: Citesc ajustările din sheet...');
         const sheetAdjustments = sheetOperations.currentSheet.configSnapshot.balanceAdjustments;
 
         // Convertește din formatul sheet (indexat după apartmentId) în formatul legacy
@@ -404,7 +368,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
       // ❌ FALLBACK REMOVED (2025-01-05): No longer reading from balanceAdjustments collection
       // All balance data is now stored exclusively in sheets (currentSheet.configSnapshot.balanceAdjustments)
       // If no sheet data exists, return empty object (no legacy collection fallback)
-      console.log('ℹ️ No balance adjustments found in sheet - returning empty');
       return {};
       
     } catch (error) {
@@ -428,7 +391,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
             defaultPenaltyRate: data.generalSettings.defaultPenaltyRate || 0.02,
             daysBeforePenalty: data.generalSettings.daysBeforePenalty || 30
           });
-          console.log('📥 Setări penalități încărcate:', data.generalSettings);
         }
       }
     } catch (error) {
@@ -438,7 +400,6 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
 
   // 🧮 CALCULUL AUTOMATIZAT AL SOLDURILOR PENTRU LUNA URMĂTOARE
   const calculateNextMonthBalances = useCallback((currentTable, currentMonth) => {
-    console.log('🧮 Calculez soldurile pentru luna următoare...');
     
     const nextMonthDate = new Date();
     const currentMonthDate = new Date(currentMonth);
@@ -489,15 +450,12 @@ export const useBalanceManagement = (association, sheetOperations = null) => {
             penalitati: nextMonthPenalitati
           };
           
-          console.log(`✅ Ap.${row.apartment}: Transfer → Restante=${nextMonthRestante}, Penalitati=${nextMonthPenalitati}, PenaltyAdded=${penaltyOnCurrentMaintenance}`);
         } else {
           // Totul plătit - nu se transferă nimic
           nextMonthBalances[row.apartmentId] = { restante: 0, penalitati: 0 };
-          console.log(`✅ Ap.${row.apartment}: Totul plătit - balante resetate`);
         }
       });
       
-      console.log('✅ Solduri calculate pentru', nextMonth, ':', Object.keys(nextMonthBalances).length, 'apartamente');
       return { [nextMonthKey]: nextMonthBalances };
     }
 

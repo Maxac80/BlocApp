@@ -363,29 +363,22 @@ export const useOnboarding = () => {
   // 💾 SALVARE ASOCIAȚIE DIN ONBOARDING
   const saveAssociationFromOnboarding = async (userId) => {
     try {
-      // console.log('🔍 DEBUG: saveAssociationFromOnboarding called for user:', userId);
       
       // Verifică dacă există date de asociație în stepsCompleted
       const associationStepData = stepsCompleted?.association?.data;
       const profileStepData = stepsCompleted?.profile?.data;
       const documentsStepData = stepsCompleted?.documents?.data;
       
-      // console.log('🔍 DEBUG: Found association step data:', !!associationStepData);
-      // console.log('🔍 DEBUG: Found profile step data:', !!profileStepData);
-      // console.log('🔍 DEBUG: Found documents step data:', !!documentsStepData);
       
       if (!associationStepData || associationStepData.skipStep) {
-        // console.log('📋 Association step was skipped or no data available');
         return;
       }
 
       const { associationData } = associationStepData;
       
-      // console.log('🔍 DEBUG: Association name:', associationData?.name);
       
       // Verifică dacă datele sunt complete
       if (!associationData?.name?.trim()) {
-        // console.log('📋 Association data incomplete, skipping save');
         return;
       }
 
@@ -465,13 +458,11 @@ export const useOnboarding = () => {
         source: 'onboarding'
       };
 
-      // console.log('🔍 DEBUG: Ready to save association with name:', associationToSave.name);
       
       // Salvează în Firestore
       const associationsRef = collection(db, 'associations');
       const docRef = await addDoc(associationsRef, associationToSave);
 
-      console.log('✅ Association created from onboarding with ID:', docRef.id);
 
       // Creează member doc pentru admin (fondator)
       try {
@@ -703,7 +694,6 @@ export const useOnboarding = () => {
     completeOnboardingProcess,
     completeOnboardingWithTabs: async (tabData, currentUser) => {
       try {
-        console.log('🚀 Starting completeOnboardingWithTabs...');
 
         // Salvez direct asociația fără să depend de funcția veche
         if (tabData.association && tabData.association.name) {
@@ -754,10 +744,8 @@ export const useOnboarding = () => {
           };
 
           // Salvează în Firestore
-          console.log('💾 Saving association to Firestore...', associationToSave);
           const associationsRef = collection(db, 'associations');
           const docRef = await addDoc(associationsRef, associationToSave);
-          console.log('✅ Association created from tabs with ID:', docRef.id);
 
           // Creează member doc pentru admin (creatorul asociației)
           const memberRef = doc(db, 'associations', docRef.id, 'members', currentUser.uid);
@@ -772,14 +760,12 @@ export const useOnboarding = () => {
             addedAt: new Date().toISOString(),
             joinedAt: new Date().toISOString()
           });
-          console.log('✅ Member doc created for admin');
 
           // Adaugă asociația la directAssociations[] pe user document
           const userRef = doc(db, 'users', currentUser.uid);
           await updateDoc(userRef, {
             directAssociations: arrayUnion(docRef.id)
           });
-          console.log('✅ Association added to user directAssociations[]');
 
           // Salvează datele de profil și în user doc (sursa de adevăr)
           if (tabData.profile) {
@@ -806,14 +792,11 @@ export const useOnboarding = () => {
                 displayName: profileUpdate.name
               });
             }
-            console.log('✅ Profile data synced to user doc');
           }
 
           // 🎯 INIȚIALIZEAZĂ SISTEM DE SHEETS PENTRU NOUA ASOCIAȚIE
           try {
-            console.log('🎯 Initializing sheet system for association:', docRef.id);
             await initializeMonths(associationToSave, docRef.id);
-            console.log('✅ Sheet system initialized successfully for association:', docRef.id);
           } catch (sheetError) {
             console.error('❌ Error initializing sheet system:', sheetError);
             // Nu failăm întreaga operație pentru că asociația s-a creat cu succes
@@ -835,7 +818,6 @@ export const useOnboarding = () => {
         // Marchează profilul ca având onboarding complet
         await completeOnboarding(currentUser.uid);
 
-        console.log('✅ Onboarding completed successfully');
         return true;
       } catch (error) {
         console.error('❌ Error in completeOnboardingWithTabs:', error);

@@ -153,7 +153,8 @@ export function AuthProviderEnhanced({ children }) {
   // 🔑 LOGIN AVANSAT CU SECURITATE
   async function loginEnhanced(email, password, rememberMe = false) {
     try {
-      setLoading(true);
+      // NU setăm loading din context - LoginForm are propriul isLoading
+      // setLoading(true) ar demonta LoginForm prin AuthManager
       setAuthError(null);
 
       // Verifică limitările de login
@@ -227,32 +228,79 @@ export function AuthProviderEnhanced({ children }) {
         };
         
       } catch (authError) {
-        // Incrementează încercările de login
-        const attemptResult = await security.incrementLoginAttempts(email);
-        
-        let errorMessage = 'Email sau parolă incorectă.';
-        if (attemptResult.blocked) {
-          errorMessage = `Prea multe încercări eșuate. Contul este blocat pentru 15 minute.`;
-        } else if (attemptResult.remainingAttempts <= 2) {
-          errorMessage = `Email sau parolă incorectă. Mai ai ${attemptResult.remainingAttempts} încercări înainte de blocare.`;
+        const errorCode = authError.code;
+
+        // Cont inexistent - NU incrementăm rate limiter
+        if (errorCode === 'auth/user-not-found') {
+          await security.logActivity('system', 'LOGIN_FAILED', {
+            email,
+            error: errorCode,
+            reason: 'user-not-found'
+          });
+          throw new Error('NOT_FOUND:Nu există un cont cu acest email.');
         }
-        
+
+        // Firebase v11+ returnează auth/invalid-credential pentru ambele cazuri
+        // (user-not-found și wrong-password). Verificăm dacă email-ul există în Firebase Auth
+        // folosind un query pe colecția users din Firestore.
+        if (errorCode === 'auth/invalid-credential') {
+          let userExists = false;
+          try {
+            const { collection, query: fsQuery, where, getDocs } = await import('firebase/firestore');
+            const usersQuery = fsQuery(collection(db, 'users'), where('email', '==', email.toLowerCase().trim()));
+            const snapshot = await getDocs(usersQuery);
+            userExists = !snapshot.empty;
+          } catch (queryError) {
+            // Dacă query-ul eșuează (permisiuni etc.), utilizatorul probabil nu există
+            // (un user autentificat anterior ar avea permisiuni de citire)
+            userExists = false;
+          }
+
+          if (!userExists) {
+            // Email-ul nu există - NU incrementăm rate limiter
+            try {
+              await security.logActivity('system', 'LOGIN_FAILED', {
+                email, error: errorCode, reason: 'user-not-found'
+              });
+            } catch (_) { /* ignore logging errors */ }
+            throw new Error('NOT_FOUND:Nu există un cont cu acest email.');
+          }
+        }
+
+        // Prea multe cereri Firebase
+        if (errorCode === 'auth/too-many-requests') {
+          throw new Error('Prea multe încercări. Te rugăm să aștepți câteva minute.');
+        }
+
+        // Parolă greșită sau alt error - incrementăm rate limiter
+        let attemptResult = { remainingAttempts: 5, blocked: false };
+        try {
+          attemptResult = await security.incrementLoginAttempts(email);
+        } catch (_) { /* ignore Firestore permission errors */ }
+
+        let errorMessage = 'Parolă incorectă.';
+        if (attemptResult.blocked) {
+          errorMessage = 'Prea multe încercări eșuate. Contul este blocat pentru 15 minute.';
+        } else if (attemptResult.remainingAttempts <= 2) {
+          errorMessage = `Parolă incorectă. Mai ai ${attemptResult.remainingAttempts} încercări înainte de blocare.`;
+        }
+
         // Log încercare eșuată
-        await security.logActivity('system', 'LOGIN_FAILED', {
-          email,
-          error: authError.code,
-          attemptsRemaining: attemptResult.remainingAttempts,
-          blocked: attemptResult.blocked
-        });
-        
+        try {
+          await security.logActivity('system', 'LOGIN_FAILED', {
+            email,
+            error: errorCode,
+            attemptsRemaining: attemptResult.remainingAttempts,
+            blocked: attemptResult.blocked
+          });
+        } catch (_) { /* ignore logging errors */ }
+
         throw new Error(errorMessage);
       }
       
     } catch (error) {
       setAuthError(error.message);
       throw error;
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -684,7 +732,6 @@ export function AuthProviderEnhanced({ children }) {
     if (currentContext?.type === 'association' && userDirectAssociations.length >= 0) {
       const stillExists = userDirectAssociations.some(a => a.id === currentContext.id);
       if (!stillExists && !contextsLoading) {
-        console.log('⚠️ Asociația curentă nu mai e accesibilă, clear context');
         clearContext();
         return;
       }
@@ -749,7 +796,6 @@ export function AuthProviderEnhanced({ children }) {
           const addedIds = newAssocIds.filter(id => !prevIds.includes(id));
 
           if (removedIds.length > 0 || addedIds.length > 0) {
-            console.log('🔄 directAssociations schimbat — removed:', removedIds, 'added:', addedIds);
             // Reîncarcă contextele complet (inclusiv clear context dacă necesar)
             loadUserContexts(currentUser.uid);
           }
@@ -842,7 +888,7 @@ export function AuthProviderEnhanced({ children }) {
 
   return (
     <AuthContextEnhanced.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContextEnhanced.Provider>
   );
 }

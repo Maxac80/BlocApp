@@ -100,14 +100,6 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
   
   // Adaugă o nouă încasare (compatibil cu PaymentModal)
   const addIncasare = async (incasareData) => {
-    console.log('🔍 DEBUG addIncasare called:', {
-      hasAssociation: !!association?.id,
-      hasPublishedSheet: !!publishedSheet,
-      publishedSheetId: publishedSheet?.id,
-      publishedSheetStatus: publishedSheet?.status,
-      publishedSheetMonth: publishedSheet?.monthYear
-    });
-
     if (!association?.id) {
       throw new Error('Nu există asociație selectată');
     }

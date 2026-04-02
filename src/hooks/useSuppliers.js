@@ -50,7 +50,6 @@ const useSuppliers = (currentSheet) => {
       // Actualizează state-ul local pentru feedback instant
       setSuppliers(updatedSuppliers);
 
-      console.log('✅ SHEET-BASED: Furnizor adăugat în sheet:', currentSheet.monthYear);
       return newSupplier; // Returnează furnizorul nou creat
     } catch (error) {
       console.error('Error adding supplier to sheet:', error);
@@ -103,7 +102,6 @@ const useSuppliers = (currentSheet) => {
       await updateDoc(sheetRef, updateData);
 
       setSuppliers(updatedSuppliers);
-      console.log('✅ SHEET-BASED: Furnizor actualizat în sheet:', currentSheet.monthYear);
     } catch (error) {
       console.error('Error updating supplier in sheet:', error);
       setError(error.message);
@@ -146,7 +144,6 @@ const useSuppliers = (currentSheet) => {
       });
 
       setSuppliers(updatedSuppliers);
-      console.log('✅ SHEET-BASED: Furnizor șters din sheet și eliminat din configurații:', currentSheet.monthYear);
     } catch (error) {
       console.error('Error deleting supplier from sheet:', error);
       setError(error.message);

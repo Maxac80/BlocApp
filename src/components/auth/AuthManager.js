@@ -17,7 +17,8 @@ export default function AuthManager({ onAuthComplete }) {
     currentUser,
     isEmailVerified,
     needsOnboarding,
-    loading
+    loading,
+    setAuthError
   } = useAuthEnhanced();
   
   const [currentFlow, setCurrentFlow] = useState(() => {
@@ -131,12 +132,12 @@ export default function AuthManager({ onAuthComplete }) {
     }
   };
 
-  // 🔄 SWITCH HANDLERS
-  const switchToLogin = () => setCurrentFlow('login');
-  const switchToRegister = () => setCurrentFlow('register');
-  const switchToReset = () => setCurrentFlow('reset');
+  // 🔄 SWITCH HANDLERS - curăță erorile la schimbarea flow-ului
+  const switchToLogin = () => { setAuthError(null); setCurrentFlow('login'); };
+  const switchToRegister = () => { setAuthError(null); setCurrentFlow('register'); };
+  const switchToReset = () => { setAuthError(null); setCurrentFlow('reset'); };
 
-  // ⏳ LOADING STATE - Only show if truly loading
+  // ⏳ LOADING STATE - Doar la inițializarea auth
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center">

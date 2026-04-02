@@ -512,7 +512,6 @@ export const useUserProfile = () => {
 
       // Verifică dacă user-ul e deja în organizație
       if (currentOrganizations.some(org => org.id === organizationId)) {
-        console.log('User already in organization');
         return true;
       }
 
@@ -633,7 +632,6 @@ export const useUserProfile = () => {
 
       // Verifică dacă asociația e deja adăugată
       if (currentDirectAssociations.includes(associationId)) {
-        console.log('Association already in directAssociations');
         return true;
       }
 

@@ -416,13 +416,8 @@ export const useExpenseManagement = ({
         separateInvoicesData: expenseData.separateInvoicesData || null
       };
 
-      console.log('🔥 Calling addMonthlyExpense with expensePayload:', expensePayload);
-      console.log('🔥 expensePayload.invoiceData:', expensePayload.invoiceData);
-      console.log('🔥 expensePayload.separateInvoicesData:', expensePayload.separateInvoicesData);
       const newExpense = await addMonthlyExpense(expensePayload);
       const expenseId = newExpense.id;
-      console.log('🔥 addMonthlyExpense returned expense:', newExpense);
-      console.log('🔥 Expense ID:', expenseId);
 
       // 2. Dacă avem detalii factură, salvăm și factura
       // console.log('🔍 DEBUG Condiții salvare factură:', {
@@ -460,7 +455,6 @@ export const useExpenseManagement = ({
           const invoiceAmount = parseFloat(invoiceEntry.invoiceAmount || 0);
           try {
             if (invoiceEntry.isExistingInvoice && invoiceEntry.existingInvoiceId) {
-              console.log('📊 Actualizare distribuție pentru document existent:', invoiceEntry.existingInvoiceId);
               await updateInvoiceDistribution(invoiceEntry.existingInvoiceId, {
                 sheetId: currentSheet?.id || null,
                 month: currentMonth,
@@ -471,7 +465,6 @@ export const useExpenseManagement = ({
                 notes: `Distribuție pentru ${expenseData.name}`
               });
             } else if (addInvoiceFn) {
-              console.log('📝 Creare document nou:', invoiceEntry.invoiceNumber, 'furnizor:', invoiceEntry.supplierName || expenseSettings.supplierName);
               await addInvoiceFn({
                 expenseId: expenseId,
                 expenseTypeId: expenseSettings.id,
@@ -513,7 +506,6 @@ export const useExpenseManagement = ({
 
       // Salvează facturi separate per bloc/scară dacă există
       if (expenseData.separateInvoicesData && Object.keys(expenseData.separateInvoicesData).length > 0 && addInvoiceFn) {
-        console.log('💼 Salvez facturi separate:', expenseData.separateInvoicesData);
 
         for (const [entityId, invoiceInfo] of Object.entries(expenseData.separateInvoicesData)) {
           if (!invoiceInfo || !invoiceInfo.invoiceNumber) continue;
@@ -543,7 +535,6 @@ export const useExpenseManagement = ({
 
           try {
             await addInvoiceFn(separateInvoiceData, invoiceInfo.pdfFile);
-            console.log(`✅ Factură salvată pentru entitatea ${entityId}`);
           } catch (invoiceError) {
             console.warn(`⚠️ Eroare la salvarea facturii pentru entitatea ${entityId}:`, invoiceError);
           }
@@ -613,7 +604,6 @@ export const useExpenseManagement = ({
       };
 
       await updateExpenseInSheet(expenseId, updatedExpense);
-      console.log('✅ Consumption updated in sheet for apartment:', apartmentId);
     } catch (error) {
       console.error('❌ Eroare la actualizarea consumului:', error);
     }
@@ -641,7 +631,6 @@ export const useExpenseManagement = ({
       };
 
       await updateExpenseInSheet(expenseId, updatedExpense);
-      console.log('✅ Individual amount updated in sheet for apartment:', apartmentId);
     } catch (error) {
       console.error('❌ Eroare la actualizarea sumei individuale:', error);
     }
@@ -675,7 +664,6 @@ export const useExpenseManagement = ({
         pendingConsumptions: updatedPendingConsumptions
       });
 
-      console.log('✅ Pending consumption saved for:', expenseTypeName, apartmentId);
     } catch (error) {
       console.error('❌ Error saving pending consumption:', error);
     }
@@ -709,7 +697,6 @@ export const useExpenseManagement = ({
         pendingIndividualAmounts: updatedPendingAmounts
       });
 
-      console.log('✅ Pending individual amount saved for:', expenseTypeName, apartmentId);
     } catch (error) {
       console.error('❌ Error saving pending individual amount:', error);
     }
@@ -739,7 +726,6 @@ export const useExpenseManagement = ({
       };
 
       await updateExpenseInSheet(expenseId, updatedExpense);
-      console.log('✅ Indexes updated in sheet for apartment:', apartmentId);
     } catch (error) {
       console.error('❌ Eroare la actualizarea indecșilor:', error);
     }
@@ -773,7 +759,6 @@ export const useExpenseManagement = ({
         pendingIndexes: updatedPendingIndexes
       });
 
-      console.log('✅ Pending indexes saved for:', expenseTypeName, apartmentId);
     } catch (error) {
       console.error('❌ Error saving pending indexes:', error);
     }
@@ -800,7 +785,6 @@ export const useExpenseManagement = ({
       const currentIsOpen = expenseConfig.indexConfiguration?.portalSubmission?.isOpen ?? true;
       const newIsOpen = !currentIsOpen;
 
-      console.log('📱 Toggling portal submission:', { expenseId, from: currentIsOpen, to: newIsOpen });
 
       // Actualizează în Firebase
       const { updateDoc } = await import('firebase/firestore');
@@ -823,7 +807,6 @@ export const useExpenseManagement = ({
         'configSnapshot.expenseConfigurations': updatedExpenseConfigs
       });
 
-      console.log('✅ Portal submission toggled successfully');
       return true;
     } catch (error) {
       console.error('❌ Error toggling portal submission:', error);
@@ -900,31 +883,16 @@ export const useExpenseManagement = ({
 
   // Wrapper pentru a expune funcția cu numele corect - CU PARAMETRI EXPLICIȚI
   const handleAddExpense = async (expenseDataParam, addInvoiceFn = null, invoiceFunctions = null) => {
-    console.log('🎯 WRAPPER in hook - param1 type:', typeof expenseDataParam);
-    console.log('🎯 WRAPPER in hook - param1 value:', expenseDataParam);
-    console.log('🎯 WRAPPER in hook - param2 type:', typeof addInvoiceFn);
-    console.log('🎯 WRAPPER in hook - param2 value:', addInvoiceFn);
-    console.log('🎯 WRAPPER in hook - invoiceFunctions:', invoiceFunctions);
 
     return addExpenseInternal(expenseDataParam, addInvoiceFn, invoiceFunctions);
   };
 
   // ✏️ ACTUALIZAREA CHELTUIELII
   const handleUpdateExpense = async (expenseId, expenseDataParam, invoiceFunctions = null) => {
-    console.log('✏️ handleUpdateExpense START:', {
-      expenseId,
-      expenseData: expenseDataParam,
-      hasInvoiceFunctions: !!invoiceFunctions
-    });
 
     const expenseData = expenseDataParam;
 
     if (!expenseId || !expenseData?.name || !association) {
-      console.log('❌ Validation failed:', {
-        expenseId,
-        expenseDataName: expenseData?.name,
-        hasAssociation: !!association
-      });
       return false;
     }
 
@@ -932,7 +900,6 @@ export const useExpenseManagement = ({
     const isConsumptionBased = expenseSettings.distributionType === "consumption";
     const isIndividualBased = expenseSettings.distributionType === "individual";
 
-    console.log('✏️ Expense settings:', { expenseSettings, isConsumptionBased, isIndividualBased });
 
     // Calculează amount-ul total bazat pe receptionMode
     let totalAmount = 0;
@@ -947,7 +914,6 @@ export const useExpenseManagement = ({
       totalAmount = parseFloat(expenseData.billAmount);
     }
 
-    console.log('✏️ Calculated total amount:', totalAmount);
 
     // Validări
     if (isConsumptionBased && (!expenseData.unitPrice || !expenseData.billAmount)) {
@@ -986,9 +952,6 @@ export const useExpenseManagement = ({
     };
 
     try {
-      console.log('✏️ handleUpdateExpense - expenseData received:', expenseData);
-      console.log('✏️ expenseData.invoiceData:', expenseData.invoiceData);
-      console.log('✏️ expenseData.separateInvoicesData:', expenseData.separateInvoicesData);
 
       // Găsește cheltuiala existentă pentru a păstra consumption și individualAmounts
       const existingExpense = currentSheet?.expenses?.find(exp => exp.id === expenseId);
@@ -1017,15 +980,10 @@ export const useExpenseManagement = ({
       // Curăță recursiv toate valorile undefined pentru Firestore
       const updatedExpense = removeUndefined(updatedExpenseRaw);
 
-      console.log('✏️ Calling updateExpenseInSheet with:', updatedExpense);
-      console.log('✏️ updatedExpense.invoiceData:', updatedExpense.invoiceData);
-      console.log('✏️ updatedExpense.separateInvoicesData:', updatedExpense.separateInvoicesData);
       await updateExpenseInSheet(expenseId, updatedExpense);
-      console.log('✏️ Expense updated successfully in sheet');
 
       // Update invoices collection dacă există invoice data și funcții pentru update
       if (invoiceFunctions && expenseData.invoiceData && expenseData.invoiceData.invoiceNumber) {
-        console.log('✏️ Updating invoice in invoices collection...');
         try {
           const { updateInvoiceByNumber, updateInvoiceDistribution, getInvoiceByNumber } = invoiceFunctions;
 
@@ -1041,41 +999,30 @@ export const useExpenseManagement = ({
               }
             );
 
-            console.log('✏️ Invoice updated successfully in collection');
           } else {
-            console.log('⚠️ updateInvoiceByNumber function not available');
           }
 
           // Actualizează și distributionHistory dacă suma s-a schimbat
           if (updateInvoiceDistribution && getInvoiceByNumber) {
-            console.log('📊 Actualizare distributionHistory pentru editare...');
-            console.log('📊 expenseId pentru căutare:', expenseId);
-            console.log('📊 invoiceNumber:', expenseData.invoiceData.invoiceNumber);
 
             const invoice = await getInvoiceByNumber(expenseData.invoiceData.invoiceNumber);
 
             if (invoice) {
-              console.log('📊 Găsită factură existentă pentru update distribution:', invoice.id);
-              console.log('📊 invoice.distributionHistory:', invoice.distributionHistory);
 
               // Calculează suma distribuită (noua sumă sau suma veche)
               const currentDistribution = parseFloat(expenseData.amount || expenseData.billAmount || 0);
-              console.log('📊 currentDistribution (noua sumă):', currentDistribution);
 
               // Actualizează sau adaugă în distributionHistory
               // Verifică dacă deja există o intrare pentru acest expenseId
               const existingDistribution = invoice.distributionHistory?.find(
                 dist => {
-                  console.log('📊 Comparing dist.expenseId:', dist.expenseId, 'with expenseId:', expenseId);
                   return dist.expenseId === expenseId;
                 }
               );
 
-              console.log('📊 existingDistribution found:', existingDistribution);
 
               if (existingDistribution) {
                 // Deja există - trebuie să actualizăm suma distribuită
-                console.log('📊 Actualizare distribuție existentă în history');
 
                 // Recalculează distributedAmount (scădem vechea sumă și adăugăm noua)
                 const oldDistribution = existingDistribution.amount || 0;
@@ -1091,10 +1038,8 @@ export const useExpenseManagement = ({
                   notes: `Distribuție actualizată pentru ${expenseData.name}`
                 });
 
-                console.log('✅ distributionHistory actualizat pentru editare');
               } else {
                 // Nu există - este o nouă distribuție (nu ar trebui să se întâmple în edit, dar handle-uim)
-                console.log('📊 Adăugare distribuție nouă în history (editare)');
 
                 await updateInvoiceDistribution(invoice.id, {
                   sheetId: currentSheet?.id || null,
@@ -1106,7 +1051,6 @@ export const useExpenseManagement = ({
                   notes: `Distribuție pentru ${expenseData.name}`
                 });
 
-                console.log('✅ distributionHistory adăugat pentru editare');
               }
             }
           }

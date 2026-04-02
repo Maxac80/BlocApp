@@ -32,7 +32,6 @@ export const useDataOperations = ({
       return;
     }
     
-    // console.log('🚨 ȘTERGERE COMPLETĂ A DATELOR ÎNCEPUT...');
     
     // Afișează un loading pentru utilizator
     const loadingDiv = document.createElement('div');
@@ -84,13 +83,11 @@ export const useDataOperations = ({
       // Șterge toate colecțiile în paralel pentru viteză
       const deletePromises = collectionsToDelete.map(async (collectionName) => {
         try {
-          console.log(`🗑️ Șterg colecția: ${collectionName}`);
           
           const collectionRef = collection(db, collectionName);
           const querySnapshot = await getDocs(collectionRef);
           
           if (querySnapshot.empty) {
-            // console.log(`📭 Colecția ${collectionName} este goală`);
             return;
           }
           
@@ -100,7 +97,6 @@ export const useDataOperations = ({
           });
           
           await Promise.all(batch);
-          console.log(`✅ Colecția ${collectionName} ștearsă complet (${batch.length} documente)`);
         } catch (error) {
           console.error(`❌ Eroare la ștergerea colecției ${collectionName}:`, error);
         }
@@ -109,7 +105,6 @@ export const useDataOperations = ({
       // Așteaptă ca toate colecțiile să fie șterse
       await Promise.all(deletePromises);
       
-      // console.log('✅ TOATE DATELE AU FOST ȘTERSE!');
       
       // Actualizează mesajul de loading
       loadingDiv.innerHTML = '✅ Date șterse! Resetez aplicația...';
@@ -132,12 +127,9 @@ export const useDataOperations = ({
           const { signOut } = await import('firebase/auth');
           const { auth } = await import('../firebase');
           await signOut(auth);
-          // console.log('✅ Utilizator deconectat');
         } catch (authError) {
-          // console.log('⚠️ Nu s-a putut deconecta utilizatorul:', authError);
         }
         
-        // console.log('🔄 Reîncărcare forțată...');
         
         // Forțează reîncărcarea completă (fără cache)
         window.location.href = window.location.origin + window.location.pathname + '?t=' + Date.now();
@@ -160,12 +152,8 @@ export const useDataOperations = ({
     }
   }, []);
 
-
   // Funcții actualizate pentru a folosi hook-urile Firestore
   const handleAddAssociation = useCallback(async (activeUser, newAssociation, resetForm, initializeMonths) => {
-    // console.log('🏢 handleAddAssociation called');
-    // console.log('📊 newAssociation:', newAssociation);
-    // console.log('📊 activeUser:', activeUser);
     
     if (!newAssociation.name || !newAssociation.address) {
       alert('Te rog completează numele și adresa asociației!');
@@ -178,7 +166,6 @@ export const useDataOperations = ({
     }
     
     try {
-      console.log('🚀 ÎNCEPE CREAREA ASOCIAȚIEI...');
       const createdAssociation = await createAssociation({
         name: newAssociation.name,
         address: newAssociation.address,
@@ -193,9 +180,7 @@ export const useDataOperations = ({
       // 🎯 Sheet creation removed - only happens automatically after onboarding completion
       // Nu mai creăm sheet automat la adăugarea manuală de asociații
       // Sheet-ul se creează doar după finalizarea onboarding-ului
-      console.log('✅ Association created successfully. Sheet will be created automatically after onboarding completion.');
 
-      console.log('✅ ASOCIAȚIE CREATĂ CU SUCCES!');
     } catch (error) {
       console.error('❌ Eroare la crearea asociației:', error);
       alert('Eroare la crearea asociației: ' + error.message);
@@ -217,11 +202,8 @@ export const useDataOperations = ({
   }, [addBlock, association]);
 
   const handleAddStair = useCallback(async (newStair, resetForm) => {
-    // console.log('🔼 handleAddStair - newStair:', newStair);
-    // console.log('🔼 handleAddStair - blockId type:', typeof newStair.blockId, newStair.blockId);
     
     if (!newStair.name || !newStair.blockId) {
-      // console.log('❌ Validare eșuată - lipsește numele sau blockId');
       alert('Te rog completează numele scării și selectează blocul!');
       return;
     }
@@ -249,12 +231,8 @@ export const useDataOperations = ({
     
     const availableStairs = getAvailableStairs();
     
-    // console.log('👥 handleAddApartment - newApartment:', newApartment);
-    // console.log('👥 handleAddApartment - stairId type:', typeof newApartment.stairId, newApartment.stairId);
-    // console.log('👥 handleAddApartment - availableStairs:', availableStairs);
     
     if (!newApartment.number || !newApartment.persons || !newApartment.stairId || !newApartment.owner) {
-      // console.log('❌ Validare eșuată - lipsesc datele obligatorii');
       alert('Te rog completează toate câmpurile obligatorii (nr apartament, proprietar, persoane, scara)!');
       return;
     }

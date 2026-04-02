@@ -99,39 +99,15 @@ export const useSheetManagement = (associationId) => {
           const data = { id: doc.id, ...doc.data() };
           sheetsData.push(data);
 
-          console.log('📄 Sheet raw data:', {
-            id: data.id,
-            monthYear: data.monthYear,
-            status: data.status,
-            statusType: typeof data.status,
-            statusMatch_IN_PROGRESS: data.status === SHEET_STATUS.IN_PROGRESS,
-            statusMatch_PUBLISHED: data.status === SHEET_STATUS.PUBLISHED
-          });
 
           // Clasifică sheet-urile după status
           switch (data.status) {
             case SHEET_STATUS.IN_PROGRESS:
               inProgressSheet = data;
-              console.log('🟢 Found IN_PROGRESS sheet:', {
-                id: inProgressSheet.id,
-                monthYear: inProgressSheet.monthYear,
-                hasMaintenanceTable: !!inProgressSheet.maintenanceTable,
-                status: inProgressSheet.status
-              });
               break;
             case SHEET_STATUS.PUBLISHED:
               publishedSheet = data;
-              console.log('🔄 Found published sheet:', {
-                id: publishedSheet.id,
-                monthYear: publishedSheet.monthYear,
-                hasMaintenanceTable: !!publishedSheet.maintenanceTable,
-                maintenanceTableLength: publishedSheet.maintenanceTable?.length || 0,
-                hasExpenses: !!publishedSheet.expenses,
-                expensesLength: publishedSheet.expenses?.length || 0,
-                status: publishedSheet.status
-              });
               if (publishedSheet.expenses && publishedSheet.expenses.length > 0) {
-                console.log('📦 Published sheet expenses:', JSON.stringify(publishedSheet.expenses, null, 2));
               }
               break;
             case SHEET_STATUS.ARCHIVED:
@@ -146,17 +122,7 @@ export const useSheetManagement = (associationId) => {
           }
         });
 
-        console.log('📊 Sheets loaded:', {
-          totalSheets: sheetsData.length,
-          inProgress: inProgressSheet ? { id: inProgressSheet.id, month: inProgressSheet.monthYear, status: inProgressSheet.status } : null,
-          published: publishedSheet ? { id: publishedSheet.id, month: publishedSheet.monthYear, status: publishedSheet.status } : null,
-          archived: archivedList.length
-        });
 
-        console.log('🔄 Updating React state:', {
-          settingCurrentSheet: inProgressSheet ? inProgressSheet.id : null,
-          settingPublishedSheet: publishedSheet ? publishedSheet.id : null
-        });
 
         setSheets(sheetsData);
         setCurrentSheet(inProgressSheet);
@@ -262,7 +228,6 @@ export const useSheetManagement = (associationId) => {
       const sheetRef = createNewSheetRef(idToUse);
       await setDoc(sheetRef, sheetData);
 
-      console.log('✅ Sheet inițial creat:', monthYear);
       return sheetRef.id;
     } catch (error) {
       console.error('❌ Error creating initial sheet:', error);
@@ -290,7 +255,6 @@ export const useSheetManagement = (associationId) => {
       let structureData = completeStructureData;
 
       if (!structureData || !structureData.apartments || !structureData.blocks || !structureData.stairs) {
-        console.log('🔄 updateStructureSnapshot: Încărcare automată a structurii din Firebase...');
 
         // Încarcă blocurile pentru asociația curentă
         const blocksSnapshot = await getDocs(query(collection(db, 'blocks'), where('associationId', '==', associationId)));
@@ -337,7 +301,6 @@ export const useSheetManagement = (associationId) => {
           };
         }
 
-        console.log(`✅ Încărcate din Firebase: ${structureData.blocks.length} blocuri, ${structureData.stairs.length} scări, ${structureData.apartments.length} apartamente`);
       }
 
       // Creează snapshot complet cu TOATE datele structurale
@@ -375,7 +338,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ updateStructureSnapshot: Snapshot actualizat cu succes în sheet:', currentSheet.id);
 
     } catch (error) {
       console.error('❌ Error updating complete structure snapshot:', error);
@@ -388,8 +350,6 @@ export const useSheetManagement = (associationId) => {
    * SNAPSHOT: Păstrează TOATE cheltuielile ca entități independente
    */
   const addExpenseToSheet = useCallback(async (expense) => {
-    console.log('📥 addExpenseToSheet called with:', expense);
-    console.log('📥 currentSheet:', { id: currentSheet?.id, status: currentSheet?.status });
 
     if (!currentSheet || currentSheet.status !== SHEET_STATUS.IN_PROGRESS) {
       console.error('❌ Cannot add expense - invalid sheet status');
@@ -422,18 +382,15 @@ export const useSheetManagement = (associationId) => {
         sheetId: currentSheet.id
       };
 
-      console.log('📥 Created expense snapshot:', expenseSnapshot);
 
       const updatedExpenses = [...(currentSheet.expenses || []), expenseSnapshot];
 
-      console.log('📥 Saving to Firebase - expenses array length:', updatedExpenses.length);
 
       await setDoc(sheetRef, {
         expenses: updatedExpenses,
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Expense added to sheet successfully:', expenseSnapshot.id);
       return expenseSnapshot.id; // Returnează ID-ul cheltuielii
 
     } catch (error) {
@@ -536,14 +493,12 @@ export const useSheetManagement = (associationId) => {
       const updatedExpenses = [...currentExpenses];
       updatedExpenses[expenseIndex] = cleanedExpense;
 
-      console.log('📝 Updating expense in sheet:', { expenseId, updatedData: cleanedExpense });
 
       await setDoc(sheetRef, {
         expenses: updatedExpenses,
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Expense updated in sheet successfully:', expenseId);
       return true;
 
     } catch (error) {
@@ -585,7 +540,6 @@ export const useSheetManagement = (associationId) => {
 
       await updateDoc(sheetRef, updates);
 
-      console.log('✅ Configurări snapshot actualizate pentru sheet:', currentSheet.monthYear);
     } catch (error) {
       console.error('❌ Error updating config snapshot:', error);
       throw error;
@@ -622,16 +576,6 @@ export const useSheetManagement = (associationId) => {
       ? maintenanceData.map(row => removeUndefinedValues(row))
       : [];
 
-    console.log('📋 Publishing sheet with maintenance data:', {
-      sheetId: currentSheet.id,
-      month: currentSheet.monthYear,
-      maintenanceDataLength: cleanedMaintenanceData?.length,
-      paymentsLength: currentSheet.payments?.length,
-      expensesLength: currentSheet.expenses?.length,
-      expenses: currentSheet.expenses,
-      firstRowHasExpenseDetails: !!cleanedMaintenanceData?.[0]?.expenseDetails,
-      firstRowExpenseDetailsKeys: Object.keys(cleanedMaintenanceData?.[0]?.expenseDetails || {})
-    });
 
     const batch = writeBatch(db);
 
@@ -651,14 +595,11 @@ export const useSheetManagement = (associationId) => {
       if (cleanedMaintenanceData && cleanedMaintenanceData.length > 0) {
         updateData.maintenanceTable = cleanedMaintenanceData;
       } else {
-        console.log('⚠️ No maintenance data provided for publishing - keeping existing table');
       }
 
       // SALVEAZĂ cheltuielile distribuite în sheet-ul publicat
       if (currentSheet.expenses && currentSheet.expenses.length > 0) {
         updateData.expenses = currentSheet.expenses;
-        console.log('💾 Salvare expenses la publicare:', currentSheet.expenses.length, 'cheltuieli');
-        console.log('📋 Expenses înainte de curățare:', JSON.stringify(currentSheet.expenses, null, 2));
       }
 
       // 🎯 SALVEAZĂ snapshot al apartamentelor la publicare
@@ -668,19 +609,10 @@ export const useSheetManagement = (associationId) => {
           ...currentSheet.associationSnapshot,
           apartments: currentSheet.associationSnapshot.apartments.map(apt => ({...apt}))
         };
-        console.log('🏢 Salvare snapshot apartamente la publicare:',
-          currentSheet.associationSnapshot.apartments.length, 'apartamente');
       }
 
       // Curăță valorile undefined din updateData
       const cleanedUpdateData = removeUndefinedValues(updateData);
-      console.log('🧹 UpdateData după curățare - are expenses?', {
-        hasExpenses: !!cleanedUpdateData.expenses,
-        expensesLength: cleanedUpdateData.expenses?.length,
-        expenses: cleanedUpdateData.expenses,
-        hasApartmentsSnapshot: !!cleanedUpdateData.associationSnapshot?.apartments,
-        apartmentsCount: cleanedUpdateData.associationSnapshot?.apartments?.length
-      });
 
       batch.update(currentSheetRef, cleanedUpdateData);
 
@@ -722,12 +654,6 @@ export const useSheetManagement = (associationId) => {
         nextWorkingMonth = `${romanianMonths[nextWorkingDate.getMonth()]} ${nextWorkingDate.getFullYear()}`;
         nextConsumptionMonth = `${romanianMonths[nextConsumptionDate.getMonth()]} ${nextConsumptionDate.getFullYear()}`;
 
-        console.log('📅 Calculare luni următoare:', {
-          currentWorking: currentSheet.customMonthName,
-          currentConsumption: currentSheet.consumptionMonth,
-          nextWorking: nextWorkingMonth,
-          nextConsumption: nextConsumptionMonth
-        });
       } else {
         // Fallback la incrementare standard
         const nextDate = new Date();
@@ -800,14 +726,6 @@ export const useSheetManagement = (associationId) => {
           }
         });
 
-        console.log('🔄 Transferred indexes to new sheet:', {
-          originalExpenses: expenses.length,
-          expensesWithIndexes: expensesWithTransferredIndexes.length,
-          details: expensesWithTransferredIndexes.map(e => ({
-            name: e.name,
-            apartmentCount: Object.keys(e.indexes).length
-          }))
-        });
 
         return expensesWithTransferredIndexes;
       };
@@ -864,12 +782,6 @@ export const useSheetManagement = (associationId) => {
           const apartmentBalances = calculateApartmentBalancesAfterPayments(cleanedMaintenanceData, currentSheet.payments || []);
           const totalBalance = calculateTotalBalanceAfterPayments(cleanedMaintenanceData, currentSheet.payments || []);
 
-          console.log('🔄 Creating new sheet with transferred balances:', {
-            nextMonth: nextWorkingMonth,
-            apartmentBalancesCount: Object.keys(apartmentBalances).length,
-            totalTransferredBalance: totalBalance,
-            apartmentBalances: apartmentBalances
-          });
 
           return {
             previousMonth: totalBalance,
@@ -913,10 +825,6 @@ export const useSheetManagement = (associationId) => {
       await batch.commit();
       
 
-      console.log('✅ Sheet publicat și nou sheet creat:', {
-        published: currentSheet.monthYear,
-        newSheet: nextWorkingMonth
-      });
 
       return { 
         publishedSheetId: currentSheet.id, 
@@ -995,20 +903,11 @@ export const useSheetManagement = (associationId) => {
           updatedAt: serverTimestamp()
         });
 
-        console.log('🔄 Actualizare solduri individuale în timp real:', {
-          publishedSheet: publishedSheet.monthYear,
-          currentSheet: currentSheet.monthYear,
-          apartmentId: paymentData.apartmentId,
-          payment: paymentData.amount,
-          newApartmentRemaining: updatedApartmentBalances[paymentData.apartmentId]?.remaining,
-          newPreviousBalance: newPreviousMonthBalance
-        });
       }
 
       // Execută toate actualizările
       await batch.commit();
 
-      console.log('✅ Plată înregistrată și corelație actualizată în timp real');
       
     } catch (error) {
       console.error('❌ Error adding payment with real-time correlation:', error);
@@ -1073,12 +972,6 @@ export const useSheetManagement = (associationId) => {
     // Soldul final = Total facturi - Total plăți
     const finalBalance = totalBalance - totalPayments;
     
-    console.log('🔄 Transfer Balance Calculation:', {
-      maintenanceTotal: totalBalance,
-      paymentsTotal: totalPayments,
-      finalBalance: finalBalance,
-      paymentsCount: payments?.length || 0
-    });
     
     return finalBalance;
   };
@@ -1110,7 +1003,6 @@ export const useSheetManagement = (associationId) => {
           isPaidInFull = true;
         }
 
-        console.log(`  Apt ${row.apartment}: totalDatorat=${row.totalDatorat}, totalPaid=${totalPaid}, isPaidInFull=${isPaidInFull}`);
 
         if (isPaidInFull) {
           // Apartament plătit integral - nu transferă nimic
@@ -1128,12 +1020,10 @@ export const useSheetManagement = (associationId) => {
             paid: totalPaid,
             remaining: remainingAmount
           };
-          console.log(`    💰 Rămâne de plătit: ${remainingAmount} RON`);
         }
       }
     });
 
-    console.log('🏠 Final Apartment Balances After Payments (NEW LOGIC):', apartmentBalances);
     return apartmentBalances;
   };
 
@@ -1156,7 +1046,6 @@ export const useSheetManagement = (associationId) => {
       return;
     }
 
-    console.log('🔧 FIXING transferred balances from published sheet to current sheet');
 
     // Recalculează soldurile din sheet-ul publicat
     const correctedBalances = calculateApartmentBalancesAfterPayments(
@@ -1174,7 +1063,6 @@ export const useSheetManagement = (associationId) => {
       updatedAt: serverTimestamp()
     });
 
-    console.log('✅ Sheet-ul curent actualizat cu soldurile corectate');
 
     // Forțează reîncărcarea pentru a vedea modificările
     window.location.reload();
@@ -1198,7 +1086,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       });
 
-      console.log('✅ Numele personalizat al sheet-ului actualizat:', customName);
     } catch (error) {
       console.error('❌ Error updating custom sheet name:', error);
       throw error;
@@ -1221,7 +1108,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       });
 
-      console.log('✅ Setările de luni actualizate pentru sheet:', { workingMonth, consumptionMonth });
     } catch (error) {
       console.error('❌ Error updating sheet month settings:', error);
       throw error;
@@ -1243,7 +1129,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       });
 
-      console.log('✅ Tabelul de întreținere al sheet-ului curent actualizat');
     } catch (error) {
       console.error('❌ Error updating current sheet maintenance table:', error);
       throw error;
@@ -1270,7 +1155,6 @@ export const useSheetManagement = (associationId) => {
       });
 
       await batch.commit();
-      console.log('✅ Toate sheet-urile au fost șterse');
     } catch (error) {
       console.error('❌ Error resetting sheets:', error);
       throw error;
@@ -1313,7 +1197,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Bloc adăugat direct în sheet:', newBlock);
       return newBlock;
 
     } catch (error) {
@@ -1353,7 +1236,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Scară adăugată direct în sheet:', newStair);
       return newStair;
 
     } catch (error) {
@@ -1401,7 +1283,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Apartament adăugat direct în sheet:', newApartment);
       return newApartment;
 
     } catch (error) {
@@ -1447,7 +1328,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Bloc șters din sheet cu toate scările și apartamentele asociate:', blockId);
       return true;
 
     } catch (error) {
@@ -1486,7 +1366,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Scară ștearsă din sheet cu toate apartamentele asociate:', stairId);
       return true;
 
     } catch (error) {
@@ -1520,7 +1399,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Apartament șters din sheet:', apartmentId);
       return true;
 
     } catch (error) {
@@ -1557,7 +1435,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Bloc actualizat în sheet:', blockId);
       return true;
 
     } catch (error) {
@@ -1594,7 +1471,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Scară actualizată în sheet:', stairId);
       return true;
 
     } catch (error) {
@@ -1631,7 +1507,6 @@ export const useSheetManagement = (associationId) => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      console.log('✅ Apartament actualizat în sheet:', apartmentId);
       return true;
 
     } catch (error) {
@@ -1697,19 +1572,12 @@ export const useSheetManagement = (associationId) => {
         maintenanceTable: deleteField()
       };
 
-      console.log('📝 Actualizare status sheet la depublicare:', {
-        sheetId,
-        newStatus: SHEET_STATUS.IN_PROGRESS,
-        statusValue: updateData.status,
-        updateData
-      });
 
       batch.update(sheetRef, updateData);
 
       // 6. ȘTERGE sheet-ul următoare creat automat (dacă există)
       if (nextSheetId) {
         const nextSheetRef = getSheetRef(associationId, nextSheetId);
-        console.log('🗑️ Ștergere sheet următor:', nextSheetId);
         batch.delete(nextSheetRef);
       }
 
@@ -1738,11 +1606,6 @@ export const useSheetManagement = (associationId) => {
           const previousSheet = archivedSheets[0]; // Cel mai recent arhivat
           const previousSheetRef = getSheetRef(associationId, previousSheet.id);
 
-          console.log('🔄 Restaurare sheet anterior la PUBLISHED:', {
-            sheetId: previousSheet.id,
-            month: previousSheet.monthYear,
-            archivedAt: previousSheet.archivedAt
-          });
 
           batch.update(previousSheetRef, {
             status: SHEET_STATUS.PUBLISHED,
@@ -1753,25 +1616,12 @@ export const useSheetManagement = (associationId) => {
         }
       }
 
-      console.log('💾 Se execută batch.commit()...');
       await batch.commit();
-      console.log('✅ Batch commit executat cu succes');
 
       // Verifică imediat ce status are sheet-ul după commit
       const verifySheetDoc = await getDoc(sheetRef);
       const verifyData = verifySheetDoc.data();
-      console.log('🔍 Verificare status după commit:', {
-        sheetId,
-        statusInFirebase: verifyData?.status,
-        hasMaintenanceTable: !!verifyData?.maintenanceTable,
-        updatedAt: verifyData?.updatedAt
-      });
 
-      console.log('✅ Sheet depublicat cu succes:', {
-        sheetId,
-        month: sheetData.monthYear,
-        nextSheetDeleted: !!nextSheetId
-      });
 
       return {
         success: true,

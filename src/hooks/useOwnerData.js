@@ -167,16 +167,6 @@ export function useOwnerData(associationId, apartmentId) {
     const activeSheet = published || current;
 
     if (activeSheet) {
-      // DEBUG: Afișează toate apartamentele din maintenanceTable pentru a găsi ID-ul corect
-      console.log('🔍 [useOwnerData] Căutăm apartament cu ID:', aptId);
-      console.log('🔍 [useOwnerData] Apartamente în maintenanceTable:',
-        activeSheet.maintenanceTable?.map(row => ({
-          apartmentId: row.apartmentId,
-          apartmentNumber: row.apartmentNumber,
-          owner: row.owner
-        }))
-      );
-
       // Extrage maintenance data pentru apartament folosind helper-ul matchApartment
       const maintenance = activeSheet.maintenanceTable?.find(row => matchApartment(row, aptId));
 
@@ -644,11 +634,8 @@ export function useOwnerData(associationId, apartmentId) {
     }
 
     if (!targetSheet) {
-      console.log('[useOwnerData] Nu s-a găsit sheet pentru luna:', selectedMonth);
       return;
     }
-
-    console.log('[useOwnerData] Actualizăm date pentru luna:', selectedMonth, 'Sheet:', targetSheet.id);
 
     // Găsește datele de întreținere pentru apartament
     const maintenance = targetSheet.maintenanceTable?.find(row => matchApartment(row, apartmentId));
@@ -692,15 +679,7 @@ export function useOwnerData(associationId, apartmentId) {
         setExpenseDetails([]);
       }
 
-      console.log('[useOwnerData] Date actualizate:', {
-        totalDatorat: maintenance.totalDatorat,
-        restante: maintenance.restante,
-        penalitati: maintenance.penalitati,
-        currentMaintenance: maintenance.currentMaintenance,
-        totalPaid
-      });
     } else {
-      console.log('[useOwnerData] Nu s-a găsit apartament în maintenanceTable pentru:', apartmentId);
     }
   }, [selectedMonth, apartmentId, publishedSheet, currentSheet, archivedSheets]);
 

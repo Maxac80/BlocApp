@@ -51,15 +51,7 @@ const useInvoices = (associationId, currentSheet) => {
 
         setInvoices(invoicesData);
         setLoading(false);
-        console.log('📋 useInvoices onSnapshot — facturi încărcate:', invoicesData.length, 'associationId:', associationId);
         if (invoicesData.length > 0) {
-          console.log('📋 Detalii facturi:', invoicesData.map(inv => ({
-            id: inv.id, num: inv.invoiceNumber, supplier: inv.supplierName,
-            remaining: inv.remainingAmount, distributed: inv.distributedAmount,
-            total: inv.totalInvoiceAmount || inv.totalAmount,
-            isFullyDistributed: inv.isFullyDistributed,
-            documentType: inv.documentType
-          })));
         }
       },
       (error) => {
@@ -75,7 +67,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 📝 ACTUALIZAREA DISTRIBUȚIEI UNEI FACTURI EXISTENTE
   const updateInvoiceDistribution = useCallback(async (invoiceId, distributionData) => {
     try {
-      console.log('📝 Actualizez distribuția facturii:', invoiceId);
       
       // Obține factura existentă
       const invoice = invoices.find(inv => inv.id === invoiceId);
@@ -88,16 +79,6 @@ const useInvoices = (associationId, currentSheet) => {
       const newRemainingAmount = (invoice.totalInvoiceAmount || invoice.totalAmount) - newDistributedAmount;
       const isFullyDistributed = newRemainingAmount <= 0;
       
-      // console.log('🔍 ACTUALIZARE DISTRIBUȚIE - Date de calcul:', {
-      //   invoiceId,
-      //   invoiceNumber: invoice.invoiceNumber,
-      //   totalInvoiceAmount: invoice.totalInvoiceAmount || invoice.totalAmount,
-      //   currentDistributedAmount: invoice.distributedAmount || 0,
-      //   newDistributionAmount: currentDistribution,
-      //   calculatedNewDistributedAmount: newDistributedAmount,
-      //   calculatedNewRemainingAmount: newRemainingAmount,
-      //   isFullyDistributed
-      // });
       
       // Verifică dacă există deja o intrare pentru acest expenseId sau expenseTypeId în distributionHistory
       const existingHistory = invoice.distributionHistory || [];
@@ -117,8 +98,6 @@ const useInvoices = (associationId, currentSheet) => {
 
       if (existingEntryIndex >= 0) {
         // ACTUALIZARE - există deja o intrare pentru acest expense
-        console.log('📊 Actualizare intrare existentă în distributionHistory pentru expenseId/expenseTypeId:',
-                    distributionData.expenseId, distributionData.expenseTypeId);
 
         const oldAmount = existingHistory[existingEntryIndex].amount || 0;
 
@@ -144,7 +123,6 @@ const useInvoices = (associationId, currentSheet) => {
         ];
       } else {
         // ADĂUGARE - nu există o intrare pentru acest expenseId, adaugă una nouă
-        console.log('📊 Adăugare intrare nouă în distributionHistory');
 
         actualNewDistributedAmount = newDistributedAmount;
 
@@ -175,12 +153,6 @@ const useInvoices = (associationId, currentSheet) => {
         updatedAt: new Date().toISOString()
       });
       
-      console.log('✅ Distribuție actualizată pentru factura:', invoiceId);
-      console.log('📊 Nouă distribuție:', {
-        distributedAmount: newDistributedAmount,
-        remainingAmount: newRemainingAmount,
-        isFullyDistributed: isFullyDistributed
-      });
       
       // Așteaptă puțin pentru a permite sincronizarea Firestore înainte de următoarea operație
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -200,16 +172,8 @@ const useInvoices = (associationId, currentSheet) => {
     }
 
     try {
-      console.log('➕ Adaug factură nouă:', invoiceData);
-      console.log('📎 PDF File:', pdfFile?.name || 'Nu există PDF');
       
       // 🔍 VERIFICĂ DACĂ FACTURA EXISTĂ DEJA
-      console.log('🔍 CĂUTARE FACTURĂ EXISTENTĂ:', {
-        cautataInvoiceNumber: invoiceData.invoiceNumber,
-        cautataAssociationId: associationId,
-        totalInvoicesInMemory: invoices.length,
-        invoicesNumbers: invoices.map(inv => ({ id: inv.id, invoiceNumber: inv.invoiceNumber, associationId: inv.associationId }))
-      });
       
       // Normalizează invoiceNumber pentru comparație (elimină spații și face lowercase)
       const normalizeInvoiceNumber = (invoiceNum) => {
@@ -223,24 +187,11 @@ const useInvoices = (associationId, currentSheet) => {
         const matchesNumber = normalizedExistingNumber === normalizedSearchNumber;
         const matchesAssociation = inv.associationId === associationId;
         
-        console.log('🔍 COMPARING INVOICE:', {
-          existing: { id: inv.id, invoiceNumber: inv.invoiceNumber, normalized: normalizedExistingNumber },
-          searching: { invoiceNumber: invoiceData.invoiceNumber, normalized: normalizedSearchNumber },
-          matchesNumber,
-          matchesAssociation,
-          willMatch: matchesNumber && matchesAssociation
-        });
         
         return matchesNumber && matchesAssociation;
       });
       
       if (existingInvoice) {
-        console.log('🔄 Factură existentă găsită, actualizez distribuția:', {
-          id: existingInvoice.id,
-          invoiceNumber: existingInvoice.invoiceNumber,
-          currentDistributedAmount: existingInvoice.distributedAmount,
-          totalAmount: existingInvoice.totalInvoiceAmount || existingInvoice.totalAmount
-        });
         
         // Folosește updateInvoiceDistribution pentru factura existentă
         const currentDistribution = parseFloat(invoiceData.totalAmount) || 0;
@@ -255,7 +206,6 @@ const useInvoices = (associationId, currentSheet) => {
           notes: invoiceData.distributionNotes || `Distribuție pentru ${invoiceData.expenseName || invoiceData.expenseType}`
         });
         
-        console.log('✅ Distribuție actualizată pentru factura existentă:', existingInvoice.id);
         return existingInvoice.id;
       }
       
@@ -271,30 +221,16 @@ const useInvoices = (associationId, currentSheet) => {
                                     supplierData.supplierName === 'Fără furnizor' ||
                                     supplierData.supplierName === '' ||
                                     supplierData.supplierName === null;
-      console.log('🔍 Verificare necesitatea corectării furnizorului:', {
-        supplierId: supplierData.supplierId,
-        supplierName: supplierData.supplierName,
-        needsCorrection: needsSupplierCorrection
-      });
       
       if (needsSupplierCorrection) {
-        console.log('⚠️ Furnizor lipsă, încerc să obțin din configurația cheltuielii:', invoiceData.expenseType);
         
         try {
           const expenseConfig = getExpenseConfig(invoiceData.expenseType);
-          console.log('🔎 expenseConfig din getExpenseConfig:', {
-            expenseConfig: expenseConfig,
-            hasConfig: !!expenseConfig,
-            supplierId: expenseConfig?.supplierId,
-            supplierName: expenseConfig?.supplierName,
-            hasValidSupplier: !!(expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName)
-          });
           
           if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
             // 🔥 ACTUALIZEZ supplierData cu datele corecte!
             supplierData.supplierId = expenseConfig.supplierId;
             supplierData.supplierName = expenseConfig.supplierName;
-            console.log('✅ Furnizor obținut din configurația cheltuielii:', supplierData);
           } else {
             console.warn('⚠️ Nu s-a găsit configurația furnizorului pentru cheltuiala:', invoiceData.expenseType);
             console.warn('⚠️ expenseConfig details:', expenseConfig);
@@ -311,7 +247,6 @@ const useInvoices = (associationId, currentSheet) => {
       // Upload PDF dacă este furnizat
       if (pdfFile) {
         try {
-          console.log('📎 Procesez PDF pentru factură:', invoiceData.invoiceNumber);
           pdfData = await uploadInvoicePDF(pdfFile, associationId, invoiceData.invoiceNumber);
         } catch (uploadError) {
           console.warn('⚠️ Nu s-a putut procesa PDF-ul, salvez factura fără PDF:', uploadError);
@@ -397,18 +332,6 @@ const useInvoices = (associationId, currentSheet) => {
 
       const docRef = await addDoc(getInvoicesCollection(associationId), dataToSave);
 
-      console.log('✅ Factură salvată cu ID:', docRef.id);
-      console.log('📊 Factură salvată cu datele:', {
-        id: docRef.id,
-        month: invoiceData.month,
-        invoiceNumber: invoiceData.invoiceNumber,
-        supplierName: supplierData.supplierName,
-        totalInvoiceAmount: totalInvoiceAmount,
-        distributedAmount: distributedAmount,
-        remainingAmount: remainingAmount,
-        isFullyDistributed: isFullyDistributed,
-        hasPdfData: !!pdfData
-      });
       
       // Factură salvată cu succes
       return docRef.id;
@@ -422,7 +345,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 📝 ACTUALIZAREA UNEI FACTURI EXISTENTE
   const updateInvoice = useCallback(async (invoiceId, updates) => {
     try {
-      console.log('📝 Actualizez factura:', invoiceId);
 
       const invoiceRef = getInvoiceRef(associationId, invoiceId);
       await updateDoc(invoiceRef, {
@@ -430,7 +352,6 @@ const useInvoices = (associationId, currentSheet) => {
         updatedAt: new Date().toISOString()
       });
 
-      console.log('✅ Factură actualizată:', invoiceId);
 
     } catch (error) {
       console.error('❌ Eroare la actualizarea facturii:', error);
@@ -441,7 +362,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 📝 ACTUALIZAREA UNEI FACTURI DUPĂ NUMĂR
   const updateInvoiceByNumber = useCallback(async (invoiceNumber, updates) => {
     try {
-      console.log('📝 Actualizez factura după număr:', invoiceNumber);
 
       // Normalizează numărul facturii pentru căutare
       const normalizedNumber = invoiceNumber.trim().toLowerCase();
@@ -468,12 +388,10 @@ const useInvoices = (associationId, currentSheet) => {
   // 🗑️ ȘTERGEREA UNEI FACTURI
   const deleteInvoice = useCallback(async (invoiceId) => {
     try {
-      console.log('🗑️ Șterg factura:', invoiceId);
 
       const invoiceRef = getInvoiceRef(associationId, invoiceId);
       await deleteDoc(invoiceRef);
 
-      console.log('✅ Factură ștearsă:', invoiceId);
       
     } catch (error) {
       console.error('❌ Eroare la ștergerea facturii:', error);
@@ -484,7 +402,6 @@ const useInvoices = (associationId, currentSheet) => {
   // ✅ MARCAREA FACTURII CA PLĂTITĂ
   const markInvoiceAsPaid = useCallback(async (invoiceId, paymentData = {}) => {
     try {
-      console.log('✅ Marchez factura ca plătită:', invoiceId);
       
       await updateInvoice(invoiceId, {
         isPaid: true,
@@ -493,7 +410,6 @@ const useInvoices = (associationId, currentSheet) => {
         paymentNotes: paymentData.notes || ''
       });
 
-      console.log('✅ Factură marcată ca plătită:', invoiceId);
       
     } catch (error) {
       console.error('❌ Eroare la marcarea facturii ca plătită:', error);
@@ -504,7 +420,6 @@ const useInvoices = (associationId, currentSheet) => {
   // ❌ MARCAREA FACTURII CA NEPLĂTITĂ
   const markInvoiceAsUnpaid = useCallback(async (invoiceId) => {
     try {
-      console.log('❌ Marchez factura ca neplătită:', invoiceId);
       
       await updateInvoice(invoiceId, {
         isPaid: false,
@@ -513,7 +428,6 @@ const useInvoices = (associationId, currentSheet) => {
         paymentNotes: null
       });
 
-      console.log('❌ Factură marcată ca neplătită:', invoiceId);
       
     } catch (error) {
       console.error('❌ Eroare la marcarea facturii ca neplătită:', error);
@@ -524,12 +438,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 📎 UPLOAD PDF FACTURĂ FOLOSIND BASE64 (ca DocumentsStep)
   const uploadInvoicePDF = async (file, associationId, invoiceNumber) => {
     try {
-      console.log('📎 Convertesc PDF factură la Base64:', invoiceNumber);
-      console.log('📄 Fișier details:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
       
       // Validare fișier PDF
       if (file.type !== 'application/pdf') {
@@ -552,7 +460,6 @@ const useInvoices = (associationId, currentSheet) => {
         });
       };
       
-      console.log('🔄 Converting PDF to Base64...');
       const base64Data = await fileToBase64(file);
       
       // Verifică dacă Base64 nu este prea mare pentru Firestore (1MB limit)
@@ -560,9 +467,6 @@ const useInvoices = (associationId, currentSheet) => {
         throw new Error('PDF-ul este prea mare chiar și după conversie. Încearcă un PDF mai mic.');
       }
       
-      console.log('✅ PDF convertit cu succes la Base64');
-      console.log('📊 Original size:', file.size, 'bytes');
-      console.log('📊 Base64 size:', base64Data.length, 'characters');
       
       // Returnează datele Base64 în loc de URL Firebase Storage
       return {
@@ -583,7 +487,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 🔧 ACTUALIZAREA FURNIZORILOR PENTRU FACTURILE EXISTENTE FĂRĂ FURNIZOR
   const updateMissingSuppliersForExistingInvoices = useCallback(async (specificExpenseType = null) => {
     try {
-      console.log('🔧 Verific și actualizez facturile fără furnizor...', specificExpenseType ? `pentru ${specificExpenseType}` : '');
       
       const invoicesWithoutSupplier = invoices.filter(invoice => {
         const hasNoSupplier = !invoice.supplierName || 
@@ -603,18 +506,15 @@ const useInvoices = (associationId, currentSheet) => {
         return hasNoSupplier && matchesExpenseType;
       });
       
-      console.log('📊 Facturi găsite fără furnizor:', invoicesWithoutSupplier.length, specificExpenseType ? `pentru ${specificExpenseType}` : '');
       
       for (const invoice of invoicesWithoutSupplier) {
         try {
-          console.log('🔧 Procesez factura:', invoice.id, 'cu cheltuiala:', invoice.expenseName || invoice.expenseType || 'LIPSEȘTE');
 
           // Pentru facturile fără expenseTypeId/expenseName, folosește specificExpenseType pentru configurare
           const targetExpenseType = invoice.expenseTypeId || invoice.expenseName || invoice.expenseType || specificExpenseType;
           const expenseConfig = getExpenseConfig(targetExpenseType);
 
           if (expenseConfig && expenseConfig.supplierId && expenseConfig.supplierName) {
-            console.log('✅ Actualizez furnizorul pentru factura:', invoice.id, 'cu:', expenseConfig.supplierName);
 
             const invoiceRef = getInvoiceRef(associationId, invoice.id);
             const updateData = {
@@ -627,7 +527,6 @@ const useInvoices = (associationId, currentSheet) => {
             if (!invoice.expenseTypeId && expenseConfig.id) {
               updateData.expenseTypeId = expenseConfig.id;
               updateData.expenseName = expenseConfig.name;
-              console.log('🔧 Setez expenseTypeId și expenseName pentru factura:', invoice.id, 'la:', expenseConfig.id, expenseConfig.name);
             }
 
             await updateDoc(invoiceRef, updateData);
@@ -639,7 +538,6 @@ const useInvoices = (associationId, currentSheet) => {
         }
       }
       
-      console.log('✅ Actualizare furnizori completă');
       return invoicesWithoutSupplier.length;
     } catch (error) {
       console.error('❌ Eroare la actualizarea furnizorilor:', error);
@@ -669,15 +567,7 @@ const useInvoices = (associationId, currentSheet) => {
   
   // 🆕 OBȚINE FACTURILE PARȚIAL DISTRIBUITE
   const getPartiallyDistributedInvoices = useCallback((expenseType = null, documentType = null, supplierId = null) => {
-    console.log('🔍 getPartiallyDistributedInvoices:', { expenseType, documentType, supplierId, totalInvoices: invoices.length });
     if (invoices.length > 0) {
-      console.log('🔍 Facturi în memorie:', invoices.map(inv => ({
-        id: inv.id, num: inv.invoiceNumber, supplier: inv.supplierName,
-        docType: inv.documentType || 'factura',
-        remaining: inv.remainingAmount, distributed: inv.distributedAmount,
-        total: inv.totalInvoiceAmount || inv.totalAmount,
-        isFullyDistributed: inv.isFullyDistributed
-      })));
     }
     const filtered = invoices.filter(invoice => {
       // Logica îmbunătățită pentru facturi parțial distribuite
@@ -753,7 +643,6 @@ const useInvoices = (associationId, currentSheet) => {
   // 🛠️ CORECTARE FURNIZORI GREȘIT ATRIBUIȚI
   const fixIncorrectSuppliers = useCallback(async () => {
     try {
-      console.log('🛠️ Corectez furnizori greșit atribuiți...');
       
       // Găsește facturi care au expenseTypeId/expenseName diferit de furnizorul lor
       const problematicInvoices = invoices.filter(invoice => {
@@ -767,19 +656,11 @@ const useInvoices = (associationId, currentSheet) => {
         return expenseConfig.supplierName.toLowerCase().trim() !== invoice.supplierName.toLowerCase().trim();
       });
 
-      console.log('🔍 Facturi cu furnizor incorect:', problematicInvoices.length);
 
       for (const invoice of problematicInvoices) {
         const expenseIdentifier = invoice.expenseTypeId || invoice.expenseName || invoice.expenseType;
         const correctExpenseConfig = getExpenseConfig(expenseIdentifier);
         
-        console.log('🔧 Corectez factura:', invoice.id, {
-          invoiceNumber: invoice.invoiceNumber,
-          expenseTypeId: invoice.expenseTypeId,
-          expenseName: invoice.expenseName || invoice.expenseType,
-          currentSupplier: invoice.supplierName,
-          correctSupplier: correctExpenseConfig.supplierName
-        });
 
         const invoiceRef = getInvoiceRef(associationId, invoice.id);
         await updateDoc(invoiceRef, {
@@ -789,7 +670,6 @@ const useInvoices = (associationId, currentSheet) => {
         });
       }
       
-      console.log('✅ Corecție furnizori completă');
       return problematicInvoices.length;
     } catch (error) {
       console.error('❌ Eroare la corecția furnizorilor:', error);
@@ -834,11 +714,9 @@ const useInvoices = (associationId, currentSheet) => {
   // 🔄 MIGRARE AUTOMATĂ - Adaugă expenseTypeId în distributionHistory
   const migrateDistributionHistoryToExpenseTypeId = useCallback(async () => {
     if (!invoices || invoices.length === 0) {
-      console.log('📊 Nu există facturi de migrat');
       return { success: true, updated: 0, total: 0 };
     }
 
-    console.log('🔄 Începe migrarea distributionHistory...');
     let updatedCount = 0;
     let totalProcessed = 0;
 
@@ -898,14 +776,12 @@ const useInvoices = (associationId, currentSheet) => {
             updatedAt: new Date().toISOString()
           });
           updatedCount++;
-          console.log(`✅ Migrat factura ${invoice.invoiceNumber} (${invoice.id})`);
         } catch (error) {
           console.error(`❌ Eroare la migrarea facturii ${invoice.id}:`, error);
         }
       }
     }
 
-    console.log(`✅ Migrare completă: ${updatedCount} din ${totalProcessed} facturi actualizate`);
     return { success: true, updated: updatedCount, total: totalProcessed };
   }, [associationId, invoices, getExpenseConfig]);
 
