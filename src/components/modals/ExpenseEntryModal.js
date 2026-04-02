@@ -167,25 +167,17 @@ const ExpenseEntryModal = ({
   // Pre-populează formularul când editingExpense este furnizat
   useEffect(() => {
     if (editingExpense) {
-      console.log('✏️ Pre-populating form with:', editingExpense);
-      console.log('✏️ editingExpense.amountsByBlock:', editingExpense.amountsByBlock);
-      console.log('✏️ editingExpense.amountsByStair:', editingExpense.amountsByStair);
 
       const expenseConfig = getExpenseConfigNormalized(editingExpense.name);
-      console.log('✏️ Config receptionMode:', expenseConfig?.receptionMode);
-      console.log('✏️ Full config:', expenseConfig);
 
       setSelectedExpense(editingExpense.name);
 
       // Populează sumele bazate pe distributionType și receptionMode
       if (editingExpense.amountsByBlock && Object.keys(editingExpense.amountsByBlock).length > 0) {
-        console.log('✏️ Setting amounts from amountsByBlock:', editingExpense.amountsByBlock);
         setAmounts(editingExpense.amountsByBlock);
       } else if (editingExpense.amountsByStair && Object.keys(editingExpense.amountsByStair).length > 0) {
-        console.log('✏️ Setting amounts from amountsByStair:', editingExpense.amountsByStair);
         setAmounts(editingExpense.amountsByStair);
       } else {
-        console.log('✏️ No amounts to set, using empty object');
         setAmounts({});
       }
 
@@ -200,7 +192,6 @@ const ExpenseEntryModal = ({
       // Populează invoice data din editingExpense (salvate în sheet)
       if (editingExpense.invoicesData && editingExpense.invoicesData.length > 0) {
         // Multi-document invoices — group by supplierId
-        console.log('📋 Loading multi invoices from editingExpense:', editingExpense.invoicesData);
         const newSupplierInvoices = {};
         for (const invData of editingExpense.invoicesData) {
           const invAmount = invData.invoiceAmount?.toString() || invData.totalInvoiceAmount?.toString() || '';
@@ -231,7 +222,6 @@ const ExpenseEntryModal = ({
         setSupplierInvoices(newSupplierInvoices);
       } else if (editingExpense.invoiceData) {
         // Single invoice — backward compat: wrap in documents array
-        console.log('📋 Loading single invoice from editingExpense:', editingExpense.invoiceData);
         const invData = editingExpense.invoiceData;
         const invAmount = invData.invoiceAmount?.toString() || invData.totalInvoiceAmount?.toString() || '';
         const suppliers = getEffectiveSuppliers(expenseConfig);
@@ -264,7 +254,6 @@ const ExpenseEntryModal = ({
       }
 
       if (editingExpense.separateInvoicesData) {
-        console.log('📋 Loading separateInvoices from editingExpense:', editingExpense.separateInvoicesData);
         setSeparateInvoices(editingExpense.separateInvoicesData);
       }
     }
@@ -650,11 +639,6 @@ const ExpenseEntryModal = ({
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 handleSubmit START', {
-      selectedExpense,
-      editingExpense: !!editingExpense,
-      supplierInvoices
-    });
 
     if (!selectedExpense) {
       alert('Selectează o cheltuială');
@@ -875,7 +859,6 @@ const ExpenseEntryModal = ({
       newExpense.invoicesData = invoicesDataArray;
     }
 
-    console.log('🧾 handleSubmit - invoices:', { count: invoicesDataArray.length, invoicesDataArray });
 
     // Adaugă facturi separate per bloc/scară dacă există
     if (Object.keys(separateInvoices).length > 0) {
@@ -884,24 +867,14 @@ const ExpenseEntryModal = ({
       newExpense.entityAmounts = amounts;
     }
 
-    console.log('🚀 About to save expense', {
-      isEditing: !!editingExpense,
-      hasInvoiceData: !!newExpense.invoiceData,
-      invoiceNumber: newExpense.invoiceData?.invoiceNumber,
-      newExpense
-    });
 
     try {
       if (editingExpense) {
         // Mod editare - folosește handleUpdateExpense
-        console.log('✏️ ExpenseEntryModal - Updating expense:', newExpense);
         await handleUpdateExpense(editingExpense.id, newExpense);
       } else {
         // Mod adăugare - folosește handleAddExpense
-        console.log('📝 ExpenseEntryModal - About to call handleAddExpense with:', newExpense);
-        console.log('📝 handleAddExpense function type:', typeof handleAddExpense);
         await handleAddExpense(newExpense);
-        console.log('✅ handleAddExpense completed');
       }
       onClose();
       resetForm();

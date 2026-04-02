@@ -124,13 +124,6 @@ const DashboardView = ({
       paymentInfo: apartmentData.paymentInfo
     };
 
-    console.log('📊 Opening maintenance breakdown in Dashboard:', {
-      apartmentId: apartmentData.apartmentId,
-      hasExpenseDetails: !!mergedData.expenseDetails,
-      expenseDetailsCount: Object.keys(mergedData.expenseDetails || {}).length,
-      expenseDetailsKeys: Object.keys(mergedData.expenseDetails || {}),
-      expenseDifferenceDetailsKeys: Object.keys(mergedData.expenseDifferenceDetails || {})
-    });
 
     setSelectedMaintenanceData(mergedData);
     setShowMaintenanceBreakdown(true);
@@ -412,11 +405,6 @@ const DashboardView = ({
         // Folosește expenses din details dacă există, altfel fallback la expenses din props
         const finalExpensesList = expensesFromDetails.length > 0 ? expensesFromDetails : (expenses || []);
 
-        console.log('📋 Modal expenses:', {
-          fromDetails: expensesFromDetails.length,
-          fromProps: (expenses || []).length,
-          using: finalExpensesList.length
-        });
 
         return (
           <MaintenanceBreakdownModal

@@ -271,9 +271,7 @@ const SetupView = ({
           // updateStructureSnapshot va prelua apartamentele din Firebase automat
         };
 
-        console.log('🏢 Actualizez Sheet 1 cu apartamentele importate...');
         await updateStructureSnapshot(completeStructureData);
-        console.log('✅ Sheet 1 actualizat cu succes după importul Excel');
 
       } catch (updateError) {
         console.error('❌ Eroare la actualizarea Sheet 1:', updateError);

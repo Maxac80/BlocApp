@@ -145,16 +145,16 @@ const InviteAssocMemberModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-3">
-              <UserPlus className="w-5 h-5 text-blue-600" />
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-2.5 sm:mr-3 flex-shrink-0">
+              <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Invita Membru
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                Invită Membru
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500 truncate">
                 {association?.name}
               </p>
             </div>
@@ -223,7 +223,7 @@ const InviteAssocMemberModal = ({
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             {/* Error general */}
             {errors.general && (
               <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -298,38 +298,38 @@ const InviteAssocMemberModal = ({
             <div className="flex items-start p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <Info className="w-5 h-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-700">
-                <p className="font-medium">Cum functioneaza?</p>
+                <p className="font-medium">Cum funcționează?</p>
                 <p className="mt-1">
-                  Persoana invitata va primi un email cu un link unic.
-                  Dupa ce acceseaza link-ul si isi creaza contul (sau se logheaza),
-                  va fi adaugata automat ca membru in asociatie.
+                  Persoana invitată va primi un email cu un link unic.
+                  După ce accesează link-ul și își creează contul (sau se loghează),
+                  va fi adăugată automat ca membru în asociație.
                 </p>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-2">
+            <div className="flex justify-end space-x-2 sm:space-x-3 pt-2">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                Anuleaza
+                Anulează
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center px-3 sm:px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-1.5" />
                     Se trimite...
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Trimite Invitația
+                    <Send className="w-3.5 h-3.5 mr-1.5" />
+                    Invită
                   </>
                 )}
               </button>

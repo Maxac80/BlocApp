@@ -160,11 +160,6 @@ const ExpenseConfigModal = ({
   // Load config when modal opens in EDIT mode
   useEffect(() => {
     if (isOpen && mode === 'edit' && expenseConfig && !justAddedSupplierRef.current) {
-      console.log('🔧 [ExpenseConfigModal] EDIT MODE - expenseConfig received:', {
-        id: expenseConfig.id,
-        name: expenseConfig.name,
-        distributionType: expenseConfig.distributionType
-      });
       const distributionType = expenseConfig.distributionType || 'apartment';
       const defaultFixedAmountMode = distributionType === 'person' ? 'person' : 'apartment';
 
@@ -213,7 +208,6 @@ const ExpenseConfigModal = ({
           includeExcludedInDifference: false
         }
       };
-      console.log('🔧 [ExpenseConfigModal] Setting localConfig with distributionType:', newLocalConfig.distributionType);
       setLocalConfig(newLocalConfig);
 
       // Setează showCustomUnit dacă unitatea e custom
@@ -1156,12 +1150,6 @@ const ExpenseConfigModal = ({
                               // Determină dacă cheltuiala este salvată sau pending
                               const expenseKeyForConsumption = mode === 'add' ? inputExpenseName : expenseName;
 
-                              console.log('🗑️ Excluding apartment, deleting consumption:', {
-                                apartmentId: apartment.id,
-                                apartmentNumber: apartment.number,
-                                expenseKey: expenseKeyForConsumption,
-                                mode
-                              });
 
                               // Găsește cheltuiala pentru a obține ID-ul (pentru cheltuieli distribuite)
                               const distributedExpenses = currentSheet?.expenses || [];
@@ -1169,21 +1157,12 @@ const ExpenseConfigModal = ({
                                 exp.name === expenseKeyForConsumption || exp.id === expenseKeyForConsumption
                               );
 
-                              console.log('🔍 Looking for distributed expense:', {
-                                expenseKeyForConsumption,
-                                foundExpense: distributedExpense ? { id: distributedExpense.id, name: distributedExpense.name } : null,
-                                totalDistributedExpenses: distributedExpenses.length,
-                                hasUpdateExpenseConsumption: !!updateExpenseConsumption,
-                                hasUpdatePendingConsumption: !!updatePendingConsumption
-                              });
 
                               if (distributedExpense && distributedExpense.id && updateExpenseConsumption) {
                                 // Cheltuială distribuită - șterge consumul
-                                console.log('✅ Calling updateExpenseConsumption:', distributedExpense.id, apartment.id, null);
                                 updateExpenseConsumption(distributedExpense.id, apartment.id, null);
                               } else if (updatePendingConsumption) {
                                 // Cheltuială pending - șterge consumul pending
-                                console.log('✅ Calling updatePendingConsumption:', expenseKeyForConsumption, apartment.id, null);
                                 updatePendingConsumption(expenseKeyForConsumption, apartment.id, null);
                               }
                             }

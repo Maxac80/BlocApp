@@ -328,6 +328,7 @@ function AppContent() {
           userProfile={userProfile}
           activeUser={currentUser}
           onSelectAssociation={(assoc) => {
+            localStorage.setItem('currentView', 'dashboard');
             selectDirectAssociation(assoc);
           }}
           onCreateAssociation={() => setShowCreateAssocModal(true)}
@@ -343,6 +344,7 @@ function AppContent() {
             await loadUserContexts(currentUser?.uid);
             // Mic delay pentru propagare Firestore - evită permission errors pe subcollecții
             await new Promise(r => setTimeout(r, 500));
+            localStorage.setItem('currentView', 'dashboard');
             selectDirectAssociation(assoc);
           }}
         />

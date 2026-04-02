@@ -35,20 +35,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
   const initialPenalitati = (penalitati || 0) + totalIncasatPenalitati;
   const initialTotalDatorat = (totalDatorat || 0) + totalIncasat;
 
-  console.log('💰 MaintenanceBreakdownModal - Încasări:', {
-    apartmentId,
-    apartmentNumber: apartment,
-    totalPayments: payments?.length || 0,
-    apartmentPaymentsCount: apartmentPayments.length,
-    apartmentPayments,
-    totalIncasat,
-    breakdown: {
-      intretinere: totalIncasatIntretinere,
-      restante: totalIncasatRestante,
-      penalitati: totalIncasatPenalitati
-    },
-    currentMonth
-  });
 
   // Get current apartment details
   const currentApartment = allApartments?.find(apt => apt.id === apartmentId);
@@ -126,15 +112,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         standardAmount = aptAmount;
         foundIntegralApartment = true;
 
-        console.log(`[PerApartment Debug] ${expense.name}:`, {
-          receptionMode: expense.receptionMode || expense.expenseEntryMode || 'per_association',
-          currentBlockId,
-          currentStairId,
-          groupApartmentsCount: groupApartments.length,
-          integralApartment: apt.number,
-          integralAptStairId: apt.stairId,
-          standardAmount
-        });
 
         break;
       }
@@ -162,7 +139,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     // FALLBACK: Dacă nu găsim apartament integral sau cu procentaj, folosește apartamentul curent
     if (standardAmount === 0 && currentAptAmount > 0) {
       standardAmount = currentAptAmount;
-      console.log(`[PerApartment Fallback] ${expense.name}: Used current apartment - ${currentAptAmount}`);
     }
 
     return standardAmount;
@@ -210,7 +186,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
 
     // Debug: log distribution type for cotaParte expenses
     if (expense.name && (expense.name.includes('Cota parte') || expense.name.includes('cota parte'))) {
-      console.log('Distribution Type for', expense.name, ':', distType);
     }
 
     switch (distType) {
@@ -265,18 +240,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
               // Calculate price per person: amount / number of persons
               standardPricePerPerson = aptAmount / apt.persons;
 
-              console.log(`[PerPerson Debug] ${expense.name}:`, {
-                receptionMode: expense.receptionMode || expense.expenseEntryMode || 'per_association',
-                currentBlockId,
-                currentStairId,
-                groupApartmentsCount: groupApartmentsForPerson.length,
-                integralApartment: apt.number,
-                integralAptStairId: apt.stairId,
-                aptAmount,
-                persons: apt.persons,
-                standardPricePerPerson,
-                currentApartmentPersons: persons
-              });
 
               break;
             }
@@ -285,7 +248,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
           // FALLBACK: Dacă nu găsim apartament integral, folosește apartamentul curent
           if (standardPricePerPerson === 0 && persons > 0 && calculatedAmount > 0) {
             standardPricePerPerson = calculatedAmount / persons;
-            console.log(`[PerPerson Fallback] ${expense.name}: Used current apartment - ${calculatedAmount} / ${persons} = ${standardPricePerPerson}`);
           }
         }
 
@@ -334,7 +296,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         // If we have the surface and the calculated amount, we can derive the price per sqm
         const pricePerSqm = apartmentSurf > 0 && calculatedAmount > 0 ? (calculatedAmount / apartmentSurf) : 0;
 
-        console.log('✓ CotaParte matched:', expense.name, '- Surface:', apartmentSurf, 'Amount:', calculatedAmount, 'Price/mp:', pricePerSqm);
 
         return {
           type: 'cotaParte',
@@ -359,14 +320,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
   };
 
   // Calculate expense breakdown - include ALL expenses (even excluded ones)
-  console.log('🔍 MaintenanceBreakdownModal Debug:', {
-    apartmentId,
-    expenseDetailsKeys: Object.keys(expenseDetails || {}),
-    expenseDetailsStructure: expenseDetails,
-    expensesListIds: expensesList?.map(e => e.expenseTypeId || e.id) || [],
-    expensesListNames: expensesList?.map(e => e.name) || [],
-    expensesListLength: expensesList?.length || 0
-  });
 
   const expenseBreakdown = expensesList?.map(expense => {
     // Folosește ID-ul cheltuielii pentru a găsi datele (expenseTypeId sau id)
@@ -379,7 +332,6 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     const difference = expenseDifferenceDetails?.[expenseKey] || 0;
     const participation = apartmentParticipations?.[apartmentId]?.[expense.name];
 
-    console.log(`  Expense: ${expense.name} (ID: ${expenseKey}), amount: ${amount}, difference: ${difference}, found: ${!!expenseData}, shouldShow: ${amount > 0 || difference > 0 || participation?.excluded}`);
 
     // Get consumption or individual amount for this expense from the expense object
     const consumption = expense.consumption?.[apartmentId] || 0;

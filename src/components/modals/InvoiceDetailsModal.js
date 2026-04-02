@@ -75,15 +75,6 @@ const InvoiceDetailsModal = ({
       return;
     }
 
-    console.log('🔍 InvoiceDetailsModal - handleSubmit - Sending data:', {
-      entityId,
-      invoiceNumber,
-      invoiceAmount,
-      invoiceDate,
-      dueDate,
-      notes,
-      hasPdfFile: !!pdfFile
-    });
 
     onSave({
       entityId,

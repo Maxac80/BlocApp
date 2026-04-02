@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
 import useSuppliers from '../../hooks/useSuppliers';
@@ -43,16 +43,6 @@ const AccountingView = ({
              (sheet.status === 'PUBLISHED' || sheet.status === 'published' || sheet.status === 'archived')
   ) || null;
 
-  console.log('📊 AccountingView - Sheet Detection:', {
-    currentMonth,
-    totalSheets: sheets.length,
-    publishedSheetMonth: publishedSheet?.monthYear,
-    allSheets: sheets.map(s => ({ month: s.monthYear, status: s.status, payments: s.payments?.length || 0 })),
-    foundSheetForCurrentMonth: currentMonthSheet ? {
-      month: currentMonthSheet.monthYear,
-      paymentsCount: currentMonthSheet.payments?.length || 0
-    } : null
-  });
 
   const {
     incasari,
@@ -63,13 +53,6 @@ const AccountingView = ({
     deleteIncasare
   } = useIncasari(association, currentMonth, currentMonthSheet);
 
-  console.log('💰 useIncasari result:', {
-    incasariCount: incasari.length,
-    loading,
-    error,
-    currentMonth,
-    hasSheet: !!currentMonthSheet
-  });
 
   // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
   const { getExpenseConfig } = useExpenseConfigurations(association?.id);
@@ -298,7 +281,6 @@ const AccountingView = ({
   // Funcție pentru descărcarea PDF-ului Base64
   const handleDownloadPDF = (invoice) => {
     try {
-      console.log('📄 Descarcă PDF pentru factura:', invoice.invoiceNumber);
       
       let base64Data = invoice.pdfUrl;
       let fileName = `Factura_${invoice.invoiceNumber}.pdf`;
@@ -328,7 +310,6 @@ const AccountingView = ({
       link.click();
       document.body.removeChild(link);
       
-      console.log('✅ PDF descărcat:', fileName);
       
     } catch (error) {
       console.error('❌ Eroare la descărcarea PDF-ului:', error);
@@ -360,6 +341,25 @@ const AccountingView = ({
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Contabilitate</h1>
         </div>
+
+        {/* Guard: nu există apartamente configurate */}
+        {apartments.length === 0 ? (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 text-center mb-6">
+            <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-2">
+              Configurează mai întâi structura asociației
+            </h3>
+            <p className="text-sm text-blue-600 mb-4">
+              Pentru a vizualiza încasările și a înregistra facturile, trebuie să adaugi blocurile, scările și apartamentele.
+            </p>
+            <button
+              onClick={() => handleNavigation('setup')}
+              className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+            >
+              Configurează Apartamentele
+            </button>
+          </div>
+        ) : (
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="border-b">
@@ -916,6 +916,7 @@ const AccountingView = ({
             )}
           </div>
         </div>
+      )}
 
       {/* Modal detalii încasare */}
       {showReceiptModal && selectedIncasare && (

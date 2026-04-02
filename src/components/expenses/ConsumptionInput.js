@@ -1995,7 +1995,6 @@ const ConsumptionInput = ({
                                           // Verifică modul de introducere
                                           const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                                           const isIndexMode = inputMode === 'indexes';
-                                          console.log('🟣 FOOTER VERIFICARE - inputMode:', inputMode, 'isIndexMode:', isIndexMode, 'apt:', apt.id);
 
                                           let aptConsumption = 0;
                                           const indexes = expense?.indexes?.[apt.id];
@@ -2034,28 +2033,13 @@ const ConsumptionInput = ({
                                       const allApartments = getAssociationApartments();
                                       const expenseDifferences = calculateExpenseDifferences(expense, allApartments);
 
-                                      console.log('🔴 DEBUG totalDifference:', {
-                                        apartmentsForCalculationIds: apartmentsForCalculation.map(a => a.id),
-                                        expenseDifferencesKeys: Object.keys(expenseDifferences),
-                                        expenseDifferencesValues: expenseDifferences,
-                                        apartmentsForCalculationCount: apartmentsForCalculation.length
-                                      });
 
                                       const totalDifference = apartmentsForCalculation.reduce((sum, apt) => {
                                         const diff = expenseDifferences[apt.id] || 0;
-                                        console.log(`🔴 Apt ${apt.id}: diff = ${diff}`);
                                         return sum + diff;
                                       }, 0);
 
-                                      console.log('🔴 totalDifference FINAL:', totalDifference);
 
-                                      console.log('🟢 FOOTER FINAL:', {
-                                        totalAfterParticipation,
-                                        totalDifference,
-                                        expectedAmount,
-                                        apartmentsForCalculationCount: apartmentsForCalculation.length,
-                                        filterType: filterInfo.type
-                                      });
 
                                       const finalTotal = totalAfterParticipation + totalDifference;
                                       // Diferență rămasă = calculat - așteptat

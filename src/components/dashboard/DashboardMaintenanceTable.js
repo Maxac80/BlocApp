@@ -47,20 +47,9 @@ const DashboardMaintenanceTable = ({
   const stairFilteredData = selectedStairTab === 'all'
     ? maintenanceData
     : maintenanceData.filter(data => {
-        console.log('🔍 Filtering data:', {
-          apartmentId: data.apartmentId,
-          dataStairId: data.stairId,
-          selectedStairTab,
-          match: data.stairId === selectedStairTab
-        });
         return data.stairId === selectedStairTab;
       });
 
-  console.log('📊 Stair filter results:', {
-    selectedStairTab,
-    totalData: maintenanceData?.length || 0,
-    filteredData: stairFilteredData?.length || 0
-  });
 
   // Filtrează datele în funcție de căutare
   const filteredData = stairFilteredData.filter(data => {
@@ -81,12 +70,6 @@ const DashboardMaintenanceTable = ({
   // Calculează statisticile pentru datele filtrate (respectă tab-ul de scară selectat)
   const paymentStats = getPaymentStats ? getPaymentStats() : null;
 
-  console.log('🔍 DashboardMaintenanceTable scroll debug:', {
-    filteredDataLength: filteredData.length,
-    shouldHaveScroll: filteredData.length > 10,
-    disableSticky: filteredData.length <= 10,
-    hasOverflow: filteredData.length > 10 ? 'overflow-auto' : 'none'
-  });
 
   // Calculăm totalul datorat INIȚIAL pentru scara selectată
   // totalDatorat în maintenanceData este deja actualizat după plăți (reduced)

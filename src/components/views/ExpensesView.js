@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 import SupplierModal from '../modals/SupplierModal';
@@ -177,6 +177,25 @@ const ExpensesViewNew = ({
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Configurare cheltuieli</h1>
         </div>
+
+        {/* Guard: nu există apartamente configurate */}
+        {getAssociationApartments && getAssociationApartments().length === 0 ? (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 text-center mb-6">
+            <Building className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-2">
+              Configurează mai întâi structura asociației
+            </h3>
+            <p className="text-sm text-blue-600 mb-4">
+              Pentru a configura cheltuielile și a seta furnizorii, trebuie să adaugi blocurile, scările și apartamentele.
+            </p>
+            <button
+              onClick={() => handleNavigation('setup')}
+              className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm"
+            >
+              Configurează Apartamentele
+            </button>
+          </div>
+        ) : (
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="border-b">
@@ -699,6 +718,7 @@ const ExpensesViewNew = ({
             )}
           </div>
         </div>
+        )}
 
         <ExpenseConfigModal
           isOpen={configModalOpen}

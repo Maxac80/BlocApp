@@ -135,7 +135,6 @@ const ExpenseForm = ({
   React.useEffect(() => {
     // Doar resetează datele locale când newExpense.name devine gol
     if (newExpense.name === "" && (invoiceData.invoiceNumber || pdfFile || showInvoiceDetails)) {
-      console.log('🔄 Resetez datele locale ale facturii după reset newExpense');
       resetInvoiceData();
     }
   }, [newExpense.name]); // Doar dependența necesară
@@ -144,7 +143,6 @@ const ExpenseForm = ({
   React.useEffect(() => {
     // Doar actualiza când există date de factură și nu e în reset
     if (setNewExpense && newExpense.name && showInvoiceDetails) {
-      console.log('📤 Actualizez newExpense cu datele facturii');
       
       // Calculează suma de distribuit curentă
       const currentDistribution = getExpenseConfig(newExpense.name).distributionType === "consumption" 
@@ -477,11 +475,9 @@ const ExpenseForm = ({
             
             // Auto-sincronizare dacă nu găsim facturi pentru cheltuiala cu furnizor configurat
             if (hasConfiguredSupplier && partialInvoicesForType?.length === 0 && syncSuppliersForExpenseType) {
-              console.log('🔄 Încerc auto-sincronizarea furnizorilor pentru', newExpense.name);
               // Rulează sincronizarea în background, dar nu așteptăm rezultatul pentru UI
               syncSuppliersForExpenseType(newExpense.name).then((syncedCount) => {
                 if (syncedCount > 0) {
-                  console.log('✅ Sincronizate', syncedCount, 'facturi pentru', newExpense.name);
                 }
               }).catch(error => {
                 console.error('❌ Eroare auto-sincronizare:', error);
@@ -575,9 +571,7 @@ const ExpenseForm = ({
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('🖱️ Click pe butonul Adaugă factură, showInvoiceDetails:', showInvoiceDetails);
                       setShowInvoiceDetails(!showInvoiceDetails);
-                      console.log('🔄 Schimbat showInvoiceDetails la:', !showInvoiceDetails);
                     }}
                     className={`px-3 py-1 rounded-md text-xs font-medium ${
                       showInvoiceDetails 
@@ -768,7 +762,6 @@ const ExpenseForm = ({
                               const currentAmount = newExpense.billAmount || newExpense.amount;
                               const distribuit = parseFloat(currentAmount) || 0;
                               const ramas = total - distribuit;
-                              console.log('🧮 DEBUG Calcul distribuție:', { total, distribuit, ramas, currentAmount });
                               return (
                                 <>
                                   Distribui: {currentAmount} RON din {invoiceData.totalInvoiceAmount} RON total

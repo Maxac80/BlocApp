@@ -30,17 +30,17 @@ const DashboardHeader = ({
   };
 
   return (
-    <header className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-4 mb-4 sm:mb-6">
-      <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-100">
+    <header className="px-3 sm:px-4 lg:px-6 pt-2 sm:pt-4 lg:pt-4 mb-3 sm:mb-6">
+      <div className="bg-white p-2.5 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-blue-100">
         {/* Layout: vertical pe mobil, horizontal pe desktop */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 sm:gap-3 lg:gap-4">
 
           {/* Secțiunea cu informații asociație */}
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 truncate">
+            <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-800">
               {association?.name || "Nume Asociație"}
             </h1>
-            <p className="text-gray-600 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">
+            <p className="text-gray-600 text-[11px] sm:text-sm mt-0.5">
               {association?.address ?
                 `${association.address.street || ''} ${association.address.number || ''}, ${association.address.city || ''}, ${association.address.county || ''}`.trim()
                 : "Adresa asociației"}

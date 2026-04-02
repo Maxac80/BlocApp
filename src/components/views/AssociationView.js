@@ -823,16 +823,17 @@ const AssociationView = ({
                     <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 overflow-visible">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex items-center">
-                          <Users className="w-4 h-4 mr-1.5" />
+                          <Users className="w-4 h-4 mr-1.5 flex-shrink-0" />
                           Membrii asociatiei
                         </h3>
                         {isFounder && (
                           <button
                             onClick={() => setShowInviteModal(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-1 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
                           >
-                            <UserPlus className="w-4 h-4" />
-                            Invită Membru
+                            <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="hidden sm:inline">Invită Membru</span>
+                            <span className="sm:hidden">Invită</span>
                           </button>
                         )}
                       </div>
@@ -870,14 +871,14 @@ const AssociationView = ({
                             return (
                               <div
                                 key={member.id}
-                                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors gap-2 sm:gap-0"
                               >
                                 <div className="flex items-center min-w-0">
                                   <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center mr-3 flex-shrink-0 border border-gray-200">
                                     <User className="w-4 h-4 text-gray-500" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                    <p className="text-sm font-medium text-gray-900">
                                       {member.name || member.email || 'Membru'}
                                       {isSelf && <span className="text-xs text-gray-400 ml-1">(tu)</span>}
                                     </p>
@@ -887,7 +888,7 @@ const AssociationView = ({
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-12 sm:ml-2">
                                   {member.isFounder ? (
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
                                       Fondator

@@ -147,14 +147,6 @@ const MaintenanceView = ({
     ? activeSheet
     : null;
 
-  console.log('🔍 DEBUG Payment Sheet Selection:', {
-    currentMonth,
-    activeSheetMonth: activeSheet?.monthYear,
-    activeSheetStatus: activeSheet?.status,
-    isLockedSheet: activeSheet?.status === 'published' || activeSheet?.status === 'archived',
-    publishedSheetForPayments: publishedSheetForPayments ? 'FOUND' : 'NULL',
-    paymentsCount: activeSheet?.payments?.length || 0
-  });
 
   const { addIncasare, incasari, loading: incasariLoading } = useIncasari(association || null, currentMonth, publishedSheetForPayments);
 
@@ -207,14 +199,6 @@ const MaintenanceView = ({
     return getUpdatedMaintenanceData(maintenanceData);
   }, [maintenanceData, getUpdatedMaintenanceData]);
 
-  console.log('🔍 MaintenanceView data check:', {
-    isMonthReadOnly,
-    maintenanceDataLength: maintenanceData?.length || 0,
-    firstRowHasExpenseDetails: !!maintenanceData?.[0]?.expenseDetails,
-    firstRowExpenseDetailsKeys: Object.keys(maintenanceData?.[0]?.expenseDetails || {}),
-    updatedFirstRowHasExpenseDetails: !!updatedMaintenanceData?.[0]?.expenseDetails,
-    updatedFirstRowExpenseDetailsKeys: Object.keys(updatedMaintenanceData?.[0]?.expenseDetails || {})
-  });
 
   // Grupează scările pentru tab-uri (înainte de early return pentru Rules of Hooks)
   const stairTabs = useMemo(() => {
@@ -260,11 +244,6 @@ const MaintenanceView = ({
   const distributedExpenses = useMemo(() => {
     if (!expenses) return [];
 
-    console.log('📋 MaintenanceView distributedExpenses:', {
-      expensesLength: expenses.length,
-      expensesNames: expenses.map(e => e.name),
-      isMonthReadOnly
-    });
 
     // Returnează TOATE cheltuielile din sheet (sunt deja ale acestei asociații)
     return expenses;
@@ -275,10 +254,8 @@ const MaintenanceView = ({
   const [migrationRun, setMigrationRun] = useState(false);
   useEffect(() => {
     if (invoices && invoices.length > 0 && !migrationRun && migrateDistributionHistoryToExpenseTypeId) {
-      console.log('🔄 Pornesc migrarea automată a distributionHistory...');
       migrateDistributionHistoryToExpenseTypeId()
         .then(result => {
-          console.log('✅ Migrare completă:', result);
           setMigrationRun(true);
         })
         .catch(error => {
@@ -291,11 +268,6 @@ const MaintenanceView = ({
   // ✅ SHEET-BASED: Folosește cheltuielile din sheet-ul activ pasat de BlocApp
   // MUTAT AICI pentru a respecta Rules of Hooks
   const associationExpenses = useMemo(() => {
-    console.log('📦 MaintenanceView - Using expenses from BlocApp:', {
-      currentMonth,
-      expensesLength: expenses?.length || 0,
-      expensesNames: expenses?.map(e => e.name) || []
-    });
 
     return expenses || [];
   }, [expenses, currentMonth]);
@@ -378,7 +350,6 @@ const MaintenanceView = ({
           newExpense.invoiceData.selectedExistingInvoiceId,
           distributionData
         );
-        console.log('✅ Distribuție parțială actualizată pentru factura existentă');
       } catch (error) {
         console.error('❌ Eroare la actualizarea distribuției:', error);
       }
@@ -404,7 +375,6 @@ const MaintenanceView = ({
 
   // Handler pentru salvarea plății cu integrare Firestore
   const handleSavePayment = async (paymentData) => {
-    console.log('💰 Salvare plată:', paymentData);
 
     // Salvează încasarea în Firestore
     const incasareData = {
@@ -417,7 +387,6 @@ const MaintenanceView = ({
     const result = await addIncasare(incasareData);
 
     if (result.success) {
-      console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
       // Tabelul se va actualiza automat prin usePaymentSync
       // Nu mai trebuie să marcăm manual plata - sistemul calculează automat datoriile rămase
     } else {
@@ -428,12 +397,6 @@ const MaintenanceView = ({
 
   // Handler pentru deschiderea modalului de breakdown întreținere
   const handleOpenMaintenanceBreakdown = (apartmentData) => {
-    console.log('📊 Opening maintenance breakdown - received data:', {
-      apartmentId: apartmentData.apartmentId,
-      hasExpenseDetails: !!apartmentData.expenseDetails,
-      expenseDetailsKeys: Object.keys(apartmentData.expenseDetails || {}),
-      isMonthReadOnly
-    });
 
     // apartmentData vine deja din updatedMaintenanceData (prin filteredMaintenanceData)
     // și ar trebui să conțină expenseDetails
@@ -521,7 +484,6 @@ const MaintenanceView = ({
           // Verifică că suma lățimilor = tableWidth
           const totalWidth = colWidths.reduce((a, b) => a + b, 0);
           if (totalWidth !== tableWidth) {
-            console.log(`Ajustez lățimile: ${totalWidth} -> ${tableWidth}`);
           }
           
           const headers = [
@@ -931,7 +893,6 @@ const MaintenanceView = ({
           const fileName = `Avizier_${association?.name?.replace(/\s+/g, '_')}_${currentMonth.replace(/\s+/g, '_')}.pdf`;
           doc.save(fileName);
           
-          console.log('✅ PDF profesional generat cu succes!');
           alert('✅ PDF pentru avizier generat cu succes!');
           
         } catch (error) {
@@ -1082,7 +1043,6 @@ const MaintenanceView = ({
                       <button
                         onClick={async () => {
                           const result = await publishMonth(currentMonth);
-                          console.log('Publish result:', result);
                         }}
                         className="bg-purple-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg hover:bg-purple-700 flex items-center gap-1 sm:gap-2 font-medium shadow-md transition-all hover:shadow-lg text-xs sm:text-sm whitespace-nowrap"
                       >
@@ -1109,9 +1069,7 @@ const MaintenanceView = ({
                               return;
                             }
 
-                            console.log('🔄 Depublicare în curs...', { sheetId });
                             await unpublishSheet(sheetId);
-                            console.log('✅ Depublicare completă - UI-ul ar trebui să se actualizeze automat');
                           } catch (error) {
                             console.error('❌ Eroare depublicare:', error);
                             alert(`❌ Eroare la depublicare: ${error.message}`);
@@ -1388,7 +1346,6 @@ const MaintenanceView = ({
           getExpenseConfig={getExpenseConfig}
           editingExpense={editingExpense}
           handleAddExpense={async (newExpenseData) => {
-            console.log('🎯 WRAPPER received from modal:', newExpenseData);
 
             // Pasează funcțiile pentru invoice distribution update
             const invoiceFunctions = {
@@ -1399,7 +1356,6 @@ const MaintenanceView = ({
 
             const result = await addExpenseFromHook(newExpenseData, addInvoice, invoiceFunctions);
 
-            console.log('🎯 WRAPPER returned:', result);
             if (result !== false) {
               setShowExpenseEntryModal(false);
               setEditingExpense(null);
@@ -1407,7 +1363,6 @@ const MaintenanceView = ({
             return result;
           }}
           handleUpdateExpense={async (expenseId, updatedExpenseData) => {
-            console.log('✏️ UPDATE WRAPPER received:', { expenseId, updatedExpenseData });
 
             // Pasează funcțiile pentru invoice update
             const invoiceFunctions = {
@@ -1419,7 +1374,6 @@ const MaintenanceView = ({
 
             const result = await handleUpdateExpense(expenseId, updatedExpenseData, invoiceFunctions);
 
-            console.log('✏️ UPDATE WRAPPER returned:', result);
             if (result !== false) {
               setShowExpenseEntryModal(false);
               setEditingExpense(null);

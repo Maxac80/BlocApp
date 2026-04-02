@@ -99,7 +99,6 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
 
         // 2. Fallback: client-side Firestore (localhost / dev)
         if (!result) {
-          console.log('Using client-side verification fallback');
           const clientResult = await verifyInvitation(token);
           if (clientResult.valid) {
             result = {
@@ -136,7 +135,6 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
         } else {
           // Daca invitatia e deja acceptata si user-ul e logat, redirect direct
           if (result.error === 'INVITATION_ACCEPTED' && currentUser) {
-            console.log('Invitation already accepted and user logged in, redirecting...');
             onSuccess && onSuccess({
               alreadyAccepted: true,
               association: associationData ? { id: invitationData?.associationId, ...associationData } : null
@@ -229,7 +227,6 @@ const AssocInviteRegistration = ({ token, onSuccess, onNavigateToLogin }) => {
 
       // Daca invitatia a fost deja acceptata, redirect direct (nu eroare)
       if (err.message === 'INVITATION_ACCEPTED') {
-        console.log('Invitation already accepted, redirecting...');
         setAccepted(true);
         setTimeout(() => {
           onSuccess && onSuccess({ alreadyAccepted: true });
