@@ -66,7 +66,7 @@ const ExpensesViewNew = ({
     return archivedSheet || currentSheet;
   }, [publishedSheet, currentSheet, currentMonth, sheets]);
 
-  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier } = useSuppliers(activeSheet);
+  const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier, updateSupplierServiceTypes } = useSuppliers(activeSheet);
 
   // Închide dropdown-ul când se dă click în afara lui
   useEffect(() => {
@@ -84,6 +84,25 @@ const ExpensesViewNew = ({
   const handleConfigureExpense = (expenseIdOrName) => {
     setSelectedExpense(expenseIdOrName);
     setConfigModalOpen(true);
+  };
+
+  // Sincronizare bidirecțională: când salvez cheltuiala cu furnizori,
+  // actualizez serviceTypes pe furnizorii asociați
+  const handleSyncSupplierServiceTypes = async (expenseId, supplierIds) => {
+    if (!expenseId || !supplierIds) return;
+    for (const supplier of suppliers) {
+      const currentServiceTypes = supplier.serviceTypes || [];
+      const isLinked = supplierIds.includes(supplier.id);
+      const hasExpense = currentServiceTypes.includes(expenseId);
+
+      if (isLinked && !hasExpense) {
+        // Adaugă cheltuiala la furnizor (fără a atinge expenseConfigurations)
+        await updateSupplierServiceTypes(supplier.id, [...currentServiceTypes, expenseId]);
+      } else if (!isLinked && hasExpense) {
+        // Scoate cheltuiala de la furnizor
+        await updateSupplierServiceTypes(supplier.id, currentServiceTypes.filter(id => id !== expenseId));
+      }
+    }
   };
 
   const handleAddSupplier = () => {
@@ -142,6 +161,12 @@ const ExpensesViewNew = ({
         appliesTo: configData.appliesTo || expenseData.appliesTo || { blocks: [], stairs: [] }
       });
 
+      // Sincronizare furnizori: actualizează serviceTypes pe furnizorii asociați
+      const supplierIds = (configData.suppliers || []).map(s => s.supplierId);
+      if (supplierIds.length > 0) {
+        await handleSyncSupplierServiceTypes(newExpenseId, supplierIds);
+      }
+
       return true;
     } catch (error) {
       console.error('❌ Eroare la adăugarea cheltuielii din modal:', error);
@@ -162,11 +187,23 @@ const ExpensesViewNew = ({
   // Funcție pentru a obține cheltuielile active pentru un furnizor
   const getSupplierExpenseTypes = (supplierId) => {
     if (!getAssociationExpenseTypes) return [];
-    
+
+    // Caută furnizorul pentru serviceTypes (sursa principală)
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (supplier?.serviceTypes?.length > 0) {
+      // Mapează serviceTypes la numele cheltuielilor
+      return getAssociationExpenseTypes()
+        .filter(et => supplier.serviceTypes.includes(et.id || et.name))
+        .map(et => et.name);
+    }
+
+    // Fallback: verifică expenseConfigurations (backward compat)
     return getAssociationExpenseTypes()
       .map(expenseType => {
         const config = getExpenseConfig(expenseType.name);
-        return config.supplierId === supplierId ? expenseType.name : null;
+        if (config.supplierId === supplierId) return expenseType.name;
+        if (config.suppliers?.some(s => s.supplierId === supplierId)) return expenseType.name;
+        return null;
       })
       .filter(Boolean);
   };
@@ -256,8 +293,10 @@ const ExpensesViewNew = ({
                     {getAssociationExpenseTypes().map((expenseType, index, array) => {
                       const config = getExpenseConfig(expenseType.id || expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
-                      const supplierName = config.supplierName || 'Fără furnizor';
-                      const hasSupplier = config.supplierName && config.supplierName.trim() !== '';
+                      const allSuppliers = config.suppliers?.length > 0
+                        ? config.suppliers.map(s => s.supplierName).filter(Boolean)
+                        : (config.supplierName ? [config.supplierName] : []);
+                      const hasSupplier = allSuppliers.length > 0;
                       const isLastItem = index >= array.length - 2; // ultimele 2 iteme
 
                       // Verifică dacă cheltuiala a fost distribuită în calcul întreținere
@@ -330,18 +369,20 @@ const ExpensesViewNew = ({
                                   {distributionText}
                                 </span>
                               </div>
-                              {/* Rând 3: Furnizor */}
-                              <div className="mt-0.5 flex items-center gap-1.5">
-                                <span className="text-xs text-gray-500">Furnizor:</span>
-                                {hasSupplier ? (
-                                  <span className="text-xs text-gray-900 font-medium">{supplierName}</span>
-                                ) : (
-                                  <span className="text-xs text-orange-600 italic">{supplierName}</span>
-                                )}
-                              </div>
+                              {/* Rând 3: Furnizor(i) - doar dacă există */}
+                              {hasSupplier && (
+                                <div className="mt-0.5">
+                                  <span className="text-xs text-gray-500">{allSuppliers.length > 1 ? 'Furnizori: ' : 'Furnizor: '}</span>
+                                  <span className="text-xs text-gray-900 font-medium">{allSuppliers.join(', ')}</span>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              {isDistributed ? (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {!hasSupplier ? (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded whitespace-nowrap">
+                                  Adaugă furnizor
+                                </span>
+                              ) : isDistributed ? (
                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded whitespace-nowrap">Distribuită</span>
                               ) : (
                                 <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded whitespace-nowrap">Nedistribuită</span>
@@ -453,8 +494,10 @@ const ExpensesViewNew = ({
                         const config = getExpenseConfig(expenseType.id || expenseType.name);
                         const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
                         const isLastItem = index >= array.length - 2; // ultimele 2 iteme
-                        const supplierName = config.supplierName || 'Fără furnizor';
-                        const hasSupplier = config.supplierName && config.supplierName.trim() !== '';
+                        const allSuppliers = config.suppliers?.length > 0
+                          ? config.suppliers.map(s => s.supplierName).filter(Boolean)
+                          : (config.supplierName ? [config.supplierName] : []);
+                        const hasSupplier = allSuppliers.length > 0;
 
                         // Determină textul și culoarea pentru tipul de distribuție
                         let distributionText, distributionBadgeClass;
@@ -495,11 +538,15 @@ const ExpensesViewNew = ({
                                 </div>
                                 {/* Rând 3: Furnizor */}
                                 <div className="mt-0.5 flex items-center gap-1.5">
-                                  <span className="text-xs text-gray-400">Furnizor:</span>
+                                  <span className="text-xs text-gray-400">{allSuppliers.length > 1 ? 'Furnizori:' : 'Furnizor:'}</span>
                                   {hasSupplier ? (
-                                    <span className="text-xs text-gray-500 font-medium">{supplierName}</span>
+                                    allSuppliers.map((name, i) => (
+                                      <span key={i} className="text-xs text-gray-500 font-medium">
+                                        {name}{i < allSuppliers.length - 1 ? ',' : ''}
+                                      </span>
+                                    ))
                                   ) : (
-                                    <span className="text-xs text-orange-500 italic opacity-60">{supplierName}</span>
+                                    <span className="text-xs text-orange-500 italic opacity-60">Fără furnizor</span>
                                   )}
                                 </div>
                               </div>
@@ -736,6 +783,7 @@ const ExpensesViewNew = ({
           currentSheet={currentSheet}
           blocks={blocks}
           stairs={stairs}
+          onSyncSupplierServiceTypes={handleSyncSupplierServiceTypes}
         />
 
         {/* Unified modal in ADD mode */}
@@ -752,6 +800,7 @@ const ExpensesViewNew = ({
           currentSheet={currentSheet}
           blocks={blocks || []}
           stairs={stairs || []}
+          onSyncSupplierServiceTypes={handleSyncSupplierServiceTypes}
         />
 
         <SupplierModal
@@ -763,6 +812,8 @@ const ExpensesViewNew = ({
           onSave={handleSupplierSave}
           supplier={editingSupplier}
           title={editingSupplier ? 'Editează furnizor' : 'Adaugă furnizor nou'}
+          expenseTypes={getAssociationExpenseTypes()}
+          existingSuppliers={suppliers}
         />
       </div>
     </div>

@@ -31,7 +31,8 @@ const ExpenseConfigModal = ({
   initialTab = 'general',
   getAssociationExpenseTypes, // For duplicate name checking in 'add' mode
   updateExpenseConsumption, // For clearing consumption when excluding apartments
-  updatePendingConsumption // For clearing consumption in pending expenses
+  updatePendingConsumption, // For clearing consumption in pending expenses
+  onSyncSupplierServiceTypes // Sincronizare bidirecțională furnizor-cheltuieli
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedStairTab, setSelectedStairTab] = useState('all');
@@ -131,6 +132,7 @@ const ExpenseConfigModal = ({
         },
         supplierId: null,
         supplierName: '',
+        suppliers: [],
         fixedAmountMode: 'apartment',
         indexConfiguration: {
           enabled: false,
@@ -275,31 +277,32 @@ const ExpenseConfigModal = ({
 
   const handleAddNewSupplier = async (supplierData) => {
     try {
-      const newSupplier = await addSupplier({
-        ...supplierData,
-        serviceTypes: [expenseKey]  // Folosește ID-ul cheltuielii, nu numele
-      });
+      // Nu transmitem serviceTypes aici - sincronizarea se face la Save
+      // pentru a evita dubla adăugare (useSuppliers sync + local state)
+      const newSupplier = await addSupplier(supplierData);
 
       // Setează flag-ul că tocmai am adăugat un furnizor
       justAddedSupplierRef.current = true;
 
-      // Update local config with new supplier — adaugă în lista suppliers
-      const isFirst = !localConfig.suppliers || localConfig.suppliers.length === 0;
+      // Update local config with new supplier — adaugă în lista suppliers (fără duplicat)
       const newEntry = {
         supplierId: newSupplier.id,
         supplierName: newSupplier.name
       };
-      setLocalConfig(prev => ({
-        ...prev,
-        suppliers: [...(prev.suppliers || []), newEntry],
-        // Sync root cu primul furnizor (backward compat)
-        ...(isFirst ? { supplierId: newSupplier.id, supplierName: newSupplier.name } : {})
-      }));
+      setLocalConfig(prev => {
+        const existing = prev.suppliers || [];
+        // Nu adăuga dacă deja există
+        if (existing.some(s => s.supplierId === newSupplier.id)) return prev;
+        const isFirst = existing.length === 0;
+        return {
+          ...prev,
+          suppliers: [...existing, newEntry],
+          ...(isFirst ? { supplierId: newSupplier.id, supplierName: newSupplier.name } : {})
+        };
+      });
 
-      // Resetează flag-ul după 2 secunde
-      setTimeout(() => {
-        justAddedSupplierRef.current = false;
-      }, 2000);
+      // Flag-ul rămâne activ până la închiderea/salvarea modalului
+      // pentru a preveni resetarea localConfig de către useEffect
     } catch (error) {
       console.error('Error adding supplier:', error);
       console.error('Error details:', {
@@ -404,7 +407,9 @@ const ExpenseConfigModal = ({
       // EDIT MODE: VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
       if (mode === 'edit' && expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
         // Verifică dacă există o cheltuială distribuită în luna curentă
-        const existingExpense = currentSheet?.expenses?.find(exp => exp.name === expenseName);
+        const existingExpense = currentSheet?.expenses?.find(exp =>
+          exp.expenseTypeId === (expenseConfig?.id || expenseKey) || exp.name === expenseName
+        );
 
         if (existingExpense) {
           const oldMode = expenseConfig.receptionMode === 'per_association' ? 'Pe asociație' :
@@ -441,6 +446,15 @@ const ExpenseConfigModal = ({
         await updateExpenseConfig(expenseKey, finalConfig);
       }
 
+      // Sincronizare bidirecțională: actualizează serviceTypes pe furnizorii asociați
+      if (onSyncSupplierServiceTypes) {
+        const expenseId = mode === 'add' ? null : (expenseConfig?.id || expenseKey);
+        if (expenseId) {
+          const supplierIds = (finalConfig.suppliers || []).map(s => s.supplierId);
+          onSyncSupplierServiceTypes(expenseId, supplierIds);
+        }
+      }
+
       // Save apartment participations to Firebase FIRST
       if (saveApartmentParticipations) {
         // Merge cu participările existente pentru alte cheltuieli
@@ -474,7 +488,8 @@ const ExpenseConfigModal = ({
         });
       }
 
-      // Închide modalul DUPĂ ce toate operațiunile sunt complete
+      // Resetează flag-ul de supplier adăugat și închide modalul
+      justAddedSupplierRef.current = false;
       onClose();
     } catch (error) {
       console.error('Eroare la salvarea configurației:', error);
@@ -1229,51 +1244,42 @@ const ExpenseConfigModal = ({
           {activeTab === 'supplier' && (
             <div className="space-y-3 sm:space-y-4">
               {/* Lista furnizori configurați */}
-              {localConfig.suppliers.length > 0 && (
+              {localConfig.suppliers?.length > 0 && (
                 <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Furnizori asociați</h4>
                   {localConfig.suppliers.map((supplierEntry, index) => (
-                    <div key={supplierEntry.supplierId || index} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="text-sm font-medium text-gray-900">
-                        {supplierEntry.supplierName || 'Furnizor necunoscut'}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingSupplier({ id: supplierEntry.supplierId, name: supplierEntry.supplierName });
-                            setIsSupplierModalOpen(true);
-                          }}
-                          className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                          title="Editează furnizor"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!window.confirm(`Vrei să elimini furnizorul "${supplierEntry.supplierName}" de la această cheltuială?`)) return;
-                            const updated = localConfig.suppliers.filter((_, i) => i !== index);
-                            const first = updated[0];
-                            setLocalConfig({
-                              ...localConfig,
-                              suppliers: updated,
-                              supplierId: first?.supplierId || null,
-                              supplierName: first?.supplierName || ''
-                            });
-                          }}
-                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Elimină furnizor"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div key={supplierEntry.supplierId || index} className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {supplierEntry.supplierName || 'Furnizor necunoscut'}
+                        </span>
                       </div>
+                      <button
+                        onClick={() => {
+                          const updated = localConfig.suppliers.filter((_, i) => i !== index);
+                          const first = updated[0];
+                          setLocalConfig({
+                            ...localConfig,
+                            suppliers: updated,
+                            supplierId: first?.supplierId || null,
+                            supplierName: first?.supplierName || ''
+                          });
+                        }}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        title="Dezasociază furnizor"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Adaugă furnizor */}
+              {/* Selectează furnizor */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Adaugă furnizor
+                  Selectează furnizor
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -1286,6 +1292,8 @@ const ExpenseConfigModal = ({
                         alert('Acest furnizor este deja adăugat.');
                         return;
                       }
+                      // Nu adăuga dacă deja există
+                      if (localConfig.suppliers.some(s => s.supplierId === supplier.id)) return;
                       const isFirst = localConfig.suppliers.length === 0;
                       const newEntry = { supplierId: supplier.id, supplierName: supplier.name };
                       const updated = [...localConfig.suppliers, newEntry];
@@ -2241,7 +2249,7 @@ const ExpenseConfigModal = ({
 
         <div className="p-3 sm:p-4 bg-gray-50 border-t flex justify-end gap-2 flex-shrink-0">
           <button
-            onClick={onClose}
+            onClick={() => { justAddedSupplierRef.current = false; onClose(); }}
             className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
           >
             Anulează
