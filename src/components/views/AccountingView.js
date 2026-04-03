@@ -61,7 +61,7 @@ const AccountingView = ({
   // Hook pentru gestionarea furnizorilor (creare furnizor nou din modal factura)
   const { addSupplier } = useSuppliers(currentSheet);
 
-  const [activeTab, setActiveTab] = useState('incasari'); // 'incasari' sau 'facturi'
+  const [activeTab, setActiveTab] = useState('facturi'); // 'facturi' sau 'incasari'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, paid, unpaid
   const [selectedIncasare, setSelectedIncasare] = useState(null);
@@ -366,17 +366,6 @@ const AccountingView = ({
           <div className="border-b">
             <div className="flex">
               <button
-                onClick={() => setActiveTab('incasari')}
-                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
-                  activeTab === 'incasari'
-                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Receipt className="w-4 h-4" />
-                Încasări ({stats.totalCount || filteredIncasari.length})
-              </button>
-              <button
                 onClick={() => setActiveTab('facturi')}
                 className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === 'facturi'
@@ -386,6 +375,17 @@ const AccountingView = ({
               >
                 <FileText className="w-4 h-4" />
                 Facturi ({invoiceStats.total})
+              </button>
+              <button
+                onClick={() => setActiveTab('incasari')}
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
+                  activeTab === 'incasari'
+                    ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Receipt className="w-4 h-4" />
+                Încasări ({stats.totalCount || filteredIncasari.length})
               </button>
             </div>
           </div>
