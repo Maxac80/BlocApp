@@ -440,7 +440,8 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     getUnpaidInvoices,
     getOverdueInvoices,
     getInvoiceStats,
-    updateMissingSuppliersForExistingInvoices
+    updateMissingSuppliersForExistingInvoices,
+    removeInvoiceDistribution
   } = useInvoices(association?.id, currentSheet);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
@@ -768,7 +769,7 @@ useEffect(() => {
               getExpenseConfig={getFirestoreExpenseConfig}
               handleAddExpense={handleAddExpense}
               handleUpdateExpense={handleUpdateExpense}
-              handleDeleteMonthlyExpense={handleDeleteMonthlyExpense}
+              handleDeleteMonthlyExpense={(expenseId) => handleDeleteMonthlyExpense(expenseId, { invoices, removeInvoiceDistribution })}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               updatePendingConsumption={updatePendingConsumption}
@@ -965,6 +966,8 @@ useEffect(() => {
               getInvoiceStats={getInvoiceStats}
               markInvoiceAsPaid={markInvoiceAsPaid}
               markInvoiceAsUnpaid={markInvoiceAsUnpaid}
+              deleteInvoice={deleteInvoice}
+              updateInvoice={updateInvoice}
               updateMissingSuppliersForExistingInvoices={updateMissingSuppliersForExistingInvoices}
               currentSheet={currentSheet}
               isReadOnlyRole={isReadOnlyRole}

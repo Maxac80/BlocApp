@@ -827,19 +827,23 @@ export const useExpenseManagement = ({
   }, [deleteCustomExpense]);
 
   // 🗑️ ȘTERGEREA CHELTUIELILOR LUNARE - NOU
-  const handleDeleteMonthlyExpense = useCallback(async (expenseId) => {
+  const handleDeleteMonthlyExpense = useCallback(async (expenseId, invoiceFunctions = null) => {
     const expense = expenses.find(exp => exp.id === expenseId);
     if (!expense) return false;
-    
-    // Verifică dacă cheltuiala are consumuri
-    const hasConsumption = expense.consumption && Object.keys(expense.consumption).length > 0 && 
-                           Object.values(expense.consumption).some(val => parseFloat(val) > 0);
-    
-    // Verifică dacă cheltuiala are sume individuale
-    const hasIndividualAmounts = expense.individualAmounts && Object.keys(expense.individualAmounts).length > 0 && 
-                                 Object.values(expense.individualAmounts).some(val => parseFloat(val) > 0);
-    
+
     try {
+      // Reversează distribuția pe facturile asociate
+      if (invoiceFunctions?.removeInvoiceDistribution && invoiceFunctions?.invoices) {
+        const linkedInvoices = invoiceFunctions.invoices.filter(inv =>
+          inv.distributionHistory?.some(entry =>
+            entry.expenseId === expenseId || entry.expenseTypeId === expense.expenseTypeId
+          )
+        );
+        for (const invoice of linkedInvoices) {
+          await invoiceFunctions.removeInvoiceDistribution(invoice.id, expenseId);
+        }
+      }
+
       await deleteMonthlyExpense(expenseId);
       return true;
     } catch (error) {

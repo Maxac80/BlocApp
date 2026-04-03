@@ -164,6 +164,42 @@ const useInvoices = (associationId, currentSheet) => {
     }
   }, [invoices]);
 
+  // 🗑️ REVERSAREA DISTRIBUȚIEI (când se șterge o cheltuială distribuită)
+  const removeInvoiceDistribution = useCallback(async (invoiceId, expenseId) => {
+    try {
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      if (!invoice) return false;
+
+      const existingHistory = invoice.distributionHistory || [];
+      const entryIndex = existingHistory.findIndex(entry =>
+        (expenseId && entry.expenseId === expenseId) ||
+        (expenseId && entry.expenseTypeId === expenseId)
+      );
+
+      if (entryIndex < 0) return false; // Nu există distribuție pentru acest expense
+
+      const removedAmount = existingHistory[entryIndex].amount || 0;
+      const updatedHistory = existingHistory.filter((_, i) => i !== entryIndex);
+      const newDistributedAmount = Math.max(0, (invoice.distributedAmount || 0) - removedAmount);
+      const totalAmount = invoice.totalInvoiceAmount || invoice.totalAmount;
+      const newRemainingAmount = totalAmount - newDistributedAmount;
+
+      const invoiceRef = getInvoiceRef(associationId, invoiceId);
+      await updateDoc(invoiceRef, {
+        distributedAmount: newDistributedAmount,
+        remainingAmount: newRemainingAmount,
+        isFullyDistributed: newRemainingAmount <= 0,
+        distributionHistory: updatedHistory,
+        updatedAt: new Date().toISOString()
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Eroare la reversarea distribuției:', error);
+      return false;
+    }
+  }, [invoices, associationId]);
+
   // ➕ ADĂUGAREA UNEI FACTURI NOI (cu suport pentru distribuție parțială)
   const addInvoice = useCallback(async (invoiceData, pdfFile = null) => {
     
@@ -798,6 +834,7 @@ const useInvoices = (associationId, currentSheet) => {
     updateInvoiceByNumber,
     deleteInvoice,
     updateInvoiceDistribution,
+    removeInvoiceDistribution,
     updateMissingSuppliersForExistingInvoices,
     
     // ✅ Management plăți

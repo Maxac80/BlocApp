@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
@@ -32,6 +32,8 @@ const AccountingView = ({
   getInvoiceStats,
   markInvoiceAsPaid,
   markInvoiceAsUnpaid,
+  deleteInvoice,
+  updateInvoice,
   updateMissingSuppliersForExistingInvoices,
   currentSheet
 }) => {
@@ -892,17 +894,32 @@ const AccountingView = ({
                                     </button>
                                   )}
                                   {!isReadOnlyRole && (
+                                    <>
                                     <button
                                       onClick={() => toggleInvoicePaymentStatus(invoice.id, invoice.isPaid)}
-                                      className={`${
+                                      className={`p-1 rounded transition-colors ${
                                         invoice.isPaid
-                                          ? 'text-red-600 hover:text-red-900'
-                                          : 'text-green-600 hover:text-green-900'
+                                          ? 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                                          : 'text-green-500 hover:text-green-700 hover:bg-green-50'
                                       }`}
                                       title={invoice.isPaid ? 'Marchează ca neplătită' : 'Marchează ca plătită'}
                                     >
-                                      {invoice.isPaid ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                                      {invoice.isPaid ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                                     </button>
+                                    {deleteInvoice && (
+                                      <button
+                                        onClick={() => {
+                                          if (window.confirm(`Sigur vrei să ștergi factura "${invoice.invoiceNumber}" de la ${invoice.supplierName}?`)) {
+                                            deleteInvoice(invoice.id);
+                                          }
+                                        }}
+                                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="Șterge factura"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                    </>
                                   )}
                                 </td>
                               </tr>
