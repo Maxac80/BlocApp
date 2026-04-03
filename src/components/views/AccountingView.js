@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus } from 'lucide-react';
+import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
 import useSuppliers from '../../hooks/useSuppliers';
@@ -1010,6 +1011,20 @@ const AccountingView = ({
         suppliers={currentSheet?.configSnapshot?.suppliers || []}
         onAddSupplier={addSupplier}
         currentMonth={currentMonth}
+        expenseTypes={(() => {
+          const configs = Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {}).filter(c => c.isEnabled !== false);
+          const defaultOrder = defaultExpenseTypes.map(d => d.id);
+          return configs
+            .map(c => ({ id: c.id, name: c.name }))
+            .sort((a, b) => {
+              const aIdx = defaultOrder.indexOf(a.id);
+              const bIdx = defaultOrder.indexOf(b.id);
+              if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+              if (aIdx !== -1) return -1;
+              if (bIdx !== -1) return 1;
+              return (a.name || '').localeCompare(b.name || '');
+            });
+        })()}
       />
     </div>
   );

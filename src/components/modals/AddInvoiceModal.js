@@ -8,7 +8,8 @@ const AddInvoiceModal = ({
   onSave,
   suppliers = [],
   onAddSupplier,
-  currentMonth
+  currentMonth,
+  expenseTypes = []
 }) => {
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -69,16 +70,16 @@ const AddInvoiceModal = ({
 
   const handleSave = async () => {
     if (!formData.supplierId) {
-      alert('Selecteaza un furnizor.');
+      alert('Selectează un furnizor.');
       return;
     }
     if (!formData.invoiceNumber.trim()) {
-      alert('Numarul documentului este obligatoriu.');
+      alert('Numărul documentului este obligatoriu.');
       return;
     }
     const amount = parseFloat(formData.totalAmount);
     if (!amount || amount <= 0) {
-      alert('Suma documentului trebuie sa fie mai mare decat 0.');
+      alert('Suma documentului trebuie să fie mai mare decât 0.');
       return;
     }
 
@@ -126,7 +127,7 @@ const AddInvoiceModal = ({
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-white">
-                  Adauga factura
+                  Adaugă factură
                 </h2>
                 <p className="text-white/80 text-xs">{currentMonth}</p>
               </div>
@@ -154,7 +155,7 @@ const AddInvoiceModal = ({
                   onChange={handleSupplierChange}
                   className="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 hover:border-gray-400"
                 >
-                  <option value="">-- Selecteaza furnizor --</option>
+                  <option value="">-- Selectează furnizor --</option>
                   {suppliers.filter(s => s.isActive !== false).map(supplier => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.name}
@@ -184,9 +185,9 @@ const AddInvoiceModal = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, documentType: e.target.value }))}
                 className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 hover:border-gray-400"
               >
-                <option value="factura">Factura</option>
+                <option value="factura">Factură</option>
                 <option value="bon_fiscal">Bon fiscal</option>
-                <option value="chitanta">Chitanta</option>
+                <option value="chitanta">Chitanță</option>
                 <option value="proces_verbal">Proces-verbal</option>
                 <option value="altul">Altul</option>
               </select>
@@ -210,7 +211,7 @@ const AddInvoiceModal = ({
               {/* Suma document */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Suma document (RON) *
+                  Sumă document (RON) *
                 </label>
                 <input
                   type="number"
@@ -229,7 +230,7 @@ const AddInvoiceModal = ({
               {/* Data document */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Data document
+                  Dată document
                 </label>
                 <input
                   type="date"
@@ -239,10 +240,10 @@ const AddInvoiceModal = ({
                 />
               </div>
 
-              {/* Data scadenta */}
+              {/* Data scadență */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Data scadenta
+                  Dată scadență
                 </label>
                 <input
                   type="date"
@@ -265,24 +266,26 @@ const AddInvoiceModal = ({
               onClick={onClose}
               className="px-3 py-1.5 text-xs sm:text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-all duration-200 font-medium"
             >
-              Anuleaza
+              Anulează
             </button>
             <button
               onClick={handleSave}
               disabled={!isValid || saving}
               className="px-3 py-1.5 text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-md hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg whitespace-nowrap"
             >
-              {saving ? 'Se salveaza...' : 'Salveaza factura'}
+              {saving ? 'Se salvează...' : 'Salvează factura'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal creare furnizor nou */}
+      {/* Modal adăugare furnizor */}
       <SupplierModal
         isOpen={showSupplierModal}
         onClose={() => setShowSupplierModal(false)}
         onSave={handleNewSupplier}
+        expenseTypes={expenseTypes}
+        existingSuppliers={suppliers}
       />
     </div>
   );
