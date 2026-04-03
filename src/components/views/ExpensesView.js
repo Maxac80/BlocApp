@@ -647,7 +647,7 @@ const ExpensesViewNew = ({
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                     disabled={cantEdit}
-                    title={cantEdit ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor nou'}
+                    title={cantEdit ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor'}
                   >
                     <Plus className="w-4 h-4" />
                     Adaugă furnizor
@@ -811,7 +811,7 @@ const ExpensesViewNew = ({
           }}
           onSave={handleSupplierSave}
           supplier={editingSupplier}
-          title={editingSupplier ? 'Editează furnizor' : 'Adaugă furnizor nou'}
+          title={editingSupplier ? 'Editează furnizor' : 'Adaugă furnizor'}
           expenseTypes={getAssociationExpenseTypes()}
           existingSuppliers={suppliers}
         />

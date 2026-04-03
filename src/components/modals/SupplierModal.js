@@ -75,7 +75,7 @@ const SupplierModal = ({
                 <Building2 className="w-4 h-4 text-white" />
               </div>
               <h2 className="text-lg font-bold text-white">
-                {title || (supplier ? 'Editează furnizor' : 'Adaugă furnizor nou')}
+                {title || (supplier ? 'Editează furnizor' : 'Adaugă furnizor')}
               </h2>
             </div>
             <button
@@ -161,7 +161,7 @@ const SupplierModal = ({
             disabled={!name.trim()}
             className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
           >
-            {supplier ? 'Salvează' : 'Creează furnizor'}
+            {supplier ? 'Salvează' : 'Adaugă furnizor'}
           </button>
         </div>
       </div>

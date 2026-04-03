@@ -168,7 +168,7 @@ const AddInvoiceModal = ({
                     className="px-2.5 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-1 whitespace-nowrap"
                   >
                     <Plus className="w-4 h-4" />
-                    Creaza furnizor
+                    Adaugă furnizor
                   </button>
                 )}
               </div>

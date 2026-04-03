@@ -1319,7 +1319,7 @@ const ExpenseConfigModal = ({
                     onClick={() => setIsSupplierModalOpen(true)}
                     className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
                   >
-                    Creează furnizor
+                    Adaugă furnizor
                   </button>
                 </div>
               </div>
@@ -2289,7 +2289,7 @@ const ExpenseConfigModal = ({
           }
         }}
         supplier={editingSupplier ? { name: editingSupplier.name } : null}
-        title={editingSupplier ? 'Editează furnizor' : 'Creează furnizor'}
+        title={editingSupplier ? 'Editează furnizor' : 'Adaugă furnizor'}
       />
     </div>
   );
