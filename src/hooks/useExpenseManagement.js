@@ -834,13 +834,17 @@ export const useExpenseManagement = ({
     try {
       // Reversează distribuția pe facturile asociate
       if (invoiceFunctions?.removeInvoiceDistribution && invoiceFunctions?.invoices) {
+        const expenseTypeId = expense.expenseTypeId || expense.expenseType || expense.name;
         const linkedInvoices = invoiceFunctions.invoices.filter(inv =>
           inv.distributionHistory?.some(entry =>
-            entry.expenseId === expenseId || entry.expenseTypeId === expense.expenseTypeId
+            entry.expenseId === expenseId ||
+            entry.expenseTypeId === expenseId ||
+            entry.expenseId === expenseTypeId ||
+            entry.expenseTypeId === expenseTypeId
           )
         );
         for (const invoice of linkedInvoices) {
-          await invoiceFunctions.removeInvoiceDistribution(invoice.id, expenseId);
+          await invoiceFunctions.removeInvoiceDistribution(invoice.id, expenseId, expenseTypeId);
         }
       }
 

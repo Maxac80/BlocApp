@@ -753,8 +753,16 @@ const AccountingView = ({
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {invoice.invoiceNumber}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {invoice.expenseName || invoice.expenseType || '-'}
+                                <td className="px-6 py-4 text-sm text-gray-900">
+                                  {(() => {
+                                    // Extrage cheltuielile din distributionHistory sau din câmpurile directe
+                                    const expenseNames = invoice.distributionHistory?.length > 0
+                                      ? [...new Set(invoice.distributionHistory.map(e => e.expenseName).filter(Boolean))]
+                                      : (invoice.expenseName ? [invoice.expenseName] : []);
+                                    return expenseNames.length > 0
+                                      ? expenseNames.join(', ')
+                                      : <span className="text-gray-400">-</span>;
+                                  })()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
                                   <div>

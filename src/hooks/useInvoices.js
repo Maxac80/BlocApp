@@ -165,16 +165,19 @@ const useInvoices = (associationId, currentSheet) => {
   }, [invoices]);
 
   // 🗑️ REVERSAREA DISTRIBUȚIEI (când se șterge o cheltuială distribuită)
-  const removeInvoiceDistribution = useCallback(async (invoiceId, expenseId) => {
+  const removeInvoiceDistribution = useCallback(async (invoiceId, expenseId, expenseTypeId = null) => {
     try {
       const invoice = invoices.find(inv => inv.id === invoiceId);
       if (!invoice) return false;
 
       const existingHistory = invoice.distributionHistory || [];
-      const entryIndex = existingHistory.findIndex(entry =>
-        (expenseId && entry.expenseId === expenseId) ||
-        (expenseId && entry.expenseTypeId === expenseId)
-      );
+      const entryIndex = existingHistory.findIndex(entry => {
+        if (expenseId && entry.expenseId === expenseId) return true;
+        if (expenseId && entry.expenseTypeId === expenseId) return true;
+        if (expenseTypeId && entry.expenseTypeId === expenseTypeId) return true;
+        if (expenseTypeId && entry.expenseId === expenseTypeId) return true;
+        return false;
+      });
 
       if (entryIndex < 0) return false; // Nu există distribuție pentru acest expense
 
