@@ -26,3 +26,13 @@ yarn-error.log*
 # Windows reserved names (prevent accidental creation)
 nul
 NUL
+.claude/test-credentials.md
+
+# Playwright MCP - screenshots and logs (local testing)
+.playwright-mcp/
+*.png
+!public/**/*.png
+!src/**/*.png
+
+# Claude Code worktrees (temporary)
+.claude/worktrees/

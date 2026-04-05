@@ -319,12 +319,13 @@ const ExpenseEntryModal = ({
     const invoice = available.find(inv => inv.id === invoiceId);
     if (invoice) {
       const remaining = invoice.remainingAmount || invoice.totalInvoiceAmount || 0;
+      const remainingStr = parseFloat(remaining).toFixed(2);
       // Auto-fill total doar dacă e un singur furnizor + un singur document
       if (!isMultiDocumentMode()) {
         if (config?.distributionType === 'consumption') {
-          setBillAmount(remaining.toString());
+          setBillAmount(remainingStr);
         } else {
-          setTotalAmount(remaining.toString());
+          setTotalAmount(remainingStr);
         }
       }
       updateSupplierDocument(supplierId, docIndex, {
@@ -333,10 +334,10 @@ const ExpenseEntryModal = ({
         newDocAmount: '',
         newDocDate: '',
         newDocDueDate: '',
-        distributeAmount: remaining.toString(),
+        distributeAmount: remainingStr,
         singleInvoice: {
           invoiceNumber: invoice.invoiceNumber,
-          invoiceAmount: (invoice.totalInvoiceAmount || 0).toString(),
+          invoiceAmount: parseFloat(invoice.totalInvoiceAmount || 0).toFixed(2),
           invoiceDate: invoice.invoiceDate || '',
           dueDate: invoice.dueDate || '',
           notes: invoice.notes || '',
@@ -543,8 +544,8 @@ const ExpenseEntryModal = ({
           </div>
         )}
 
-        {/* Sumă de distribuit per document nou (doar în multi-document mode) */}
-        {!selExisting && multiDoc && (
+        {/* Sumă de distribuit per document nou */}
+        {!selExisting && (
           <div>
             <label className="block text-xs text-gray-600 mb-1">Sumă de distribuit (RON) *</label>
             <input
@@ -554,10 +555,15 @@ const ExpenseEntryModal = ({
               onChange={(e) => {
                 const val = e.target.value;
                 const maxAmount = parseFloat(doc.newDocAmount) || 0;
-                if (maxAmount > 0 && parseFloat(val) > maxAmount) {
-                  updateSupplierDocument(sid, docIndex, { distributeAmount: maxAmount.toString() });
-                } else {
-                  updateSupplierDocument(sid, docIndex, { distributeAmount: val });
+                const finalVal = (maxAmount > 0 && parseFloat(val) > maxAmount) ? maxAmount.toString() : val;
+                updateSupplierDocument(sid, docIndex, { distributeAmount: finalVal });
+                // Sincronizează cu totalAmount/billAmount pentru validare
+                if (!isMultiDocumentMode()) {
+                  if (config?.distributionType === 'consumption') {
+                    setBillAmount(finalVal);
+                  } else {
+                    setTotalAmount(finalVal);
+                  }
                 }
               }}
               placeholder="0.00"
@@ -579,27 +585,30 @@ const ExpenseEntryModal = ({
                 </div>
               )}
             </div>
-            {multiDoc && (
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Sumă de distribuit (RON) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={doc.distributeAmount || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const maxAmount = selExisting.remainingAmount || 0;
-                    if (maxAmount > 0 && parseFloat(val) > maxAmount) {
-                      updateSupplierDocument(sid, docIndex, { distributeAmount: maxAmount.toString() });
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Sumă de distribuit (RON) *</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={doc.distributeAmount || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const maxAmount = selExisting.remainingAmount || 0;
+                  const finalVal = (maxAmount > 0 && parseFloat(val) > maxAmount) ? maxAmount.toString() : val;
+                  updateSupplierDocument(sid, docIndex, { distributeAmount: finalVal });
+                  // Sincronizează cu totalAmount/billAmount pentru validare
+                  if (!isMultiDocumentMode()) {
+                    if (config?.distributionType === 'consumption') {
+                      setBillAmount(finalVal);
                     } else {
-                      updateSupplierDocument(sid, docIndex, { distributeAmount: val });
+                      setTotalAmount(finalVal);
                     }
-                  }}
-                  placeholder="0.00"
-                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
-                />
-              </div>
-            )}
+                  }
+                }}
+                placeholder="0.00"
+                className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
+              />
+            </div>
           </>
         )}
       </div>
@@ -647,9 +656,43 @@ const ExpenseEntryModal = ({
 
     const config = getExpenseConfigNormalized(selectedExpense);
 
+    // Sincronizare: dacă totalAmount/billAmount sunt goale dar avem distributeAmount în documente
+    // (caz auto-fill de la factură existentă fără editare manuală)
+    const getAllDocs = () => {
+      const all = [];
+      Object.values(supplierInvoices).forEach(sup => {
+        if (sup?.documents) all.push(...sup.documents);
+      });
+      return all;
+    };
+
+    if (!isMultiDocumentMode()) {
+      const firstDocWithAmount = getAllDocs().find(d => d.distributeAmount && parseFloat(d.distributeAmount) > 0);
+      if (firstDocWithAmount) {
+        if (config?.distributionType === 'consumption' && !billAmount) {
+          setBillAmount(firstDocWithAmount.distributeAmount);
+        } else if (config?.distributionType !== 'consumption' && !totalAmount) {
+          setTotalAmount(firstDocWithAmount.distributeAmount);
+        }
+      }
+    }
+
+    // Recalculează valorile locale pentru validare (state-ul poate fi încă nesincronizat)
+    const effectiveTotalAmount = totalAmount || (() => {
+      const doc = getAllDocs().find(d => d.distributeAmount && parseFloat(d.distributeAmount) > 0);
+      return doc ? doc.distributeAmount : '';
+    })();
+    const effectiveBillAmount = billAmount || effectiveTotalAmount;
+
+
+    // Normalizează receptionMode: dacă e undefined, folosim 'per_association' ca default sigur
+    const receptionMode = config.receptionMode || 'per_association';
+
     // Construiește obiectul newExpense bazat pe receptionMode și distributionType
     const newExpense = {
-      name: selectedExpense
+      name: selectedExpense,
+      receptionMode: receptionMode,
+      distributionType: config.distributionType
     };
 
     // Adaugă sume bazate pe distributionType
@@ -661,13 +704,13 @@ const ExpenseEntryModal = ({
       newExpense.unitPrice = unitPrice;
 
       // Verifică receptionMode pentru consumption
-      if (config.receptionMode === 'per_association') {
-        if (!billAmount) {
+      if (receptionMode === 'per_association') {
+        if (!effectiveBillAmount) {
           alert('Completează suma totală');
           return;
         }
-        newExpense.billAmount = billAmount;
-      } else if (config.receptionMode === 'per_block') {
+        newExpense.billAmount = effectiveBillAmount;
+      } else if (receptionMode === 'per_block') {
         const missingBlocks = (config.appliesTo?.blocks || []).filter(blockId => !amounts[blockId]);
         if (missingBlocks.length > 0) {
           alert('Completează sumele pentru toate blocurile');
@@ -676,7 +719,7 @@ const ExpenseEntryModal = ({
         newExpense.amountsByBlock = amounts;
         // Calculează billAmount ca sumă totală
         newExpense.billAmount = Object.values(amounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toString();
-      } else if (config.receptionMode === 'per_stair') {
+      } else if (receptionMode === 'per_stair') {
         const missingStairs = (config.appliesTo?.stairs || []).filter(stairId => !amounts[stairId]);
         if (missingStairs.length > 0) {
           alert('Completează sumele pentru toate scările');
@@ -688,20 +731,20 @@ const ExpenseEntryModal = ({
       }
     } else if (config.distributionType === 'individual') {
       // Verifică receptionMode pentru individual
-      if (config.receptionMode === 'per_association') {
-        if (!totalAmount) {
+      if (receptionMode === 'per_association') {
+        if (!effectiveTotalAmount) {
           alert('Completează suma totală');
           return;
         }
-        newExpense.amount = totalAmount;
-      } else if (config.receptionMode === 'per_block') {
+        newExpense.amount = effectiveTotalAmount;
+      } else if (receptionMode === 'per_block') {
         const missingBlocks = (config.appliesTo?.blocks || []).filter(blockId => !amounts[blockId]);
         if (missingBlocks.length > 0) {
           alert('Completează sumele pentru toate blocurile');
           return;
         }
         newExpense.amountsByBlock = amounts;
-      } else if (config.receptionMode === 'per_stair') {
+      } else if (receptionMode === 'per_stair') {
         const missingStairs = (config.appliesTo?.stairs || []).filter(stairId => !amounts[stairId]);
         if (missingStairs.length > 0) {
           alert('Completează sumele pentru toate scările');
@@ -711,13 +754,13 @@ const ExpenseEntryModal = ({
       }
     } else if (config.distributionType === 'cotaParte') {
       // cotaParte - verificăm dacă e total sau per_block/per_stair
-      if (config.receptionMode === 'per_association') {
-        if (!totalAmount) {
+      if (receptionMode === 'per_association') {
+        if (!effectiveTotalAmount) {
           alert('Completează suma totală');
           return;
         }
-        newExpense.amount = totalAmount;
-      } else if (config.receptionMode === 'per_block') {
+        newExpense.amount = effectiveTotalAmount;
+      } else if (receptionMode === 'per_block') {
         // Verifică că toate blocurile au sume
         const missingBlocks = (config.appliesTo?.blocks || []).filter(blockId => !amounts[blockId]);
         if (missingBlocks.length > 0) {
@@ -725,7 +768,7 @@ const ExpenseEntryModal = ({
           return;
         }
         newExpense.amountsByBlock = amounts;
-      } else if (config.receptionMode === 'per_stair') {
+      } else if (receptionMode === 'per_stair') {
         // Verifică că toate scările au sume
         const missingStairs = (config.appliesTo?.stairs || []).filter(stairId => !amounts[stairId]);
         if (missingStairs.length > 0) {
@@ -736,13 +779,13 @@ const ExpenseEntryModal = ({
       }
     } else {
       // apartment, person - verificăm dacă e total sau per_block/per_stair
-      if (config.receptionMode === 'per_association') {
-        if (!totalAmount) {
+      if (receptionMode === 'per_association') {
+        if (!effectiveTotalAmount) {
           alert('Completează suma totală');
           return;
         }
-        newExpense.amount = totalAmount;
-      } else if (config.receptionMode === 'per_block') {
+        newExpense.amount = effectiveTotalAmount;
+      } else if (receptionMode === 'per_block') {
         // Verifică că toate blocurile au sume
         const missingBlocks = (config.appliesTo?.blocks || []).filter(blockId => !amounts[blockId]);
         if (missingBlocks.length > 0) {
@@ -750,7 +793,7 @@ const ExpenseEntryModal = ({
           return;
         }
         newExpense.amountsByBlock = amounts;
-      } else if (config.receptionMode === 'per_stair') {
+      } else if (receptionMode === 'per_stair') {
         // Verifică că toate scările au sume
         const missingStairs = (config.appliesTo?.stairs || []).filter(stairId => !amounts[stairId]);
         if (missingStairs.length > 0) {
@@ -763,7 +806,7 @@ const ExpenseEntryModal = ({
 
     // 🏢 Build invoices data from all suppliers
     let currentDist;
-    if (config.receptionMode === 'per_block' || config.receptionMode === 'per_stair') {
+    if (receptionMode === 'per_block' || receptionMode === 'per_stair') {
       currentDist = Object.values(amounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toString();
     } else {
       currentDist = config.distributionType === 'consumption' ? billAmount : totalAmount;

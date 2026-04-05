@@ -1762,15 +1762,19 @@ return (
                                                   {/* Hamburger menu pentru apartament */}
                                                   <div className="relative ml-1 sm:ml-4 apartment-menu-container">
                                                     <button
-                                                      onClick={() => {
+                                                      onClick={(e) => {
                                                         // Arată meniul pentru TOATE apartamentele
                                                         if (openApartmentMenus[apartment.id]) {
                                                           setOpenApartmentMenus({});
                                                         } else {
+                                                          // Detectează dacă butonul e aproape de josul viewport-ului
+                                                          const rect = e.currentTarget.getBoundingClientRect();
+                                                          const spaceBelow = window.innerHeight - rect.bottom;
                                                           setOpenBlockMenus({});
                                                           setOpenStairMenus({});
-                                                          setOpenApartmentMenus({});
-                                                          setOpenApartmentMenus({ [apartment.id]: true });
+                                                          setOpenApartmentMenus({
+                                                            [apartment.id]: spaceBelow < 200 ? 'up' : 'down'
+                                                          });
                                                         }
                                                       }}
                                                       className="p-2 text-orange-600 hover:bg-orange-200 hover:text-orange-800 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
@@ -1782,7 +1786,7 @@ return (
                                                     </button>
 
                                                     {openApartmentMenus[apartment.id] && (
-                                                      <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                                                      <div className={`absolute right-0 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 ${openApartmentMenus[apartment.id] === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                                                         <div className="py-1">
                                                           <button
                                                             onClick={() => handleOpenMaintenanceBreakdown(apartment)}

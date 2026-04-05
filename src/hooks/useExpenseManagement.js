@@ -400,7 +400,7 @@ export const useExpenseManagement = ({
         expenseTypeId: expenseSettings.id,  // ID unic al tipului de cheltuială
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
-        receptionMode: expenseSettings.receptionMode,
+        receptionMode: expenseData.receptionMode || expenseSettings.receptionMode || 'per_association',
         isUnitBased: isConsumptionBased,
         unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
@@ -971,7 +971,7 @@ export const useExpenseManagement = ({
         expenseTypeId: expenseSettings.id,  // ID unic al tipului de cheltuială
         amount: isConsumptionBased ? 0 : totalAmount,
         distributionType: expenseSettings.distributionType,
-        receptionMode: expenseSettings.receptionMode,
+        receptionMode: expenseData.receptionMode || expenseSettings.receptionMode || 'per_association',
         isUnitBased: isConsumptionBased,
         unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
