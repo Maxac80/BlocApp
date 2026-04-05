@@ -1796,28 +1796,53 @@ export const IndividualAmountsTable = ({
   getAssociationApartments,
   stairs,
   selectedStairTab,
-  blocks
+  blocks,
+  onEditParticipation
 }) => {
   // Verifică dacă coloana "Persoane" este relevantă
   // Pentru sume individuale, arată doar când distribuția este pe persoane
   const showPersonsColumn = config?.distributionType === 'perPerson';
 
+  // Helper pentru handler input (reutilizat în desktop și mobile)
+  const handleInputChange = (apartmentId, inputValue) => {
+    if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
+      const normalizedValue = inputValue.replace(',', '.');
+      setLocalValues(prev => ({ ...prev, [`${expenseTypeName}-${apartmentId}`]: normalizedValue }));
+      if (expense) {
+        updateExpenseIndividualAmount(expense.id, apartmentId, normalizedValue);
+      } else {
+        updatePendingIndividualAmount(expenseTypeName, apartmentId, normalizedValue);
+      }
+    }
+  };
+
+  const handleInputBlur = (apartmentId, rawValue) => {
+    const numericValue = parseFloat(rawValue.replace(',', '.')) || 0;
+    if (expense) {
+      updateExpenseIndividualAmount(expense.id, apartmentId, numericValue);
+    } else {
+      updatePendingIndividualAmount(expenseTypeName, apartmentId, numericValue);
+    }
+  };
+
   return (
-    <div className="overflow-x-auto border rounded-lg">
+    <>
+    {/* ============ DESKTOP TABLE (≥768px) ============ */}
+    <div className="hidden md:block overflow-x-auto border rounded-lg">
       <table className="w-full text-sm">
         <thead className="bg-gray-100 sticky top-0">
           <tr>
             <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b-2 w-16">Apt</th>
             <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b-2 min-w-[120px]">Proprietar</th>
 
+            <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b-2 border-l bg-amber-50 min-w-[120px]">
+              Participare
+            </th>
+
             {/* Coloană Persoane - doar când distribuția este pe persoane */}
             {showPersonsColumn && (
               <th className="px-3 py-2 text-center font-semibold text-gray-700 border-b-2 border-l w-20">Persoane</th>
             )}
-
-            <th className="px-3 py-2 text-left font-semibold text-gray-700 border-b-2 border-l bg-amber-50 min-w-[120px]">
-              Participare
-            </th>
 
             {/* Coloană sume individuale */}
             <th className="px-3 py-2 text-center font-semibold text-gray-700 border-b-2 border-l">
@@ -1878,21 +1903,39 @@ export const IndividualAmountsTable = ({
                   {apartment.owner || '-'}
                 </td>
 
+                {/* Participare */}
+                <td className="px-3 py-2 border-l bg-amber-50">
+                  {onEditParticipation ? (
+                    <button
+                      type="button"
+                      onClick={onEditParticipation}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all ${
+                        participation?.type === 'excluded'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {participation?.type === 'excluded' ? 'Exclus' : 'Integral'}
+                    </button>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${
+                        participation?.type === 'excluded'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {participation?.type === 'excluded' ? 'Exclus' : 'Integral'}
+                    </span>
+                  )}
+                </td>
+
                 {/* Persoane - doar când e relevantă */}
                 {showPersonsColumn && (
                   <td className="px-3 py-2 text-center font-medium border-l">
                     {apartment.persons || 0}
                   </td>
                 )}
-
-                {/* Participare */}
-                <td className="px-3 py-2 text-gray-700 border-l bg-amber-50">
-                  {participation?.type === 'excluded' ? (
-                    <span className="text-red-600 font-medium">Exclus</span>
-                  ) : (
-                    <span className="text-green-600 font-medium">Integral</span>
-                  )}
-                </td>
 
                 {/* Sume individuale - cu diferență în footer */}
                 <td className="px-3 py-2 text-center border-l">
@@ -1904,33 +1947,8 @@ export const IndividualAmountsTable = ({
                       inputMode="decimal"
                       placeholder="-"
                       value={localValues[`${expenseTypeName}-${apartment.id}`] ?? manualValue}
-                      onChange={(e) => {
-                        const inputValue = e.target.value;
-                        if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
-                          const normalizedValue = inputValue.replace(',', '.');
-
-                          // Optimistic UI update - afișare imediată
-                          setLocalValues(prev => ({
-                            ...prev,
-                            [`${expenseTypeName}-${apartment.id}`]: normalizedValue
-                          }));
-
-                          // Salvare în Firebase (async)
-                          if (expense) {
-                            updateExpenseIndividualAmount(expense.id, apartment.id, normalizedValue);
-                          } else {
-                            updatePendingIndividualAmount(expenseTypeName, apartment.id, normalizedValue);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const numericValue = parseFloat(e.target.value.replace(',', '.')) || 0;
-                        if (expense) {
-                          updateExpenseIndividualAmount(expense.id, apartment.id, numericValue);
-                        } else {
-                          updatePendingIndividualAmount(expenseTypeName, apartment.id, numericValue);
-                        }
-                      }}
+                      onChange={(e) => handleInputChange(apartment.id, e.target.value)}
+                      onBlur={(e) => handleInputBlur(apartment.id, e.target.value)}
                       className={`w-20 px-2 py-0.5 border border-gray-300 rounded text-xs text-gray-900 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${!hasManualValue ? 'border-orange-300 bg-orange-50' : ''}`}
                     />
                   )}
@@ -1954,6 +1972,104 @@ export const IndividualAmountsTable = ({
         />
       </table>
     </div>
+
+    {/* ============ MOBILE CARD LIST (<768px) ============ */}
+    <div className="md:hidden border rounded-lg overflow-hidden divide-y divide-gray-200 bg-white">
+      {apartments.map(apartment => {
+        const manualValue = String(dataObject[apartment.id] || '');
+        const localIndividual = localValues[`${expenseTypeName}-${apartment.id}`];
+        const effectiveManualValue = localIndividual !== undefined ? localIndividual : manualValue;
+        const hasManualValue = effectiveManualValue !== '' && effectiveManualValue !== null && effectiveManualValue !== undefined && !isNaN(parseFloat(effectiveManualValue));
+
+        const apartmentParticipations = config.apartmentParticipation || {};
+        const participation = apartmentParticipations[apartment.id];
+        const isExcluded = participation?.type === 'excluded';
+        const isDisabled = isMonthReadOnly || isExcluded;
+
+        return (
+          <div
+            key={apartment.id}
+            className={`flex items-center gap-2 px-3 py-2 ${
+              isExcluded
+                ? 'bg-gray-100 opacity-60'
+                : !hasManualValue && !isDisabled
+                  ? 'bg-orange-50'
+                  : ''
+            }`}
+          >
+            {/* Nr apt */}
+            <div className="flex-shrink-0 w-8 text-center font-bold text-gray-700 text-sm">
+              {apartment.number}
+            </div>
+
+            {/* Proprietar + persoane dacă showPersonsColumn */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-gray-800 truncate" title={apartment.owner}>
+                {apartment.owner || '-'}
+              </div>
+              {showPersonsColumn && (
+                <div className="text-[11px] text-gray-500">{apartment.persons || 0} pers</div>
+              )}
+            </div>
+
+            {/* Badge Participare compact — doar iconiță (clickable dacă onEditParticipation) */}
+            {onEditParticipation ? (
+              <button
+                type="button"
+                onClick={onEditParticipation}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all ${
+                  isExcluded ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                }`}
+              >
+                {isExcluded ? '🚫' : '✓'}
+              </button>
+            ) : (
+              <span
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${
+                  isExcluded ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                }`}
+              >
+                {isExcluded ? '🚫' : '✓'}
+              </span>
+            )}
+
+            {/* Input sumă */}
+            {isDisabled ? (
+              <div className="flex-shrink-0 w-20 text-right font-bold text-sm text-gray-500">
+                {isExcluded ? '-' : (manualValue || '-')}
+              </div>
+            ) : (
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="-"
+                value={localValues[`${expenseTypeName}-${apartment.id}`] ?? manualValue}
+                onChange={(e) => handleInputChange(apartment.id, e.target.value)}
+                onBlur={(e) => handleInputBlur(apartment.id, e.target.value)}
+                className={`flex-shrink-0 w-20 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 text-right focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${!hasManualValue ? 'border-orange-300 bg-orange-50' : ''}`}
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {/* Footer TOTAL mobil — simplu, doar totalul (fără diferență, să rămână compact) */}
+      {(() => {
+        const apartmentParticipations = config?.apartmentParticipation || {};
+        const totalIntroduced = apartments.reduce((sum, apt) => {
+          const p = apartmentParticipations[apt.id];
+          if (p?.type === 'excluded') return sum;
+          return sum + parseFloat(expense?.individualAmounts?.[apt.id] || 0);
+        }, 0);
+        return (
+          <div className="flex items-center justify-between px-3 py-2 bg-gray-100 border-t-2 border-gray-400 font-bold">
+            <span className="text-sm text-gray-700">TOTAL:</span>
+            <span className="text-sm text-green-700">{totalIntroduced.toFixed(2)} RON</span>
+          </div>
+        );
+      })()}
+    </div>
+    </>
   );
 };
 

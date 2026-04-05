@@ -1101,9 +1101,9 @@ const MaintenanceView = ({
                     stairs={stairs}
                     calculateExpenseDifferences={calculateExpenseDifferences}
                     onEditExpense={handleEditExpense}
-                    onConfigureExpense={(expenseName) => {
+                    onConfigureExpense={(expenseName, tab = 'general') => {
                       setSelectedExpenseForConfig(expenseName);
-                      setConfigModalInitialTab('general');
+                      setConfigModalInitialTab(tab);
                       setShowExpenseConfig(true);
                     }}
                     expandedExpenses={expandedExpenses}

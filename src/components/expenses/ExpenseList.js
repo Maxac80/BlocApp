@@ -7,6 +7,7 @@ import {
   ExpenseStatusBadge,
   getExpenseStatus
 } from './shared/ConsumptionComponents';
+import ExpenseDistributionTable from './shared/ExpenseDistributionTable';
 import { generateIndividualAmountsTemplate } from '../../utils/excelTemplateIndividualAmounts';
 import ExcelUploadIndividualAmountsModal from '../modals/ExcelUploadIndividualAmountsModal';
 
@@ -4295,7 +4296,17 @@ const ExpenseList = ({
                                     title="Descarcă template Excel cu toate apartamentele"
                                   >
                                     <Download className="w-4 h-4" />
-                                    {isGeneratingTemplate ? 'Se generează...' : 'Descarcă template Excel'}
+                                    {isGeneratingTemplate ? (
+                                      <>
+                                        <span className="hidden sm:inline">Se generează...</span>
+                                        <span className="sm:hidden">...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="hidden sm:inline">Descarcă template Excel</span>
+                                        <span className="sm:hidden">Template</span>
+                                      </>
+                                    )}
                                   </button>
                                   <button
                                     onClick={() => setExcelUploadModal({ isOpen: true, expense })}
@@ -4303,7 +4314,8 @@ const ExpenseList = ({
                                     title="Importă sume din fișier Excel"
                                   >
                                     <Upload className="w-4 h-4" />
-                                    Importă din Excel
+                                    <span className="hidden sm:inline">Importă din Excel</span>
+                                    <span className="sm:hidden">Importă</span>
                                   </button>
                                 </div>
                               )}
@@ -4324,6 +4336,34 @@ const ExpenseList = ({
                               stairs={stairs}
                               selectedStairTab={selectedStairTab}
                               blocks={blocks}
+                              onEditParticipation={!isMonthReadOnly && !isReadOnlyRole && onConfigureExpense
+                                ? () => onConfigureExpense(expense.name, 'participation')
+                                : null}
+                            />
+                          </div>
+                        );
+                      }
+
+                      // Pentru cheltuieli pe apartament/persoană/cotă parte - tabel read-only
+                      if (['apartment', 'perApartament', 'person', 'perPerson', 'cotaParte'].includes(config.distributionType)) {
+                        const relevantAmount = getRelevantAmount(expense);
+                        return (
+                          <div className="mt-6">
+                            <h5 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                              <Calculator className="w-5 h-5" />
+                              Distribuție pe apartamente:
+                            </h5>
+                            <ExpenseDistributionTable
+                              apartments={filteredApartments}
+                              expense={expense}
+                              config={config}
+                              relevantAmount={relevantAmount}
+                              allApartments={getAssociationApartments()}
+                              blocks={blocks}
+                              stairs={stairs}
+                              onEditParticipation={!isMonthReadOnly && !isReadOnlyRole && onConfigureExpense
+                                ? () => onConfigureExpense(expense.name, 'participation')
+                                : null}
                             />
                           </div>
                         );
