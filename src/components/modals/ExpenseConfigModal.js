@@ -1090,7 +1090,7 @@ const ExpenseConfigModal = ({
                     </button>
                     {stairTabs.map(stair => {
                       // Verifică dacă scara este activă în configurație
-                      const isStairActive = localConfig.receptionMode === 'per_association' ||
+                      const isStairActive = localConfig.receptionMode === 'per_association' || localConfig.receptionMode === 'total' ||
                         (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(stair.id)) ||
                         (localConfig.receptionMode === 'per_block' && (() => {
                           const stairObj = stairs.find(s => s.id === stair.id);
@@ -1130,7 +1130,9 @@ const ExpenseConfigModal = ({
                     const block = stair ? blocks.find(b => b.id === stair.blockId) : null;
 
                     // Verifică dacă apartamentul este activ (scara/blocul este selectat)
-                    const isApartmentActive = localConfig.receptionMode === 'per_association' ||
+                    // 'total' e alias legacy pentru 'per_association' — tratat identic
+                    const isPerAssociation = localConfig.receptionMode === 'per_association' || localConfig.receptionMode === 'total';
+                    const isApartmentActive = isPerAssociation ||
                       (localConfig.receptionMode === 'per_stair' && localConfig.appliesTo.stairs.includes(apartment.stairId)) ||
                       (localConfig.receptionMode === 'per_block' && block && localConfig.appliesTo.blocks.includes(block.id));
 
