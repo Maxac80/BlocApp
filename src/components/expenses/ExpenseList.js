@@ -1,12 +1,14 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Trash2, ChevronDown, ChevronUp, Edit2, Layers, Building2, BarChart, MoreVertical, Settings } from 'lucide-react';
+import { Calculator, Trash2, ChevronDown, ChevronUp, Edit2, Layers, Building2, BarChart, MoreVertical, Settings, Download, Upload } from 'lucide-react';
 import {
   ConsumptionTable,
   IndividualAmountsTable,
   ExpenseStatusBadge,
   getExpenseStatus
 } from './shared/ConsumptionComponents';
+import { generateIndividualAmountsTemplate } from '../../utils/excelTemplateIndividualAmounts';
+import ExcelUploadIndividualAmountsModal from '../modals/ExcelUploadIndividualAmountsModal';
 
 const ExpenseList = ({
   associationExpenses,
@@ -43,7 +45,10 @@ const ExpenseList = ({
   getInvoiceForExpense,
   // Props pentru ajustarea rotunjirilor
   maintenanceData, // 🆕 Date din tabelul de întreținere cu ajustare rotunjire
-  isReadOnlyRole // 🔒 Președinte/Cenzor nu poate edita/șterge
+  isReadOnlyRole, // 🔒 Președinte/Cenzor nu poate edita/șterge
+  // Props pentru Excel upload (sume individuale)
+  association,
+  updateExpenseIndividualAmountsBatch
 }) => {
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -61,6 +66,10 @@ const ExpenseList = ({
 
   // State pentru optimistic UI updates în tabeluri
   const [localValues, setLocalValues] = useState({});
+
+  // State pentru modal Excel upload sume individuale
+  const [excelUploadModal, setExcelUploadModal] = useState({ isOpen: false, expense: null });
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
 
   // Refs pentru scroll automat la cheltuieli
   const expenseRefs = useRef({});
@@ -4254,10 +4263,51 @@ const ExpenseList = ({
 
                         return (
                           <div className="mt-6">
-                            <h5 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                              <Calculator className="w-5 h-5" />
-                              Tabel sume individuale:
-                            </h5>
+                            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                              <h5 className="font-semibold text-gray-700 flex items-center gap-2">
+                                <Calculator className="w-5 h-5" />
+                                Tabel sume individuale:
+                              </h5>
+                              {/* Toolbar Excel - doar dacă nu e read-only și avem association */}
+                              {!isMonthReadOnly && !isReadOnlyRole && association && expense && (
+                                <div className="flex gap-2 flex-wrap">
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        setIsGeneratingTemplate(true);
+                                        const allApartments = getAssociationApartments();
+                                        await generateIndividualAmountsTemplate(
+                                          association,
+                                          expense,
+                                          allApartments,
+                                          blocks,
+                                          stairs
+                                        );
+                                      } catch (err) {
+                                        console.error('❌ Eroare la generarea template-ului:', err);
+                                        alert('Eroare la generarea template-ului: ' + err.message);
+                                      } finally {
+                                        setIsGeneratingTemplate(false);
+                                      }
+                                    }}
+                                    disabled={isGeneratingTemplate}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                                    title="Descarcă template Excel cu toate apartamentele"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    {isGeneratingTemplate ? 'Se generează...' : 'Descarcă template Excel'}
+                                  </button>
+                                  <button
+                                    onClick={() => setExcelUploadModal({ isOpen: true, expense })}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 border border-green-300 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                                    title="Importă sume din fișier Excel"
+                                  >
+                                    <Upload className="w-4 h-4" />
+                                    Importă din Excel
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                             <IndividualAmountsTable
                               apartments={filteredApartments}
                               config={config}
@@ -4288,6 +4338,25 @@ const ExpenseList = ({
             );
           })}
         </div>
+      )}
+
+      {/* Modal Import Excel Sume Individuale */}
+      {excelUploadModal.isOpen && excelUploadModal.expense && association && (
+        <ExcelUploadIndividualAmountsModal
+          isOpen={excelUploadModal.isOpen}
+          onClose={() => setExcelUploadModal({ isOpen: false, expense: null })}
+          association={association}
+          expense={excelUploadModal.expense}
+          apartments={getAssociationApartments()}
+          blocks={blocks}
+          stairs={stairs}
+          existingAmounts={excelUploadModal.expense.individualAmounts || {}}
+          onImportConfirmed={async (amounts) => {
+            if (updateExpenseIndividualAmountsBatch) {
+              await updateExpenseIndividualAmountsBatch(excelUploadModal.expense.id, amounts);
+            }
+          }}
+        />
       )}
     </>
   );

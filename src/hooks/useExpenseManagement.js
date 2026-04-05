@@ -636,6 +636,34 @@ export const useExpenseManagement = ({
     }
   }, [currentSheet, updateExpenseInSheet]);
 
+  // 💰 BATCH UPDATE SUME INDIVIDUALE (pentru import Excel)
+  // Primește un obiect { apartmentId: amount } și face UN singur write în Firestore
+  // Merge cu valorile existente (apartamentele care nu apar în `amountsObject` rămân neschimbate)
+  const updateExpenseIndividualAmountsBatch = useCallback(async (expenseId, amountsObject) => {
+    try {
+      if (!currentSheet || !currentSheet.expenses) {
+        console.error('❌ No current sheet or expenses');
+        return;
+      }
+
+      const expense = currentSheet.expenses.find(exp => exp.id === expenseId);
+      if (!expense) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        return;
+      }
+
+      const updatedExpense = {
+        ...expense,
+        individualAmounts: { ...(expense.individualAmounts || {}), ...amountsObject }
+      };
+
+      await updateExpenseInSheet(expenseId, updatedExpense);
+    } catch (error) {
+      console.error('❌ Eroare la batch update sume individuale:', error);
+      throw error;
+    }
+  }, [currentSheet, updateExpenseInSheet]);
+
   // 📝 SALVARE CONSUMURI PENDING (pentru cheltuieli nedistribuite)
   const updatePendingConsumption = useCallback(async (expenseTypeName, apartmentId, consumption) => {
     try {
@@ -1104,6 +1132,7 @@ export const useExpenseManagement = ({
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
+    updateExpenseIndividualAmountsBatch,
     updatePendingConsumption,
     updatePendingIndividualAmount,
     updateExpenseIndexes,

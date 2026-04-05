@@ -49,6 +49,7 @@ const MaintenanceView = ({
   handleDeleteMonthlyExpense,
   updateExpenseConsumption,
   updateExpenseIndividualAmount,
+  updateExpenseIndividualAmountsBatch,
   updatePendingConsumption,
   updatePendingIndividualAmount,
   updateExpenseIndexes,
@@ -1109,6 +1110,8 @@ const MaintenanceView = ({
                     setExpandedExpenses={setExpandedExpenses}
                     updateExpenseConsumption={updateExpenseConsumption}
                     updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+                    updateExpenseIndividualAmountsBatch={updateExpenseIndividualAmountsBatch}
+                    association={association}
                     updatePendingConsumption={updatePendingConsumption}
                     updatePendingIndividualAmount={updatePendingIndividualAmount}
                     updateExpenseIndexes={updateExpenseIndexes}

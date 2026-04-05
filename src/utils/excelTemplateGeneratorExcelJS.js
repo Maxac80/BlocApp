@@ -18,10 +18,37 @@ const APARTMENT_TYPES = ['Garsoniera', '2 camere', '3 camere', '4 camere', '5 ca
 const HEATING_SOURCES = ['Termoficare', 'Centrală proprie', 'Centrală bloc', 'Debranșat'];
 
 /**
+ * 🖼️ Helper: descarcă logo-ul BlocApp și îl atașează la workbook
+ */
+const loadBlocAppLogo = async (workbook) => {
+  try {
+    const response = await fetch('/blocapp-logo.png');
+    if (!response.ok) {
+      console.warn('⚠️ Logo BlocApp nu a putut fi încărcat, continuăm fără logo');
+      return null;
+    }
+    const buffer = await response.arrayBuffer();
+    return workbook.addImage({ buffer, extension: 'png' });
+  } catch (error) {
+    console.warn('⚠️ Eroare la încărcarea logo-ului BlocApp:', error);
+    return null;
+  }
+};
+
+/**
  * 📖 GENEREAZĂ SHEET CU INSTRUCȚIUNI
  */
-const generateInstructionsSheet = (workbook, associationName) => {
+const generateInstructionsSheet = (workbook, associationName, logoImageId) => {
   const sheet = workbook.addWorksheet('📖 INSTRUCȚIUNI');
+
+  // Logo sus (dacă e disponibil) - ancorat la row 0, înălțime ajustată
+  if (logoImageId !== null && logoImageId !== undefined) {
+    sheet.addImage(logoImageId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: 140, height: 56 }
+    });
+    sheet.getRow(1).height = 48; // Rezervă spațiu pentru logo (48 pts ≈ 64 px)
+  }
 
   // === HEADER PREMIUM ===
   sheet.mergeCells('A2:G2');
@@ -219,9 +246,18 @@ const generateInstructionsSheet = (workbook, associationName) => {
 /**
  * 🏗️ GENEREAZĂ SHEET PENTRU O SCARĂ - LAYOUT OPTIMIZAT
  */
-const generateStairSheet = (workbook, stair, block) => {
+const generateStairSheet = (workbook, stair, block, logoImageId) => {
   const sheetName = `${block.name.substring(0, 10)}_${stair.name.substring(0, 10)}`.substring(0, 31);
   const sheet = workbook.addWorksheet(sheetName);
+
+  // Logo sus (dacă e disponibil)
+  if (logoImageId !== null && logoImageId !== undefined) {
+    sheet.addImage(logoImageId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: 140, height: 56 }
+    });
+    sheet.getRow(1).height = 48;
+  }
 
   // === TITLE ===
   sheet.mergeCells('A2:H2');
@@ -469,14 +505,17 @@ export const generateExcelTemplate = async (association, blocks, stairs) => {
     workbook.keywords = 'apartamente import template';
     workbook.description = `Template generat pentru ${association.name}. Include ${associationBlocks.length} bloc(uri) și ${associationStairs.length} scară(ri).`;
 
+    // Încarcă logo-ul o singură dată pentru tot workbook-ul
+    const logoImageId = await loadBlocAppLogo(workbook);
+
     // Generate sheets
-    generateInstructionsSheet(workbook, association.name);
+    generateInstructionsSheet(workbook, association.name, logoImageId);
 
     let stairCount = 0;
     for (const stair of associationStairs) {
       const block = associationBlocks.find(b => b.id === stair.blockId);
       if (block) {
-        generateStairSheet(workbook, stair, block);
+        generateStairSheet(workbook, stair, block, logoImageId);
         stairCount++;
       }
     }

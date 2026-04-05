@@ -402,6 +402,7 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
     updateExpenseIndividualAmount,
+    updateExpenseIndividualAmountsBatch,
     updatePendingConsumption,
     updatePendingIndividualAmount,
     updateExpenseIndexes,
@@ -772,6 +773,7 @@ useEffect(() => {
               handleDeleteMonthlyExpense={(expenseId) => handleDeleteMonthlyExpense(expenseId, { invoices, removeInvoiceDistribution })}
               updateExpenseConsumption={updateExpenseConsumption}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
+              updateExpenseIndividualAmountsBatch={updateExpenseIndividualAmountsBatch}
               updatePendingConsumption={updatePendingConsumption}
               updatePendingIndividualAmount={updatePendingIndividualAmount}
               updateExpenseIndexes={updateExpenseIndexes}
