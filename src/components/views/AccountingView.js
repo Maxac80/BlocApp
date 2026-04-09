@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2 } from 'lucide-react';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
@@ -574,7 +574,7 @@ const AccountingView = ({
             {/* Facturi */}
               <div className="space-y-6">
                 {/* Statistici Facturi */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                   <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500">
                     <div className="flex items-center justify-between">
                       <div>
@@ -622,6 +622,34 @@ const AccountingView = ({
                       <Calendar className="w-8 h-8 text-red-500 opacity-50" />
                     </div>
                   </div>
+
+                  {/* Card distribuite */}
+                  {(() => {
+                    const sheetExps = currentSheet?.expenses || [];
+                    const distributed = filteredInvoices.filter(inv => {
+                      const total = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
+                      const distNames = (inv.distributionHistory || []).map(d => d.expenseName).filter(Boolean);
+                      const realDist = sheetExps
+                        .filter(exp => distNames.includes(exp.name))
+                        .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                      return realDist >= total - 0.01 && realDist > 0;
+                    }).length;
+                    const total = filteredInvoices.length;
+                    const allDone = distributed === total && total > 0;
+                    return (
+                      <div className={`bg-gray-50 p-4 rounded-lg border-l-4 ${allDone ? 'border-green-500' : distributed > 0 ? 'border-purple-500' : 'border-gray-400'}`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600">Distribuite</p>
+                            <p className="text-2xl font-bold text-gray-800">
+                              {distributed} / {total}
+                            </p>
+                          </div>
+                          <Share2 className={`w-8 h-8 opacity-50 ${allDone ? 'text-green-500' : distributed > 0 ? 'text-purple-500' : 'text-gray-400'}`} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
 
@@ -679,10 +707,21 @@ const AccountingView = ({
                       const expConfig = getExpenseConfig(invoice.expenseType);
                       const finalSupplier = expConfig?.supplierName || invoice.supplierName || 'Fără furnizor';
                       const totalInvoice = invoice.totalInvoiceAmount || invoice.totalAmount;
-                      const distributed = invoice.distributedAmount || 0;
-                      const remaining = invoice.remainingAmount ?? (totalInvoice - distributed);
+                      // Verificăm distribuția din currentSheet.expenses (sursă de adevăr)
+                      // Bug vechi: invoice.distributedAmount/distributionHistory.amount pot conține totalul facturii, nu suma reală distribuită
+                      const sheetExpenses = currentSheet?.expenses || [];
+                      const distributedExpenseNames = (invoice.distributionHistory || [])
+                        .filter(d => d.amount > 0)
+                        .map(d => d.expenseName)
+                        .filter(Boolean);
+                      // Suma reală distribuită = suma cheltuielilor din sheet care au invoiceData legat de această factură
+                      const realDistributed = sheetExpenses
+                        .filter(exp => distributedExpenseNames.includes(exp.name))
+                        .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                      const distributed = realDistributed > 0 ? realDistributed : (invoice.distributedAmount || 0);
+                      const remaining = totalInvoice - distributed;
                       const percentage = totalInvoice > 0 ? Math.round((distributed / totalInvoice) * 100) : 0;
-                      const isFullyDistributed = remaining <= 0 && distributed > 0;
+                      const isFullyDistributed = remaining <= 0.01 && distributed > 0;
                       const distributionHistory = (invoice.distributionHistory || []).filter(d => d.amount > 0);
                       const expenseNames = distributionHistory.length > 0
                         ? [...new Set(distributionHistory.map(d => d.expenseName).filter(Boolean))]
@@ -703,23 +742,16 @@ const AccountingView = ({
                             </span>
                           </div>
 
-                          {/* Row 2: Distribution status badge + percentage */}
-                          <div className="flex items-center justify-between mb-2">
-                            {expenseNames.length > 0 ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-green-100 text-green-700">
-                                Distribuită
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700">
-                                Nedistribuită
-                              </span>
-                            )}
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded whitespace-nowrap ${
+                          {/* Row 2: Distribution status badge (în dreapta, uniform cu celelalte pagini) */}
+                          <div className="flex items-center justify-end mb-2">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${
                               isFullyDistributed ? 'bg-green-100 text-green-700' :
-                              distributed > 0 ? 'bg-purple-100 text-purple-700' :
-                              'bg-orange-100 text-orange-600'
+                              distributed > 0 ? 'bg-orange-100 text-orange-700' :
+                              'bg-red-100 text-red-700'
                             }`}>
-                              {isFullyDistributed ? '✅ 100%' : `${percentage}%`}
+                              {isFullyDistributed ? 'Distribuită' :
+                               distributed > 0 ? `Parțial distribuită (${percentage}%)` :
+                               'Nedistribuită'}
                             </span>
                           </div>
 
@@ -736,9 +768,12 @@ const AccountingView = ({
                                   const bloc = blocks.find(b => b.id === distConfig.appliesTo.bloc);
                                   target = bloc ? `Bloc ${bloc.name}` : 'Bloc';
                                 }
+                                // Suma reală din sheet expense (nu din distributionHistory care poate fi incorectă)
+                                const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
+                                const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
                                 return (
                                   <div key={idx} className="flex items-center justify-between text-gray-600">
-                                    <span>{dist.expenseName || dist.notes} · {dist.amount} lei</span>
+                                    <span>{dist.expenseName || dist.notes} · {realAmount.toFixed(2)} lei</span>
                                     <span className="text-gray-400 ml-2">{target}</span>
                                   </div>
                                 );

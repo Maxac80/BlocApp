@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Trash2, MoreVertical } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
+import StatsCard from '../common/StatsCard';
 
 const SuppliersView = ({
   association,
@@ -16,7 +17,8 @@ const SuppliersView = ({
   publishedSheet,
   sheets,
   blocks,
-  stairs
+  stairs,
+  invoices = []
 }) => {
   const cantEdit = isMonthReadOnly || isReadOnlyRole;
 
@@ -56,6 +58,45 @@ const SuppliersView = ({
       })
       .map(expType => expType.name);
   };
+
+  // Helper: status distribuție furnizor (bazat pe cheltuielile asociate, nu pe facturi)
+  // Un furnizor e "distribuit" dacă TOATE cheltuielile lui au fost distribuite în luna curentă
+  const getSupplierDistributionStatus = (supplierId) => {
+    const expenseTypes = getSupplierExpenseTypes(supplierId);
+    if (expenseTypes.length === 0) return { status: 'no_expenses', label: 'Fără cheltuieli', color: 'bg-gray-100 text-gray-500', distributed: [], undistributed: [] };
+
+    const distributedExpenses = currentSheet?.expenses || [];
+    const distributed = [];
+    const undistributed = [];
+
+    expenseTypes.forEach(expName => {
+      const isDistributed = distributedExpenses.some(exp => exp.name === expName);
+      if (isDistributed) {
+        distributed.push(expName);
+      } else {
+        undistributed.push(expName);
+      }
+    });
+
+    if (distributed.length === expenseTypes.length) {
+      return { status: 'full', label: 'Distribuită', color: 'bg-green-100 text-green-700', distributed, undistributed };
+    }
+    if (distributed.length > 0) {
+      return { status: 'partial', label: 'Parțial distribuită', color: 'bg-orange-100 text-orange-700', distributed, undistributed };
+    }
+    return { status: 'undistributed', label: 'Nedistribuită', color: 'bg-red-100 text-red-700', distributed, undistributed };
+  };
+
+  // Statistici globale furnizori
+  const supplierStats = React.useMemo(() => {
+    const totalLinks = suppliers.reduce((sum, s) => sum + getSupplierExpenseTypes(s.id).length, 0);
+    const withDistributed = suppliers.filter(s => {
+      const st = getSupplierDistributionStatus(s.id);
+      return st.status === 'full';
+    }).length;
+    return { totalLinks, withDistributed };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppliers, invoices]);
 
   const handleAddSupplier = () => {
     setEditingSupplier(null);
@@ -98,6 +139,13 @@ const SuppliersView = ({
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🚛 Furnizori</h1>
+        </div>
+
+        {/* Statistici furnizori */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+          <StatsCard label="Total furnizori" value={suppliers.length} borderColor="border-blue-500" />
+          <StatsCard label="Cu facturi distribuite" value={`${supplierStats.withDistributed} / ${suppliers.length}`} borderColor="border-green-500" />
+          <StatsCard label="Cheltuieli asociate" value={supplierStats.totalLinks} borderColor="border-teal-500" />
         </div>
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -145,19 +193,43 @@ const SuppliersView = ({
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm sm:text-base text-gray-900">{supplier.name}</div>
-                              {activeExpenseTypes.length > 0 && (
-                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-xs text-gray-500">
-                                    {activeExpenseTypes.length === 1 ? 'Cheltuială:' : 'Cheltuieli:'}
-                                  </span>
-                                  {activeExpenseTypes.map(type => (
-                                    <span key={type} className="inline-block px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">
-                                      {type}
+                              {(() => {
+                                const dist = getSupplierDistributionStatus(supplier.id);
+                                return activeExpenseTypes.length > 0 && (
+                                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs text-gray-500">
+                                      {activeExpenseTypes.length === 1 ? 'Cheltuială:' : 'Cheltuieli:'}
                                     </span>
-                                  ))}
-                                </div>
-                              )}
+                                    {activeExpenseTypes.map(type => {
+                                      const isExpDistributed = dist.distributed?.includes(type);
+                                      return (
+                                        <span
+                                          key={type}
+                                          className={`inline-block px-1.5 py-0.5 text-xs rounded ${
+                                            isExpDistributed
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-gray-200 text-gray-600'
+                                          }`}
+                                        >
+                                          {type}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
+
+                            {/* Badge distribuție în dreapta (la fel ca la Cheltuieli) + meniu acțiuni */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {(() => {
+                                const dist = getSupplierDistributionStatus(supplier.id);
+                                return (
+                                  <span className={`inline-block px-2 py-0.5 text-xs rounded font-medium whitespace-nowrap ${dist.color}`}>
+                                    {dist.label}
+                                  </span>
+                                );
+                              })()}
                             <div className="relative" data-dropdown-container>
                               <button
                                 onClick={(e) => {
@@ -223,6 +295,7 @@ const SuppliersView = ({
                                   </div>
                                 </div>
                               )}
+                            </div>
                             </div>
                           </div>
                         </div>
