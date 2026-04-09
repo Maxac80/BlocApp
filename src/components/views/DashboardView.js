@@ -179,7 +179,7 @@ const DashboardView = ({
       <div className="w-full">
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📊 Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">📋 Întreținere</h1>
         </div>
 
 

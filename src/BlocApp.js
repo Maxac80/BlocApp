@@ -33,6 +33,7 @@ import {
   AccountingView,
   MessagesView
 } from './components/views';
+import SuppliersView from './components/views/SuppliersView';
 
 export default function BlocApp({ associationId, userRole, onSwitchContext, onStandaloneNavigate }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
@@ -906,6 +907,24 @@ useEffect(() => {
               sheets={sheets}
               togglePortalSubmission={togglePortalSubmission}
               isReadOnlyRole={isReadOnlyRole}
+            />
+          )}
+
+          {/* Suppliers View */}
+          {currentView === "suppliers" && (
+            <SuppliersView
+              association={association}
+              currentMonth={currentMonth}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              isReadOnlyRole={isReadOnlyRole}
+              getAssociationExpenseTypes={getAssociationExpenseTypes}
+              getExpenseConfig={getFirestoreExpenseConfig}
+              updateExpenseConfig={updateFirestoreExpenseConfig}
+              currentSheet={currentSheet}
+              publishedSheet={publishedSheet}
+              sheets={sheets}
+              blocks={blocks}
+              stairs={stairs}
             />
           )}
 
