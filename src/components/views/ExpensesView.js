@@ -289,7 +289,7 @@ const ExpensesViewNew = ({
 
                 <div>
                   <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-3 sm:mb-4">Cheltuieli active pentru {currentMonth}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     {getAssociationExpenseTypes().map((expenseType, index, array) => {
                       const config = getExpenseConfig(expenseType.id || expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
@@ -661,7 +661,7 @@ const ExpensesViewNew = ({
                   ) : suppliers.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">Nu există furnizori adăugați</p>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                       {suppliers.map((supplier, index, array) => {
                         const isLastItem = index >= array.length - 2; // ultimele 2 iteme
                         const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);

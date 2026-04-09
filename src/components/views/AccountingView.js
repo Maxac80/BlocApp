@@ -700,7 +700,7 @@ const AccountingView = ({
                     Nu există facturi înregistrate pentru {currentMonth}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     {filteredInvoices.map((invoice) => {
                       const isOverdue = !invoice.isPaid && invoice.dueDate && new Date(invoice.dueDate) < new Date();
                       const expConfig = getExpenseConfig(invoice.expenseType);
@@ -730,11 +730,17 @@ const AccountingView = ({
                             </span>
                           </div>
 
-                          {/* Row 2: Expenses + Distribution badge */}
+                          {/* Row 2: Distribution status badge + percentage */}
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-gray-500">
-                              {expenseNames.length > 0 ? expenseNames.join(', ') : 'Nedistribuită'}
-                            </span>
+                            {expenseNames.length > 0 ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-green-100 text-green-700">
+                                Distribuită
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700">
+                                Nedistribuită
+                              </span>
+                            )}
                             <span className={`px-2 py-0.5 text-xs font-medium rounded whitespace-nowrap ${
                               isFullyDistributed ? 'bg-green-100 text-green-700' :
                               distributed > 0 ? 'bg-purple-100 text-purple-700' :
