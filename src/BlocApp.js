@@ -907,6 +907,7 @@ useEffect(() => {
               sheets={sheets}
               togglePortalSubmission={togglePortalSubmission}
               isReadOnlyRole={isReadOnlyRole}
+              invoices={invoices}
             />
           )}
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
@@ -25,6 +25,11 @@ const SuppliersView = ({
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [expandedSuppliers, setExpandedSuppliers] = useState({});
+
+  const toggleExpand = (supplierId) => {
+    setExpandedSuppliers(prev => ({ ...prev, [supplierId]: !prev[supplierId] }));
+  };
 
   // Determină sheet-ul corect pentru luna selectată
   const activeSheet = React.useMemo(() => {
@@ -65,6 +70,10 @@ const SuppliersView = ({
     const expenseTypes = getSupplierExpenseTypes(supplierId);
     if (expenseTypes.length === 0) return { status: 'no_expenses', label: 'Fără cheltuieli', color: 'bg-gray-100 text-gray-500', distributed: [], undistributed: [] };
 
+    // Verifică dacă furnizorul are facturi în luna curentă
+    const supplierInvs = invoices.filter(inv => inv.supplierId === supplierId);
+    const hasInvoices = supplierInvs.length > 0;
+
     const distributedExpenses = currentSheet?.expenses || [];
     const distributed = [];
     const undistributed = [];
@@ -79,12 +88,15 @@ const SuppliersView = ({
     });
 
     if (distributed.length === expenseTypes.length) {
-      return { status: 'full', label: 'Distribuită', color: 'bg-green-100 text-green-700', distributed, undistributed };
+      return { status: 'full', label: 'Distribuit', color: 'bg-green-100 text-green-700', distributed, undistributed };
     }
     if (distributed.length > 0) {
-      return { status: 'partial', label: 'Parțial distribuită', color: 'bg-orange-100 text-orange-700', distributed, undistributed };
+      return { status: 'partial', label: 'Parțial distribuit', color: 'bg-orange-100 text-orange-700', distributed, undistributed };
     }
-    return { status: 'undistributed', label: 'Nedistribuită', color: 'bg-red-100 text-red-700', distributed, undistributed };
+    if (!hasInvoices) {
+      return { status: 'no_invoices', label: 'Fără facturi', color: 'bg-yellow-100 text-yellow-700', distributed, undistributed };
+    }
+    return { status: 'undistributed', label: 'Nedistribuit', color: 'bg-red-100 text-red-700', distributed, undistributed };
   };
 
   // Statistici globale furnizori
@@ -185,12 +197,18 @@ const SuppliersView = ({
                       const isLastItem = index >= array.length - 2;
                       const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
 
+                      const isExpanded = expandedSuppliers[supplier.id];
+                      const supplierInvoices = invoices.filter(inv => inv.supplierId === supplier.id);
+
                       return (
                         <div
                           key={supplier.id}
                           className="p-3 sm:p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent"
                         >
-                          <div className="flex items-start justify-between">
+                          <div
+                            className="flex items-start justify-between cursor-pointer"
+                            onClick={() => toggleExpand(supplier.id)}
+                          >
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm sm:text-base text-gray-900">{supplier.name}</div>
                               {(() => {
@@ -220,7 +238,7 @@ const SuppliersView = ({
                               })()}
                             </div>
 
-                            {/* Badge distribuție în dreapta (la fel ca la Cheltuieli) + meniu acțiuni */}
+                            {/* Badge distribuție + chevron + meniu acțiuni */}
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {(() => {
                                 const dist = getSupplierDistributionStatus(supplier.id);
@@ -230,6 +248,10 @@ const SuppliersView = ({
                                   </span>
                                 );
                               })()}
+                              {isExpanded
+                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-400" />
+                              }
                             <div className="relative" data-dropdown-container>
                               <button
                                 onClick={(e) => {
@@ -298,6 +320,76 @@ const SuppliersView = ({
                             </div>
                             </div>
                           </div>
+
+                          {/* Secțiune expandată — facturi furnizor */}
+                          {isExpanded && (
+                            <div className="border-t border-gray-200 mt-3 pt-3">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <FileText className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="text-xs font-semibold text-gray-600">Facturi luna curentă</span>
+                              </div>
+                              {supplierInvoices.length === 0 ? (
+                                <p className="text-xs text-gray-400 italic pl-5">Nicio factură în luna curentă</p>
+                              ) : (
+                                <div className="space-y-2 pl-5">
+                                  {supplierInvoices.map(inv => {
+                                    const totalInv = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
+                                    const distHistory = (inv.distributionHistory || []).filter(d => d.amount > 0);
+                                    const sheetExps = currentSheet?.expenses || [];
+                                    // Suma reală distribuită din sheet expenses
+                                    const distExpNames = distHistory.map(d => d.expenseName).filter(Boolean);
+                                    const realDistributed = sheetExps
+                                      .filter(exp => distExpNames.includes(exp.name))
+                                      .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                                    const remaining = totalInv - realDistributed;
+                                    const isFullyDist = remaining <= 0.01 && realDistributed > 0;
+
+                                    return (
+                                      <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-sm font-medium text-gray-800">
+                                            Nr. {inv.invoiceNumber} · {totalInv.toFixed(2)} lei
+                                          </span>
+                                          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+                                            isFullyDist ? 'bg-green-100 text-green-700' :
+                                            realDistributed > 0 ? 'bg-orange-100 text-orange-700' :
+                                            'bg-red-100 text-red-700'
+                                          }`}>
+                                            {isFullyDist ? 'Distribuită' :
+                                             realDistributed > 0 ? 'Parțial' :
+                                             'Nedistribuită'}
+                                          </span>
+                                        </div>
+                                        {inv.invoiceDate && (
+                                          <div className="text-[11px] text-gray-400 mb-1">{inv.invoiceDate}</div>
+                                        )}
+                                        {distHistory.length > 0 && (
+                                          <div className="space-y-0.5">
+                                            {distHistory.map((d, idx) => {
+                                              const sheetExp = sheetExps.find(e => e.name === d.expenseName);
+                                              const realAmt = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(d.amount) || 0;
+                                              return (
+                                                <div key={idx} className="text-xs text-gray-600 flex justify-between">
+                                                  <span>{d.expenseName}</span>
+                                                  <span className="font-medium text-green-700">{realAmt.toFixed(2)} lei</span>
+                                                </div>
+                                              );
+                                            })}
+                                            {remaining > 0.01 && (
+                                              <div className="text-xs text-orange-600 font-medium flex justify-between pt-0.5 border-t border-gray-100">
+                                                <span>Rămas nedistribuit</span>
+                                                <span>{remaining.toFixed(2)} lei</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
