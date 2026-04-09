@@ -925,6 +925,7 @@ useEffect(() => {
               sheets={sheets}
               blocks={blocks}
               stairs={stairs}
+              invoices={invoices}
             />
           )}
 

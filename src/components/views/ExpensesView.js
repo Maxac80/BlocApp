@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
+import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 import SupplierModal from '../modals/SupplierModal';
@@ -214,6 +215,22 @@ const ExpensesViewNew = ({
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Cheltuieli</h1>
         </div>
+
+        {/* Statistici cheltuieli */}
+        {(() => {
+          const totalExpenseTypes = getAssociationExpenseTypes().length;
+          const distributedExpenses = currentSheet?.expenses?.length || 0;
+          const undistributed = totalExpenseTypes - distributedExpenses;
+          const totalDistributed = (currentSheet?.expenses || []).reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <StatsCard label="Total cheltuieli" value={totalExpenseTypes} borderColor="border-blue-500" />
+              <StatsCard label="Distribuite" value={`${distributedExpenses} / ${totalExpenseTypes}`} borderColor="border-green-500" />
+              <StatsCard label="Nedistribuite" value={undistributed} borderColor="border-orange-500" />
+              <StatsCard label="Total distribuit" value={`${totalDistributed.toFixed(2)} lei`} borderColor="border-teal-500" />
+            </div>
+          );
+        })()}
 
         {/* Guard: nu există apartamente configurate */}
         {getAssociationApartments && getAssociationApartments().length === 0 ? (

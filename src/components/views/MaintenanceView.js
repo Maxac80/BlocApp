@@ -2,6 +2,7 @@
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X, Building, Share2 } from 'lucide-react';
+import StatsCard from '../common/StatsCard';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
@@ -912,6 +913,22 @@ const MaintenanceView = ({
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🔀 Distribuție cheltuieli</h1>
         </div>
+
+        {/* Statistici distribuție */}
+        {(() => {
+          const totalExpenseTypes = getAssociationExpenseTypes ? getAssociationExpenseTypes().length : 0;
+          const distributedCount = associationExpenses?.length || 0;
+          const totalDistributed = (associationExpenses || []).reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+          const totalInvoices = (invoices || []).reduce((sum, inv) => sum + (parseFloat(inv.totalInvoiceAmount) || 0), 0);
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <StatsCard label="Total cheltuieli" value={totalExpenseTypes} borderColor="border-blue-500" />
+              <StatsCard label="Distribuite" value={`${distributedCount} / ${totalExpenseTypes}`} borderColor="border-green-500" />
+              <StatsCard label="Total distribuit" value={`${totalDistributed.toFixed(2)} lei`} borderColor="border-teal-500" />
+              <StatsCard label="Total facturi" value={`${totalInvoices.toFixed(2)} lei`} borderColor="border-orange-500" />
+            </div>
+          );
+        })()}
 
         {/* Guard: no apartments configured yet */}
         {getAssociationApartments().length === 0 && (
