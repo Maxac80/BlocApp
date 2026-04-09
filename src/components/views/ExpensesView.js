@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3 } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
@@ -38,11 +38,17 @@ const ExpensesViewNew = ({
   sheets,
   blocks,
   stairs,
-  togglePortalSubmission
+  togglePortalSubmission,
+  invoices = []
 }) => {
   const cantEdit = isMonthReadOnly || isReadOnlyRole;
 
   const [activeTab, setActiveTab] = useState('expenses');
+  const [expandedExpenseCards, setExpandedExpenseCards] = useState({});
+
+  const toggleExpenseCard = (id) => {
+    setExpandedExpenseCards(prev => ({ ...prev, [id]: !prev[id] }));
+  };
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
@@ -313,9 +319,19 @@ const ExpensesViewNew = ({
                         distributionBadgeClass = "bg-teal-100 text-teal-700";
                       }
 
+                      const expCardId = expenseType.id || expenseType.name;
+                      const isExpCardExpanded = expandedExpenseCards[expCardId];
+                      const expenseInvoices = invoices.filter(inv =>
+                        inv.expenseTypeId === expenseType.id ||
+                        inv.distributionHistory?.some(d => d.expenseName === expenseType.name)
+                      );
+
                       return (
                         <div key={expenseType.name} className="p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex items-start justify-between">
+                          <div
+                            className="flex items-start justify-between cursor-pointer"
+                            onClick={() => toggleExpenseCard(expCardId)}
+                          >
                             <div className="flex-1 min-w-0">
                               {/* Rând 1: Nume cheltuială */}
                               <div className="flex items-center gap-2 flex-wrap">
@@ -376,6 +392,10 @@ const ExpensesViewNew = ({
                               ) : (
                                 <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded whitespace-nowrap">Nedistribuită</span>
                               )}
+                              {isExpCardExpanded
+                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-400" />
+                              }
                             <div className="relative" data-dropdown-container>
                               <button
                                 onClick={(e) => {
@@ -469,6 +489,51 @@ const ExpensesViewNew = ({
                             </div>
                             </div>
                           </div>
+
+                          {/* Secțiune expandată — facturi cheltuială */}
+                          {isExpCardExpanded && (
+                            <div className="border-t border-gray-200 mt-3 pt-3">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <FileText className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="text-xs font-semibold text-gray-600">Facturi asociate</span>
+                              </div>
+                              {expenseInvoices.length === 0 ? (
+                                <p className="text-xs text-gray-400 italic pl-5">Nicio factură asociată</p>
+                              ) : (
+                                <div className="space-y-2 pl-5">
+                                  {expenseInvoices.map(inv => {
+                                    const totalInv = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
+                                    const sheetExps = currentSheet?.expenses || [];
+                                    const sheetExp = sheetExps.find(e => e.name === expenseType.name);
+                                    const realDistributed = sheetExp ? parseFloat(sheetExp.amount) || 0 : 0;
+
+                                    return (
+                                      <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-sm font-medium text-gray-800">
+                                            Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'} · {totalInv.toFixed(2)} lei
+                                          </span>
+                                          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
+                                            isDistributed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                          }`}>
+                                            {isDistributed ? 'Distribuită' : 'Nedistribuită'}
+                                          </span>
+                                        </div>
+                                        {inv.invoiceDate && (
+                                          <div className="text-[11px] text-gray-400">{inv.invoiceDate}</div>
+                                        )}
+                                        {isDistributed && realDistributed > 0 && (
+                                          <div className="text-xs text-green-700 font-medium mt-1">
+                                            Distribuit: {realDistributed.toFixed(2)} lei
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
