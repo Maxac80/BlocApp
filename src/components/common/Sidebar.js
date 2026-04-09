@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calculator, X, FileText, Wrench, Users, Building, Coins, ChevronUp, MessageSquare } from 'lucide-react';
+import { ClipboardList, Share2, X, FileText, Coins, Settings, Building, Truck, ChevronUp, MessageSquare } from 'lucide-react';
 import UserDropdownMenu from './UserDropdownMenu';
 import { useMessaging } from '../../hooks/useMessaging';
 
@@ -161,7 +161,7 @@ const Sidebar = ({
     {/* Meniu Navigare - scrollabil */}
     <nav className="flex-1 mt-4 lg:mt-6 overflow-y-auto">
       <div className="px-2 space-y-1">
-        {/* Tabel intretinere */}
+        {/* Întreținere */}
         <button
           onClick={() => handleNavigation("dashboard")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -170,22 +170,22 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <FileText className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <ClipboardList className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Tabel intretinere</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Intretinere luna curenta</div>
+              <div className="text-sm lg:text-base font-medium">Întreținere</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Tabel & încasări</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Tabel intretinere
+              Întreținere
             </div>
           )}
         </button>
 
-        {/* Calcul intretinere */}
+        {/* Distribuție cheltuieli */}
         <button
           onClick={() => handleNavigation("maintenance")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -194,17 +194,17 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Calculator className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Share2 className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Calcul intretinere</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Calculeaza intretinerea curenta</div>
+              <div className="text-sm lg:text-base font-medium">Distribuție cheltuieli</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Distribuie cheltuielile lunare</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Calcul intretinere
+              Distribuție cheltuieli
             </div>
           )}
         </button>
@@ -242,22 +242,46 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Wrench className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Coins className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Configurare cheltuieli</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Cheltuieli & furnizori</div>
+              <div className="text-sm lg:text-base font-medium">Cheltuieli</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Configurare cheltuieli</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Configurare cheltuieli
+              Cheltuieli
             </div>
           )}
         </button>
 
-        {/* Contabilitate */}
+        {/* Furnizori */}
+        <button
+          onClick={() => handleNavigation("suppliers")}
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "suppliers"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Truck className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Furnizori</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Gestionare furnizori</div>
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Furnizori
+            </div>
+          )}
+        </button>
+
+        {/* Facturi */}
         <button
           onClick={() => handleNavigation("accounting")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
@@ -266,17 +290,17 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Coins className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <FileText className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Contabilitate</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Incasari & chitante</div>
+              <div className="text-sm lg:text-base font-medium">Facturi</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Gestionare facturi</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Contabilitate
+              Facturi
             </div>
           )}
         </button>
@@ -290,7 +314,7 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Users className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Settings className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
               <div className="text-sm lg:text-base font-medium">Setări Asociație</div>

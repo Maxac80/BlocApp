@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import { FileText, Calculator, Wallet, Coins, MoreHorizontal, Building, Users, User, Settings, BookOpen, X, MessageSquare } from 'lucide-react';
+import { ClipboardList, Share2, Coins, FileText, Truck, MoreHorizontal, Building, User, Settings, BookOpen, X, MessageSquare } from 'lucide-react';
 
 const BottomNavigation = ({ currentView, handleNavigation }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Paginile principale din bottom nav
   const mainNavItems = [
-    { id: 'dashboard', label: 'Întreținere', icon: FileText },
-    { id: 'maintenance', label: 'Calcul', icon: Calculator },
+    { id: 'dashboard', label: 'Întreținere', icon: ClipboardList },
+    { id: 'maintenance', label: 'Distribuție', icon: Share2 },
     { id: 'setup', label: 'Apartamente', icon: Building },
-    { id: 'expenses', label: 'Cheltuieli', icon: Wallet },
+    { id: 'expenses', label: 'Cheltuieli', icon: Coins },
   ];
 
   // Paginile secundare din meniul "Mai multe"
   const moreNavItems = [
-    { id: 'accounting', label: 'Contabilitate', icon: Coins, description: 'Încasări și chitanțe' },
+    { id: 'suppliers', label: 'Furnizori', icon: Truck, description: 'Gestionare furnizori' },
+    { id: 'accounting', label: 'Facturi', icon: FileText, description: 'Gestionare facturi' },
     { id: 'messages', label: 'Mesaje', icon: MessageSquare, description: 'Comunicare cu locatarii' },
-    { id: 'association', label: 'Date asociație', icon: Users, description: 'Informații asociație' },
+    { id: 'association', label: 'Setări Asociație', icon: Settings, description: 'Date și configurări' },
     { id: 'profile', label: 'Profil Administrator', icon: User, description: 'Setări profil' },
     { id: 'settings', label: 'Setări', icon: Settings, description: 'Configurări aplicație' },
     { id: 'tutorials', label: 'Tutoriale', icon: BookOpen, description: 'Ghiduri și învățare' },
