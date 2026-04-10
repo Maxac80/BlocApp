@@ -723,10 +723,22 @@ const AccountingView = ({
                             className="flex items-start justify-between gap-2 cursor-pointer"
                             onClick={() => toggleInvoiceExpand(invoice.id)}
                           >
-                            {/* Left column: supplier · invoice nr + cheltuieli asociate */}
+                            {/* Left column: supplier · invoice nr + dată/plată + cheltuieli asociate */}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm sm:text-base text-gray-900">
                                 {finalSupplier} · {invoice.invoiceNumber}
+                              </div>
+                              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                {invoice.invoiceDate && (
+                                  <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
+                                )}
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                  invoice.isPaid ? 'bg-green-100 text-green-700' :
+                                  isOverdue ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
+                                </span>
                               </div>
                               {(() => {
                                 const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
@@ -876,18 +888,6 @@ const AccountingView = ({
                                       )}
                                     </div>
                                   )}
-                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
-                                    {invoice.invoiceDate && (
-                                      <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
-                                    )}
-                                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                      invoice.isPaid ? 'bg-green-100 text-green-700' :
-                                      isOverdue ? 'bg-red-100 text-red-700' :
-                                      'bg-yellow-100 text-yellow-700'
-                                    }`}>
-                                      {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
-                                    </span>
-                                  </div>
                                 </div>
                               </div>
                             </div>
