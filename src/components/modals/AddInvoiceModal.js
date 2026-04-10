@@ -6,11 +6,14 @@ const AddInvoiceModal = ({
   isOpen,
   onClose,
   onSave,
+  onUpdate,
+  invoice = null, // Dacă e prezent → mod editare
   suppliers = [],
   onAddSupplier,
   currentMonth,
   expenseTypes = []
 }) => {
+  const isEditMode = !!invoice;
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [formData, setFormData] = useState({
     supplierId: '',
@@ -23,21 +26,35 @@ const AddInvoiceModal = ({
   });
   const [saving, setSaving] = useState(false);
 
-  // Reset form when modal opens
+  // Reset/populare form la deschidere
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        supplierId: '',
-        supplierName: '',
-        documentType: 'factura',
-        invoiceNumber: '',
-        totalAmount: '',
-        invoiceDate: '',
-        dueDate: ''
-      });
+      if (isEditMode && invoice) {
+        // Mod editare: populează cu datele facturii existente
+        setFormData({
+          supplierId: invoice.supplierId || '',
+          supplierName: invoice.supplierName || '',
+          documentType: invoice.documentType || 'factura',
+          invoiceNumber: invoice.invoiceNumber || '',
+          totalAmount: String(invoice.totalInvoiceAmount || invoice.totalAmount || invoice.amount || ''),
+          invoiceDate: invoice.invoiceDate || '',
+          dueDate: invoice.dueDate || ''
+        });
+      } else {
+        // Mod adăugare: resetează
+        setFormData({
+          supplierId: '',
+          supplierName: '',
+          documentType: 'factura',
+          invoiceNumber: '',
+          totalAmount: '',
+          invoiceDate: '',
+          dueDate: ''
+        });
+      }
       setSaving(false);
     }
-  }, [isOpen]);
+  }, [isOpen, isEditMode, invoice]);
 
   const handleSupplierChange = (e) => {
     const selectedId = e.target.value;
@@ -85,23 +102,41 @@ const AddInvoiceModal = ({
 
     setSaving(true);
     try {
-      const invoiceData = {
-        supplierId: formData.supplierId,
-        supplierName: formData.supplierName,
-        documentType: formData.documentType,
-        invoiceNumber: formData.invoiceNumber.trim(),
-        totalAmount: amount,
-        totalInvoiceAmount: amount,
-        invoiceAmount: amount,
-        amount: amount,
-        invoiceDate: formData.invoiceDate || null,
-        dueDate: formData.dueDate || null,
-        month: currentMonth,
-        isStandalone: true,
-        currentDistribution: 0,
-        vatAmount: 0
-      };
-      await onSave(invoiceData, null);
+      if (isEditMode && onUpdate && invoice) {
+        // Mod editare: doar câmpurile editabile (păstrăm distributionHistory etc.)
+        const updates = {
+          supplierId: formData.supplierId,
+          supplierName: formData.supplierName,
+          documentType: formData.documentType,
+          invoiceNumber: formData.invoiceNumber.trim(),
+          totalAmount: amount,
+          totalInvoiceAmount: amount,
+          invoiceAmount: amount,
+          amount: amount,
+          invoiceDate: formData.invoiceDate || null,
+          dueDate: formData.dueDate || null
+        };
+        await onUpdate(invoice.id, updates);
+      } else {
+        // Mod adăugare
+        const invoiceData = {
+          supplierId: formData.supplierId,
+          supplierName: formData.supplierName,
+          documentType: formData.documentType,
+          invoiceNumber: formData.invoiceNumber.trim(),
+          totalAmount: amount,
+          totalInvoiceAmount: amount,
+          invoiceAmount: amount,
+          amount: amount,
+          invoiceDate: formData.invoiceDate || null,
+          dueDate: formData.dueDate || null,
+          month: currentMonth,
+          isStandalone: true,
+          currentDistribution: 0,
+          vatAmount: 0
+        };
+        await onSave(invoiceData, null);
+      }
       onClose();
     } catch (error) {
       console.error('Eroare la salvarea facturii:', error);
@@ -127,7 +162,7 @@ const AddInvoiceModal = ({
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-white">
-                  Adaugă factură
+                  {isEditMode ? 'Editează factură' : 'Adaugă factură'}
                 </h2>
                 <p className="text-white/80 text-xs">{currentMonth}</p>
               </div>
@@ -273,7 +308,7 @@ const AddInvoiceModal = ({
               disabled={!isValid || saving}
               className="px-3 py-1.5 text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-md hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg whitespace-nowrap"
             >
-              {saving ? 'Se salvează...' : 'Salvează factura'}
+              {saving ? 'Se salvează...' : (isEditMode ? 'Salvează modificările' : 'Salvează factura')}
             </button>
           </div>
         </div>

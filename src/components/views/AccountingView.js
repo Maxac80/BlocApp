@@ -685,7 +685,8 @@ const AccountingView = ({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
-                    {filteredInvoices.map((invoice) => {
+                    {filteredInvoices.map((invoice, invIdx, invArr) => {
+                      const isLastItem = invIdx >= invArr.length - 2;
                       const isOverdue = !invoice.isPaid && invoice.dueDate && new Date(invoice.dueDate) < new Date();
                       const expConfig = getExpenseConfig(invoice.expenseType);
                       const finalSupplier = expConfig?.supplierName || invoice.supplierName || 'Fără furnizor';
@@ -713,16 +714,62 @@ const AccountingView = ({
 
                       return (
                         <div key={invoice.id} className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors">
-                          {/* Row 1: Supplier · Invoice number + Amount */}
-                          <div className="flex items-start justify-between mb-1.5">
-                            <div className="min-w-0">
+                          {/* Row 1: Supplier · Invoice number + Amount + 3-dots menu */}
+                          <div className="flex items-start justify-between mb-1.5 gap-2">
+                            <div className="min-w-0 flex-1">
                               <span className="font-semibold text-sm text-gray-900">{finalSupplier}</span>
                               <span className="text-gray-400 mx-1.5">·</span>
                               <span className="text-sm text-gray-600">{invoice.invoiceNumber}</span>
                             </div>
-                            <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-2">
-                              {totalInvoice.toFixed(2)} lei
-                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                                {totalInvoice.toFixed(2)} lei
+                              </span>
+                              {!isReadOnlyRole && (
+                                <div className="relative" data-dropdown-container>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
+                                    }}
+                                    className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
+                                    title="Opțiuni"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                  {openDropdown === dropdownId && (
+                                    <>
+                                      <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
+                                      <div className={`absolute right-0 z-20 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1 ${
+                                        isLastItem ? 'bottom-full mb-1' : 'top-full mt-1'
+                                      }`}>
+                                        <button
+                                          onClick={() => { setEditingInvoice(invoice); setShowEditInvoiceModal(true); setOpenDropdown(null); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                          <Pencil className="w-3.5 h-3.5" /> Editează factura
+                                        </button>
+                                        <button
+                                          onClick={() => { toggleInvoicePaymentStatus(invoice.id, invoice.isPaid); setOpenDropdown(null); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                          {invoice.isPaid ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                                          {invoice.isPaid ? 'Marchează neplătită' : 'Marchează plătită'}
+                                        </button>
+                                        {deleteInvoice && (
+                                          <button
+                                            onClick={() => { if (window.confirm(`Sigur vrei să ștergi factura "${invoice.invoiceNumber}"?`)) deleteInvoice(invoice.id); setOpenDropdown(null); }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" /> Șterge factura
+                                          </button>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Row 2: Cheltuieli asociate furnizorului + badge distribuție */}
@@ -797,59 +844,18 @@ const AccountingView = ({
                             </div>
                           )}
 
-                          {/* Separator + Row 4 */}
-                          <div className="border-t border-gray-100 pt-2 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              {invoice.invoiceDate && (
-                                <span>{new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
-                              )}
-                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                invoice.isPaid ? 'bg-green-100 text-green-700' :
-                                isOverdue ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
-                              }`}>
-                                {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
-                              </span>
-                            </div>
-
-                            {!isReadOnlyRole && (
-                              <div className="relative">
-                                <button
-                                  onClick={() => setOpenDropdown(openDropdown === dropdownId ? null : dropdownId)}
-                                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {openDropdown === dropdownId && (
-                                  <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
-                                    <div className="absolute right-0 bottom-full mb-1 z-20 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-                                      <button
-                                        onClick={() => { setEditingInvoice(invoice); setShowEditInvoiceModal(true); setOpenDropdown(null); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                      >
-                                        <Pencil className="w-3.5 h-3.5" /> Editează factura
-                                      </button>
-                                      <button
-                                        onClick={() => { toggleInvoicePaymentStatus(invoice.id, invoice.isPaid); setOpenDropdown(null); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                      >
-                                        {invoice.isPaid ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                                        {invoice.isPaid ? 'Marchează neplătită' : 'Marchează plătită'}
-                                      </button>
-                                      {deleteInvoice && (
-                                        <button
-                                          onClick={() => { if (window.confirm(`Sigur vrei să ștergi factura "${invoice.invoiceNumber}"?`)) deleteInvoice(invoice.id); setOpenDropdown(null); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" /> Șterge factura
-                                        </button>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                          {/* Row 4: Date + paid status */}
+                          <div className="border-t border-gray-100 pt-2 flex items-center gap-2 text-xs text-gray-500">
+                            {invoice.invoiceDate && (
+                              <span>{new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
                             )}
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                              invoice.isPaid ? 'bg-green-100 text-green-700' :
+                              isOverdue ? 'bg-red-100 text-red-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
+                            </span>
                           </div>
                         </div>
                       );
@@ -950,6 +956,35 @@ const AccountingView = ({
         isOpen={showAddInvoiceModal}
         onClose={() => setShowAddInvoiceModal(false)}
         onSave={addInvoice}
+        suppliers={currentSheet?.configSnapshot?.suppliers || []}
+        onAddSupplier={addSupplier}
+        currentMonth={currentMonth}
+        expenseTypes={(() => {
+          const configs = Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {}).filter(c => c.isEnabled !== false);
+          const defaultOrder = defaultExpenseTypes.map(d => d.id);
+          return configs
+            .map(c => ({ id: c.id, name: c.name }))
+            .sort((a, b) => {
+              const aIdx = defaultOrder.indexOf(a.id);
+              const bIdx = defaultOrder.indexOf(b.id);
+              if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+              if (aIdx !== -1) return -1;
+              if (bIdx !== -1) return 1;
+              return (a.name || '').localeCompare(b.name || '');
+            });
+        })()}
+      />
+
+      {/* Modal Editează Factura — același component AddInvoiceModal cu prop invoice */}
+      <AddInvoiceModal
+        isOpen={showEditInvoiceModal}
+        onClose={() => {
+          setShowEditInvoiceModal(false);
+          setEditingInvoice(null);
+        }}
+        onSave={addInvoice}
+        onUpdate={updateInvoice}
+        invoice={editingInvoice}
         suppliers={currentSheet?.configSnapshot?.suppliers || []}
         onAddSupplier={addSupplier}
         currentMonth={currentMonth}
