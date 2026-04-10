@@ -436,7 +436,7 @@ const ExpensesViewNew = ({
                               ) : isDistributed ? (
                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded whitespace-nowrap">Distribuită</span>
                               ) : (
-                                <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-medium rounded whitespace-nowrap">Nedistribuită</span>
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded whitespace-nowrap">Nedistribuită</span>
                               )}
                               {isExpCardExpanded
                                 ? <ChevronUp className="w-4 h-4 text-gray-400" />
