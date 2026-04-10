@@ -389,7 +389,7 @@ const SuppliersView = ({
                                             'bg-red-100 text-red-700'
                                           }`}>
                                             {isFullyDist ? 'Distribuită' :
-                                             realDistributed > 0 ? 'Parțial' :
+                                             realDistributed > 0 ? 'Parțial distribuită' :
                                              'Nedistribuită'}
                                           </span>
                                         </div>
