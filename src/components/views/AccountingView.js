@@ -657,7 +657,7 @@ const AccountingView = ({
                   {!isReadOnlyRole && !isMonthReadOnly && (
                     <button
                       onClick={() => setShowAddInvoiceModal(true)}
-                      className="flex items-center justify-center gap-1.5 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
+                      className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" />
                       Adaugă factura
