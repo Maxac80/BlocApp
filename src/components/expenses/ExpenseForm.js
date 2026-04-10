@@ -422,7 +422,7 @@ const ExpenseForm = ({
               <div className="p-3 bg-blue-50 rounded-lg">
                 <div className="text-sm text-blue-800">
                   <strong>{newExpense.name}</strong> se împarte: {
-                    getExpenseConfig(newExpense.name).distributionType === "apartment" ? "Pe apartament (egal)" :
+                    getExpenseConfig(newExpense.name).distributionType === "apartment" ? "Pe apartament" :
                     getExpenseConfig(newExpense.name).distributionType === "person" ? "Pe persoană" : "Pe consum"
                   }
                 </div>

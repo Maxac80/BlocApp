@@ -94,6 +94,17 @@ const AccountingView = ({
     setExpandedInvoices(prev => ({ ...prev, [invoiceId]: !prev[invoiceId] }));
   };
 
+  // Închide dropdown la click în afară
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('[data-dropdown-container]')) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   // Obține statisticile
   const stats = getIncasariStats(apartments);
   
@@ -158,18 +169,13 @@ const AccountingView = ({
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  // Helper: calculează ratio-ul real distribuit dintr-o factură (din currentSheet.expenses, sursa de adevăr)
+  // Helper: calculează ratio-ul real distribuit dintr-o factură (din distributionHistory[].amount, per factură)
   const getInvoiceDistributionRatio = (invoice) => {
     const total = parseFloat(invoice.totalInvoiceAmount || invoice.totalAmount) || 0;
     if (total === 0) return 0;
-    const sheetExps = currentSheet?.expenses || [];
-    const distNames = (invoice.distributionHistory || [])
+    const realDistributed = (invoice.distributionHistory || [])
       .filter(d => d.amount > 0)
-      .map(d => d.expenseName)
-      .filter(Boolean);
-    const realDistributed = sheetExps
-      .filter(exp => distNames.includes(exp.name))
-      .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+      .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
     return realDistributed / total;
   };
 
@@ -413,13 +419,11 @@ const AccountingView = ({
         <>
         {/* Statistici Facturi — deasupra cardului, la fel ca pe celelalte pagini */}
         {(() => {
-          const sheetExps = currentSheet?.expenses || [];
           const distCount = filteredInvoices.filter(inv => {
             const total = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
-            const distNames = (inv.distributionHistory || []).map(d => d.expenseName).filter(Boolean);
-            const realDist = sheetExps
-              .filter(exp => distNames.includes(exp.name))
-              .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+            const realDist = (inv.distributionHistory || [])
+              .filter(d => d.amount > 0)
+              .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
             return realDist >= total - 0.01 && realDist > 0;
           }).length;
           return (
@@ -696,17 +700,11 @@ const AccountingView = ({
                       const expConfig = getExpenseConfig(invoice.expenseType);
                       const finalSupplier = expConfig?.supplierName || invoice.supplierName || 'Fără furnizor';
                       const totalInvoice = invoice.totalInvoiceAmount || invoice.totalAmount;
-                      // Verificăm distribuția din currentSheet.expenses (sursă de adevăr)
-                      // Bug vechi: invoice.distributedAmount/distributionHistory.amount pot conține totalul facturii, nu suma reală distribuită
+                      // Suma reală distribuită = suma amount-urilor din distributionHistory (per factură, NU cumulativ pe cheltuială)
                       const sheetExpenses = currentSheet?.expenses || [];
-                      const distributedExpenseNames = (invoice.distributionHistory || [])
+                      const realDistributed = (invoice.distributionHistory || [])
                         .filter(d => d.amount > 0)
-                        .map(d => d.expenseName)
-                        .filter(Boolean);
-                      // Suma reală distribuită = suma cheltuielilor din sheet care au invoiceData legat de această factură
-                      const realDistributed = sheetExpenses
-                        .filter(exp => distributedExpenseNames.includes(exp.name))
-                        .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                        .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
                       const distributed = realDistributed > 0 ? realDistributed : (invoice.distributedAmount || 0);
                       const remaining = totalInvoice - distributed;
                       const percentage = totalInvoice > 0 ? Math.round((distributed / totalInvoice) * 100) : 0;
@@ -718,67 +716,17 @@ const AccountingView = ({
                       const dropdownId = `inv-${invoice.id}`;
 
                       return (
-                        <div key={invoice.id} className="p-3 sm:p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent">
+                        <div key={invoice.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div
-                            className="flex items-start justify-between gap-2 cursor-pointer"
+                            className="cursor-pointer"
                             onClick={() => toggleInvoiceExpand(invoice.id)}
                           >
-                            {/* Left column: supplier · invoice nr + dată/plată + cheltuieli asociate */}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm sm:text-base text-gray-900">
-                                {finalSupplier} · {invoice.invoiceNumber}
+                            {/* Row 1: Nr factură (stânga) | Status badge + chevron + 3-dots (dreapta) */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="font-medium text-sm sm:text-base text-gray-900 min-w-0 flex-1">
+                                {invoice.invoiceNumber}
                               </div>
-                              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                                {invoice.invoiceDate && (
-                                  <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
-                                )}
-                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                  invoice.isPaid ? 'bg-green-100 text-green-700' :
-                                  isOverdue ? 'bg-red-100 text-red-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
-                                </span>
-                              </div>
-                              {(() => {
-                                const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
-                                const distributedNames = new Set(distributionHistory.map(d => d.expenseName).filter(Boolean));
-                                if (supplierExpenses.length === 0) {
-                                  return (
-                                    <div className="mt-1">
-                                      <span className="text-xs text-gray-400 italic">Furnizor fără cheltuieli asociate</span>
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-xs text-gray-500">
-                                      {supplierExpenses.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
-                                    </span>
-                                    {supplierExpenses.map(name => {
-                                      const isDist = distributedNames.has(name);
-                                      return (
-                                        <span
-                                          key={name}
-                                          className={`inline-block px-1.5 py-0.5 text-xs rounded ${
-                                            isDist ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-                                          }`}
-                                        >
-                                          {name}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-
-                            {/* Right column: amount on top, then badge + chevron + 3-dots */}
-                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                              <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                                {totalInvoice.toFixed(2)} lei
-                              </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-block px-2 py-0.5 text-xs rounded font-medium whitespace-nowrap ${
                                   isFullyDistributed ? 'bg-green-100 text-green-700' :
                                   distributed > 0 ? 'bg-orange-100 text-orange-700' :
@@ -806,7 +754,7 @@ const AccountingView = ({
                                     </button>
                                     {openDropdown === dropdownId && (
                                       <div
-                                        className={`absolute right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
+                                        className={`absolute right-0 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
                                           isLastItem ? 'bottom-full mb-2' : 'top-full mt-2'
                                         }`}
                                         onClick={(e) => e.stopPropagation()}
@@ -855,6 +803,65 @@ const AccountingView = ({
                                 )}
                               </div>
                             </div>
+
+                            {/* Row 2: Cheltuieli asociate */}
+                            {(() => {
+                              const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
+                              const distributedNames = new Set(distributionHistory.map(d => d.expenseName).filter(Boolean));
+                              return (
+                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                  {supplierExpenses.length === 0 ? (
+                                    <span className="text-xs text-gray-400 italic">Furnizor fără cheltuieli asociate</span>
+                                  ) : (
+                                    <>
+                                      <span className="text-xs text-gray-500">
+                                        {supplierExpenses.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
+                                      </span>
+                                      {supplierExpenses.map(name => {
+                                        const isDist = distributedNames.has(name);
+                                        return (
+                                          <span
+                                            key={name}
+                                            className={`inline-block px-1.5 py-0.5 text-xs rounded ${
+                                              isDist ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                                            }`}
+                                          >
+                                            {name}
+                                          </span>
+                                        );
+                                      })}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Row 3: Furnizor (stânga) | Suma (dreapta) */}
+                            <div className="mt-0.5 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs text-gray-500">Furnizor: </span>
+                                <span className="text-xs text-gray-900 font-medium">{finalSupplier}</span>
+                              </div>
+                              <span className="text-sm font-bold text-gray-900 whitespace-nowrap flex-shrink-0">
+                                {totalInvoice.toFixed(2)} lei
+                              </span>
+                            </div>
+
+                            {/* Linie delimitatoare gri + Row 4: dată + status plată */}
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                {invoice.invoiceDate && (
+                                  <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
+                                )}
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                  invoice.isPaid ? 'bg-green-100 text-green-700' :
+                                  isOverdue ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Secțiune expandată — distribuție factură în chenar alb */}
@@ -871,8 +878,7 @@ const AccountingView = ({
                                   ) : (
                                     <div className="space-y-0.5">
                                       {distributionHistory.map((dist, idx) => {
-                                        const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
-                                        const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
+                                        const realAmount = parseFloat(dist.amount) || 0;
                                         return (
                                           <div key={idx} className="text-xs text-gray-600 flex justify-between">
                                             <span>{dist.expenseName || dist.notes}</span>

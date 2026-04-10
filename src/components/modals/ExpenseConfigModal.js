@@ -405,19 +405,26 @@ const ExpenseConfigModal = ({
       }
 
       // EDIT MODE: VERIFICARE CRITICĂ: Detectează schimbarea receptionMode când există distribuție activă
-      if (mode === 'edit' && expenseConfig && localConfig.receptionMode !== expenseConfig.receptionMode) {
+      // Normalizează valorile: undefined / null / 'total' / 'per_association' = "Pe asociație" (echivalente)
+      const normalizeReceptionMode = (mode) => {
+        if (!mode || mode === 'total' || mode === 'per_association') return 'per_association';
+        return mode;
+      };
+      const oldNormalized = normalizeReceptionMode(expenseConfig?.receptionMode);
+      const newNormalized = normalizeReceptionMode(localConfig.receptionMode);
+
+      if (mode === 'edit' && expenseConfig && oldNormalized !== newNormalized) {
         // Verifică dacă există o cheltuială distribuită în luna curentă
         const existingExpense = currentSheet?.expenses?.find(exp =>
           exp.expenseTypeId === (expenseConfig?.id || expenseKey) || exp.name === expenseName
         );
 
         if (existingExpense) {
-          const oldMode = expenseConfig.receptionMode === 'per_association' ? 'Pe asociație' :
-                         expenseConfig.receptionMode === 'per_block' ? 'Per bloc' :
-                         expenseConfig.receptionMode === 'per_stair' ? 'Per scară' : expenseConfig.receptionMode;
-          const newMode = localConfig.receptionMode === 'per_association' ? 'Pe asociație' :
-                         localConfig.receptionMode === 'per_block' ? 'Per bloc' :
-                         localConfig.receptionMode === 'per_stair' ? 'Per scară' : localConfig.receptionMode;
+          const labelFor = (m) => m === 'per_association' ? 'Pe asociație' :
+                                  m === 'per_block' ? 'Per bloc' :
+                                  m === 'per_stair' ? 'Per scară' : m;
+          const oldMode = labelFor(oldNormalized);
+          const newMode = labelFor(newNormalized);
 
           alert(`⚠️ ATENȚIE!\n\nAi schimbat modul de primire factură de la "${oldMode}" la "${newMode}".\n\nAceastă cheltuială este deja distribuită în luna curentă cu configurația veche.\n\nPentru a schimba configurația, trebuie mai întâi să:\n1. Ștergi distribuirea existentă (din tab Cheltuieli distribuite → meniul cu 3 puncte → Șterge distribuirea)\n2. Salvezi noua configurație\n3. Re-distribui cheltuiala cu noile setări`);
           return;

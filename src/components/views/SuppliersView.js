@@ -235,7 +235,7 @@ const SuppliersView = ({
                       return (
                         <div
                           key={supplier.id}
-                          className="p-3 sm:p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent"
+                          className="p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div
                             className="flex items-start justify-between cursor-pointer"
@@ -361,18 +361,18 @@ const SuppliersView = ({
                                 <span className="text-xs font-semibold text-gray-600">Facturi luna curentă</span>
                               </div>
                               {supplierInvoices.length === 0 ? (
-                                <p className="text-xs text-gray-400 italic pl-5">Nicio factură în luna curentă</p>
+                                <div className="pl-5">
+                                  <div className="bg-white rounded border border-gray-200 p-2.5">
+                                    <p className="text-xs text-gray-400 italic">Nicio factură în luna curentă</p>
+                                  </div>
+                                </div>
                               ) : (
                                 <div className="space-y-2 pl-5">
                                   {supplierInvoices.map(inv => {
                                     const totalInv = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
                                     const distHistory = (inv.distributionHistory || []).filter(d => d.amount > 0);
-                                    const sheetExps = currentSheet?.expenses || [];
-                                    // Suma reală distribuită din sheet expenses
-                                    const distExpNames = distHistory.map(d => d.expenseName).filter(Boolean);
-                                    const realDistributed = sheetExps
-                                      .filter(exp => distExpNames.includes(exp.name))
-                                      .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                                    // Suma reală distribuită din distributionHistory[].amount (per factură, NU cumulativ pe cheltuială)
+                                    const realDistributed = distHistory.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
                                     const remaining = totalInv - realDistributed;
                                     const isFullyDist = remaining <= 0.01 && realDistributed > 0;
 
@@ -395,8 +395,7 @@ const SuppliersView = ({
                                         {distHistory.length > 0 && (
                                           <div className="space-y-0.5">
                                             {distHistory.map((d, idx) => {
-                                              const sheetExp = sheetExps.find(e => e.name === d.expenseName);
-                                              const realAmt = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(d.amount) || 0;
+                                              const realAmt = parseFloat(d.amount) || 0;
                                               return (
                                                 <div key={idx} className="text-xs text-gray-600 flex justify-between">
                                                   <span>{d.expenseName}</span>

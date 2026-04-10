@@ -401,9 +401,9 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     handleAddCustomExpense,
     handleDeleteCustomExpense,
     handleDeleteMonthlyExpense,
-    updateExpenseConsumption,
-    updateExpenseIndividualAmount,
-    updateExpenseIndividualAmountsBatch,
+    updateExpenseConsumption: _updateExpenseConsumptionRaw,
+    updateExpenseIndividualAmount: _updateExpenseIndividualAmountRaw,
+    updateExpenseIndividualAmountsBatch: _updateExpenseIndividualAmountsBatchRaw,
     updatePendingConsumption,
     updatePendingIndividualAmount,
     updateExpenseIndexes,
@@ -443,8 +443,32 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     getOverdueInvoices,
     getInvoiceStats,
     updateMissingSuppliersForExistingInvoices,
-    removeInvoiceDistribution
+    removeInvoiceDistribution,
+    syncInvoicesAfterExpenseChange
   } = useInvoices(association?.id, currentSheet);
+
+  // 🔄 WRAPPERE: după update sume individuale/consum, sincronizează automat
+  // distributionHistory[].amount al facturilor cu o singură intrare pe acea cheltuială
+  const updateExpenseConsumption = React.useCallback(async (...args) => {
+    await _updateExpenseConsumptionRaw(...args);
+    if (syncInvoicesAfterExpenseChange && activeSheet) {
+      await syncInvoicesAfterExpenseChange(activeSheet, args[0]);
+    }
+  }, [_updateExpenseConsumptionRaw, syncInvoicesAfterExpenseChange, activeSheet]);
+
+  const updateExpenseIndividualAmount = React.useCallback(async (...args) => {
+    await _updateExpenseIndividualAmountRaw(...args);
+    if (syncInvoicesAfterExpenseChange && activeSheet) {
+      await syncInvoicesAfterExpenseChange(activeSheet, args[0]);
+    }
+  }, [_updateExpenseIndividualAmountRaw, syncInvoicesAfterExpenseChange, activeSheet]);
+
+  const updateExpenseIndividualAmountsBatch = React.useCallback(async (...args) => {
+    await _updateExpenseIndividualAmountsBatchRaw(...args);
+    if (syncInvoicesAfterExpenseChange && activeSheet) {
+      await syncInvoicesAfterExpenseChange(activeSheet, args[0]);
+    }
+  }, [_updateExpenseIndividualAmountsBatchRaw, syncInvoicesAfterExpenseChange, activeSheet]);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {

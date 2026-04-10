@@ -396,7 +396,7 @@ const useInvoices = (associationId, currentSheet) => {
       console.error('❌ Eroare la actualizarea facturii:', error);
       throw error;
     }
-  }, []);
+  }, [associationId]);
 
   // 📝 ACTUALIZAREA UNEI FACTURI DUPĂ NUMĂR
   const updateInvoiceByNumber = useCallback(async (invoiceNumber, updates) => {
@@ -604,6 +604,87 @@ const useInvoices = (associationId, currentSheet) => {
     );
   }, [invoices]);
   
+  // 🔄 SYNC AUTOMAT: după ce s-a modificat sheet.expense.amount (consum/sume individuale),
+  // recalculează distributionHistory[].amount pentru fiecare factură care are doar O SINGURĂ
+  // intrare în sheet pentru cheltuiala respectivă (singura factură pe acea cheltuială).
+  // Pentru cheltuieli cu mai multe facturi, păstrăm sumele introduse de user (split manual).
+  const syncInvoicesAfterExpenseChange = useCallback(async (sheet, changedExpenseId) => {
+    if (!sheet || !sheet.expenses || !changedExpenseId) return;
+    if (!associationId) return;
+
+    try {
+      const sheetExpense = sheet.expenses.find(e => e.id === changedExpenseId);
+      if (!sheetExpense) return;
+
+      const expenseTypeId = sheetExpense.expenseTypeId || sheetExpense.id;
+      const expenseName = sheetExpense.name;
+      const newSheetAmount = parseFloat(sheetExpense.amount) || 0;
+
+      // Identifică facturile care au această cheltuială în distributionHistory
+      const linkedInvoices = invoices.filter(inv =>
+        inv.distributionHistory?.some(entry =>
+          entry.expenseId === changedExpenseId ||
+          (expenseTypeId && entry.expenseTypeId === expenseTypeId) ||
+          (expenseName && (entry.expenseName === expenseName || entry.expenseType === expenseName))
+        )
+      );
+
+      if (linkedInvoices.length === 0) return;
+
+      // Pentru fiecare factură legată, decide dacă auto-sync-ul e sigur
+      for (const invoice of linkedInvoices) {
+        const totalInvoiceAmount = parseFloat(invoice.totalInvoiceAmount || invoice.totalAmount) || 0;
+        if (totalInvoiceAmount === 0) continue;
+
+        // Numără câte facturi au această cheltuială (intersecție invoices × sheetExpense)
+        const invoicesOnSameExpense = invoices.filter(inv =>
+          inv.distributionHistory?.some(entry =>
+            entry.expenseId === changedExpenseId ||
+            (expenseTypeId && entry.expenseTypeId === expenseTypeId) ||
+            (expenseName && (entry.expenseName === expenseName || entry.expenseType === expenseName))
+          )
+        );
+
+        // Dacă sunt mai multe facturi pe aceeași cheltuială → split manual, nu auto-sync
+        if (invoicesOnSameExpense.length > 1) continue;
+
+        // Dacă e o singură factură → setează dist.amount = sheetExpense.amount
+        const updatedHistory = invoice.distributionHistory.map(entry => {
+          const matches =
+            entry.expenseId === changedExpenseId ||
+            (expenseTypeId && entry.expenseTypeId === expenseTypeId) ||
+            (expenseName && (entry.expenseName === expenseName || entry.expenseType === expenseName));
+          if (matches) {
+            return { ...entry, amount: newSheetAmount };
+          }
+          return entry;
+        });
+
+        // Recalculează distributedAmount, remainingAmount, isFullyDistributed
+        const newDistributedAmount = updatedHistory
+          .filter(d => d.amount > 0)
+          .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+        const newRemainingAmount = Math.max(0, totalInvoiceAmount - newDistributedAmount);
+        const newIsFullyDistributed = newRemainingAmount <= 0.01 && newDistributedAmount > 0;
+
+        // Skip dacă nu s-a schimbat nimic real
+        const oldDistributedAmount = parseFloat(invoice.distributedAmount) || 0;
+        if (Math.abs(oldDistributedAmount - newDistributedAmount) < 0.001) continue;
+
+        const invoiceRef = getInvoiceRef(associationId, invoice.id);
+        await updateDoc(invoiceRef, {
+          distributionHistory: updatedHistory,
+          distributedAmount: newDistributedAmount,
+          remainingAmount: newRemainingAmount,
+          isFullyDistributed: newIsFullyDistributed,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('❌ Eroare la sync facturi după modificare cheltuială:', error);
+    }
+  }, [invoices, associationId]);
+
   // 🆕 OBȚINE FACTURILE PARȚIAL DISTRIBUITE
   const getPartiallyDistributedInvoices = useCallback((expenseType = null, documentType = null, supplierId = null) => {
     if (invoices.length > 0) {
@@ -620,10 +701,13 @@ const useInvoices = (associationId, currentSheet) => {
       // 2. Nu este marcată ca complet distribuită ȘI are totalAmount > 0
       const hasRemaining = remainingAmount > 0 || (isNotFullyDistributed && totalInvoiceAmount > 0);
 
-      // Pentru non-facturi (bon fiscal, chitanță, etc.): match doar pe documentType, fără filtru furnizor
+      // Pentru non-facturi (bon fiscal, chitanță, proces-verbal etc.): match pe documentType
+      // Dar respectă filtrul de supplierId dacă e specificat (la fel ca la facturi)
       if (documentType && documentType !== 'factura') {
         const invoiceDocType = invoice.documentType || 'factura';
-        return hasRemaining && (invoiceDocType === documentType);
+        if (invoiceDocType !== documentType) return false;
+        if (supplierId && invoice.supplierId && invoice.supplierId !== supplierId) return false;
+        return hasRemaining;
       }
 
       // Filtrare pe supplierId specific (pentru multi-furnizor)
@@ -638,9 +722,14 @@ const useInvoices = (associationId, currentSheet) => {
                         invoice.expenseName === expenseType ||
                         invoice.expenseType === expenseType;  // backwards compatibility
 
-      // Dacă nu găsim direct, încearcă matching pe furnizor
+      // Dacă nu găsim direct, încearcă matching pe furnizor (single supplier - format vechi)
       if (!matchesType && expenseConfig?.supplierName && invoice.supplierName) {
         matchesType = expenseConfig.supplierName.toLowerCase().trim() === invoice.supplierName.toLowerCase().trim();
+      }
+
+      // Dacă tot nu găsim, încearcă matching pe lista de furnizori (multi-supplier - format nou)
+      if (!matchesType && expenseConfig?.suppliers?.length > 0 && invoice.supplierId) {
+        matchesType = expenseConfig.suppliers.some(s => s.supplierId === invoice.supplierId);
       }
 
       // Pentru facturi, verifică și documentType (exclude non-facturi din lista de facturi)
@@ -837,6 +926,7 @@ const useInvoices = (associationId, currentSheet) => {
     updateInvoiceByNumber,
     deleteInvoice,
     updateInvoiceDistribution,
+    syncInvoicesAfterExpenseChange,
     removeInvoiceDistribution,
     updateMissingSuppliersForExistingInvoices,
     

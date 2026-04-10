@@ -45,7 +45,7 @@ const ExpenseList = ({
   totalExpenseTypes = 0, // Total cheltuieli active configurate
   // Props pentru facturi
   invoices,
-  getInvoiceForExpense,
+  getInvoicesForExpense,
   // Props pentru ajustarea rotunjirilor
   maintenanceData, // 🆕 Date din tabelul de întreținere cu ajustare rotunjire
   isReadOnlyRole, // 🔒 Președinte/Cenzor nu poate edita/șterge
@@ -708,20 +708,15 @@ const ExpenseList = ({
     );
     if (!sheetExp || !(parseFloat(sheetExp.amount) > 0)) return 'undistributed';
 
-    // Verifică dacă există factură legată cu distribuție parțială
-    const invoice = getInvoiceForExpense ? getInvoiceForExpense(expense) : null;
-    if (invoice) {
+    // Verifică dacă există vreo factură legată cu distribuție parțială (suma distribuită per factură < total factură)
+    const invoicesForExp = getInvoicesForExpense ? getInvoicesForExpense(expense) : [];
+    for (const invoice of invoicesForExp) {
       const invoiceTotal = parseFloat(invoice.totalInvoiceAmount || invoice.totalAmount) || 0;
-      if (invoiceTotal > 0) {
-        const distNames = (invoice.distributionHistory || [])
-          .filter(d => d.amount > 0)
-          .map(d => d.expenseName)
-          .filter(Boolean);
-        const realDist = sheetExps
-          .filter(e => distNames.includes(e.name))
-          .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-        if (realDist < invoiceTotal - 0.01) return 'partial';
-      }
+      if (invoiceTotal === 0) continue;
+      const realDist = (invoice.distributionHistory || [])
+        .filter(d => d.amount > 0)
+        .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+      if (realDist < invoiceTotal - 0.01) return 'partial';
     }
     return 'distributed';
   };
@@ -1114,7 +1109,7 @@ const ExpenseList = ({
                         <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-gray-600">
                           <span className="font-medium">Distribuție:</span>
                           <span>
-                            {config.distributionType === "apartment" && "Pe apartament (egal)"}
+                            {config.distributionType === "apartment" && "Pe apartament"}
                             {config.distributionType === "person" && "Pe persoană"}
                             {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
@@ -1179,21 +1174,27 @@ const ExpenseList = ({
                           )}
                         </div>
 
-                        {/* Linia 4: Factură (dacă există) */}
+                        {/* Linia 4: Facturi (dacă există) */}
                         {(() => {
-                          const invoice = getInvoiceForExpense?.(expense);
-                          if (!invoice) return null;
+                          const invoicesForExp = getInvoicesForExpense?.(expense) || [];
+                          if (invoicesForExp.length === 0) return null;
 
                           return (
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-gray-600 pt-1 border-t border-gray-200 mt-1">
-                              <span className="font-medium">Factură:</span>
-                              <span className="text-indigo-600 font-medium">
-                                {invoice.supplierName && `${invoice.supplierName} • `}
-                                Nr. {invoice.invoiceNumber}
-                                {invoice.invoiceDate && ` • ${new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}`}
-                                {invoice.dueDate && ` • ${new Date(invoice.dueDate).toLocaleDateString('ro-RO')}`}
-                                {invoice.invoiceAmount && ` • ${parseFloat(invoice.invoiceAmount).toFixed(2)} RON`}
-                              </span>
+                            <div className="pt-1 border-t border-gray-200 mt-1 flex gap-1">
+                              <span className="font-medium text-gray-600 flex-shrink-0">{invoicesForExp.length === 1 ? 'Factură:' : 'Facturi:'}</span>
+                              <div className="flex flex-col">
+                                {invoicesForExp.map(inv => (
+                                  <span key={inv.id} className="text-indigo-600 font-medium">
+                                    {inv.supplierName && `${inv.supplierName} • `}
+                                    {inv.invoiceNumber}
+                                    {/* Date emitere/scadență ascunse temporar — pot fi reactivate dacă e nevoie
+                                    {inv.invoiceDate && ` • ${new Date(inv.invoiceDate).toLocaleDateString('ro-RO')}`}
+                                    {inv.dueDate && ` • ${new Date(inv.dueDate).toLocaleDateString('ro-RO')}`}
+                                    */}
+                                    {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           );
                         })()}
@@ -1208,7 +1209,7 @@ const ExpenseList = ({
                         <div className="flex flex-wrap items-center gap-1 text-gray-600">
                           <span className="font-medium">Distribuție:</span>
                           <span>
-                            {config.distributionType === "apartment" && "Pe apartament (egal)"}
+                            {config.distributionType === "apartment" && "Pe apartament"}
                             {config.distributionType === "person" && "Pe persoană"}
                             {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
@@ -1230,23 +1231,43 @@ const ExpenseList = ({
                           <span className="text-blue-600 font-medium">
                             {participationInfo.totalParticipating}/{participationInfo.total} apartamente
                           </span>
+                          {!participationInfo.allParticipate && (
+                            <>
+                              {participationInfo.notParticipating.length > 0 && (
+                                <span className="text-red-600">
+                                  • {participationInfo.notParticipating.length} {participationInfo.notParticipating.length === 1 ? 'exclus' : 'excluse'}
+                                </span>
+                              )}
+                              {participationInfo.partialParticipating.length > 0 && (
+                                <span className="text-orange-600">
+                                  • {participationInfo.partialParticipating.length} {participationInfo.partialParticipating.length === 1 ? 'cu participare diferită' : 'cu participare diferită'}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
 
-                        {/* Linia 4: Factură (dacă există) */}
+                        {/* Linia 4: Facturi (dacă există) */}
                         {(() => {
-                          const invoice = getInvoiceForExpense?.(expense);
-                          if (!invoice) return null;
+                          const invoicesForExp = getInvoicesForExpense?.(expense) || [];
+                          if (invoicesForExp.length === 0) return null;
 
                           return (
-                            <div className="flex flex-wrap items-center gap-1 text-gray-600 pt-1 border-t border-gray-200 mt-1">
-                              <span className="font-medium">Factură:</span>
-                              <span className="text-indigo-600 font-medium">
-                                {invoice.supplierName && `${invoice.supplierName} • `}
-                                Nr. {invoice.invoiceNumber}
-                                {invoice.invoiceDate && ` • ${new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}`}
-                                {invoice.dueDate && ` • ${new Date(invoice.dueDate).toLocaleDateString('ro-RO')}`}
-                                {invoice.invoiceAmount && ` • ${parseFloat(invoice.invoiceAmount).toFixed(2)} RON`}
-                              </span>
+                            <div className="pt-1 border-t border-gray-200 mt-1 flex gap-1">
+                              <span className="font-medium text-gray-600 flex-shrink-0">{invoicesForExp.length === 1 ? 'Factură:' : 'Facturi:'}</span>
+                              <div className="flex flex-col">
+                                {invoicesForExp.map(inv => (
+                                  <span key={inv.id} className="text-indigo-600 font-medium">
+                                    {inv.supplierName && `${inv.supplierName} • `}
+                                    {inv.invoiceNumber}
+                                    {/* Date emitere/scadență ascunse temporar — pot fi reactivate dacă e nevoie
+                                    {inv.invoiceDate && ` • ${new Date(inv.invoiceDate).toLocaleDateString('ro-RO')}`}
+                                    {inv.dueDate && ` • ${new Date(inv.dueDate).toLocaleDateString('ro-RO')}`}
+                                    */}
+                                    {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           );
                         })()}

@@ -479,7 +479,7 @@ const ExpenseEntryModal = ({
               <option value="">Selectează document existent...</option>
               {available.map(avInv => (
                 <option key={avInv.id} value={avInv.id}>
-                  {avInv.invoiceNumber} — {docType !== 'factura' ? (avInv.expenseName || 'Fără cheltuială') : (avInv.supplierName || 'Fără furnizor')} — Total: {(avInv.totalInvoiceAmount || avInv.totalAmount || avInv.amount || 0).toFixed(2)} RON — Rămas: {(avInv.remainingAmount || 0).toFixed(2)} RON
+                  {avInv.invoiceNumber} — Total: {(avInv.totalInvoiceAmount || avInv.totalAmount || avInv.amount || 0).toFixed(2)} RON — Rămas: {(avInv.remainingAmount || 0).toFixed(2)} RON
                 </option>
               ))}
             </select>
@@ -1018,7 +1018,7 @@ const ExpenseEntryModal = ({
                     </div>
                     <div className="text-xs text-blue-700">
                       📊 Distribuție: {
-                        config.distributionType === 'apartment' ? 'Pe apartament (egal)' :
+                        config.distributionType === 'apartment' ? 'Pe apartament' :
                         config.distributionType === 'person' ? 'Pe persoană' :
                         config.distributionType === 'consumption' ? `Pe consum (${getConsumptionUnit(config)})` :
                         config.distributionType === 'individual' ? 'Pe apartament (individual)' :

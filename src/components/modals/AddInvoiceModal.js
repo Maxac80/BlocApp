@@ -103,7 +103,15 @@ const AddInvoiceModal = ({
     setSaving(true);
     try {
       if (isEditMode && onUpdate && invoice) {
-        // Mod editare: doar câmpurile editabile (păstrăm distributionHistory etc.)
+        // Mod editare: păstrăm distributionHistory dar recalculăm
+        // remainingAmount și isFullyDistributed pe baza noului total + sumele deja distribuite
+        const distributionHistory = invoice.distributionHistory || [];
+        const realDistributed = distributionHistory
+          .filter(d => d.amount > 0)
+          .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+        const newRemainingAmount = Math.max(0, amount - realDistributed);
+        const newIsFullyDistributed = newRemainingAmount <= 0.01 && realDistributed > 0;
+
         const updates = {
           supplierId: formData.supplierId,
           supplierName: formData.supplierName,
@@ -114,7 +122,11 @@ const AddInvoiceModal = ({
           invoiceAmount: amount,
           amount: amount,
           invoiceDate: formData.invoiceDate || null,
-          dueDate: formData.dueDate || null
+          dueDate: formData.dueDate || null,
+          // Recalculează stare distribuție pe baza noului total
+          distributedAmount: realDistributed,
+          remainingAmount: newRemainingAmount,
+          isFullyDistributed: newIsFullyDistributed
         };
         await onUpdate(invoice.id, updates);
       } else {

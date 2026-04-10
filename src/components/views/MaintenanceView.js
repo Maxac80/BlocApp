@@ -1161,19 +1161,16 @@ const MaintenanceView = ({
                     getApartmentParticipation={getApartmentParticipation}
                     totalExpenseTypes={getAssociationExpenseTypes ? getAssociationExpenseTypes().length : 0}
                     invoices={invoices}
-                    getInvoiceForExpense={(expense) => {
-                      // Compatibilitate backwards: caută după expenseId (nou) SAU expenseTypeId SAU expenseType/expenseName (vechi)
+                    getInvoicesForExpense={(expense) => {
+                      // Returnează TOATE facturile distribuite pentru această cheltuială (nu doar prima)
                       const expenseId = expense?.id || expense;
                       const expenseTypeId = expense?.expenseTypeId;
                       const expenseName = expense?.name;
 
-                      return invoices?.find(inv =>
+                      return (invoices || []).filter(inv =>
                         inv.distributionHistory?.some(entry =>
-                          // Nou: caută după expenseId (ID document Firebase)
                           entry.expenseId === expenseId ||
-                          // Nou: caută după expenseTypeId (ID tip cheltuială)
                           (expenseTypeId && entry.expenseTypeId === expenseTypeId) ||
-                          // Vechi: caută după expenseType sau expenseName (backwards compatibility)
                           (expenseName && (entry.expenseType === expenseName || entry.expenseName === expenseName))
                         )
                       );

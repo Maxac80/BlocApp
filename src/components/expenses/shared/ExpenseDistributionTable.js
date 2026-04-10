@@ -230,16 +230,18 @@ const ExpenseDistributionTable = ({
                 )}
               </div>
 
-              {/* Badge Participare compact (mereu vizibil, click pentru editare) */}
-              <ParticipationBadge
-                participation={participation}
-                fixedAmountMode={fixedAmountMode}
-                compact
-                onClick={clickable ? onEditParticipation : undefined}
-              />
+              {/* Badge Participare compact — coloană fixă pentru aliniere verticală */}
+              <div className="flex-shrink-0 w-12 flex justify-center">
+                <ParticipationBadge
+                  participation={participation}
+                  fixedAmountMode={fixedAmountMode}
+                  compact
+                  onClick={clickable ? onEditParticipation : undefined}
+                />
+              </div>
 
-              {/* Sumă */}
-              <div className={`flex-shrink-0 text-right font-bold text-sm ${isExcluded ? 'text-gray-400' : 'text-teal-700'}`}>
+              {/* Sumă — coloană fixă pentru aliniere */}
+              <div className={`flex-shrink-0 w-20 text-right font-bold text-sm ${isExcluded ? 'text-gray-400' : 'text-teal-700'}`}>
                 {amount.toFixed(2)}
               </div>
             </div>
