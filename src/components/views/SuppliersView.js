@@ -249,7 +249,7 @@ const SuppliersView = ({
                                 return activeExpenseTypes.length > 0 && (
                                   <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs text-gray-500">
-                                      {activeExpenseTypes.length === 1 ? 'Cheltuială:' : 'Cheltuieli:'}
+                                      {activeExpenseTypes.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
                                     </span>
                                     {activeExpenseTypes.map(type => {
                                       const isExpDistributed = dist.distributed?.includes(type);

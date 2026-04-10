@@ -360,9 +360,16 @@ const ExpensesViewNew = ({
 
                       const expCardId = expenseType.id || expenseType.name;
                       const isExpCardExpanded = expandedExpenseCards[expCardId];
+                      // Facturi asociate cheltuielii — fie prin link direct (expenseTypeId / distributionHistory),
+                      // fie prin furnizor: factura e de la un furnizor care are această cheltuială în serviceTypes
+                      const linkedSupplierIds = new Set([
+                        ...(config.suppliers || []).map(s => s.supplierId).filter(Boolean),
+                        ...(config.supplierId ? [config.supplierId] : [])
+                      ]);
                       const expenseInvoices = invoices.filter(inv =>
                         inv.expenseTypeId === expenseType.id ||
-                        inv.distributionHistory?.some(d => d.expenseName === expenseType.name)
+                        inv.distributionHistory?.some(d => d.expenseName === expenseType.name) ||
+                        (inv.supplierId && linkedSupplierIds.has(inv.supplierId))
                       );
 
                       return (
