@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2 } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
@@ -88,6 +88,11 @@ const AccountingView = ({
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [showEditInvoiceModal, setShowEditInvoiceModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [expandedInvoices, setExpandedInvoices] = useState({});
+
+  const toggleInvoiceExpand = (invoiceId) => {
+    setExpandedInvoices(prev => ({ ...prev, [invoiceId]: !prev[invoiceId] }));
+  };
 
   // Obține statisticile
   const stats = getIncasariStats(apartments);
@@ -713,96 +718,56 @@ const AccountingView = ({
                       const dropdownId = `inv-${invoice.id}`;
 
                       return (
-                        <div key={invoice.id} className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors">
-                          {/* Row 1: Supplier · Invoice number + Amount + 3-dots menu */}
-                          <div className="flex items-start justify-between mb-1.5 gap-2">
-                            <div className="min-w-0 flex-1">
-                              <span className="font-semibold text-sm text-gray-900">{finalSupplier}</span>
-                              <span className="text-gray-400 mx-1.5">·</span>
-                              <span className="text-sm text-gray-600">{invoice.invoiceNumber}</span>
+                        <div key={invoice.id} className="p-3 sm:p-4 rounded-lg transition-all duration-200 bg-gray-50 border-2 border-transparent">
+                          <div
+                            className="flex items-start justify-between gap-2 cursor-pointer"
+                            onClick={() => toggleInvoiceExpand(invoice.id)}
+                          >
+                            {/* Left column: supplier · invoice nr + cheltuieli asociate */}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm sm:text-base text-gray-900">
+                                {finalSupplier} · {invoice.invoiceNumber}
+                              </div>
+                              {(() => {
+                                const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
+                                const distributedNames = new Set(distributionHistory.map(d => d.expenseName).filter(Boolean));
+                                if (supplierExpenses.length === 0) {
+                                  return (
+                                    <div className="mt-1">
+                                      <span className="text-xs text-gray-400 italic">Furnizor fără cheltuieli asociate</span>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs text-gray-500">
+                                      {supplierExpenses.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
+                                    </span>
+                                    {supplierExpenses.map(name => {
+                                      const isDist = distributedNames.has(name);
+                                      return (
+                                        <span
+                                          key={name}
+                                          className={`inline-block px-1.5 py-0.5 text-xs rounded ${
+                                            isDist ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                                          }`}
+                                        >
+                                          {name}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+
+                            {/* Right column: amount on top, then badge + chevron + 3-dots */}
+                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                               <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
                                 {totalInvoice.toFixed(2)} lei
                               </span>
-                              {!isReadOnlyRole && (
-                                <div className="relative" data-dropdown-container>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
-                                    }}
-                                    className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
-                                    title="Opțiuni"
-                                  >
-                                    <MoreVertical className="w-4 h-4" />
-                                  </button>
-                                  {openDropdown === dropdownId && (
-                                    <>
-                                      <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
-                                      <div className={`absolute right-0 z-20 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1 ${
-                                        isLastItem ? 'bottom-full mb-1' : 'top-full mt-1'
-                                      }`}>
-                                        <button
-                                          onClick={() => { setEditingInvoice(invoice); setShowEditInvoiceModal(true); setOpenDropdown(null); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                          <Pencil className="w-3.5 h-3.5" /> Editează factura
-                                        </button>
-                                        <button
-                                          onClick={() => { toggleInvoicePaymentStatus(invoice.id, invoice.isPaid); setOpenDropdown(null); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                          {invoice.isPaid ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                                          {invoice.isPaid ? 'Marchează neplătită' : 'Marchează plătită'}
-                                        </button>
-                                        {deleteInvoice && (
-                                          <button
-                                            onClick={() => { if (window.confirm(`Sigur vrei să ștergi factura "${invoice.invoiceNumber}"?`)) deleteInvoice(invoice.id); setOpenDropdown(null); }}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" /> Șterge factura
-                                          </button>
-                                        )}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Row 2: Cheltuieli asociate furnizorului + badge distribuție */}
-                          {(() => {
-                            const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
-                            const distributedNames = new Set(distributionHistory.map(d => d.expenseName).filter(Boolean));
-                            return (
-                              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                                  {supplierExpenses.length > 0 ? (
-                                    <>
-                                      <span className="text-xs text-gray-500">
-                                        {supplierExpenses.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
-                                      </span>
-                                      {supplierExpenses.map(name => {
-                                        const isDist = distributedNames.has(name);
-                                        return (
-                                          <span
-                                            key={name}
-                                            className={`inline-block px-1.5 py-0.5 text-xs rounded ${
-                                              isDist ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-                                            }`}
-                                          >
-                                            {name}
-                                          </span>
-                                        );
-                                      })}
-                                    </>
-                                  ) : (
-                                    <span className="text-xs text-gray-400 italic">Furnizor fără cheltuieli asociate</span>
-                                  )}
-                                </div>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0 ${
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-block px-2 py-0.5 text-xs rounded font-medium whitespace-nowrap ${
                                   isFullyDistributed ? 'bg-green-100 text-green-700' :
                                   distributed > 0 ? 'bg-orange-100 text-orange-700' :
                                   'bg-red-100 text-red-700'
@@ -811,52 +776,118 @@ const AccountingView = ({
                                    distributed > 0 ? `Parțial distribuită (${percentage}%)` :
                                    'Nedistribuită'}
                                 </span>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Row 3: Distribution details (if any) */}
-                          {distributionHistory.length > 0 && (
-                            <div className="mb-2 text-xs space-y-1">
-                              {distributionHistory.map((dist, idx) => {
-                                const distConfig = getExpenseConfig(dist.expenseName || dist.expenseType);
-                                let target = 'Toată asociația';
-                                if (distConfig?.appliesTo?.scope === 'stairs' && distConfig.appliesTo.stairs?.length > 0) {
-                                  const names = distConfig.appliesTo.stairs.map(id => stairs.find(s => s.id === id)?.name || id);
-                                  target = names.length === 1 ? `Scara ${names[0]}` : `${names.length} scări`;
-                                } else if (distConfig?.appliesTo?.scope === 'bloc' && distConfig.appliesTo.bloc) {
-                                  const bloc = blocks.find(b => b.id === distConfig.appliesTo.bloc);
-                                  target = bloc ? `Bloc ${bloc.name}` : 'Bloc';
+                                {expandedInvoices[invoice.id]
+                                  ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                  : <ChevronDown className="w-4 h-4 text-gray-400" />
                                 }
-                                // Suma reală din sheet expense (nu din distributionHistory care poate fi incorectă)
-                                const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
-                                const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
-                                return (
-                                  <div key={idx} className="flex items-center justify-between text-gray-600">
-                                    <span>{dist.expenseName || dist.notes} · {realAmount.toFixed(2)} lei</span>
-                                    <span className="text-gray-400 ml-2">{target}</span>
+                                {!isReadOnlyRole && (
+                                  <div className="relative" data-dropdown-container>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
+                                      }}
+                                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                                      title="Opțiuni"
+                                    >
+                                      <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                    {openDropdown === dropdownId && (
+                                      <div
+                                        className={`absolute right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${
+                                          isLastItem ? 'bottom-full mb-2' : 'top-full mt-2'
+                                        }`}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <div className="py-1">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingInvoice(invoice);
+                                              setShowEditInvoiceModal(true);
+                                              setOpenDropdown(null);
+                                            }}
+                                            className="w-full px-4 py-2 text-left flex items-center gap-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                          >
+                                            <Pencil className="w-4 h-4" />
+                                            Editează factura
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleInvoicePaymentStatus(invoice.id, invoice.isPaid);
+                                              setOpenDropdown(null);
+                                            }}
+                                            className="w-full px-4 py-2 text-left flex items-center gap-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                          >
+                                            {invoice.isPaid ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                            {invoice.isPaid ? 'Marchează neplătită' : 'Marchează plătită'}
+                                          </button>
+                                          {deleteInvoice && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm(`Sigur vrei să ștergi factura "${invoice.invoiceNumber}"?`)) deleteInvoice(invoice.id);
+                                                setOpenDropdown(null);
+                                              }}
+                                              className="w-full px-4 py-2 text-left flex items-center gap-2 text-red-700 hover:bg-red-50"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                              Șterge factura
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                );
-                              })}
-                              {remaining > 0 && (
-                                <div className="text-orange-600 font-medium">Rămas: {remaining.toFixed(2)} lei</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Secțiune expandată — distribuție factură + dată + status plată */}
+                          {expandedInvoices[invoice.id] && (
+                            <div className="border-t border-gray-200 mt-3 pt-3">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Share2 className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="text-xs font-semibold text-gray-600">Distribuție factură</span>
+                              </div>
+                              {distributionHistory.length === 0 ? (
+                                <p className="text-xs text-gray-400 italic pl-5">Factură nedistribuită</p>
+                              ) : (
+                                <div className="space-y-0.5 pl-5">
+                                  {distributionHistory.map((dist, idx) => {
+                                    const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
+                                    const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
+                                    return (
+                                      <div key={idx} className="text-xs flex justify-between text-gray-600">
+                                        <span>{dist.expenseName || dist.notes}</span>
+                                        <span className="font-medium text-green-700">{realAmount.toFixed(2)} lei</span>
+                                      </div>
+                                    );
+                                  })}
+                                  {remaining > 0.01 && (
+                                    <div className="text-xs text-orange-600 font-medium flex justify-between pt-0.5 border-t border-gray-100">
+                                      <span>Rămas nedistribuit</span>
+                                      <span>{remaining.toFixed(2)} lei</span>
+                                    </div>
+                                  )}
+                                </div>
                               )}
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                                {invoice.invoiceDate && (
+                                  <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
+                                )}
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                  invoice.isPaid ? 'bg-green-100 text-green-700' :
+                                  isOverdue ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
+                                </span>
+                              </div>
                             </div>
                           )}
-
-                          {/* Row 4: Date + paid status */}
-                          <div className="border-t border-gray-100 pt-2 flex items-center gap-2 text-xs text-gray-500">
-                            {invoice.invoiceDate && (
-                              <span>{new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
-                            )}
-                            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                              invoice.isPaid ? 'bg-green-100 text-green-700' :
-                              isOverdue ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
-                            </span>
-                          </div>
                         </div>
                       );
                     })}
