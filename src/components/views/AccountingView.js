@@ -428,8 +428,7 @@ const AccountingView = ({
           );
         })()}
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-4 sm:p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
             {false && /* Încasări mutat la pagina Întreținere */ (
               <div className="space-y-4 sm:space-y-6">
                 {/* Statistici Încasări */}
@@ -633,9 +632,9 @@ const AccountingView = ({
             )}
 
             {/* Facturi */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Bara de căutare și filtre pentru facturi */}
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
@@ -643,14 +642,14 @@ const AccountingView = ({
                       placeholder="Caută după furnizor, număr factură sau tip cheltuială..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                   </div>
-                  
+
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="all">Toate facturile</option>
                     <option value="paid">Plătite</option>
@@ -660,7 +659,7 @@ const AccountingView = ({
                   <select
                     value={filterDistribution}
                     onChange={(e) => setFilterDistribution(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="all">Toate distribuțiile</option>
                     <option value="distributed">Distribuite</option>
@@ -858,7 +857,6 @@ const AccountingView = ({
                   </div>
                 )}
               </div>
-          </div>
         </div>
         </>
       )}

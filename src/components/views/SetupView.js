@@ -574,9 +574,9 @@ return (
         )}
 
         {/* Structura ierarhică */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
           {/* Bara de căutare, filtru și buton acțiune */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -584,13 +584,13 @@ return (
                 placeholder="Caută după număr apartament, proprietar sau persoane..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
             <select
               value={filterScope}
               onChange={(e) => setFilterScope(e.target.value)}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="all">Toate apartamentele</option>
               {associationBlocks.length > 1 && associationBlocks.map(b => (
