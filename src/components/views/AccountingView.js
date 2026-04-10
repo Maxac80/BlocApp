@@ -632,7 +632,7 @@ const AccountingView = ({
             )}
 
             {/* Facturi */}
-              <div className="space-y-4">
+              <div>
                 {/* Bara de căutare și filtre pentru facturi */}
                 <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
                   <div className="flex-1 relative">
@@ -712,7 +712,7 @@ const AccountingView = ({
                       const dropdownId = `inv-${invoice.id}`;
 
                       return (
-                        <div key={invoice.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                        <div key={invoice.id} className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors">
                           {/* Row 1: Supplier · Invoice number + Amount */}
                           <div className="flex items-start justify-between mb-1.5">
                             <div className="min-w-0">

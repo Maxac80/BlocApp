@@ -260,7 +260,7 @@ const ExpensesViewNew = ({
         ) : (
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-              <div className="space-y-4 sm:space-y-6">
+              <div>
                 {/* Bara de căutare, filtru și buton acțiune */}
                 <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
                   <div className="flex-1 relative">

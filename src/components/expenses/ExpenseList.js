@@ -1013,20 +1013,17 @@ const ExpenseList = ({
       {/* Header cu total */}
       <div className="flex items-center justify-between mb-2 sm:mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-900">
-            {filteredExpenses.length} din {totalExpenseTypes} cheltuieli distribuite
-            {getFilterInfo().type !== 'all' && (
-              <span className="text-xs sm:text-sm font-normal text-gray-600 ml-2">
-                ({getFilterInfo().blockName} - {getFilterInfo().stairName})
-              </span>
-            )}
-          </h3>
+          {getFilterInfo().type !== 'all' && (
+            <span className="text-xs sm:text-sm font-normal text-gray-600">
+              {getFilterInfo().blockName} - {getFilterInfo().stairName}
+            </span>
+          )}
         </div>
         <div className="text-right flex-shrink-0 ml-2">
+          <div className="text-xs sm:text-sm text-gray-500">Total distribuit</div>
           <div className="text-xl sm:text-2xl font-bold text-blue-600">
             {totalAmount.toFixed(2)} <span className="text-sm sm:text-base">RON</span>
           </div>
-          <div className="text-xs sm:text-sm text-gray-500">Total</div>
 
           {/* Badge-uri pentru status distribuție */}
           {totals.allKnowExpectedAmount ? (() => {
