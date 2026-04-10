@@ -1038,8 +1038,10 @@ const MaintenanceView = ({
               </div>
               )}
 
+              {/* Card unificat: search bar + listă cheltuieli */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4">
               {/* Bara search + filtru + butoane acțiuni */}
-              <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4 px-3 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 mb-1">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4 mb-4">
                     <div className="flex-1 relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
@@ -1123,8 +1125,6 @@ const MaintenanceView = ({
               </div>
 
               {/* Lista de cheltuieli unificată */}
-              <div className="mb-4 mx-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
                   <ExpenseList
                     searchTerm={expenseSearchTerm}
                     distributionFilter={expenseDistributionFilter}
@@ -1181,13 +1181,12 @@ const MaintenanceView = ({
                     maintenanceData={maintenanceData}
                     isReadOnlyRole={isReadOnlyRole}
                   />
-                </div>
               </div>
 
               {/* Tabelul de întreținere - card separat */}
-              <div className="mx-2 mb-2">
+              <div className="mb-2">
                 {filteredMaintenanceData.length > 0 ? (
-                  <div className="rounded-xl shadow-lg border-2 border-gray-200 bg-white">
+                  <div className="rounded-xl shadow-sm border border-gray-200 bg-white">
                     <div className={`p-3 sm:p-4 border-b ${
                       monthType === 'historic'
                         ? 'bg-gray-100'
