@@ -393,9 +393,6 @@ const SuppliersView = ({
                                              'Nedistribuită'}
                                           </span>
                                         </div>
-                                        {inv.invoiceDate && (
-                                          <div className="text-[11px] text-gray-400 mb-1">{inv.invoiceDate}</div>
-                                        )}
                                         {distHistory.length > 0 && (
                                           <div className="space-y-0.5">
                                             {distHistory.map((d, idx) => {
