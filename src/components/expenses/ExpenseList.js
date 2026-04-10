@@ -12,6 +12,8 @@ import { generateIndividualAmountsTemplate } from '../../utils/excelTemplateIndi
 import ExcelUploadIndividualAmountsModal from '../modals/ExcelUploadIndividualAmountsModal';
 
 const ExpenseList = ({
+  searchTerm = '',
+  distributionFilter = 'all',
   associationExpenses,
   currentMonth,
   currentSheet,
@@ -695,8 +697,48 @@ const ExpenseList = ({
     return expense.isUnitBased ? expense.billAmount : expense.amount;
   };
 
+  // Helper: status distribuție per cheltuială (pentru filtru)
+  // Returnează 'distributed' / 'partial' / 'undistributed'
+  const getExpenseDistributionStatus = (expense) => {
+    const sheetExps = currentSheet?.expenses || [];
+    const sheetExp = sheetExps.find(e =>
+      e.expenseTypeId === expense.id ||
+      e.expenseType === expense.name ||
+      e.name === expense.name
+    );
+    if (!sheetExp || !(parseFloat(sheetExp.amount) > 0)) return 'undistributed';
+
+    // Verifică dacă există factură legată cu distribuție parțială
+    const invoice = getInvoiceForExpense ? getInvoiceForExpense(expense) : null;
+    if (invoice) {
+      const invoiceTotal = parseFloat(invoice.totalInvoiceAmount || invoice.totalAmount) || 0;
+      if (invoiceTotal > 0) {
+        const distNames = (invoice.distributionHistory || [])
+          .filter(d => d.amount > 0)
+          .map(d => d.expenseName)
+          .filter(Boolean);
+        const realDist = sheetExps
+          .filter(e => distNames.includes(e.name))
+          .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+        if (realDist < invoiceTotal - 0.01) return 'partial';
+      }
+    }
+    return 'distributed';
+  };
+
   // Filtrează și calculează totalul
   const filteredExpenses = associationExpenses.filter(expense => {
+    // Filtru search după nume
+    if (searchTerm && !expense.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+
+    // Filtru status distribuție
+    if (distributionFilter !== 'all') {
+      const status = getExpenseDistributionStatus(expense);
+      if (status !== distributionFilter) return false;
+    }
+
     const filterInfo = getFilterInfo();
     if (filterInfo.type === 'all') return true;
 

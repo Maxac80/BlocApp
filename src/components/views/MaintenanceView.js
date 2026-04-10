@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2 } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
@@ -136,6 +136,8 @@ const MaintenanceView = ({
 
   // State pentru a păstra cheltuielile expandate (persistă între tab-uri)
   const [expandedExpenses, setExpandedExpenses] = useState({});
+  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+  const [expenseDistributionFilter, setExpenseDistributionFilter] = useState('all');
 
   // Reset expandedExpenses când se schimbă luna
   useEffect(() => {
@@ -1036,8 +1038,28 @@ const MaintenanceView = ({
               </div>
               )}
 
-              {/* Butoane acțiuni - în dreapta, nu sticky */}
-              <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 mb-1">
+              {/* Bara search + filtru + butoane acțiuni */}
+              <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4 px-3 sm:px-6 pt-2 sm:pt-3 pb-1 sm:pb-2 mb-1">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        placeholder="Caută după nume cheltuială..."
+                        value={expenseSearchTerm}
+                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <select
+                      value={expenseDistributionFilter}
+                      onChange={(e) => setExpenseDistributionFilter(e.target.value)}
+                      className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="all">Toate cheltuielile</option>
+                      <option value="distributed">Distribuite</option>
+                      <option value="partial">Parțial distribuite</option>
+                      <option value="undistributed">Nedistribuite</option>
+                    </select>
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
                     {!isMonthReadOnly && !isReadOnlyRole && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
@@ -1104,6 +1126,8 @@ const MaintenanceView = ({
               <div className="mb-4 mx-2">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
                   <ExpenseList
+                    searchTerm={expenseSearchTerm}
+                    distributionFilter={expenseDistributionFilter}
                     associationExpenses={associationExpenses}
                     currentMonth={currentMonth}
                     currentSheet={currentSheet}

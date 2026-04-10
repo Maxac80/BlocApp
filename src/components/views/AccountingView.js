@@ -67,6 +67,7 @@ const AccountingView = ({
   const [activeTab, setActiveTab] = useState('facturi'); // 'facturi' sau 'incasari'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, paid, unpaid
+  const [filterDistribution, setFilterDistribution] = useState('all'); // all, distributed, partial, undistributed
   const [selectedIncasare, setSelectedIncasare] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showAddInvoiceModal, setShowAddInvoiceModal] = useState(false);
@@ -138,6 +139,21 @@ const AccountingView = ({
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+  // Helper: calculează ratio-ul real distribuit dintr-o factură (din currentSheet.expenses, sursa de adevăr)
+  const getInvoiceDistributionRatio = (invoice) => {
+    const total = parseFloat(invoice.totalInvoiceAmount || invoice.totalAmount) || 0;
+    if (total === 0) return 0;
+    const sheetExps = currentSheet?.expenses || [];
+    const distNames = (invoice.distributionHistory || [])
+      .filter(d => d.amount > 0)
+      .map(d => d.expenseName)
+      .filter(Boolean);
+    const realDistributed = sheetExps
+      .filter(exp => distNames.includes(exp.name))
+      .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+    return realDistributed / total;
+  };
+
   // Filtrează facturile
   const filteredInvoices = monthlyInvoices.filter(invoice => {
     const matchesSearch =
@@ -151,7 +167,15 @@ const AccountingView = ({
       (filterStatus === 'paid' && invoice.isPaid) ||
       (filterStatus === 'unpaid' && !invoice.isPaid);
 
-    return matchesSearch && matchesStatus;
+    let matchesDistribution = true;
+    if (filterDistribution !== 'all') {
+      const ratio = getInvoiceDistributionRatio(invoice);
+      if (filterDistribution === 'distributed') matchesDistribution = ratio >= 0.999;
+      else if (filterDistribution === 'partial') matchesDistribution = ratio > 0 && ratio < 0.999;
+      else if (filterDistribution === 'undistributed') matchesDistribution = ratio === 0;
+    }
+
+    return matchesSearch && matchesStatus && matchesDistribution;
   }).sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate));
 
   // Obține apartamentele care nu au plătit
@@ -619,23 +643,26 @@ const AccountingView = ({
                     <option value="unpaid">Neplătite</option>
                   </select>
 
+                  <select
+                    value={filterDistribution}
+                    onChange={(e) => setFilterDistribution(e.target.value)}
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Toate distribuțiile</option>
+                    <option value="distributed">Distribuite</option>
+                    <option value="partial">Parțial distribuite</option>
+                    <option value="undistributed">Nedistribuite</option>
+                  </select>
+
                   {!isReadOnlyRole && !isMonthReadOnly && (
                     <button
                       onClick={() => setShowAddInvoiceModal(true)}
-                      className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                      className="flex items-center justify-center gap-1.5 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" />
-                      Adauga factura
+                      Adaugă factura
                     </button>
                   )}
-
-                  <button
-                    onClick={generateMonthlyReport}
-                    className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Raport PDF
-                  </button>
                 </div>
 
                 {/* Card-uri Facturi */}

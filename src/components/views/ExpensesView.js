@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
@@ -56,6 +56,8 @@ const ExpensesViewNew = ({
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   // Determină sheet-ul corect pentru luna selectată
   // 1. Dacă suntem pe luna publicată, folosește publishedSheet
@@ -260,7 +262,27 @@ const ExpensesViewNew = ({
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-4 sm:p-6">
               <div className="space-y-4 sm:space-y-6">
-                <div className="flex justify-end mb-3 sm:mb-4">
+                {/* Bara de căutare, filtru și buton acțiune */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Caută după nume cheltuială..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Toate cheltuielile</option>
+                    <option value="distributed">Distribuite</option>
+                    <option value="undistributed">Nedistribuite</option>
+                  </select>
                   <button
                     onClick={() => {
                       if (cantEdit) {
@@ -269,7 +291,7 @@ const ExpensesViewNew = ({
                       }
                       setAddModalOpen(true);
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg transition-colors ${
+                    className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                       cantEdit
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -283,9 +305,26 @@ const ExpensesViewNew = ({
                 </div>
 
                 <div>
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-3 sm:mb-4">Cheltuieli active pentru {currentMonth}</h3>
+                  {(() => {
+                    const allExpenseTypes = getAssociationExpenseTypes();
+                    const filteredExpenseTypes = allExpenseTypes.filter(expenseType => {
+                      const matchesSearch = !searchTerm || expenseType.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                      if (!matchesSearch) return false;
+                      if (filterStatus === 'all') return true;
+                      const isDistributed = currentSheet?.expenses?.some(exp =>
+                        (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
+                        exp.amount > 0
+                      );
+                      if (filterStatus === 'distributed') return isDistributed;
+                      if (filterStatus === 'undistributed') return !isDistributed;
+                      return true;
+                    });
+                    if (filteredExpenseTypes.length === 0) {
+                      return <p className="text-gray-500 text-center py-8">Nicio cheltuială nu corespunde filtrelor</p>;
+                    }
+                    return (
                   <div className="grid grid-cols-1 gap-3">
-                    {getAssociationExpenseTypes().map((expenseType, index, array) => {
+                    {filteredExpenseTypes.map((expenseType, index, array) => {
                       const config = getExpenseConfig(expenseType.id || expenseType.name);
                       const isCustom = !defaultExpenseTypes.find(def => def.name === expenseType.name);
                       const allSuppliers = config.suppliers?.length > 0
@@ -538,6 +577,8 @@ const ExpensesViewNew = ({
                       );
                     })}
                   </div>
+                    );
+                  })()}
                 </div>
 
                 {getDisabledExpenseTypes().length > 0 && (

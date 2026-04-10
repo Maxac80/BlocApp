@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare } from 'lucide-react';
+import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
@@ -70,6 +70,9 @@ const SetupView = ({
   const [openBlockMenus, setOpenBlockMenus] = useState({});
   const [openStairMenus, setOpenStairMenus] = useState({});
   const [openApartmentMenus, setOpenApartmentMenus] = useState({});
+
+  // Filtru bloc (dropdown lângă search)
+  const [filterBlock, setFilterBlock] = useState('all');
 
   // State pentru modalul de apartament
   const [apartmentModalOpen, setApartmentModalOpen] = useState(false);
@@ -144,13 +147,53 @@ const SetupView = ({
     ? publishedSheet
     : currentSheet;
 
+  // Helper: verifică dacă un apartament corespunde căutării active
+  const apartmentMatchesSearch = (apt) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return apt.number.toString().includes(searchTerm) ||
+           apt.owner?.toLowerCase().includes(term) ||
+           apt.persons?.toString().includes(searchTerm);
+  };
+
   // Filtrez apartamentele pentru căutare
-  const filteredApartments = searchTerm 
-    ? associationApartments.filter(apt => 
-        apt.number.toString().includes(searchTerm) ||
-        apt.owner.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  const filteredApartments = searchTerm
+    ? associationApartments.filter(apartmentMatchesSearch)
     : associationApartments;
+
+  // Set-uri cu ID-urile scărilor și blocurilor care conțin apartamente match (sau toate dacă nu e search)
+  const matchedStairIds = React.useMemo(() => {
+    if (!searchTerm) return null; // null = toate scările
+    const ids = new Set();
+    filteredApartments.forEach(apt => apt.stairId && ids.add(apt.stairId));
+    return ids;
+  }, [searchTerm, filteredApartments]);
+
+  const matchedBlockIds = React.useMemo(() => {
+    if (!searchTerm) return null; // null = toate blocurile
+    const ids = new Set();
+    if (matchedStairIds) {
+      associationStairs.forEach(s => {
+        if (matchedStairIds.has(s.id)) ids.add(s.blockId);
+      });
+    }
+    return ids;
+  }, [searchTerm, matchedStairIds, associationStairs]);
+
+  // Helper: aplică filtrul de bloc + match search pe lista de blocuri
+  const filterBlocks = (allBlocks) => {
+    return allBlocks.filter(b => {
+      if (filterBlock !== 'all' && b.id !== filterBlock) return false;
+      if (matchedBlockIds && !matchedBlockIds.has(b.id)) return false;
+      return true;
+    });
+  };
+
+  // Helper: aplică filtrul de match search pe lista de scări dintr-un bloc
+  const filterStairs = (stairs) => {
+    if (!matchedStairIds) return stairs;
+    return stairs.filter(s => matchedStairIds.has(s.id));
+  };
 
   const totalBlocks = associationBlocks.length;
   const totalStairs = associationStairs.length;
@@ -485,225 +528,118 @@ return (
           <StatsCard label="Persoane" value={totalPersons} borderColor="border-green-500" />
         </div>
 
-        {/* Căutare și acțiuni */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div></div>
-
-            <div className="flex flex-wrap gap-2 sm:gap-3">
-              <div className="relative w-full sm:w-auto">
-                <input
-                  type="text"
-                  placeholder="Caută apartament..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full sm:w-64 lg:w-80 text-sm"
-                />
-                <svg className="absolute left-2.5 sm:left-3 top-2 sm:top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="bg-gray-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-600 text-xs sm:text-sm"
-                >
-                  Șterge
-                </button>
-              )}
-            </div>
+        {/* Bara de căutare, filtru și buton acțiune */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Caută după număr apartament, proprietar sau persoane..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-
-          {/* Mesaj informativ pentru template Excel când nu există apartamente */}
-          {stairsWithoutApartments > 0 && !searchTerm && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                <h4 className="font-medium text-blue-800 mb-1.5 flex items-center gap-2 text-sm sm:text-base">
-                  <span className="text-xl">📥</span> Import masiv cu Excel
-                </h4>
-                <p className="text-xs sm:text-sm text-blue-700 mb-3">
-                  Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru scările care nu au apartamente definite. <strong>Notă:</strong> Template-ul Excel va conține doar scările care nu au apartamente și se poate folosi pentru import doar în aceste scări.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDownloadExcelTemplate}
-                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm font-medium"
-                    title="Descarcă template Excel pentru import masiv apartamente"
-                  >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Template Excel
-                  </button>
-                  <button
-                    onClick={() => setShowExcelUploadModal(true)}
-                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm font-medium"
-                    title="Încarcă fișier Excel completat pentru import masiv"
-                  >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    Încarcă Excel
-                  </button>
-                </div>
-              </div>
-            </div>
+          {associationBlocks.length > 1 && (
+            <select
+              value={filterBlock}
+              onChange={(e) => setFilterBlock(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Toate blocurile</option>
+              {associationBlocks.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           )}
-
-          {searchTerm && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="text-sm text-gray-600 mb-2">
-                Rezultate căutare "{searchTerm}": {filteredApartments.length} apartamente
-                {filteredApartments.length > 3 && (
-                  <span className="text-gray-500"> (afișez doar primele 3)</span>
-                )}
-              </div>
-              {filteredApartments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {filteredApartments.sort((a, b) => {
-                    const numberDiff = a.number - b.number;
-                    if (numberDiff !== 0) return numberDiff;
-
-                    if (a.createdAt && b.createdAt) {
-                      return new Date(a.createdAt) - new Date(b.createdAt);
-                    }
-                    return a.id.localeCompare(b.id);
-                  }).slice(0, 3).map(apartment => {
-                    const stairForApartment = stairs.find(s => s.id === apartment.stairId);
-                    const blockForApartment = blocks.find(b => b.id === stairForApartment?.blockId);
-                    return (
-                      <div key={apartment.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="font-medium text-blue-800">
-                          Apt {apartment.number} - {apartment.owner}
-                        </div>
-                        <div className="text-sm text-blue-600">
-                          {blockForApartment?.name} - {stairForApartment?.name} • {apartment.persons} persoane
-                        </div>
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            onClick={() => {
-                              // Colapsează toate blocurile și scările
-                              setExpandedBlocks({});
-                              setExpandedStairs({});
-
-                              // Expandează doar blocul și scara unde este apartamentul
-                              setExpandedBlocks(prev => ({ ...prev, [blockForApartment.id]: true }));
-                              setExpandedStairs(prev => ({ ...prev, [stairForApartment.id]: true }));
-
-                              // Evidențiază apartamentul
-                              setHighlightedApartmentId(apartment.id);
-
-                              // Elimină highlighting după 3 secunde
-                              setTimeout(() => {
-                                setHighlightedApartmentId(null);
-                              }, 3000);
-
-                              // Deschide modalul de editare pentru apartament
-                              setApartmentModalMode('edit');
-                              setApartmentModalData(apartment);
-                              setApartmentModalStair(stairForApartment);
-                              setApartmentModalOpen(true);
-                            }}
-                            className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                          >
-                            Editează
-                          </button>
-                          <button
-                            onClick={() => {
-                              // Colapsează toate blocurile și scările
-                              setExpandedBlocks({});
-                              setExpandedStairs({});
-
-                              // Expandează doar blocul și scara unde este apartamentul
-                              setExpandedBlocks(prev => ({ ...prev, [blockForApartment.id]: true }));
-                              setExpandedStairs(prev => ({ ...prev, [stairForApartment.id]: true }));
-
-                              // Evidențiază apartamentul
-                              setHighlightedApartmentId(apartment.id);
-
-                              // Elimină orice highlighting după 3 secunde
-                              setTimeout(() => {
-                                setHighlightedApartmentId(null);
-                              }, 3000);
-                            }}
-                            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 flex items-center justify-center"
-                            title="Vezi în structură"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  Nu s-au găsit apartamente care să corespundă căutării
-                </div>
-              )}
-            </div>
-          )}
+          <button
+            onClick={() => {
+              if (cantEdit) {
+                alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                return;
+              }
+              openAddBlockModal();
+            }}
+            className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              cantEdit
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+            disabled={cantEdit}
+            title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă bloc'}
+          >
+            <Plus className="w-4 h-4" />
+            Adaugă bloc
+          </button>
         </div>
 
-        {/* Structura ierarhică */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-2 mb-3 sm:mb-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800">📋 Structura Asociației</h3>
-            <div className="flex gap-2 sm:gap-3 flex-wrap items-center">
-              {associationBlocks.length > 3 && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const allExpanded = {};
-                      associationBlocks.forEach(block => {
-                        allExpanded[block.id] = true;
-                      });
-                      setExpandedBlocks(allExpanded);
-
-                      const allStairsExpanded = {};
-                      associationStairs.forEach(stair => {
-                        allStairsExpanded[stair.id] = true;
-                      });
-                      setExpandedStairs(allStairsExpanded);
-                    }}
-                    className="bg-green-500 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-green-600 text-xs sm:text-sm"
-                  >
-                    Expandează Tot
-                  </button>
-                  <button
-                    onClick={() => {
-                      setExpandedBlocks({});
-                      setExpandedStairs({});
-                    }}
-                    className="bg-gray-500 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-gray-600 text-xs sm:text-sm"
-                  >
-                    Închide Tot
-                  </button>
-                </div>
-              )}
+        {/* Mesaj informativ pentru template Excel când nu există apartamente */}
+        {stairsWithoutApartments > 0 && !searchTerm && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-6">
+            <h4 className="font-medium text-blue-800 mb-1.5 flex items-center gap-2 text-sm sm:text-base">
+              <span className="text-xl">📥</span> Import masiv cu Excel
+            </h4>
+            <p className="text-xs sm:text-sm text-blue-700 mb-3">
+              Poți să adaugi apartamentele manual unul câte unul, sau să folosești import-ul masiv cu Excel pentru scările care nu au apartamente definite. <strong>Notă:</strong> Template-ul Excel va conține doar scările care nu au apartamente și se poate folosi pentru import doar în aceste scări.
+            </p>
+            <div className="flex gap-2">
               <button
-                onClick={() => {
-                  if (cantEdit) {
-                    alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
-                    return;
-                  }
-                  openAddBlockModal();
-                }}
-                className={`rounded-lg flex items-center transition-all duration-200 text-sm ${
-                  associationBlocks.length > 0 ? 'p-1.5 sm:p-2' : 'px-3 py-1.5 sm:px-4 sm:py-2'
-                } ${
-                  cantEdit
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:scale-105'
-                }`}
-                title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă Bloc'}
-                disabled={cantEdit}
+                onClick={handleDownloadExcelTemplate}
+                className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm font-medium"
+                title="Descarcă template Excel pentru import masiv apartamente"
               >
-                <Plus className="w-4 h-4" />
-                {associationBlocks.length === 0 && 'Adaugă Bloc'}
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Template Excel
+              </button>
+              <button
+                onClick={() => setShowExcelUploadModal(true)}
+                className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm font-medium"
+                title="Încarcă fișier Excel completat pentru import masiv"
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Încarcă Excel
               </button>
             </div>
           </div>
+        )}
+
+        {/* Structura ierarhică */}
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+          {associationBlocks.length > 3 && (
+            <div className="flex justify-end gap-2 mb-3 sm:mb-4">
+              <button
+                onClick={() => {
+                  const allExpanded = {};
+                  associationBlocks.forEach(block => {
+                    allExpanded[block.id] = true;
+                  });
+                  setExpandedBlocks(allExpanded);
+
+                  const allStairsExpanded = {};
+                  associationStairs.forEach(stair => {
+                    allStairsExpanded[stair.id] = true;
+                  });
+                  setExpandedStairs(allStairsExpanded);
+                }}
+                className="bg-green-500 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-green-600 text-xs sm:text-sm"
+              >
+                Expandează Tot
+              </button>
+              <button
+                onClick={() => {
+                  setExpandedBlocks({});
+                  setExpandedStairs({});
+                }}
+                className="bg-gray-500 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-gray-600 text-xs sm:text-sm"
+              >
+                Închide Tot
+              </button>
+            </div>
+          )}
 
           {/* Lista blocurilor */}
           <div className="space-y-4">
@@ -773,14 +709,23 @@ return (
                   </div>
                 </div>
               </div>
-            ) : (
-              associationBlocks.sort((a, b) => {
+            ) : (() => {
+              const visibleBlocks = filterBlocks(associationBlocks);
+              if (visibleBlocks.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    Niciun bloc nu corespunde filtrelor
+                  </div>
+                );
+              }
+              return visibleBlocks.sort((a, b) => {
                 if (a.createdAt && b.createdAt) {
                   return new Date(a.createdAt) - new Date(b.createdAt);
                 }
                 return a.id.localeCompare(b.id);
               }).map(block => {
-                const blockStairs = associationStairs.filter(stair => stair.blockId === block.id);
+                const allBlockStairs = associationStairs.filter(stair => stair.blockId === block.id);
+                const blockStairs = filterStairs(allBlockStairs);
                 // Reguli inteligente de expandare pentru blocuri
                 const shouldExpandBlock = () => {
                   // Dacă nu există blocuri - expandează pentru mesaje
@@ -812,7 +757,10 @@ return (
                   return false;
                 };
 
-                const isExpanded = expandedBlocks[block.id] ?? shouldExpandBlock();
+                // Când search e activ, forțează expandarea blocurilor cu match
+                const isExpanded = searchTerm
+                  ? true
+                  : (expandedBlocks[block.id] ?? shouldExpandBlock());
 
                 return (
                   <div key={block.id} className="border border-gray-200 rounded-lg">
@@ -1082,7 +1030,11 @@ return (
                               }
                               return a.id.localeCompare(b.id);
                             }).map(currentStair => {
-                              const stairApartments = associationApartments.filter(apt => apt.stairId === currentStair.id);
+                              const allStairApartments = associationApartments.filter(apt => apt.stairId === currentStair.id);
+                              // Când search e activ, păstrează doar apartamentele care fac match
+                              const stairApartments = searchTerm
+                                ? allStairApartments.filter(apartmentMatchesSearch)
+                                : allStairApartments;
                               // Reguli inteligente de expandare pentru scări
                               const shouldExpandStair = () => {
                                 // Dacă scara nu are apartamente - expandează să se vadă mesajul
@@ -1099,7 +1051,10 @@ return (
                                 return false;
                               };
 
-                              const isStairExpanded = expandedStairs[currentStair.id] ?? shouldExpandStair();
+                              // Când search e activ, forțează expandarea scărilor cu match
+                              const isStairExpanded = searchTerm
+                                ? true
+                                : (expandedStairs[currentStair.id] ?? shouldExpandStair());
                               
                               return (
                                 <div key={currentStair.id} className="sm:ml-6 border-l-2 border-green-200 pl-0.5 sm:pl-4">
@@ -1925,8 +1880,8 @@ return (
                     )}
                   </div>
                 );
-              })
-            )}
+              });
+            })()}
           </div>
         </div>
       </div>
