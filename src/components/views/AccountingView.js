@@ -845,46 +845,50 @@ const AccountingView = ({
                             </div>
                           </div>
 
-                          {/* Secțiune expandată — distribuție factură + dată + status plată */}
+                          {/* Secțiune expandată — distribuție factură în chenar alb */}
                           {expandedInvoices[invoice.id] && (
                             <div className="border-t border-gray-200 mt-3 pt-3">
                               <div className="flex items-center gap-1.5 mb-2">
                                 <Share2 className="w-3.5 h-3.5 text-gray-500" />
                                 <span className="text-xs font-semibold text-gray-600">Distribuție factură</span>
                               </div>
-                              {distributionHistory.length === 0 ? (
-                                <p className="text-xs text-gray-400 italic pl-5">Factură nedistribuită</p>
-                              ) : (
-                                <div className="space-y-0.5 pl-5">
-                                  {distributionHistory.map((dist, idx) => {
-                                    const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
-                                    const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
-                                    return (
-                                      <div key={idx} className="text-xs flex justify-between text-gray-600">
-                                        <span>{dist.expenseName || dist.notes}</span>
-                                        <span className="font-medium text-green-700">{realAmount.toFixed(2)} lei</span>
-                                      </div>
-                                    );
-                                  })}
-                                  {remaining > 0.01 && (
-                                    <div className="text-xs text-orange-600 font-medium flex justify-between pt-0.5 border-t border-gray-100">
-                                      <span>Rămas nedistribuit</span>
-                                      <span>{remaining.toFixed(2)} lei</span>
+                              <div className="pl-5">
+                                <div className="bg-white rounded border border-gray-200 p-2.5">
+                                  {distributionHistory.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">Factură nedistribuită</p>
+                                  ) : (
+                                    <div className="space-y-0.5">
+                                      {distributionHistory.map((dist, idx) => {
+                                        const sheetExp = sheetExpenses.find(e => e.name === dist.expenseName);
+                                        const realAmount = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(dist.amount) || 0;
+                                        return (
+                                          <div key={idx} className="text-xs text-gray-600 flex justify-between">
+                                            <span>{dist.expenseName || dist.notes}</span>
+                                            <span className="font-medium text-green-700">{realAmount.toFixed(2)} lei</span>
+                                          </div>
+                                        );
+                                      })}
+                                      {remaining > 0.01 && (
+                                        <div className="text-xs text-orange-600 font-medium flex justify-between pt-0.5 border-t border-gray-100">
+                                          <span>Rămas nedistribuit</span>
+                                          <span>{remaining.toFixed(2)} lei</span>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+                                    {invoice.invoiceDate && (
+                                      <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
+                                    )}
+                                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                      invoice.isPaid ? 'bg-green-100 text-green-700' :
+                                      isOverdue ? 'bg-red-100 text-red-700' :
+                                      'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
+                                    </span>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
-                                {invoice.invoiceDate && (
-                                  <span>📅 {new Date(invoice.invoiceDate).toLocaleDateString('ro-RO')}</span>
-                                )}
-                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                  invoice.isPaid ? 'bg-green-100 text-green-700' :
-                                  isOverdue ? 'bg-red-100 text-red-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {invoice.isPaid ? 'Plătită' : isOverdue ? 'Scadentă' : 'Neplătită'}
-                                </span>
                               </div>
                             </div>
                           )}
