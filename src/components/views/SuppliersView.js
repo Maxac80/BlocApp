@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
@@ -26,6 +26,8 @@ const SuppliersView = ({
   const [openDropdown, setOpenDropdown] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [expandedSuppliers, setExpandedSuppliers] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const toggleExpand = (supplierId) => {
     setExpandedSuppliers(prev => ({ ...prev, [supplierId]: !prev[supplierId] }));
@@ -163,7 +165,30 @@ const SuppliersView = ({
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-4 sm:p-6">
             <div className="space-y-4 sm:space-y-6">
-              <div className="flex justify-end mb-3 sm:mb-4">
+              {/* Bara de căutare, filtru și buton acțiune */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Caută după nume furnizor..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">Toți furnizorii</option>
+                  <option value="full">Distribuit</option>
+                  <option value="partial">Parțial distribuit</option>
+                  <option value="undistributed">Nedistribuit</option>
+                  <option value="no_invoices">Fără facturi</option>
+                  <option value="no_expenses">Fără cheltuieli</option>
+                </select>
                 <button
                   onClick={() => {
                     if (cantEdit) {
@@ -172,7 +197,7 @@ const SuppliersView = ({
                     }
                     handleAddSupplier();
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg transition-colors ${
+                  className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                     cantEdit
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -186,14 +211,22 @@ const SuppliersView = ({
               </div>
 
               <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-700 mb-3 sm:mb-4">Lista furnizorilor</h3>
                 {loading ? (
                   <p className="text-gray-500 text-center py-8">Se încarcă furnizorii...</p>
                 ) : suppliers.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">Nu există furnizori adăugați</p>
-                ) : (
+                ) : (() => {
+                  const filteredSuppliers = suppliers.filter(supplier => {
+                    const matchesSearch = !searchTerm || supplier.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesStatus = filterStatus === 'all' || getSupplierDistributionStatus(supplier.id).status === filterStatus;
+                    return matchesSearch && matchesStatus;
+                  });
+                  if (filteredSuppliers.length === 0) {
+                    return <p className="text-gray-500 text-center py-8">Niciun furnizor nu corespunde filtrelor</p>;
+                  }
+                  return (
                   <div className="grid grid-cols-1 gap-3">
-                    {suppliers.map((supplier, index, array) => {
+                    {filteredSuppliers.map((supplier, index, array) => {
                       const isLastItem = index >= array.length - 2;
                       const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
 
@@ -394,7 +427,8 @@ const SuppliersView = ({
                       );
                     })}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
