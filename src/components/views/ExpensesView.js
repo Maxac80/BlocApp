@@ -571,7 +571,7 @@ const ExpensesViewNew = ({
                                             isPartial ? 'bg-orange-100 text-orange-700' :
                                             'bg-red-100 text-red-700'
                                           }`}>
-                                            {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial' : 'Nedistribuită'}
+                                            {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial distribuită' : 'Nedistribuită'}
                                           </span>
                                         </div>
                                         {distHistory.length > 0 && (
