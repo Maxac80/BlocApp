@@ -814,7 +814,6 @@ const AccountingView = ({
                   </div>
                 )}
               </div>
-            )}
           </div>
         </div>
         </>

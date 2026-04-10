@@ -71,8 +71,8 @@ const SetupView = ({
   const [openStairMenus, setOpenStairMenus] = useState({});
   const [openApartmentMenus, setOpenApartmentMenus] = useState({});
 
-  // Filtru bloc (dropdown lângă search)
-  const [filterBlock, setFilterBlock] = useState('all');
+  // Filtru scop (dropdown lângă search) — valori: 'all' | 'block:<id>' | 'stair:<id>'
+  const [filterScope, setFilterScope] = useState('all');
 
   // State pentru modalul de apartament
   const [apartmentModalOpen, setApartmentModalOpen] = useState(false);
@@ -180,19 +180,30 @@ const SetupView = ({
     return ids;
   }, [searchTerm, matchedStairIds, associationStairs]);
 
-  // Helper: aplică filtrul de bloc + match search pe lista de blocuri
+  // Parsare filtru scop
+  const scopeBlockId = filterScope.startsWith('block:') ? filterScope.slice(6) : null;
+  const scopeStairId = filterScope.startsWith('stair:') ? filterScope.slice(6) : null;
+  // Dacă filtrul e pe scară, afișează doar blocul care conține scara
+  const scopeStairBlockId = scopeStairId
+    ? associationStairs.find(s => s.id === scopeStairId)?.blockId
+    : null;
+
+  // Helper: aplică filtrul de scop + match search pe lista de blocuri
   const filterBlocks = (allBlocks) => {
     return allBlocks.filter(b => {
-      if (filterBlock !== 'all' && b.id !== filterBlock) return false;
+      if (scopeBlockId && b.id !== scopeBlockId) return false;
+      if (scopeStairBlockId && b.id !== scopeStairBlockId) return false;
       if (matchedBlockIds && !matchedBlockIds.has(b.id)) return false;
       return true;
     });
   };
 
-  // Helper: aplică filtrul de match search pe lista de scări dintr-un bloc
+  // Helper: aplică filtrul de scop + match search pe lista de scări dintr-un bloc
   const filterStairs = (stairs) => {
-    if (!matchedStairIds) return stairs;
-    return stairs.filter(s => matchedStairIds.has(s.id));
+    let result = stairs;
+    if (scopeStairId) result = result.filter(s => s.id === scopeStairId);
+    if (matchedStairIds) result = result.filter(s => matchedStairIds.has(s.id));
+    return result;
   };
 
   const totalBlocks = associationBlocks.length;
@@ -528,51 +539,6 @@ return (
           <StatsCard label="Persoane" value={totalPersons} borderColor="border-green-500" />
         </div>
 
-        {/* Bara de căutare, filtru și buton acțiune */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Caută după număr apartament, proprietar sau persoane..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          {associationBlocks.length > 1 && (
-            <select
-              value={filterBlock}
-              onChange={(e) => setFilterBlock(e.target.value)}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Toate blocurile</option>
-              {associationBlocks.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          )}
-          <button
-            onClick={() => {
-              if (cantEdit) {
-                alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
-                return;
-              }
-              openAddBlockModal();
-            }}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-              cantEdit
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-            disabled={cantEdit}
-            title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă bloc'}
-          >
-            <Plus className="w-4 h-4" />
-            Adaugă bloc
-          </button>
-        </div>
-
         {/* Mesaj informativ pentru template Excel când nu există apartamente */}
         {stairsWithoutApartments > 0 && !searchTerm && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-6">
@@ -609,6 +575,58 @@ return (
 
         {/* Structura ierarhică */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+          {/* Bara de căutare, filtru și buton acțiune */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Caută după număr apartament, proprietar sau persoane..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <select
+              value={filterScope}
+              onChange={(e) => setFilterScope(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Toate apartamentele</option>
+              {associationBlocks.length > 1 && associationBlocks.map(b => (
+                <option key={`block-${b.id}`} value={`block:${b.id}`}>📦 {b.name}</option>
+              ))}
+              {associationStairs.map(s => {
+                const block = associationBlocks.find(b => b.id === s.blockId);
+                const label = associationBlocks.length > 1 && block
+                  ? `${block.name} - ${s.name}`
+                  : s.name;
+                return (
+                  <option key={`stair-${s.id}`} value={`stair:${s.id}`}>🪜 {label}</option>
+                );
+              })}
+            </select>
+            <button
+              onClick={() => {
+                if (cantEdit) {
+                  alert('Nu poți adăuga blocuri într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                  return;
+                }
+                openAddBlockModal();
+              }}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                cantEdit
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+              disabled={cantEdit}
+              title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă bloc'}
+            >
+              <Plus className="w-4 h-4" />
+              Adaugă bloc
+            </button>
+          </div>
+
           {associationBlocks.length > 3 && (
             <div className="flex justify-end gap-2 mb-3 sm:mb-4">
               <button
