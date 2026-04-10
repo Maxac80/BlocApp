@@ -161,24 +161,18 @@ const SetupView = ({
     ? associationApartments.filter(apartmentMatchesSearch)
     : associationApartments;
 
-  // Set-uri cu ID-urile scărilor și blocurilor care conțin apartamente match (sau toate dacă nu e search)
-  const matchedStairIds = React.useMemo(() => {
-    if (!searchTerm) return null; // null = toate scările
-    const ids = new Set();
-    filteredApartments.forEach(apt => apt.stairId && ids.add(apt.stairId));
-    return ids;
-  }, [searchTerm, filteredApartments]);
-
-  const matchedBlockIds = React.useMemo(() => {
-    if (!searchTerm) return null; // null = toate blocurile
-    const ids = new Set();
-    if (matchedStairIds) {
-      associationStairs.forEach(s => {
-        if (matchedStairIds.has(s.id)) ids.add(s.blockId);
-      });
-    }
-    return ids;
-  }, [searchTerm, matchedStairIds, associationStairs]);
+  // Set-uri cu ID-urile scărilor și blocurilor care conțin apartamente match (sau null dacă nu e search)
+  // Calculat inline (nu useMemo) — apare după early return și e ieftin oricum
+  let matchedStairIds = null;
+  let matchedBlockIds = null;
+  if (searchTerm) {
+    matchedStairIds = new Set();
+    filteredApartments.forEach(apt => apt.stairId && matchedStairIds.add(apt.stairId));
+    matchedBlockIds = new Set();
+    associationStairs.forEach(s => {
+      if (matchedStairIds.has(s.id)) matchedBlockIds.add(s.blockId);
+    });
+  }
 
   // Parsare filtru scop
   const scopeBlockId = filterScope.startsWith('block:') ? filterScope.slice(6) : null;
