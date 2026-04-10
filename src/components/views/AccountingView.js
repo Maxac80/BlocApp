@@ -61,6 +61,20 @@ const AccountingView = ({
   // Hook pentru obținerea configurațiilor de cheltuieli (pentru furnizori)
   const { getExpenseConfig } = useExpenseConfigurations(association?.id);
 
+  // Helper: cheltuielile asociate unui furnizor (din config-ul cheltuielilor)
+  // Folosește configSnapshot din sheet-ul curent ca sursă de adevăr
+  const getSupplierExpenseNames = (supplierId) => {
+    if (!supplierId) return [];
+    const configs = Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {});
+    return configs
+      .filter(c =>
+        c.isEnabled !== false &&
+        (c.suppliers?.some(s => s.supplierId === supplierId) || c.supplierId === supplierId)
+      )
+      .map(c => c.name)
+      .filter(Boolean);
+  };
+
   // Hook pentru gestionarea furnizorilor (creare furnizor nou din modal factura)
   const { addSupplier } = useSuppliers(currentSheet);
 
@@ -712,18 +726,48 @@ const AccountingView = ({
                             </span>
                           </div>
 
-                          {/* Row 2: Distribution status badge (în dreapta, uniform cu celelalte pagini) */}
-                          <div className="flex items-center justify-end mb-2">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${
-                              isFullyDistributed ? 'bg-green-100 text-green-700' :
-                              distributed > 0 ? 'bg-orange-100 text-orange-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {isFullyDistributed ? 'Distribuită' :
-                               distributed > 0 ? `Parțial distribuită (${percentage}%)` :
-                               'Nedistribuită'}
-                            </span>
-                          </div>
+                          {/* Row 2: Cheltuieli asociate furnizorului + badge distribuție */}
+                          {(() => {
+                            const supplierExpenses = getSupplierExpenseNames(invoice.supplierId);
+                            const distributedNames = new Set(distributionHistory.map(d => d.expenseName).filter(Boolean));
+                            return (
+                              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                  {supplierExpenses.length > 0 ? (
+                                    <>
+                                      <span className="text-xs text-gray-500">
+                                        {supplierExpenses.length === 1 ? 'Cheltuială asociată:' : 'Cheltuieli asociate:'}
+                                      </span>
+                                      {supplierExpenses.map(name => {
+                                        const isDist = distributedNames.has(name);
+                                        return (
+                                          <span
+                                            key={name}
+                                            className={`inline-block px-1.5 py-0.5 text-xs rounded ${
+                                              isDist ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                                            }`}
+                                          >
+                                            {name}
+                                          </span>
+                                        );
+                                      })}
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-400 italic">Furnizor fără cheltuieli asociate</span>
+                                  )}
+                                </div>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0 ${
+                                  isFullyDistributed ? 'bg-green-100 text-green-700' :
+                                  distributed > 0 ? 'bg-orange-100 text-orange-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {isFullyDistributed ? 'Distribuită' :
+                                   distributed > 0 ? `Parțial distribuită (${percentage}%)` :
+                                   'Nedistribuită'}
+                                </span>
+                              </div>
+                            );
+                          })()}
 
                           {/* Row 3: Distribution details (if any) */}
                           {distributionHistory.length > 0 && (
