@@ -9,6 +9,7 @@ import StairModal from '../modals/StairModal';
 import MaintenanceBreakdownModal from '../modals/MaintenanceBreakdownModal';
 import ApartmentMembersModal from '../modals/ApartmentMembersModal';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
+import StatsCard from '../common/StatsCard';
 
 const SetupView = ({
   association,
@@ -476,27 +477,18 @@ return (
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏢 Configurare apartamente</h1>
       </div>
 
-        {/* Statistici și căutare */}
+        {/* Statistici */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <StatsCard label="Blocuri" value={totalBlocks} borderColor="border-blue-500" />
+          <StatsCard label="Scări" value={totalStairs} borderColor="border-purple-500" />
+          <StatsCard label="Apartamente" value={totalApartments} borderColor="border-orange-500" />
+          <StatsCard label="Persoane" value={totalPersons} borderColor="border-green-500" />
+        </div>
+
+        {/* Căutare și acțiuni */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center justify-between sm:justify-start space-x-4 sm:space-x-6">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalBlocks}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Blocuri</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-purple-600">{totalStairs}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Scări</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-orange-600">{totalApartments}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Apartamente</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">{totalPersons}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Persoane</div>
-              </div>
-            </div>
+            <div></div>
 
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <div className="relative w-full sm:w-auto">

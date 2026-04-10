@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2 } from 'lucide-react';
+import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
@@ -366,6 +367,28 @@ const AccountingView = ({
             </button>
           </div>
         ) : (
+        <>
+        {/* Statistici Facturi — deasupra cardului, la fel ca pe celelalte pagini */}
+        {(() => {
+          const sheetExps = currentSheet?.expenses || [];
+          const distCount = filteredInvoices.filter(inv => {
+            const total = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
+            const distNames = (inv.distributionHistory || []).map(d => d.expenseName).filter(Boolean);
+            const realDist = sheetExps
+              .filter(exp => distNames.includes(exp.name))
+              .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+            return realDist >= total - 0.01 && realDist > 0;
+          }).length;
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+              <StatsCard label="Total Facturi" value={`${invoiceStats.totalAmount.toFixed(2)} lei`} borderColor="border-orange-500" />
+              <StatsCard label="Facturi Plătite" value={`${invoiceStats.paid} / ${invoiceStats.total}`} borderColor="border-green-500" />
+              <StatsCard label="Neplătite" value={`${invoiceStats.unpaidAmount.toFixed(2)} lei`} borderColor="border-yellow-500" />
+              <StatsCard label="Restante" value={invoiceStats.overdue} borderColor="border-red-500" />
+              <StatsCard label="Distribuite" value={`${distCount} / ${filteredInvoices.length}`} borderColor={distCount === filteredInvoices.length && distCount > 0 ? 'border-green-500' : distCount > 0 ? 'border-purple-500' : 'border-gray-400'} />
+            </div>
+          );
+        })()}
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-4 sm:p-6">
@@ -573,86 +596,6 @@ const AccountingView = ({
 
             {/* Facturi */}
               <div className="space-y-6">
-                {/* Statistici Facturi */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Total Facturi</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {invoiceStats.totalAmount.toFixed(2)} lei
-                        </p>
-                      </div>
-                      <FileText className="w-8 h-8 text-orange-500 opacity-50" />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Facturi Plătite</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {invoiceStats.paid} / {invoiceStats.total}
-                        </p>
-                      </div>
-                      <CheckCircle className="w-8 h-8 text-green-500 opacity-50" />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-yellow-500">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Neplătite</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {invoiceStats.unpaidAmount.toFixed(2)} lei
-                        </p>
-                      </div>
-                      <XCircle className="w-8 h-8 text-yellow-500 opacity-50" />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-red-500">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Restante</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {invoiceStats.overdue}
-                        </p>
-                      </div>
-                      <Calendar className="w-8 h-8 text-red-500 opacity-50" />
-                    </div>
-                  </div>
-
-                  {/* Card distribuite */}
-                  {(() => {
-                    const sheetExps = currentSheet?.expenses || [];
-                    const distributed = filteredInvoices.filter(inv => {
-                      const total = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
-                      const distNames = (inv.distributionHistory || []).map(d => d.expenseName).filter(Boolean);
-                      const realDist = sheetExps
-                        .filter(exp => distNames.includes(exp.name))
-                        .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-                      return realDist >= total - 0.01 && realDist > 0;
-                    }).length;
-                    const total = filteredInvoices.length;
-                    const allDone = distributed === total && total > 0;
-                    return (
-                      <div className={`bg-gray-50 p-4 rounded-lg border-l-4 ${allDone ? 'border-green-500' : distributed > 0 ? 'border-purple-500' : 'border-gray-400'}`}>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-gray-600">Distribuite</p>
-                            <p className="text-2xl font-bold text-gray-800">
-                              {distributed} / {total}
-                            </p>
-                          </div>
-                          <Share2 className={`w-8 h-8 opacity-50 ${allDone ? 'text-green-500' : distributed > 0 ? 'text-purple-500' : 'text-gray-400'}`} />
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-
                 {/* Bara de căutare și filtre pentru facturi */}
                 <div className="flex flex-col md:flex-row gap-4 mb-6">
                   <div className="flex-1 relative">
@@ -847,6 +790,7 @@ const AccountingView = ({
             )}
           </div>
         </div>
+        </>
       )}
 
       {/* Modal detalii încasare */}
