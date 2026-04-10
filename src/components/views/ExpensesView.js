@@ -549,9 +549,16 @@ const ExpensesViewNew = ({
                                 <div className="space-y-2 pl-5">
                                   {expenseInvoices.map(inv => {
                                     const totalInv = parseFloat(inv.totalInvoiceAmount || inv.totalAmount) || 0;
+                                    const distHistory = (inv.distributionHistory || []).filter(d => d.amount > 0);
                                     const sheetExps = currentSheet?.expenses || [];
-                                    const sheetExp = sheetExps.find(e => e.name === expenseType.name);
-                                    const realDistributed = sheetExp ? parseFloat(sheetExp.amount) || 0 : 0;
+                                    // Suma reală distribuită din factură = suma cheltuielilor din sheet care apar în distributionHistory
+                                    const distExpNames = distHistory.map(d => d.expenseName).filter(Boolean);
+                                    const realDistributedTotal = sheetExps
+                                      .filter(exp => distExpNames.includes(exp.name))
+                                      .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                                    const remaining = totalInv - realDistributedTotal;
+                                    const isFullyDist = remaining <= 0.01 && realDistributedTotal > 0;
+                                    const isPartial = realDistributedTotal > 0 && !isFullyDist;
 
                                     return (
                                       <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
@@ -560,17 +567,35 @@ const ExpensesViewNew = ({
                                             Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'} · {totalInv.toFixed(2)} lei
                                           </span>
                                           <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
-                                            isDistributed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            isFullyDist ? 'bg-green-100 text-green-700' :
+                                            isPartial ? 'bg-orange-100 text-orange-700' :
+                                            'bg-red-100 text-red-700'
                                           }`}>
-                                            {isDistributed ? 'Distribuită' : 'Nedistribuită'}
+                                            {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial' : 'Nedistribuită'}
                                           </span>
                                         </div>
                                         {inv.invoiceDate && (
-                                          <div className="text-[11px] text-gray-400">{inv.invoiceDate}</div>
+                                          <div className="text-[11px] text-gray-400 mb-1">{inv.invoiceDate}</div>
                                         )}
-                                        {isDistributed && realDistributed > 0 && (
-                                          <div className="text-xs text-green-700 font-medium mt-1">
-                                            Distribuit: {realDistributed.toFixed(2)} lei
+                                        {distHistory.length > 0 && (
+                                          <div className="space-y-0.5 mt-1">
+                                            {distHistory.map((d, idx) => {
+                                              const sheetExp = sheetExps.find(e => e.name === d.expenseName);
+                                              const realAmt = sheetExp ? parseFloat(sheetExp.amount) || 0 : parseFloat(d.amount) || 0;
+                                              const isCurrentExpense = d.expenseName === expenseType.name;
+                                              return (
+                                                <div key={idx} className={`text-xs flex justify-between ${isCurrentExpense ? 'text-green-700 font-semibold' : 'text-gray-500'}`}>
+                                                  <span>{isCurrentExpense ? '→ ' : ''}{d.expenseName}</span>
+                                                  <span className="font-medium">{realAmt.toFixed(2)} lei</span>
+                                                </div>
+                                              );
+                                            })}
+                                            {remaining > 0.01 && (
+                                              <div className="text-xs text-orange-600 font-medium flex justify-between pt-0.5 border-t border-gray-100">
+                                                <span>Rămas nedistribuit</span>
+                                                <span>{remaining.toFixed(2)} lei</span>
+                                              </div>
+                                            )}
                                           </div>
                                         )}
                                       </div>
