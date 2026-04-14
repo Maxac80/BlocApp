@@ -577,17 +577,23 @@ const ExpensesViewNew = ({
 
                                     return (
                                       <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-sm font-medium text-gray-800">
-                                            Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'} · {distOnThisExpense.toFixed(2)} lei
+                                        {/* Header: Nr factură · Furnizor (stânga) | Total factură + Badge distribuit (dreapta) */}
+                                        <div className="flex items-center justify-between mb-1 gap-2">
+                                          <span className="text-sm font-medium text-gray-800 min-w-0 truncate">
+                                            Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'}
                                           </span>
-                                          <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
-                                            isFullyDist ? 'bg-green-100 text-green-700' :
-                                            isPartial ? 'bg-orange-100 text-orange-700' :
-                                            'bg-red-100 text-red-700'
-                                          }`}>
-                                            {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial distribuită' : 'Nedistribuită'}
-                                          </span>
+                                          <div className="flex items-center gap-2 flex-shrink-0">
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {totalInv.toFixed(2)} lei
+                                            </span>
+                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${
+                                              isFullyDist ? 'bg-green-100 text-green-700' :
+                                              isPartial ? 'bg-orange-100 text-orange-700' :
+                                              'bg-red-100 text-red-700'
+                                            }`}>
+                                              {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial distribuită' : 'Nedistribuită'}
+                                            </span>
+                                          </div>
                                         </div>
                                         {distHistory.length > 0 && (
                                           <div className="space-y-0.5 mt-1">
