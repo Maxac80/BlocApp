@@ -583,11 +583,11 @@ const ExpensesViewNew = ({
                                             Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'}
                                           </span>
                                           <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center ${
+                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${
                                               isFullyDist ? 'bg-green-100 text-green-700' :
                                               isPartial ? 'bg-orange-100 text-orange-700' :
                                               'bg-red-100 text-red-700'
-                                            }`} style={{ minWidth: '100px' }}>
+                                            }`}>
                                               {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial' : 'Nedistribuită'}
                                             </span>
                                             <span className="text-sm font-semibold text-gray-900 text-right" style={{ minWidth: '90px' }}>

@@ -384,11 +384,11 @@ const SuppliersView = ({
                                             Nr. {inv.invoiceNumber}
                                           </span>
                                           <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center ${
+                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${
                                               isFullyDist ? 'bg-green-100 text-green-700' :
                                               realDistributed > 0 ? 'bg-orange-100 text-orange-700' :
                                               'bg-red-100 text-red-700'
-                                            }`} style={{ minWidth: '100px' }}>
+                                            }`}>
                                               {isFullyDist ? 'Distribuită' :
                                                realDistributed > 0 ? 'Parțial' :
                                                'Nedistribuită'}
