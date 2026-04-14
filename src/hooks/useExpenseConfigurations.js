@@ -236,8 +236,21 @@ const useExpenseConfigurations = (currentSheet) => {
           expenseId = defaultType.id;
           expenseName = expenseName || defaultType.name;
         } else {
-          // Cheltuială custom nouă (nu e în defaults) — folosim expenseType ca nume fallback
-          expenseName = expenseName || expenseType;
+          // Cheltuială custom deja existentă — caută în existingConfigs după nume
+          // ca să NU creăm duplicat cu key = nume când cheia reală e custom-XXXX.
+          const existingEntry = Object.entries(existingConfigs).find(
+            ([, v]) => v?.name === expenseType
+          );
+          if (existingEntry) {
+            expenseId = existingEntry[0];
+            expenseName = expenseName || existingEntry[1].name;
+          } else {
+            // Cheltuială custom nouă — generăm un id unic (nu folosim numele ca key)
+            if (!expenseId.startsWith('custom-')) {
+              expenseId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+            }
+            expenseName = expenseName || expenseType;
+          }
         }
       }
       // Siguranță: dacă după toată logica tot e undefined, cădem pe expenseType
