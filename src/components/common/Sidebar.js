@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ClipboardList, Share2, X, FileText, Coins, Settings, Building, Truck, ChevronUp, MessageSquare } from 'lucide-react';
+import { ClipboardList, Share2, X, FileText, Tag, Settings, Building, Truck, ChevronUp, MessageSquare } from 'lucide-react';
 import UserDropdownMenu from './UserDropdownMenu';
 import { useMessaging } from '../../hooks/useMessaging';
 
@@ -242,7 +242,7 @@ const Sidebar = ({
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Coins className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Tag className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
               <div className="text-sm lg:text-base font-medium">Cheltuieli</div>

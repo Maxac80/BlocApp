@@ -161,6 +161,7 @@ const MaintenanceView = ({
     updateInvoice,
     updateInvoiceByNumber,
     updateInvoiceDistribution,
+    removeInvoiceDistribution,
     getPartiallyDistributedInvoices,
     getInvoiceByNumber,
     syncSuppliersForExpenseType,
@@ -1409,7 +1410,9 @@ const MaintenanceView = ({
               updateInvoice,
               updateInvoiceByNumber,
               updateInvoiceDistribution,
-              getInvoiceByNumber
+              getInvoiceByNumber,
+              removeInvoiceDistribution,
+              invoices
             };
 
             const result = await handleUpdateExpense(expenseId, updatedExpenseData, invoiceFunctions);

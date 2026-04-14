@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Settings, Users, Building2, Activity, Plus, Trash2, MoreVertical, Edit, Gauge } from 'lucide-react';
+import { X, Settings, Users, Building2, Activity, Plus, Trash2, MoreVertical, Edit, Gauge, Truck } from 'lucide-react';
 import useSuppliers from '../../hooks/useSuppliers';
 import SupplierModal from './SupplierModal';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
@@ -1257,10 +1257,10 @@ const ExpenseConfigModal = ({
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-gray-700">Furnizori asociați</h4>
                   {localConfig.suppliers.map((supplierEntry, index) => (
-                    <div key={supplierEntry.supplierId || index} className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-200">
+                    <div key={supplierEntry.supplierId || index} className="flex items-center justify-between p-2.5 bg-indigo-50 rounded-lg border-l-4 border-indigo-500 border border-indigo-200">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-sm font-medium text-gray-900">
+                        <Truck className="w-4 h-4 text-indigo-700 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-gray-800">
                           {supplierEntry.supplierName || 'Furnizor necunoscut'}
                         </span>
                       </div>

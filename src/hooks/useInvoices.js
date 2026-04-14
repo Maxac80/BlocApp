@@ -225,15 +225,23 @@ const useInvoices = (associationId, currentSheet) => {
         const normalizedExistingNumber = normalizeInvoiceNumber(inv.invoiceNumber);
         const matchesNumber = normalizedExistingNumber === normalizedSearchNumber;
         const matchesAssociation = inv.associationId === associationId;
-        
-        
-        return matchesNumber && matchesAssociation;
+        // Filtrăm și pe furnizor pentru a evita coliziunile când același număr
+        // (ex: "A1") este folosit de furnizori diferiți (Apa Nova A1 vs Ascensorul A1)
+        const matchesSupplier = !invoiceData.supplierId || inv.supplierId === invoiceData.supplierId;
+
+        return matchesNumber && matchesAssociation && matchesSupplier;
       });
       
       if (existingInvoice) {
-        
+
         // Folosește updateInvoiceDistribution pentru factura existentă
-        const currentDistribution = parseFloat(invoiceData.totalAmount) || 0;
+        // IMPORTANT: folosim currentDistribution/amount (porțiunea distribuită pe această cheltuială),
+        // nu totalAmount (totalul facturii), ca să nu suprascriem cu totalul facturii distribuția parțială.
+        const currentDistribution = parseFloat(
+          invoiceData.currentDistribution ||
+          invoiceData.amount ||
+          invoiceData.totalAmount
+        ) || 0;
         
         await updateInvoiceDistribution(existingInvoice.id, {
           sheetId: invoiceData.sheetId || null,  // SHEET-BASED: folosim sheetId
@@ -810,9 +818,13 @@ const useInvoices = (associationId, currentSheet) => {
     return await updateMissingSuppliersForExistingInvoices(expenseType);
   }, [updateMissingSuppliersForExistingInvoices]);
   
-  // 🆕 OBȚINE FACTURA DUPĂ NUMĂR
-  const getInvoiceByNumber = useCallback((invoiceNumber) => {
-    return invoices.find(invoice => invoice.invoiceNumber === invoiceNumber);
+  // 🆕 OBȚINE FACTURA DUPĂ NUMĂR (opțional: filtrează și pe supplierId pentru a evita
+  // coliziuni când același număr de factură există la furnizori diferiți)
+  const getInvoiceByNumber = useCallback((invoiceNumber, supplierId = null) => {
+    return invoices.find(invoice =>
+      invoice.invoiceNumber === invoiceNumber &&
+      (!supplierId || invoice.supplierId === supplierId)
+    );
   }, [invoices]);
 
   // 📊 STATISTICI FACTURI

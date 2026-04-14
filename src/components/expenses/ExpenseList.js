@@ -1183,17 +1183,19 @@ const ExpenseList = ({
                             <div className="pt-1 border-t border-gray-200 mt-1 flex gap-1">
                               <span className="font-medium text-gray-600 flex-shrink-0">{invoicesForExp.length === 1 ? 'Factură:' : 'Facturi:'}</span>
                               <div className="flex flex-col">
-                                {invoicesForExp.map(inv => (
-                                  <span key={inv.id} className="text-indigo-600 font-medium">
-                                    {inv.supplierName && `${inv.supplierName} • `}
-                                    {inv.invoiceNumber}
-                                    {/* Date emitere/scadență ascunse temporar — pot fi reactivate dacă e nevoie
-                                    {inv.invoiceDate && ` • ${new Date(inv.invoiceDate).toLocaleDateString('ro-RO')}`}
-                                    {inv.dueDate && ` • ${new Date(inv.dueDate).toLocaleDateString('ro-RO')}`}
-                                    */}
-                                    {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
-                                  </span>
-                                ))}
+                                {invoicesForExp.map(inv => {
+                                  const distOnThis = (inv.distributionHistory || [])
+                                    .filter(d => d.expenseName === expense.name)
+                                    .reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+                                  return (
+                                    <span key={inv.id} className="text-indigo-600 font-medium">
+                                      {inv.supplierName && `${inv.supplierName} • `}
+                                      {inv.invoiceNumber}
+                                      {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
+                                      {distOnThis > 0 && ` • distribuit: ${distOnThis.toFixed(2)} RON`}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
@@ -1256,17 +1258,19 @@ const ExpenseList = ({
                             <div className="pt-1 border-t border-gray-200 mt-1 flex gap-1">
                               <span className="font-medium text-gray-600 flex-shrink-0">{invoicesForExp.length === 1 ? 'Factură:' : 'Facturi:'}</span>
                               <div className="flex flex-col">
-                                {invoicesForExp.map(inv => (
-                                  <span key={inv.id} className="text-indigo-600 font-medium">
-                                    {inv.supplierName && `${inv.supplierName} • `}
-                                    {inv.invoiceNumber}
-                                    {/* Date emitere/scadență ascunse temporar — pot fi reactivate dacă e nevoie
-                                    {inv.invoiceDate && ` • ${new Date(inv.invoiceDate).toLocaleDateString('ro-RO')}`}
-                                    {inv.dueDate && ` • ${new Date(inv.dueDate).toLocaleDateString('ro-RO')}`}
-                                    */}
-                                    {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
-                                  </span>
-                                ))}
+                                {invoicesForExp.map(inv => {
+                                  const distOnThis = (inv.distributionHistory || [])
+                                    .filter(d => d.expenseName === expense.name)
+                                    .reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+                                  return (
+                                    <span key={inv.id} className="text-indigo-600 font-medium">
+                                      {inv.supplierName && `${inv.supplierName} • `}
+                                      {inv.invoiceNumber}
+                                      {inv.invoiceAmount && ` • ${parseFloat(inv.invoiceAmount).toFixed(2)} RON`}
+                                      {distOnThis > 0 && ` • distribuit: ${distOnThis.toFixed(2)} RON`}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                           );

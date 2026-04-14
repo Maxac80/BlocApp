@@ -452,13 +452,19 @@ export const useExpenseManagement = ({
 
         for (const invoiceEntry of invoicesToSave) {
           if (!invoiceEntry.invoiceNumber) continue;
-          const invoiceAmount = parseFloat(invoiceEntry.invoiceAmount || 0);
+          const invoiceTotalAmount = parseFloat(invoiceEntry.invoiceAmount || invoiceEntry.totalInvoiceAmount || 0);
+          const distributeAmount = parseFloat(
+            invoiceEntry.distributeAmount ||
+            invoiceEntry.currentDistribution ||
+            invoiceEntry.invoiceAmount ||
+            0
+          );
           try {
             if (invoiceEntry.isExistingInvoice && invoiceEntry.existingInvoiceId) {
               await updateInvoiceDistribution(invoiceEntry.existingInvoiceId, {
                 sheetId: currentSheet?.id || null,
                 month: currentMonth,
-                amount: invoiceAmount || currentDistribution,
+                amount: distributeAmount || currentDistribution,
                 expenseId: expenseId,
                 expenseTypeId: expenseSettings.id,
                 expenseName: expenseData.name,
@@ -474,11 +480,11 @@ export const useExpenseManagement = ({
                 invoiceNumber: invoiceEntry.invoiceNumber,
                 invoiceDate: invoiceEntry.invoiceDate || null,
                 dueDate: invoiceEntry.dueDate || null,
-                invoiceAmount: invoiceEntry.invoiceAmount || currentDistribution,
-                amount: invoiceAmount || currentDistribution,
-                totalAmount: invoiceAmount || currentDistribution,
-                totalInvoiceAmount: parseFloat(invoiceEntry.totalInvoiceAmount || invoiceEntry.invoiceAmount) || currentDistribution,
-                currentDistribution: invoiceAmount || currentDistribution,
+                invoiceAmount: invoiceTotalAmount || currentDistribution,
+                amount: distributeAmount || currentDistribution,
+                totalAmount: invoiceTotalAmount || currentDistribution,
+                totalInvoiceAmount: invoiceTotalAmount || currentDistribution,
+                currentDistribution: distributeAmount || currentDistribution,
                 documentType: invoiceEntry.documentType || 'factura',
                 month: currentMonth,
                 sheetId: currentSheet?.id || null,
@@ -490,7 +496,7 @@ export const useExpenseManagement = ({
                 await updateInvoiceDistribution(invoice.id, {
                   sheetId: currentSheet?.id || null,
                   month: currentMonth,
-                  amount: invoiceAmount || currentDistribution,
+                  amount: distributeAmount || currentDistribution,
                   expenseId: expenseId,
                   expenseTypeId: expenseSettings.id,
                   expenseName: expenseData.name,
@@ -1008,8 +1014,9 @@ export const useExpenseManagement = ({
         // Păstrează consumption și individualAmounts existente
         consumption: existingExpense?.consumption || {},
         individualAmounts: existingExpense?.individualAmounts || {},
-        // Actualizează datele facturii
+        // Actualizează datele facturii (single + multi-supplier)
         invoiceData: expenseData.invoiceData || existingExpense?.invoiceData || null,
+        invoicesData: expenseData.invoicesData || existingExpense?.invoicesData || null,
         separateInvoicesData: expenseData.separateInvoicesData || existingExpense?.separateInvoicesData || null
       };
 
@@ -1018,76 +1025,87 @@ export const useExpenseManagement = ({
 
       await updateExpenseInSheet(expenseId, updatedExpense);
 
-      // Update invoices collection dacă există invoice data și funcții pentru update
-      if (invoiceFunctions && expenseData.invoiceData && expenseData.invoiceData.invoiceNumber) {
+      // Update invoices collection — suportă multi-supplier (invoicesData) + single (invoiceData)
+      const invoicesToUpdate = expenseData.invoicesData && expenseData.invoicesData.length > 0
+        ? expenseData.invoicesData
+        : (expenseData.invoiceData && expenseData.invoiceData.invoiceNumber
+          ? [expenseData.invoiceData]
+          : []);
+
+      if (invoicesToUpdate.length > 0 && invoiceFunctions) {
         try {
           const { updateInvoiceByNumber, updateInvoiceDistribution, getInvoiceByNumber } = invoiceFunctions;
 
-          if (updateInvoiceByNumber) {
-            // Update invoice folosind invoiceNumber (unic per asociație)
-            await updateInvoiceByNumber(
-              expenseData.invoiceData.invoiceNumber,
-              {
-                invoiceDate: expenseData.invoiceData.invoiceDate,
-                dueDate: expenseData.invoiceData.dueDate,
-                notes: expenseData.invoiceData.notes,
-                updatedAt: new Date().toISOString()
-              }
+          // Calculează expenseIds invalidate (pentru cleanup distribuții vechi pe facturi care nu mai sunt asociate)
+          const newInvoiceIds = new Set(
+            invoicesToUpdate.map(e => e.existingInvoiceId).filter(Boolean)
+          );
+
+          for (const invoiceEntry of invoicesToUpdate) {
+            if (!invoiceEntry.invoiceNumber) continue;
+
+            // Sumele: totalul facturii vs. suma distribuită pe ACEASTĂ cheltuială
+            const distributeAmount = parseFloat(
+              invoiceEntry.distributeAmount ||
+              invoiceEntry.currentDistribution ||
+              invoiceEntry.invoiceAmount ||
+              0
             );
 
-          } else {
-          }
-
-          // Actualizează și distributionHistory dacă suma s-a schimbat
-          if (updateInvoiceDistribution && getInvoiceByNumber) {
-
-            const invoice = await getInvoiceByNumber(expenseData.invoiceData.invoiceNumber);
-
-            if (invoice) {
-
-              // Calculează suma distribuită (noua sumă sau suma veche)
-              const currentDistribution = parseFloat(expenseData.amount || expenseData.billAmount || 0);
-
-              // Actualizează sau adaugă în distributionHistory
-              // Verifică dacă deja există o intrare pentru acest expenseId
-              const existingDistribution = invoice.distributionHistory?.find(
-                dist => {
-                  return dist.expenseId === expenseId;
+            // Update metadata factură (doar dacă avem număr)
+            if (updateInvoiceByNumber && invoiceEntry.invoiceDate) {
+              await updateInvoiceByNumber(
+                invoiceEntry.invoiceNumber,
+                {
+                  invoiceDate: invoiceEntry.invoiceDate,
+                  dueDate: invoiceEntry.dueDate,
+                  notes: invoiceEntry.notes,
+                  updatedAt: new Date().toISOString()
                 }
               );
+            }
 
+            if (!updateInvoiceDistribution) continue;
 
-              if (existingDistribution) {
-                // Deja există - trebuie să actualizăm suma distribuită
+            // Găsim factura corectă: preferăm match pe id (când avem existingInvoiceId),
+            // altfel pe (invoiceNumber + supplierId) ca să evităm coliziunile de număr între furnizori
+            let targetInvoice = null;
+            if (invoiceEntry.existingInvoiceId && invoiceFunctions.invoices) {
+              targetInvoice = invoiceFunctions.invoices.find(inv => inv.id === invoiceEntry.existingInvoiceId);
+            }
+            if (!targetInvoice && getInvoiceByNumber) {
+              targetInvoice = await getInvoiceByNumber(
+                invoiceEntry.invoiceNumber,
+                invoiceEntry.supplierId
+              );
+            }
 
-                // Recalculează distributedAmount (scădem vechea sumă și adăugăm noua)
-                const oldDistribution = existingDistribution.amount || 0;
-                const newDistributedAmount = (invoice.distributedAmount || 0) - oldDistribution + currentDistribution;
+            if (!targetInvoice) continue;
 
-                await updateInvoiceDistribution(invoice.id, {
-                  sheetId: currentSheet?.id || null,
-                  month: currentMonth,
-                  amount: currentDistribution,
-                  expenseId: expenseId,
-                  expenseTypeId: expenseSettings.id,  // ID-ul tipului de cheltuială
-                  expenseName: expenseData.name,  // Păstrăm numele pentru afișare
-                  notes: `Distribuție actualizată pentru ${expenseData.name}`
-                });
+            await updateInvoiceDistribution(targetInvoice.id, {
+              sheetId: currentSheet?.id || null,
+              month: currentMonth,
+              amount: distributeAmount,
+              expenseId: expenseId,
+              expenseTypeId: expenseSettings.id,
+              expenseName: expenseData.name,
+              notes: `Distribuție actualizată pentru ${expenseData.name}`
+            });
+          }
 
-              } else {
-                // Nu există - este o nouă distribuție (nu ar trebui să se întâmple în edit, dar handle-uim)
-
-                await updateInvoiceDistribution(invoice.id, {
-                  sheetId: currentSheet?.id || null,
-                  month: currentMonth,
-                  amount: currentDistribution,
-                  expenseId: expenseId,
-                  expenseTypeId: expenseSettings.id,  // ID-ul tipului de cheltuială
-                  expenseName: expenseData.name,  // Păstrăm numele pentru afișare
-                  notes: `Distribuție pentru ${expenseData.name}`
-                });
-
-              }
+          // Cleanup: șterge distribuțiile pentru această cheltuială de pe facturi care nu mai sunt asociate
+          // (ex: utilizatorul a eliminat o factură din distribuție prin editare)
+          if (invoiceFunctions.invoices && invoiceFunctions.removeInvoiceDistribution) {
+            const invoicesWithThisExpense = invoiceFunctions.invoices.filter(inv =>
+              inv.distributionHistory?.some(d =>
+                d.expenseId === expenseId ||
+                (expenseSettings.id && d.expenseTypeId === expenseSettings.id)
+              )
+            );
+            for (const inv of invoicesWithThisExpense) {
+              if (newInvoiceIds.has(inv.id)) continue; // încă asociată
+              // Nu avem id-ul în noua listă — înseamnă că distribuția de pe această factură trebuie eliminată
+              await invoiceFunctions.removeInvoiceDistribution(inv.id, expenseId);
             }
           }
         } catch (invoiceError) {

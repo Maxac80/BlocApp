@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search, Tag } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
@@ -221,7 +221,10 @@ const ExpensesViewNew = ({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">💰 Cheltuieli</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Tag className="w-6 h-6 text-indigo-600" />
+            Cheltuieli
+          </h1>
         </div>
 
         {/* Statistici cheltuieli */}
@@ -312,7 +315,8 @@ const ExpensesViewNew = ({
                       if (filterStatus === 'all') return true;
                       const isDistributed = currentSheet?.expenses?.some(exp =>
                         (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
-                        exp.amount > 0
+                        // Cheltuielile pe consum au amount=0 și sumele în billAmount / invoicesData
+                        (exp.amount > 0 || exp.billAmount > 0 || (exp.invoicesData && exp.invoicesData.length > 0))
                       );
                       if (filterStatus === 'distributed') return isDistributed;
                       if (filterStatus === 'undistributed') return !isDistributed;
@@ -335,7 +339,8 @@ const ExpensesViewNew = ({
                       // Verifică dacă cheltuiala a fost distribuită în calcul întreținere
                       const isDistributed = currentSheet?.expenses?.some(exp =>
                         (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
-                        exp.amount > 0
+                        // Cheltuielile pe consum au amount=0 și sumele în billAmount / invoicesData
+                        (exp.amount > 0 || exp.billAmount > 0 || (exp.invoicesData && exp.invoicesData.length > 0))
                       );
 
                       // Determină textul și culoarea pentru tipul de distribuție
@@ -558,12 +563,16 @@ const ExpensesViewNew = ({
                                     const remaining = totalInv - realDistributedTotal;
                                     const isFullyDist = remaining <= 0.01 && realDistributedTotal > 0;
                                     const isPartial = realDistributedTotal > 0 && !isFullyDist;
+                                    // Suma distribuită pe ACEASTĂ cheltuială (nu totalul facturii)
+                                    const distOnThisExpense = distHistory
+                                      .filter(d => d.expenseName === expenseType.name)
+                                      .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
 
                                     return (
                                       <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
                                         <div className="flex items-center justify-between mb-1">
                                           <span className="text-sm font-medium text-gray-800">
-                                            Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'} · {totalInv.toFixed(2)} lei
+                                            Nr. {inv.invoiceNumber} · {inv.supplierName || 'Furnizor'} · {distOnThisExpense.toFixed(2)} lei
                                           </span>
                                           <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
                                             isFullyDist ? 'bg-green-100 text-green-700' :
