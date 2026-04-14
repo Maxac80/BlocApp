@@ -232,7 +232,14 @@ const ExpensesViewNew = ({
           const totalExpenseTypes = getAssociationExpenseTypes().length;
           const distributedExpenses = currentSheet?.expenses?.length || 0;
           const undistributed = totalExpenseTypes - distributedExpenses;
-          const totalDistributed = (currentSheet?.expenses || []).reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+          // Pentru cheltuieli pe consum (normale + cumulative), suma reală e în billAmount
+          // (amount e 0 pentru consumption-based). Pentru alte tipuri folosim amount.
+          const totalDistributed = (currentSheet?.expenses || []).reduce((sum, exp) => {
+            const val = exp.isUnitBased || exp.distributionType === 'consumption' || exp.distributionType === 'consumption_cumulative'
+              ? (parseFloat(exp.billAmount) || 0)
+              : (parseFloat(exp.amount) || 0);
+            return sum + val;
+          }, 0);
           return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <StatsCard label="Total cheltuieli" value={totalExpenseTypes} borderColor="border-blue-500" />
