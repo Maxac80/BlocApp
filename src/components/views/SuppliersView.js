@@ -388,9 +388,9 @@ const SuppliersView = ({
                                               isFullyDist ? 'bg-green-100 text-green-700' :
                                               realDistributed > 0 ? 'bg-orange-100 text-orange-700' :
                                               'bg-red-100 text-red-700'
-                                            }`} style={{ minWidth: '130px' }}>
+                                            }`} style={{ minWidth: '100px' }}>
                                               {isFullyDist ? 'Distribuită' :
-                                               realDistributed > 0 ? 'Parțial distribuită' :
+                                               realDistributed > 0 ? 'Parțial' :
                                                'Nedistribuită'}
                                             </span>
                                             <span className="text-sm font-semibold text-gray-900 text-right" style={{ minWidth: '90px' }}>

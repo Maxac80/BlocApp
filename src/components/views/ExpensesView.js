@@ -587,8 +587,8 @@ const ExpensesViewNew = ({
                                               isFullyDist ? 'bg-green-100 text-green-700' :
                                               isPartial ? 'bg-orange-100 text-orange-700' :
                                               'bg-red-100 text-red-700'
-                                            }`} style={{ minWidth: '130px' }}>
-                                              {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial distribuită' : 'Nedistribuită'}
+                                            }`} style={{ minWidth: '100px' }}>
+                                              {isFullyDist ? 'Distribuită' : isPartial ? 'Parțial' : 'Nedistribuită'}
                                             </span>
                                             <span className="text-sm font-semibold text-gray-900 text-right" style={{ minWidth: '90px' }}>
                                               {totalInv.toFixed(2)} lei
