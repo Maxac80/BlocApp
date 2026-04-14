@@ -378,23 +378,23 @@ const SuppliersView = ({
 
                                     return (
                                       <div key={inv.id} className="bg-white rounded border border-gray-200 p-2.5">
-                                        {/* Header: Nr factură (stânga) | Total factură + Badge distribuit (dreapta) */}
+                                        {/* Header: Nr factură (stânga) | Badge (lățime fixă, stabil) + Total aliniat cu breakdown-ul */}
                                         <div className="flex items-center justify-between mb-1 gap-2">
                                           <span className="text-sm font-medium text-gray-800 min-w-0 truncate">
                                             Nr. {inv.invoiceNumber}
                                           </span>
                                           <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className="text-sm font-semibold text-gray-900">
-                                              {totalInv.toFixed(2)} lei
-                                            </span>
-                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${
+                                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center ${
                                               isFullyDist ? 'bg-green-100 text-green-700' :
                                               realDistributed > 0 ? 'bg-orange-100 text-orange-700' :
                                               'bg-red-100 text-red-700'
-                                            }`}>
+                                            }`} style={{ minWidth: '130px' }}>
                                               {isFullyDist ? 'Distribuită' :
                                                realDistributed > 0 ? 'Parțial distribuită' :
                                                'Nedistribuită'}
+                                            </span>
+                                            <span className="text-sm font-semibold text-gray-900 text-right" style={{ minWidth: '90px' }}>
+                                              {totalInv.toFixed(2)} lei
                                             </span>
                                           </div>
                                         </div>
