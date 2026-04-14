@@ -8,8 +8,8 @@ import {
   getExpenseStatus
 } from './shared/ConsumptionComponents';
 import ExpenseDistributionTable from './shared/ExpenseDistributionTable';
-import { generateIndividualAmountsTemplate } from '../../utils/excelTemplateIndividualAmounts';
-import ExcelUploadIndividualAmountsModal from '../modals/ExcelUploadIndividualAmountsModal';
+import { generateIndividualAmountsTemplate, generateConsumptionTemplate } from '../../utils/excelTemplateIndividualAmounts';
+import ExcelUploadIndividualAmountsModal, { ExcelUploadConsumptionModal } from '../modals/ExcelUploadIndividualAmountsModal';
 
 const ExpenseList = ({
   searchTerm = '',
@@ -51,7 +51,8 @@ const ExpenseList = ({
   isReadOnlyRole, // 🔒 Președinte/Cenzor nu poate edita/șterge
   // Props pentru Excel upload (sume individuale)
   association,
-  updateExpenseIndividualAmountsBatch
+  updateExpenseIndividualAmountsBatch,
+  updateExpenseConsumptionBatch
 }) => {
   // Helper: Obține unitatea de măsură configurată
   const getUnitLabel = (expenseName) => {
@@ -73,6 +74,10 @@ const ExpenseList = ({
   // State pentru modal Excel upload sume individuale
   const [excelUploadModal, setExcelUploadModal] = useState({ isOpen: false, expense: null });
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+
+  // State pentru modal Excel upload consumuri (mod Manual)
+  const [excelConsumptionModal, setExcelConsumptionModal] = useState({ isOpen: false, expense: null });
+  const [isGeneratingConsumptionTemplate, setIsGeneratingConsumptionTemplate] = useState(false);
 
   // Refs pentru scroll automat la cheltuieli
   const expenseRefs = useRef({});
@@ -799,7 +804,7 @@ const ExpenseList = ({
       const apartmentParticipations = config.apartmentParticipation || {};
 
       let sumaIntrodusa = 0;
-      if (config.distributionType === 'consumption' && expense.consumption) {
+      if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
         // Verifică modul de introducere
         const inputMode = config?.indexConfiguration?.inputMode || 'manual';
         const isIndexMode = inputMode === 'indexes';
@@ -1020,15 +1025,14 @@ const ExpenseList = ({
             {totalAmount.toFixed(2)} <span className="text-sm sm:text-base">RON</span>
           </div>
 
-          {/* Badge-uri pentru status distribuție */}
-          {totals.allKnowExpectedAmount ? (() => {
+          {/* Badge-uri pentru status distribuție (nu mai facem placeholder când nu e nimic) */}
+          {totals.allKnowExpectedAmount && (() => {
             const diferenta = totals.totalIntrodus - totals.totalAsteptat;
-            const diferentaDistribuit = totals.totalDistribuit - totals.totalAsteptat;
-            // Fără TOLERANCE - afișăm diferență doar când există
+            const diferentaDistribuita = totals.totalDistribuit - totals.totalIntrodus;
             const hasDifference = Math.abs(diferenta) >= 0.01;
-            const isBalanced = Math.abs(diferentaDistribuit) < 0.01;
+            const hasDiferentaDistribuita = Math.abs(diferentaDistribuita) >= 0.01;
 
-            // Afișează diferența când există
+            // Afișează diferența când consumurile nu acoperă factura
             if (hasDifference) {
               return (
                 <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700">
@@ -1038,21 +1042,17 @@ const ExpenseList = ({
               );
             }
 
-            // Badge verde pentru total distribuit - când e balansat și există diferență distribuită
-            if (isBalanced && Math.abs(totals.totalDistribuit - totals.totalIntrodus) >= 0.01) {
+            // Când e balansat dar s-a distribuit o diferență (factura > consumurile introduse)
+            if (hasDiferentaDistribuita) {
               return (
-                <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700">
-                  ✓ Total distribuit: {totals.totalDistribuit.toFixed(2)} RON
+                <div className="mt-1 text-xs font-medium px-2 py-1 rounded bg-blue-50 text-blue-700">
+                  ↔ Diferență distribuită: {diferentaDistribuita > 0 ? '+' : ''}{diferentaDistribuita.toFixed(2)} RON
                 </div>
               );
             }
 
-            // Placeholder invizibil pentru aliniere
-            return <div className="mt-1 h-6"></div>;
-          })() : (
-            // Placeholder invizibil când nu știm suma așteptată
-            <div className="mt-1 h-6"></div>
-          )}
+            return null;
+          })()}
         </div>
       </div>
 
@@ -1111,7 +1111,19 @@ const ExpenseList = ({
                           <span>
                             {config.distributionType === "apartment" && "Pe apartament"}
                             {config.distributionType === "person" && "Pe persoană"}
-                            {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
+                            {config.distributionType === "consumption" && `Pe consum (${config.consumptionUnit || 'mc'}/apartament)`}
+                            {config.distributionType === "consumption_cumulative" && (() => {
+                              const srcIds = config.cumulativeFromExpenseTypeIds || [];
+                              const configs = currentSheet?.configSnapshot?.expenseConfigurations || {};
+                              const srcNames = srcIds.map(id => configs[id]?.name).filter(Boolean).join(' + ');
+                              const unit = config.consumptionUnit || 'mc';
+                              return (
+                                <>
+                                  Pe consum cumulat ({unit}/apartament)
+                                  {srcNames && <span className="text-gray-500"> — din: {srcNames}</span>}
+                                </>
+                              );
+                            })()}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
                             {config.distributionType === "cotaParte" && "Pe cotă parte indiviză"}
                           </span>
@@ -1213,7 +1225,19 @@ const ExpenseList = ({
                           <span>
                             {config.distributionType === "apartment" && "Pe apartament"}
                             {config.distributionType === "person" && "Pe persoană"}
-                            {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
+                            {config.distributionType === "consumption" && `Pe consum (${config.consumptionUnit || 'mc'}/apartament)`}
+                            {config.distributionType === "consumption_cumulative" && (() => {
+                              const srcIds = config.cumulativeFromExpenseTypeIds || [];
+                              const configs = currentSheet?.configSnapshot?.expenseConfigurations || {};
+                              const srcNames = srcIds.map(id => configs[id]?.name).filter(Boolean).join(' + ');
+                              const unit = config.consumptionUnit || 'mc';
+                              return (
+                                <>
+                                  Pe consum cumulat ({unit}/apartament)
+                                  {srcNames && <span className="text-gray-500"> — din: {srcNames}</span>}
+                                </>
+                              );
+                            })()}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
                             {config.distributionType === "cotaParte" && "Pe cotă parte indiviză"}
                           </span>
@@ -1449,7 +1473,7 @@ const ExpenseList = ({
                           })()}
                         </div>
                         {/* Total mc + Preț unitar pe o singură linie */}
-                        {config.distributionType === 'consumption' && expense.unitPrice && (() => {
+                        {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (() => {
                           const filteredApartments = getFilteredApartments();
                           const apartmentParticipations = config.apartmentParticipation || {};
                           const nonExcludedApartments = filteredApartments.filter(apt => {
@@ -1488,7 +1512,7 @@ const ExpenseList = ({
                       </div>
 
                       {/* Warning-uri verticale pentru cheltuieli pe consum */}
-                      {config.distributionType === 'consumption' && (() => {
+                      {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                         const filteredApartments = getFilteredApartments();
                         const apartmentParticipations = config.apartmentParticipation || {};
 
@@ -1893,7 +1917,7 @@ const ExpenseList = ({
                       })()}
 
                       {/* Badge pentru status consumuri/sume individuale - după toate totalurile */}
-                      {(config.distributionType === 'consumption' || config.distributionType === 'individual') && (() => {
+                      {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative' || config.distributionType === 'individual') && (() => {
                         const filteredApartments = getFilteredApartments();
                         const status = getExpenseStatus(
                           expense.name,
@@ -1904,7 +1928,7 @@ const ExpenseList = ({
                         );
                         return (
                           <div className="mt-1">
-                            <ExpenseStatusBadge status={status} isConsumption={config.distributionType === 'consumption'} />
+                            <ExpenseStatusBadge status={status} isConsumption={config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative'} />
                           </div>
                         );
                       })()}
@@ -2055,7 +2079,7 @@ const ExpenseList = ({
                                 }
                               } else {
                                 // Pentru alte tipuri de participare: calculează suma normală
-                                if (config.distributionType === 'consumption' && expense.consumption) {
+                                if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                   // Verifică modul de introducere
                                   const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                                   const isIndexMode = inputMode === 'indexes';
@@ -2111,7 +2135,7 @@ const ExpenseList = ({
 
                             // Calculează totalul unităților pentru consum (Pe asociație)
                             let totalConsumptionUnitsAssoc = 0;
-                            if (config.distributionType === 'consumption' && expense.consumption) {
+                            if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                               const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                               const isIndexMode = inputMode === 'indexes';
 
@@ -2136,7 +2160,7 @@ const ExpenseList = ({
 
                             // Calculează totalul introdus pentru consumption și individual (Pe asociație) cu participări aplicate
                             let totalIntrodusForAssoc = 0;
-                            if (config.distributionType === 'consumption' && expense.consumption) {
+                            if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                               const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                               const isIndexMode = inputMode === 'indexes';
 
@@ -2200,7 +2224,7 @@ const ExpenseList = ({
                                 <div className="text-xl font-bold text-indigo-700">{relevantAmount.toFixed(2)} RON</div>
 
                                 {/* Total introdus și diferență - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && (() => {
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                                   const diferenta = totalIntrodusForAssoc - relevantAmount;
                                   // Fără TOLERANCE
                                   const hasDifference = Math.abs(diferenta) >= 0.01;
@@ -2294,7 +2318,7 @@ const ExpenseList = ({
                                 )}
 
                                 {/* Sub sumă - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && expense.unitPrice && (
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (
                                   <>
                                     <div className="text-xs text-green-700 font-semibold mt-1">
                                       {totalConsumptionUnitsAssoc.toFixed(2)} {getUnitLabel(expense.name)} introduși
@@ -2441,7 +2465,7 @@ const ExpenseList = ({
                                 if (participation?.type !== 'excluded') {
                                   let aptAmount = 0;
 
-                                  if (config.distributionType === 'consumption' && expense.consumption) {
+                                  if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                     // Pentru consum: consum × preț unitar
                                     aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
                                   } else if (config.distributionType === 'individual' && expense.individualAmounts) {
@@ -2567,7 +2591,7 @@ const ExpenseList = ({
                                 }
                               } else {
                                 // Pentru alte tipuri de participare: calculează suma normală
-                                if (config.distributionType === 'consumption' && expense.consumption) {
+                                if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                   // Verifică modul de introducere
                                   const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                                   const isIndexMode = inputMode === 'indexes';
@@ -2627,7 +2651,7 @@ const ExpenseList = ({
 
                             // Calculează totalul unităților pentru consum
                             let totalConsumptionUnits = 0;
-                            if (config.distributionType === 'consumption' && expense.consumption) {
+                            if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                               stairApts.forEach(apt => {
                                 const participation = config.apartmentParticipation?.[apt.id];
                                 if (participation?.type !== 'excluded') {
@@ -2654,7 +2678,7 @@ const ExpenseList = ({
                                 </div>
 
                                 {/* Total introdus - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && (() => {
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                                   // totalIntrodusScara deja calculat mai sus (liniile 1891-1940)
 
                                   // Calculează diferența dacă există
@@ -2684,7 +2708,7 @@ const ExpenseList = ({
                                       .reduce((sum, apt) => sum + (expenseDifferences[apt.id] || 0), 0);
 
                                     // Calculează total introdus global pentru asociație (cu participări aplicate)
-                                    if (config.distributionType === 'consumption' && expense.consumption) {
+                                    if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                       // Verifică modul de introducere
                                       const inputMode = config?.indexConfiguration?.inputMode || 'manual';
                                       const isIndexMode = inputMode === 'indexes';
@@ -2852,7 +2876,7 @@ const ExpenseList = ({
                                 })()}
 
                                 {/* Sub sumă - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && expense.unitPrice && (
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (
                                   <>
                                     <div className="text-xs text-green-700 font-semibold mt-1">
                                       {totalConsumptionUnits.toFixed(2)} {getUnitLabel(expense.name)} introduși
@@ -3061,7 +3085,7 @@ const ExpenseList = ({
 
                               // Calculează totalul unităților pentru consum (Pe bloc)
                               let totalConsumptionUnitsBlock = 0;
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 blockApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
                                   if (participation?.type !== 'excluded') {
@@ -3072,7 +3096,7 @@ const ExpenseList = ({
 
                               // Calculează totalul introdus pentru consumption și individual cu participări aplicate
                               let totalIntrodusForBlock = 0;
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 blockApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
                                   let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
@@ -3120,7 +3144,7 @@ const ExpenseList = ({
                                   <div className="text-xl font-bold text-blue-700">{blockAmount.toFixed(2)} RON</div>
 
                                   {/* Total introdus și diferență - DOAR pentru CONSUM */}
-                                  {config.distributionType === 'consumption' && (() => {
+                                  {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                                     const diferenta = totalIntrodusForBlock - blockAmount;
                                     // Fără TOLERANCE
                                     const hasDifference = Math.abs(diferenta) >= 0.01;
@@ -3197,7 +3221,7 @@ const ExpenseList = ({
                                   )}
 
                                   {/* Sub sumă - DOAR pentru CONSUM */}
-                                  {config.distributionType === 'consumption' && expense.unitPrice && (
+                                  {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (
                                     <>
                                       <div className="text-xs text-green-700 font-semibold mt-1">
                                         {totalConsumptionUnitsBlock.toFixed(2)} {getUnitLabel(expense.name)} introduși
@@ -3329,7 +3353,7 @@ const ExpenseList = ({
                             const blockAptsForFallback = getAssociationApartments().filter(apt => blockStairIdsForFallback.includes(apt.stairId));
 
                             if (blockAmount === 0) {
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 let totalConsumption = 0;
                                 blockAptsForFallback.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
@@ -3401,10 +3425,10 @@ const ExpenseList = ({
                             if ((config.distributionType === 'cotaParte')) {
                               // Pentru cotă parte indiviză, folosește getRelevantAmount()
                               stairTotalAmount = getRelevantAmount(expense);
-                            } else if (blockHasOnlyOneStair && (config.distributionType === 'consumption' || config.distributionType === 'individual')) {
+                            } else if (blockHasOnlyOneStair && (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative' || config.distributionType === 'individual')) {
                               // Bloc cu o singură scară - folosește suma de pe bloc direct
                               stairTotalAmount = blockAmount;
-                            } else if (config.distributionType === 'consumption' && expense.consumption) {
+                            } else if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                               // Pentru consumption, calculează direct din consumption CU PARTICIPĂRI
                               stairApts.forEach(apt => {
                                 const participation = config.apartmentParticipation?.[apt.id];
@@ -3471,7 +3495,7 @@ const ExpenseList = ({
 
                             // Calculează totalul unităților pentru consum
                             let totalConsumptionUnitsForStair = 0;
-                            if (config.distributionType === 'consumption' && expense.consumption) {
+                            if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                               stairApts.forEach(apt => {
                                 const participation = config.apartmentParticipation?.[apt.id];
                                 if (participation?.type !== 'excluded') {
@@ -3485,8 +3509,8 @@ const ExpenseList = ({
                             let totalDistribuit = stairTotalAmount;
                             let totalDifferenceStair = 0;
 
-                            if ((config.distributionType === 'consumption' || config.distributionType === 'individual')) {
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                            if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative' || config.distributionType === 'individual')) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 stairApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
                                   let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
@@ -3543,14 +3567,14 @@ const ExpenseList = ({
                               <div key={stair.id} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
                                 <div className="font-medium text-purple-900">{block?.name} - {stair.name}</div>
                                 <div className="text-xl font-bold text-purple-700">
-                                  {((config.distributionType === 'consumption' || config.distributionType === 'individual') && expense?.isUnitBased
+                                  {((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative' || config.distributionType === 'individual') && expense?.isUnitBased
                                     ? totalDistribuit
                                     : stairTotalAmount
                                   ).toFixed(2)} RON
                                 </div>
 
                                 {/* Total introdus și diferență - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && (() => {
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                                   // Calculăm suma așteptată pentru această scară bazat pe proporția din bloc
                                   let expectedAmountForStair = 0;
                                   if (blockHasOnlyOneStair) {
@@ -3558,7 +3582,7 @@ const ExpenseList = ({
                                   } else {
                                     // Calculăm totalul introdus pentru întreg blocul CU PARTICIPĂRI
                                     let totalIntrodusForBlock = 0;
-                                    if (config.distributionType === 'consumption' && expense.consumption) {
+                                    if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                       blockApts.forEach(apt => {
                                         const participation = config.apartmentParticipation?.[apt.id];
                                         let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
@@ -3621,7 +3645,7 @@ const ExpenseList = ({
 
                                     // Total introdus pe bloc (pentru context) CU PARTICIPĂRI
                                     let totalIntrodusBlock = 0;
-                                    if (config.distributionType === 'consumption' && expense.consumption) {
+                                    if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                       blockApts.forEach(apt => {
                                         const participation = config.apartmentParticipation?.[apt.id];
                                         let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
@@ -3751,7 +3775,7 @@ const ExpenseList = ({
                                 )}
 
                                 {/* Sub sumă - DOAR pentru CONSUM */}
-                                {config.distributionType === 'consumption' && expense.unitPrice && (
+                                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (
                                   <>
                                     <div className="text-xs text-green-700 font-semibold mt-1">
                                       {totalConsumptionUnitsForStair.toFixed(2)} {getUnitLabel(expense.name)} introduși
@@ -3948,7 +3972,7 @@ const ExpenseList = ({
 
                               // Calculează totalul unităților pentru consum
                               let totalConsumptionUnitsForStair = 0;
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 stairApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
                                   if (participation?.type !== 'excluded') {
@@ -3959,7 +3983,7 @@ const ExpenseList = ({
 
                               // Calculează totalul introdus pentru consumption și individual cu participări aplicate
                               let totalIntrodusForStair = 0;
-                              if (config.distributionType === 'consumption' && expense.consumption) {
+                              if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                 stairApts.forEach(apt => {
                                   const participation = config.apartmentParticipation?.[apt.id];
                                   let aptAmount = parseFloat(expense.consumption[apt.id] || 0) * (expense.unitPrice || 0);
@@ -4007,7 +4031,7 @@ const ExpenseList = ({
                                   <div className="text-xl font-bold text-purple-700">{stairAmount.toFixed(2)} RON</div>
 
                                   {/* Total introdus și diferență - DOAR pentru CONSUM */}
-                                  {config.distributionType === 'consumption' && (() => {
+                                  {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (() => {
                                     const diferenta = totalIntrodusForStair - stairAmount;
                                     // Fără TOLERANCE
                                     const hasDifference = Math.abs(diferenta) >= 0.01;
@@ -4036,7 +4060,7 @@ const ExpenseList = ({
 
                                       // Total introdus pe bloc (pentru context)
                                       let totalIntrodusBlock = 0;
-                                      if (config.distributionType === 'consumption' && expense.consumption) {
+                                      if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.consumption) {
                                         blockApts.forEach(apt => {
                                           const participation = config.apartmentParticipation?.[apt.id];
                                           if (participation?.type !== 'excluded') {
@@ -4113,7 +4137,7 @@ const ExpenseList = ({
                                   )}
 
                                   {/* Sub sumă - DOAR pentru CONSUM */}
-                                  {config.distributionType === 'consumption' && expense.unitPrice && (
+                                  {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && expense.unitPrice && (
                                     <>
                                       <div className="text-xs text-green-700 font-semibold mt-1">
                                         {totalConsumptionUnitsForStair.toFixed(2)} {getUnitLabel(expense.name)} introduși
@@ -4243,9 +4267,11 @@ const ExpenseList = ({
                       const filteredApartments = getFilteredApartments();
 
                       // Pentru cheltuieli pe consum - afișează tabel de consumuri
-                      if (config.distributionType === 'consumption') {
+                      if (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') {
+                        // Pentru cumulativ, nu există inputMode propriu (datele vin din alte cheltuieli)
+                        const isCumulative = config.distributionType === 'consumption_cumulative';
                         // Verifică modul de introducere date
-                        const inputMode = config.indexConfiguration?.inputMode || 'manual';
+                        const inputMode = isCumulative ? 'manual' : (config.indexConfiguration?.inputMode || 'manual');
 
                         // Pentru modul "Indecși", folosește obiect gol pentru consumption (datele vin din indexes)
                         // Pentru modul "Manual" sau "Mixt", folosește expense.consumption
@@ -4253,47 +4279,100 @@ const ExpenseList = ({
 
                         return (
                           <div className="mt-6">
-                            {/* Header cu titlu și buton test (doar în development) */}
-                            <div className="flex items-center justify-between mb-3">
+                            {/* Header: titlu (stânga) | Test Mode + Toolbar Excel (dreapta) */}
+                            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                               <h5 className="font-semibold text-gray-700 flex items-center gap-2">
                                 <Calculator className="w-5 h-5" />
                                 Tabel consumuri:
                               </h5>
 
-                              {/* 🧪 Buton Test InputMode - doar în development */}
-                              {process.env.NODE_ENV === 'development' && updateExpenseConfig && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500 font-medium">🧪 Test Mode:</span>
-                                  <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                                    {['manual', 'indexes', 'mixed'].map((mode) => (
-                                      <button
-                                        key={mode}
-                                        onClick={async () => {
-                                          try {
-                                            const expenseKey = expense.expenseTypeId || expense.name;
-                                            await updateExpenseConfig(expenseKey, {
-                                              ...config,
-                                              indexConfiguration: {
-                                                ...config.indexConfiguration,
-                                                inputMode: mode
-                                              }
-                                            });
-                                          } catch (error) {
-                                            console.error('Error updating inputMode:', error);
-                                          }
-                                        }}
-                                        className={`px-3 py-1 text-xs font-medium rounded transition-all ${
-                                          inputMode === mode
-                                            ? 'bg-blue-600 text-white shadow-sm'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        {mode === 'manual' ? 'Manual' : mode === 'indexes' ? 'Indecși' : 'Mixt'}
-                                      </button>
-                                    ))}
+                              <div className="flex items-center gap-3 flex-wrap justify-end ml-auto">
+                                {/* 🧪 Test InputMode - doar în development, înainte de butoanele Excel. Nu pentru cumulativ. */}
+                                {process.env.NODE_ENV === 'development' && updateExpenseConfig && !isCumulative && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 font-medium">🧪 Test Mode:</span>
+                                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                                      {['manual', 'indexes', 'mixed'].map((mode) => (
+                                        <button
+                                          key={mode}
+                                          onClick={async () => {
+                                            try {
+                                              const expenseKey = expense.expenseTypeId || expense.name;
+                                              await updateExpenseConfig(expenseKey, {
+                                                ...config,
+                                                indexConfiguration: {
+                                                  ...config.indexConfiguration,
+                                                  inputMode: mode
+                                                }
+                                              });
+                                            } catch (error) {
+                                              console.error('Error updating inputMode:', error);
+                                            }
+                                          }}
+                                          className={`px-3 py-1 text-xs font-medium rounded transition-all ${
+                                            inputMode === mode
+                                              ? 'bg-blue-600 text-white shadow-sm'
+                                              : 'bg-white text-gray-600 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          {mode === 'manual' ? 'Manual' : mode === 'indexes' ? 'Indecși' : 'Mixt'}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
+
+                                {/* Toolbar Excel - doar pentru mod Manual, nu read-only, nu cumulativ. În dreapta, după Test Mode. */}
+                                {inputMode === 'manual' && !isCumulative && !isMonthReadOnly && !isReadOnlyRole && association && expense && (
+                                  <div className="flex gap-2 flex-wrap">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          setIsGeneratingConsumptionTemplate(true);
+                                          const allApartments = getAssociationApartments();
+                                          await generateConsumptionTemplate(
+                                            association,
+                                            expense,
+                                            allApartments,
+                                            blocks,
+                                            stairs
+                                          );
+                                        } catch (err) {
+                                          console.error('❌ Eroare la generarea template-ului:', err);
+                                          alert('Eroare la generarea template-ului: ' + err.message);
+                                        } finally {
+                                          setIsGeneratingConsumptionTemplate(false);
+                                        }
+                                      }}
+                                      disabled={isGeneratingConsumptionTemplate}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                                      title="Descarcă template Excel cu toate apartamentele"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                      {isGeneratingConsumptionTemplate ? (
+                                        <>
+                                          <span className="hidden sm:inline">Se generează...</span>
+                                          <span className="sm:hidden">...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="hidden sm:inline">Descarcă template Excel</span>
+                                          <span className="sm:hidden">Template</span>
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => setExcelConsumptionModal({ isOpen: true, expense })}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 border border-green-300 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                                      title="Importă consumuri din fișier Excel"
+                                    >
+                                      <Upload className="w-4 h-4" />
+                                      <span className="hidden sm:inline">Importă din Excel</span>
+                                      <span className="sm:hidden">Importă</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
                             <ConsumptionTable
@@ -4317,6 +4396,9 @@ const ExpenseList = ({
                               selectedStairTab={selectedStairTab}
                               blocks={blocks}
                               maintenanceData={maintenanceData}
+                              onEditParticipation={!isMonthReadOnly && !isReadOnlyRole && onConfigureExpense
+                                ? () => onConfigureExpense(expense.name, 'participation')
+                                : null}
                             />
                           </div>
                         );
@@ -4458,6 +4540,25 @@ const ExpenseList = ({
           onImportConfirmed={async (amounts) => {
             if (updateExpenseIndividualAmountsBatch) {
               await updateExpenseIndividualAmountsBatch(excelUploadModal.expense.id, amounts);
+            }
+          }}
+        />
+      )}
+
+      {/* Modal Import Excel Consumuri (mod Manual) */}
+      {excelConsumptionModal.isOpen && excelConsumptionModal.expense && association && (
+        <ExcelUploadConsumptionModal
+          isOpen={excelConsumptionModal.isOpen}
+          onClose={() => setExcelConsumptionModal({ isOpen: false, expense: null })}
+          association={association}
+          expense={excelConsumptionModal.expense}
+          apartments={getAssociationApartments()}
+          blocks={blocks}
+          stairs={stairs}
+          existingAmounts={excelConsumptionModal.expense.consumption || {}}
+          onImportConfirmed={async (consumptions) => {
+            if (updateExpenseConsumptionBatch) {
+              await updateExpenseConsumptionBatch(excelConsumptionModal.expense.id, consumptions);
             }
           }}
         />

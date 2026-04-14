@@ -103,7 +103,7 @@ const parseStairSheet = (workbook, sheetName, apartmentsByNumber, seenApartmentN
 
       if (cellStr === 'Nr_Apt') headerCols.nrApt = j;
       else if (cellStr === 'Proprietar') headerCols.proprietar = j;
-      else if (cellStr.startsWith('Sumă')) headerCols.suma = j;
+      else if (cellStr.startsWith('Sumă') || cellStr.startsWith('Consum')) headerCols.suma = j;
     }
 
     if (headerCols.nrApt !== -1 && headerCols.suma !== -1) {

@@ -1,15 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { parseIndividualAmountsExcel } from '../../utils/excelParserIndividualAmounts';
-import { generateIndividualAmountsTemplate } from '../../utils/excelTemplateIndividualAmounts';
+import { generateIndividualAmountsTemplate, generateConsumptionTemplate } from '../../utils/excelTemplateIndividualAmounts';
 
 /**
- * 📊 MODAL UPLOAD EXCEL - SUME INDIVIDUALE
+ * 📊 MODAL UPLOAD EXCEL - SUME INDIVIDUALE / CONSUMURI
  *
  * Permite:
  * 1. Descărcarea template-ului Excel pre-populat cu apartamentele
  * 2. Încărcarea fișierului completat
- * 3. Previzualizarea cu comparație sumă veche → sumă nouă
+ * 3. Previzualizarea cu comparație veche → nouă
  * 4. Confirmarea importului (batch save)
+ *
+ * Props:
+ * - mode: 'individual' (default) — sume în RON; 'consumption' — consumuri în mc
  */
 const ExcelUploadIndividualAmountsModal = ({
   isOpen,
@@ -20,13 +23,46 @@ const ExcelUploadIndividualAmountsModal = ({
   blocks,
   stairs,
   existingAmounts = {}, // { [apartmentId]: number } - valorile actuale din sheet
-  onImportConfirmed  // async (amounts: { [apartmentId]: number }) => void
+  onImportConfirmed,  // async (amounts: { [apartmentId]: number }) => void
+  mode = 'individual'
 }) => {
   const [file, setFile] = useState(null);
   const [parseResults, setParseResults] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef(null);
+
+  // 🏷️ Etichete adaptate după mod
+  const isConsumption = mode === 'consumption';
+  const labels = isConsumption
+    ? {
+        modalTitle: '📊 Importă consumuri din Excel',
+        step1Title: '📥 Pasul 1: Descarcă template-ul',
+        step1Desc: apartments.length,
+        valueColumnLabel: 'Consum (mc)',
+        valueColumnShort: 'Consum',
+        valueUnit: 'mc',
+        valueNounPlural: 'consumuri',
+        valueNounShort: 'consumul',
+        filledLabel: 'Consumuri completate',
+        importBtnSuffix: 'consumuri',
+        successMsg: 'consumuri au fost actualizate',
+        emptyKept: '(gol — păstrat)'
+      }
+    : {
+        modalTitle: '📊 Importă sume din Excel',
+        step1Title: '📥 Pasul 1: Descarcă template-ul',
+        step1Desc: apartments.length,
+        valueColumnLabel: 'Sumă (RON)',
+        valueColumnShort: 'Sumă',
+        valueUnit: 'lei',
+        valueNounPlural: 'sume',
+        valueNounShort: 'suma',
+        filledLabel: 'Sume completate',
+        importBtnSuffix: 'sume',
+        successMsg: 'sume au fost actualizate',
+        emptyKept: '(gol — păstrat)'
+      };
 
   const handleClose = () => {
     setFile(null);
@@ -39,7 +75,11 @@ const ExcelUploadIndividualAmountsModal = ({
   const handleDownloadTemplate = async () => {
     try {
       setIsGenerating(true);
-      await generateIndividualAmountsTemplate(association, expense, apartments, blocks, stairs);
+      if (isConsumption) {
+        await generateConsumptionTemplate(association, expense, apartments, blocks, stairs);
+      } else {
+        await generateIndividualAmountsTemplate(association, expense, apartments, blocks, stairs);
+      }
     } catch (error) {
       console.error('❌ Eroare la generarea template-ului:', error);
       alert('Eroare la generarea template-ului: ' + error.message);
@@ -84,11 +124,11 @@ const ExcelUploadIndividualAmountsModal = ({
     setIsProcessing(true);
     try {
       await onImportConfirmed(parseResults.amounts);
-      alert(`✅ Import reușit! ${parseResults.stats.filled} sume au fost actualizate.`);
+      alert(`✅ Import reușit! ${parseResults.stats.filled} ${labels.successMsg}.`);
       handleClose();
     } catch (error) {
-      console.error('❌ Eroare la importul sumelor:', error);
-      alert('Eroare la importul sumelor: ' + error.message);
+      console.error('❌ Eroare la import:', error);
+      alert('Eroare la import: ' + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -109,7 +149,7 @@ const ExcelUploadIndividualAmountsModal = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold flex items-center">
-                📊 Importă sume din Excel
+                {labels.modalTitle}
               </h2>
               <p className="text-green-100 mt-1">
                 {expense?.name || 'Cheltuială'} • {association?.name || ''}
@@ -130,10 +170,10 @@ const ExcelUploadIndividualAmountsModal = ({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Pas 1: Descarcă template */}
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">📥 Pasul 1: Descarcă template-ul</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">{labels.step1Title}</h3>
             <p className="text-sm text-blue-800 mb-3">
               Template-ul conține toate cele {apartments.length} apartamente din asociație. Completează doar coloana
-              <strong> „Sumă (RON)"</strong> pentru fiecare apartament.
+              <strong> „{labels.valueColumnLabel}"</strong> pentru fiecare apartament.
             </p>
             <button
               onClick={handleDownloadTemplate}
@@ -163,7 +203,7 @@ const ExcelUploadIndividualAmountsModal = ({
                 <>
                   <div className="text-4xl mb-4">📁</div>
                   <h4 className="text-lg font-semibold text-gray-700 mb-2">Selectează fișierul Excel</h4>
-                  <p className="text-gray-600 mb-4">Alege template-ul completat cu sumele</p>
+                  <p className="text-gray-600 mb-4">Alege template-ul completat cu {labels.valueNounPlural}le</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -223,7 +263,7 @@ const ExcelUploadIndividualAmountsModal = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <div className="text-2xl font-bold text-green-600">{parseResults.stats.filled}</div>
-                  <div className="text-xs text-gray-600">Sume completate</div>
+                  <div className="text-xs text-gray-600">{labels.filledLabel}</div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <div className="text-2xl font-bold text-gray-600">{parseResults.stats.skipped}</div>
@@ -271,7 +311,7 @@ const ExcelUploadIndividualAmountsModal = ({
               {parseResults.errors.length === 0 && parseResults.preview.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                    <h4 className="font-medium text-gray-800">📋 Preview - sumele ce vor fi importate</h4>
+                    <h4 className="font-medium text-gray-800">📋 Preview - {labels.valueNounPlural}le ce vor fi importate</h4>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     <table className="w-full text-sm">
@@ -279,8 +319,8 @@ const ExcelUploadIndividualAmountsModal = ({
                         <tr>
                           <th className="px-3 py-2 text-left font-medium text-gray-700">Apt</th>
                           <th className="px-3 py-2 text-left font-medium text-gray-700">Proprietar</th>
-                          <th className="px-3 py-2 text-right font-medium text-gray-700">Sumă veche</th>
-                          <th className="px-3 py-2 text-right font-medium text-gray-700">Sumă nouă</th>
+                          <th className="px-3 py-2 text-right font-medium text-gray-700">{labels.valueColumnShort} veche</th>
+                          <th className="px-3 py-2 text-right font-medium text-gray-700">{labels.valueColumnShort} nouă</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -299,7 +339,7 @@ const ExcelUploadIndividualAmountsModal = ({
                               <td className="px-3 py-2 text-gray-700">{entry.apartmentOwner}</td>
                               <td className="px-3 py-2 text-right text-gray-500">
                                 {oldAmount !== undefined && oldAmount !== null && oldAmount !== ''
-                                  ? `${parseFloat(oldAmount).toFixed(2)} lei`
+                                  ? `${parseFloat(oldAmount).toFixed(2)} ${labels.valueUnit}`
                                   : '—'}
                               </td>
                               <td className={`px-3 py-2 text-right font-medium ${
@@ -307,8 +347,8 @@ const ExcelUploadIndividualAmountsModal = ({
                                 isChanging ? 'text-orange-600' : 'text-green-700'
                               }`}>
                                 {entry.skipped
-                                  ? '(gol — păstrat)'
-                                  : `${entry.amount.toFixed(2)} lei`}
+                                  ? labels.emptyKept
+                                  : `${entry.amount.toFixed(2)} ${labels.valueUnit}`}
                               </td>
                             </tr>
                           );
@@ -343,7 +383,7 @@ const ExcelUploadIndividualAmountsModal = ({
                   Se importă...
                 </>
               ) : (
-                <>✅ Confirmă import ({parseResults.stats.filled} sume)</>
+                <>✅ Confirmă import ({parseResults.stats.filled} {labels.importBtnSuffix})</>
               )}
             </button>
           )}
@@ -352,5 +392,12 @@ const ExcelUploadIndividualAmountsModal = ({
     </div>
   );
 };
+
+/**
+ * 💧 Wrapper pentru import consumuri (mc)
+ */
+export const ExcelUploadConsumptionModal = (props) => (
+  <ExcelUploadIndividualAmountsModal {...props} mode="consumption" />
+);
 
 export default ExcelUploadIndividualAmountsModal;

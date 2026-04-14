@@ -235,8 +235,13 @@ const useExpenseConfigurations = (currentSheet) => {
         if (defaultType) {
           expenseId = defaultType.id;
           expenseName = expenseName || defaultType.name;
+        } else {
+          // Cheltuială custom nouă (nu e în defaults) — folosim expenseType ca nume fallback
+          expenseName = expenseName || expenseType;
         }
       }
+      // Siguranță: dacă după toată logica tot e undefined, cădem pe expenseType
+      if (!expenseName) expenseName = expenseType;
 
       // Determină isCustom și isEnabled
       const isCustom = config.isCustom !== undefined ? config.isCustom :

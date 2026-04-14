@@ -47,7 +47,7 @@ export const getExpenseStatus = (
 ) => {
   const expense = getDistributedExpense(expenseTypeName);
   const config = getExpenseConfig(expenseTypeName);
-  const isConsumption = config.distributionType === 'consumption';
+  const isConsumption = config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative';
 
   // Filtrează apartamentele EXCLUSE din calcul (nu participă deloc)
   const apartmentParticipations = config.apartmentParticipation || {};
@@ -126,7 +126,10 @@ export const getExpenseStatus = (
 
     completed = nonExcludedApartments.filter(apt => {
       const value = dataObject?.[apt.id];
-      return value && parseFloat(value) >= 0;
+      // ZERO e valoare validă: parseFloat(0)=0, dar 0 e falsy în JS,
+      // deci nu putem folosi `value && ...`. Verificăm prin parseFloat direct.
+      const num = parseFloat(value);
+      return !isNaN(num) && num >= 0;
     }).length;
   }
 
@@ -320,10 +323,36 @@ export const ConsumptionTable = ({
   stairs,
   selectedStairTab,
   blocks,
-  maintenanceData // 🆕 Adăugat pentru a citi valorile ajustate cu rotunjire
+  maintenanceData, // 🆕 Adăugat pentru a citi valorile ajustate cu rotunjire
+  onEditParticipation // 🔗 Callback pentru badge-ul de participare clickabil
 }) => {
-  const indexTypes = config.indexConfiguration?.indexTypes || [];
-  const inputMode = config.indexConfiguration?.inputMode || 'manual';
+  // 🧮 Cumulative consumption mode: consumul este suma consumurilor din alte cheltuieli
+  const isCumulative = config?.distributionType === 'consumption_cumulative';
+  const cumulativeSourceIds = config?.cumulativeFromExpenseTypeIds || [];
+
+  // Calculează consumul cumulat per apartament din cheltuielile sursă
+  const computeCumulativeConsumption = (apartmentId) => {
+    if (!isCumulative || !currentSheet?.expenses) return { value: 0, hasAnySource: false, missing: [] };
+    let total = 0;
+    let hasAnySource = false;
+    const missing = [];
+    cumulativeSourceIds.forEach(srcId => {
+      const srcExpense = currentSheet.expenses.find(exp =>
+        exp.expenseTypeId === srcId || exp.id === srcId
+      );
+      if (srcExpense) {
+        hasAnySource = true;
+        const v = parseFloat(srcExpense.consumption?.[apartmentId]) || 0;
+        total += v;
+      } else {
+        missing.push(srcId);
+      }
+    });
+    return { value: total, hasAnySource, missing };
+  };
+
+  const indexTypes = isCumulative ? [] : (config.indexConfiguration?.indexTypes || []);
+  const inputMode = isCumulative ? 'manual' : (config.indexConfiguration?.inputMode || 'manual');
 
   // 🔧 Configurare contoare per apartament
   const apartmentMeters = config.indexConfiguration?.apartmentMeters || {};
@@ -342,8 +371,11 @@ export const ConsumptionTable = ({
     return participation?.type === 'percentage' || participation?.type === 'fixed';
   });
 
-  // Arată coloana "După participare" doar dacă există participări parțiale
-  const showParticipationColumns = hasPartialParticipation;
+  // Coloana "Participare" e mereu vizibilă (cu badge Integral/Exclus/Procent/Sumă fixă)
+  // — uniform cu pattern-ul de la celelalte cheltuieli (ExpenseDistributionTable).
+  const showParticipationColumns = true;
+  // Coloana "După participare" (sumă recalculată) apare doar dacă există participări parțiale.
+  const showAfterParticipationColumn = hasPartialParticipation;
 
   // Verifică dacă coloana "Persoane" este relevantă
   // Arată doar când: distribuție pe persoane SAU diferență distribuită proporțional cu persoanele
@@ -366,9 +398,10 @@ export const ConsumptionTable = ({
               <th className="px-3 py-2 text-center font-semibold text-gray-700 border-l w-20 align-top">Persoane</th>
             )}
 
-            {/* Coloană Participare - doar dacă nu sunt toate integrale */}
+            {/* Coloană Participare - lățime fixă ca să nu crească pe ecrane wide
+                (spațiul în plus se duce în Proprietar). */}
             {showParticipationColumns && (
-              <th className="px-3 py-2 text-left font-semibold text-gray-700 border-l bg-amber-50 min-w-[120px] align-top">
+              <th className="px-3 py-2 text-left font-semibold text-gray-700 border-l bg-amber-50 align-top" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                 Participare
               </th>
             )}
@@ -414,7 +447,7 @@ export const ConsumptionTable = ({
             )}
 
             {/* Coloană sumă după participare - doar dacă nu sunt toate integrale */}
-            {showParticipationColumns && (
+            {showAfterParticipationColumn && (
               <th className="px-3 py-2 text-right font-semibold text-gray-700 border-l bg-teal-50 align-top" style={{ minWidth: '180px', maxWidth: '180px', width: '180px' }}>
                 După participare (RON)
               </th>
@@ -514,7 +547,7 @@ export const ConsumptionTable = ({
               ))}
               <th className="border-b border-l"></th>
               {expense?.unitPrice && <th className="border-b border-l"></th>}
-              {showParticipationColumns && <th className="border-b border-l"></th>}
+              {showAfterParticipationColumn && <th className="border-b border-l"></th>}
               {expense?.isUnitBased && expense?.billAmount && <th className="border-b border-l"></th>}
               {expense?.isUnitBased && expense?.billAmount && <th className="border-b border-l"></th>}
             </tr>
@@ -531,7 +564,11 @@ export const ConsumptionTable = ({
             }
 
             // Obține consum manual/total
-            const manualValue = String(dataObject[apartment.id] || '');
+            // 🧮 Pentru consumption_cumulative, consumul este calculat automat (suma cheltuielilor sursă)
+            const cumulativeInfo = isCumulative ? computeCumulativeConsumption(apartment.id) : null;
+            const manualValue = isCumulative
+              ? (cumulativeInfo.hasAnySource ? String(cumulativeInfo.value) : '0')
+              : String(dataObject[apartment.id] ?? '');
 
             // 🔧 Verifică care contoare sunt enabled pentru acest apartament
             const aptMeters = apartmentMeters[apartment.id] || {};
@@ -639,22 +676,40 @@ export const ConsumptionTable = ({
                   </td>
                 )}
 
-                {/* Participare - doar dacă nu sunt toate integrale */}
+                {/* Participare - mereu vizibilă, badge clickabil → deschide configurarea
+                    (stil uniform cu ParticipationBadge din ExpenseDistributionTable) */}
                 {showParticipationColumns && (
                   <td className="px-3 py-2 text-gray-700 border-l bg-amber-50">
                     {(() => {
+                      let label, colorClass;
                       if (participation?.type === 'excluded') {
-                        return <span className="text-red-600 font-medium">Exclus</span>;
+                        label = 'Exclus';
+                        colorClass = 'bg-red-100 text-red-700';
                       } else if (participation?.type === 'percentage') {
-                        const percent = participation.value;
-                        return <span className="text-blue-600 font-medium">Procent {percent}%</span>;
+                        label = `Procent ${participation.value}%`;
+                        colorClass = 'bg-orange-100 text-orange-700';
                       } else if (participation?.type === 'fixed') {
                         const fixedMode = config?.fixedAmountMode || 'apartment';
-                        const value = participation.value;
-                        return <span className="text-purple-600 font-medium">Sumă fixă {value} RON{fixedMode === 'person' ? '/pers' : ''}</span>;
+                        label = `Sumă fixă ${participation.value} RON${fixedMode === 'person' ? '/pers' : ''}`;
+                        colorClass = 'bg-orange-100 text-orange-700';
                       } else {
-                        return <span className="text-green-600 font-medium">Integral</span>;
+                        label = 'Integral';
+                        colorClass = 'bg-green-100 text-green-700';
                       }
+                      const clickableClass = onEditParticipation
+                        ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all'
+                        : '';
+                      const Component = onEditParticipation ? 'button' : 'span';
+                      return (
+                        <Component
+                          type={onEditParticipation ? 'button' : undefined}
+                          onClick={onEditParticipation || undefined}
+                          className={`inline-flex items-center rounded font-medium whitespace-nowrap px-2 py-0.5 text-[11px] ${colorClass} ${clickableClass}`}
+                          title={onEditParticipation ? 'Editează participarea' : undefined}
+                        >
+                          {label}
+                        </Component>
+                      );
                     })()}
                   </td>
                 )}
@@ -800,7 +855,17 @@ export const ConsumptionTable = ({
 
                 {/* Coloană Consum */}
                 <td className="px-3 py-0.5 text-center border-l bg-green-50" style={{ minWidth: '100px', maxWidth: '100px', width: '100px' }}>
-                  {isDisabled ? (
+                  {isCumulative ? (
+                    // CUMULATIV: read-only, calculat din cheltuielile sursă
+                    <span
+                      className={`font-medium ${cumulativeInfo.hasAnySource ? 'text-blue-700' : 'text-orange-600'}`}
+                      title={cumulativeInfo.hasAnySource
+                        ? 'Calculat automat din cheltuielile sursă'
+                        : 'Nu există date în cheltuielile sursă'}
+                    >
+                      {isExcluded ? '-' : cumulativeInfo.value.toFixed(2)}
+                    </span>
+                  ) : isDisabled ? (
                     <span className="text-gray-700 font-medium">{isExcluded ? '-' : (displayedConsumption || '-')}</span>
                   ) : ((inputMode === 'indexes' && hasAnyEnabledMeters) || (inputMode === 'mixed' && hasIndexData)) ? (
                     // INDEXES (cu contoare active) sau MIXT cu indexuri: read-only (calculat automat)
@@ -855,7 +920,7 @@ export const ConsumptionTable = ({
                 )}
 
                 {/* După participare (RON) - suma finală după aplicarea participării - doar dacă nu sunt toate integrale */}
-                {showParticipationColumns && (
+                {showAfterParticipationColumn && (
                   <td className={`px-3 py-2 text-right font-semibold border-l ${
                     (() => {
                       // Marchează dacă participarea modifică suma (excluded, percentage sau fixed)
@@ -916,7 +981,10 @@ export const ConsumptionTable = ({
                       allApartments.forEach(apt => {
                         let finalValue = 0;
 
-                        if (inputMode === 'indexes') {
+                        if (isCumulative) {
+                          // Pentru cumulativ, consumul este suma din cheltuielile sursă
+                          finalValue = computeCumulativeConsumption(apt.id).value;
+                        } else if (inputMode === 'indexes') {
                           // Pentru indexes mode, calculează consumul din indecși
                           const aptIndexesData = expense?.indexes?.[apt.id] || {};
                           finalValue = indexTypes.reduce((sum, indexType) => {
@@ -1056,6 +1124,7 @@ export const ConsumptionTable = ({
           localValues={localValues}
           localValuesKey={localValuesKey}
           showParticipationColumns={showParticipationColumns}
+          showAfterParticipationColumn={showAfterParticipationColumn}
           showPersonsColumn={showPersonsColumn}
         />
       </table>
@@ -1082,6 +1151,7 @@ const ConsumptionTableFooter = ({
   localValues = {},
   localValuesKey,
   showParticipationColumns = true,
+  showAfterParticipationColumn = false,
   showPersonsColumn = true
 }) => {
   return (
@@ -1268,7 +1338,7 @@ const ConsumptionTableFooter = ({
         )}
 
         {/* Suma DUPĂ participare - doar dacă nu sunt toate integrale */}
-        {showParticipationColumns && (
+        {showAfterParticipationColumn && (
           <td className="px-2 py-2 border-r align-top">
             <div className="text-right text-green-700 font-bold">
               {(() => {
@@ -1853,7 +1923,7 @@ export const IndividualAmountsTable = ({
         <tbody>
           {apartments.map(apartment => {
             // Obține suma manuală
-            const manualValue = String(dataObject[apartment.id] || '');
+            const manualValue = String(dataObject[apartment.id] ?? '');
 
             // Verifică local values FIRST pentru hasManualValue
             const localIndividual = localValues[`${expenseTypeName}-${apartment.id}`];
@@ -1976,7 +2046,7 @@ export const IndividualAmountsTable = ({
     {/* ============ MOBILE CARD LIST (<768px) ============ */}
     <div className="md:hidden border rounded-lg overflow-hidden divide-y divide-gray-200 bg-white">
       {apartments.map(apartment => {
-        const manualValue = String(dataObject[apartment.id] || '');
+        const manualValue = String(dataObject[apartment.id] ?? '');
         const localIndividual = localValues[`${expenseTypeName}-${apartment.id}`];
         const effectiveManualValue = localIndividual !== undefined ? localIndividual : manualValue;
         const hasManualValue = effectiveManualValue !== '' && effectiveManualValue !== null && effectiveManualValue !== undefined && !isNaN(parseFloat(effectiveManualValue));

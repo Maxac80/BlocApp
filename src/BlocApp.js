@@ -402,6 +402,7 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
     handleDeleteCustomExpense,
     handleDeleteMonthlyExpense,
     updateExpenseConsumption: _updateExpenseConsumptionRaw,
+    updateExpenseConsumptionBatch: _updateExpenseConsumptionBatchRaw,
     updateExpenseIndividualAmount: _updateExpenseIndividualAmountRaw,
     updateExpenseIndividualAmountsBatch: _updateExpenseIndividualAmountsBatchRaw,
     updatePendingConsumption,
@@ -469,6 +470,13 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
       await syncInvoicesAfterExpenseChange(activeSheet, args[0]);
     }
   }, [_updateExpenseIndividualAmountsBatchRaw, syncInvoicesAfterExpenseChange, activeSheet]);
+
+  const updateExpenseConsumptionBatch = React.useCallback(async (...args) => {
+    await _updateExpenseConsumptionBatchRaw(...args);
+    if (syncInvoicesAfterExpenseChange && activeSheet) {
+      await syncInvoicesAfterExpenseChange(activeSheet, args[0]);
+    }
+  }, [_updateExpenseConsumptionBatchRaw, syncInvoicesAfterExpenseChange, activeSheet]);
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
@@ -797,6 +805,7 @@ useEffect(() => {
               handleUpdateExpense={handleUpdateExpense}
               handleDeleteMonthlyExpense={(expenseId) => handleDeleteMonthlyExpense(expenseId, { invoices, removeInvoiceDistribution })}
               updateExpenseConsumption={updateExpenseConsumption}
+              updateExpenseConsumptionBatch={updateExpenseConsumptionBatch}
               updateExpenseIndividualAmount={updateExpenseIndividualAmount}
               updateExpenseIndividualAmountsBatch={updateExpenseIndividualAmountsBatch}
               updatePendingConsumption={updatePendingConsumption}

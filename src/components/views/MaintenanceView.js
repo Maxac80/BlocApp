@@ -49,6 +49,7 @@ const MaintenanceView = ({
   handleUpdateExpense,
   handleDeleteMonthlyExpense,
   updateExpenseConsumption,
+  updateExpenseConsumptionBatch,
   updateExpenseIndividualAmount,
   updateExpenseIndividualAmountsBatch,
   updatePendingConsumption,
@@ -921,7 +922,14 @@ const MaintenanceView = ({
         {(() => {
           const totalExpenseTypes = getAssociationExpenseTypes ? getAssociationExpenseTypes().length : 0;
           const distributedCount = associationExpenses?.length || 0;
-          const totalDistributed = (associationExpenses || []).reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+          // Pentru cheltuieli pe consum (și consum cumulat), suma reală e în billAmount
+          // (amount e 0 pentru consumption-based). Pentru alte tipuri folosim amount.
+          const totalDistributed = (associationExpenses || []).reduce((sum, exp) => {
+            const val = exp.isUnitBased || exp.distributionType === 'consumption' || exp.distributionType === 'consumption_cumulative'
+              ? (parseFloat(exp.billAmount) || 0)
+              : (parseFloat(exp.amount) || 0);
+            return sum + val;
+          }, 0);
           const totalInvoices = (invoices || []).reduce((sum, inv) => sum + (parseFloat(inv.totalInvoiceAmount) || 0), 0);
           return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -1151,6 +1159,7 @@ const MaintenanceView = ({
                     expandedExpenses={expandedExpenses}
                     setExpandedExpenses={setExpandedExpenses}
                     updateExpenseConsumption={updateExpenseConsumption}
+                    updateExpenseConsumptionBatch={updateExpenseConsumptionBatch}
                     updateExpenseIndividualAmount={updateExpenseIndividualAmount}
                     updateExpenseIndividualAmountsBatch={updateExpenseIndividualAmountsBatch}
                     association={association}

@@ -33,9 +33,27 @@ const loadBlocAppLogo = async (workbook) => {
 };
 
 /**
+ * 🎨 OPȚIUNI IMPLICITE TEMPLATE (mod sume individuale)
+ */
+const DEFAULT_TEMPLATE_OPTIONS = {
+  headerTitle: 'IMPORT SUME INDIVIDUALE',
+  headerIcon: '💰',
+  valueColumnLabel: 'Sumă (RON)',
+  valueUnitShort: 'RON',
+  valueNoun: 'suma',
+  valueNounPlural: 'sumele',
+  valueNounCapitalized: 'Suma',
+  valueNounCapitalizedPlural: 'Sumele',
+  valueExample: '125.50',
+  titlePrefix: 'Template Sume Individuale',
+  fileNamePrefix: 'Template',
+  subjectText: 'Template pentru importul sumelor individuale'
+};
+
+/**
  * 📖 GENEREAZĂ SHEET CU INSTRUCȚIUNI
  */
-const generateInstructionsSheet = async (workbook, association, expense, logoImageId) => {
+const generateInstructionsSheet = async (workbook, association, expense, logoImageId, options = DEFAULT_TEMPLATE_OPTIONS) => {
   const sheet = workbook.addWorksheet('📖 INSTRUCȚIUNI', {
     views: [{ showGridLines: false }]
   });
@@ -56,7 +74,7 @@ const generateInstructionsSheet = async (workbook, association, expense, logoIma
   // === HEADER ===
   sheet.mergeCells('A5:G5');
   const headerCell = sheet.getCell('A5');
-  headerCell.value = `💰  IMPORT SUME INDIVIDUALE - ${expense.name?.toUpperCase() || 'CHELTUIALĂ'}`;
+  headerCell.value = `${options.headerIcon}  ${options.headerTitle} - ${expense.name?.toUpperCase() || 'CHELTUIALĂ'}`;
   headerCell.font = { size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
   headerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
   headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -79,11 +97,11 @@ const generateInstructionsSheet = async (workbook, association, expense, logoIma
   sheet.getRow(8).height = 25;
 
   sheet.mergeCells('A10:G10');
-  sheet.getCell('A10').value = '   Acest template vă permite să introduceți rapid sumele pentru fiecare apartament.';
+  sheet.getCell('A10').value = `   Acest template vă permite să introduceți rapid ${options.valueNounPlural} pentru fiecare apartament.`;
   sheet.getCell('A10').font = { size: 11, italic: true, color: { argb: 'FF6B7280' } };
 
   sheet.mergeCells('A11:G11');
-  sheet.getCell('A11').value = '   Completați doar coloana "Sumă (RON)" din sheet-urile scărilor. Celelalte câmpuri sunt blocate.';
+  sheet.getCell('A11').value = `   Completați doar coloana "${options.valueColumnLabel}" din sheet-urile scărilor. Celelalte câmpuri sunt blocate.`;
   sheet.getCell('A11').font = { size: 11, italic: true, color: { argb: 'FF6B7280' } };
 
   // === PAȘI ===
@@ -96,8 +114,8 @@ const generateInstructionsSheet = async (workbook, association, expense, logoIma
 
   const steps = [
     '   ① Selectați sheet-ul corespunzător scării',
-    '   ② Completați suma în coloana "Sumă (RON)" pentru fiecare apartament',
-    '   ③ Apartamentele care nu au sumă pot fi lăsate goale sau cu 0',
+    `   ② Completați ${options.valueNoun} în coloana "${options.valueColumnLabel}" pentru fiecare apartament`,
+    `   ③ Apartamentele care nu au ${options.valueNoun} pot fi lăsate goale sau cu 0`,
     '   ④ Salvați fișierul și încărcați-l înapoi în BlocApp prin butonul "Importă din Excel"'
   ];
 
@@ -121,8 +139,8 @@ const generateInstructionsSheet = async (workbook, association, expense, logoIma
   const warnings = [
     '   •  Nu modificați coloanele Nr_Apt și Proprietar — sunt blocate',
     '   •  Nu ștergeți sau redenumiți sheet-urile scărilor',
-    '   •  Sumele goale nu vor suprascrie valorile existente în aplicație',
-    '   •  Sumele trebuie să fie numere pozitive (ex. 125.50)'
+    `   •  ${options.valueNounCapitalizedPlural} goale nu vor suprascrie valorile existente în aplicație`,
+    `   •  ${options.valueNounCapitalizedPlural} trebuie să fie numere pozitive (ex. ${options.valueExample})`
   ];
 
   warnings.forEach((warn, i) => {
@@ -169,7 +187,7 @@ const generateInstructionsSheet = async (workbook, association, expense, logoIma
 /**
  * 🏗️ GENEREAZĂ SHEET PENTRU O SCARĂ
  */
-const generateStairSheet = async (workbook, stair, block, apartments, expense, logoImageId) => {
+const generateStairSheet = async (workbook, stair, block, apartments, expense, logoImageId, options = DEFAULT_TEMPLATE_OPTIONS) => {
   // Numele sheet-ului: max 31 caractere, fără caractere speciale Excel
   const rawName = `${block.name}_${stair.name}`.replace(/[\\/?*[\]]/g, '_');
   const sheetName = rawName.substring(0, 31);
@@ -202,14 +220,14 @@ const generateStairSheet = async (workbook, stair, block, apartments, expense, l
   // Instrucțiune scurtă
   sheet.mergeCells('A6:C6');
   const instructionCell = sheet.getCell('A6');
-  instructionCell.value = '✏️ Completați DOAR coloana "Sumă (RON)". Restul câmpurilor sunt blocate.';
+  instructionCell.value = `✏️ Completați DOAR coloana "${options.valueColumnLabel}". Restul câmpurilor sunt blocate.`;
   instructionCell.font = { size: 11, italic: true, color: { argb: 'FF6B7280' } };
   instructionCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
   instructionCell.alignment = { horizontal: 'center', vertical: 'middle' };
   sheet.getRow(6).height = 22;
 
   // === HEADER COLOANE (row 8) ===
-  const headers = ['Nr_Apt', 'Proprietar', 'Sumă (RON)'];
+  const headers = ['Nr_Apt', 'Proprietar', options.valueColumnLabel];
   sheet.getRow(8).values = headers;
   sheet.getRow(8).height = 28;
 
@@ -288,7 +306,7 @@ const generateStairSheet = async (workbook, stair, block, apartments, expense, l
   // === COLUMN WIDTHS ===
   sheet.getColumn(1).width = 12;  // Nr_Apt
   sheet.getColumn(2).width = 36;  // Proprietar
-  sheet.getColumn(3).width = 22;  // Sumă (RON)
+  sheet.getColumn(3).width = 22;  // Coloană valoare editabilă
 
   // === PROTECȚIE SHEET ===
   await sheet.protect('', {
@@ -319,11 +337,13 @@ const generateStairSheet = async (workbook, stair, block, apartments, expense, l
  * @param {Array} blocks - Blocurile asociației
  * @param {Array} stairs - Scările asociației
  */
-export const generateIndividualAmountsTemplate = async (association, expense, apartments, blocks, stairs) => {
+export const generateIndividualAmountsTemplate = async (association, expense, apartments, blocks, stairs, options = DEFAULT_TEMPLATE_OPTIONS) => {
   try {
     if (!association || !expense || !apartments || !blocks || !stairs) {
       throw new Error('Date incomplete pentru generarea template-ului');
     }
+
+    const mergedOptions = { ...DEFAULT_TEMPLATE_OPTIONS, ...(options || {}) };
 
     const associationBlocks = blocks.filter(block => block.associationId === association.id);
     const associationStairs = stairs.filter(stair =>
@@ -341,17 +361,17 @@ export const generateIndividualAmountsTemplate = async (association, expense, ap
     workbook.lastModifiedBy = 'BlocApp';
     workbook.created = new Date();
     workbook.modified = new Date();
-    workbook.title = `Template Sume Individuale - ${expense.name} - ${association.name}`;
-    workbook.subject = `Template pentru importul sumelor individuale la ${expense.name}`;
+    workbook.title = `${mergedOptions.titlePrefix} - ${expense.name} - ${association.name}`;
+    workbook.subject = `${mergedOptions.subjectText} la ${expense.name}`;
     workbook.company = 'BlocApp';
-    workbook.category = 'Import Sume';
+    workbook.category = mergedOptions.titlePrefix;
     workbook.description = `Template generat pentru ${association.name}. Include ${associationStairs.length} scară(ri) și ${apartments.length} apartamente.`;
 
     // Încarcă logo-ul o singură dată
     const logoImageId = await loadBlocAppLogo(workbook);
 
     // Sheet Instrucțiuni
-    await generateInstructionsSheet(workbook, association, expense, logoImageId);
+    await generateInstructionsSheet(workbook, association, expense, logoImageId, mergedOptions);
 
     // Sheet-uri per scară
     let stairCount = 0;
@@ -363,7 +383,7 @@ export const generateIndividualAmountsTemplate = async (association, expense, ap
       const stairApartments = apartments.filter(apt => apt.stairId === stair.id);
       if (stairApartments.length === 0) continue;
 
-      await generateStairSheet(workbook, stair, block, stairApartments, expense, logoImageId);
+      await generateStairSheet(workbook, stair, block, stairApartments, expense, logoImageId, mergedOptions);
       stairCount++;
     }
 
@@ -377,7 +397,7 @@ export const generateIndividualAmountsTemplate = async (association, expense, ap
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `Template_${safeName(expense.name)}_${safeName(association.name)}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = `${mergedOptions.fileNamePrefix}_${safeName(expense.name)}_${safeName(association.name)}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -397,4 +417,39 @@ export const generateIndividualAmountsTemplate = async (association, expense, ap
     console.error('❌ Eroare la generarea template-ului sume individuale:', error);
     throw error;
   }
+};
+
+/**
+ * 💧 OPȚIUNI PENTRU TEMPLATE CONSUMURI (mc)
+ */
+const CONSUMPTION_TEMPLATE_OPTIONS = {
+  headerTitle: 'IMPORT CONSUMURI',
+  headerIcon: '💧',
+  valueColumnLabel: 'Consum (mc)',
+  valueUnitShort: 'mc',
+  valueNoun: 'consumul',
+  valueNounPlural: 'consumurile',
+  valueNounCapitalized: 'Consumul',
+  valueNounCapitalizedPlural: 'Consumurile',
+  valueExample: '12.50',
+  titlePrefix: 'Template Consumuri',
+  fileNamePrefix: 'Template_Consumuri',
+  subjectText: 'Template pentru importul consumurilor'
+};
+
+/**
+ * 💧 GENEREAZĂ TEMPLATE EXCEL PENTRU CONSUMURI (mc)
+ *
+ * Wrapper thin peste `generateIndividualAmountsTemplate` care adaptează etichetele
+ * pentru cheltuieli distribuite pe consum (mod "Manual").
+ */
+export const generateConsumptionTemplate = async (association, expense, apartments, blocks, stairs) => {
+  return generateIndividualAmountsTemplate(
+    association,
+    expense,
+    apartments,
+    blocks,
+    stairs,
+    CONSUMPTION_TEMPLATE_OPTIONS
+  );
 };

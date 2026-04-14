@@ -149,7 +149,7 @@ const ExpenseEntryModal = ({
     }, 0);
 
     const totalStr = total > 0 ? total.toString() : '';
-    if (config.distributionType === 'consumption') {
+    if (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') {
       setBillAmount(totalStr);
     } else {
       setTotalAmount(totalStr);
@@ -398,7 +398,7 @@ const ExpenseEntryModal = ({
       const finalDistAmount = (isReselectingOriginal && originalDistAmount) ? originalDistAmount : remainingStr;
       // Auto-fill total doar dacă e un singur furnizor + un singur document
       if (!isMultiDocumentMode()) {
-        if (config?.distributionType === 'consumption') {
+        if ((config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative')) {
           setBillAmount(finalDistAmount);
         } else {
           setTotalAmount(finalDistAmount);
@@ -450,7 +450,7 @@ const ExpenseEntryModal = ({
     updateSupplierDocument(supplierId, docIndex, updates);
     // Auto-fill total doar dacă e un singur furnizor + un singur document
     if (!isMultiDocumentMode() && numValue > 0) {
-      if (config?.distributionType === 'consumption') {
+      if ((config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative')) {
         setBillAmount(value);
       } else {
         setTotalAmount(value);
@@ -683,7 +683,7 @@ const ExpenseEntryModal = ({
                 const finalVal = (maxAmount > 0 && parseFloat(val) > maxAmount) ? maxAmount.toString() : val;
                 updateSupplierDocument(sid, docIndex, { distributeAmount: finalVal });
                 if (!isMultiDocumentMode()) {
-                  if (config?.distributionType === 'consumption') {
+                  if ((config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative')) {
                     setBillAmount(finalVal);
                   } else {
                     setTotalAmount(finalVal);
@@ -777,7 +777,7 @@ const ExpenseEntryModal = ({
                   updateSupplierDocument(sid, docIndex, { distributeAmount: finalVal });
                   // Sincronizează cu totalAmount/billAmount pentru validare
                   if (!isMultiDocumentMode()) {
-                    if (config?.distributionType === 'consumption') {
+                    if ((config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative')) {
                       setBillAmount(finalVal);
                     } else {
                       setTotalAmount(finalVal);
@@ -883,7 +883,7 @@ const ExpenseEntryModal = ({
     if (!isMultiDocumentMode()) {
       const firstDocWithAmount = getAllDocs().find(d => d.distributeAmount && parseFloat(d.distributeAmount) > 0);
       if (firstDocWithAmount) {
-        if (config?.distributionType === 'consumption' && !billAmount) {
+        if ((config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative') && !billAmount) {
           setBillAmount(firstDocWithAmount.distributeAmount);
         } else if (config?.distributionType !== 'consumption' && !totalAmount) {
           setTotalAmount(firstDocWithAmount.distributeAmount);
@@ -919,7 +919,7 @@ const ExpenseEntryModal = ({
     };
 
     // Adaugă sume bazate pe distributionType
-    if (config.distributionType === 'consumption') {
+    if (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') {
       if (!unitPrice) {
         alert('Completează prețul pe unitate');
         return;
@@ -1032,7 +1032,7 @@ const ExpenseEntryModal = ({
     if (receptionMode === 'per_block' || receptionMode === 'per_stair') {
       currentDist = Object.values(amounts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toString();
     } else {
-      currentDist = config.distributionType === 'consumption' ? billAmount : totalAmount;
+      currentDist = (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') ? billAmount : totalAmount;
     }
 
     const suppliers = getEffectiveSuppliers(config);
@@ -1282,6 +1282,7 @@ const ExpenseEntryModal = ({
                           config.distributionType === 'apartment' ? 'Pe apartament' :
                           config.distributionType === 'person' ? 'Pe persoană' :
                           config.distributionType === 'consumption' ? `Pe consum (${getConsumptionUnit(config)})` :
+                          config.distributionType === 'consumption_cumulative' ? `Pe consum cumulat (${getConsumptionUnit(config)})` :
                           config.distributionType === 'individual' ? 'Pe apartament (individual)' :
                           config.distributionType === 'cotaParte' ? 'Pe cotă parte indiviză' : config.distributionType
                         }</span>
@@ -1314,7 +1315,7 @@ const ExpenseEntryModal = ({
             {/* Preț pe unitate — pus ÎNAINTEA facturilor pentru cheltuieli pe consum
                 (admin introduce întâi prețul unitar, apoi selectează facturile).
                 Format la 2 zecimale pe blur (ex: 30 → 30.00). */}
-            {selectedExpense && config && config.distributionType === 'consumption' && (
+            {selectedExpense && config && (config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Preț pe unitate (RON/{getConsumptionUnit(config)}) *
@@ -1339,7 +1340,7 @@ const ExpenseEntryModal = ({
             {selectedExpense && config && (
               <>
                 {/* CONSUMPTION - verifică și receptionMode */}
-                {config.distributionType === 'consumption' && (
+                {(config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') && (
                   <div className="space-y-3">
                     {/* Câmpul total "Sumă de distribuit" apare DOAR dacă nu există furnizori configurați
                         (caz rar — fallback). Când există furnizori, totalul se sincronizează automat
@@ -1424,8 +1425,10 @@ const ExpenseEntryModal = ({
                 {/* INDIVIDUAL - verifică și receptionMode */}
                 {config.distributionType === 'individual' && (
                   <>
-                    {/* MODE: TOTAL */}
-                    {config.receptionMode === 'per_association' && (
+                    {/* MODE: TOTAL — câmpul apare DOAR dacă nu există furnizori configurați.
+                        Când există furnizori, totalul se sincronizează automat din input-urile per-factură de sus,
+                        deci ar fi duplicat confuz. */}
+                    {config.receptionMode === 'per_association' && getEffectiveSuppliers(config).length === 0 && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Sumă de distribuit (RON) *
@@ -1506,8 +1509,10 @@ const ExpenseEntryModal = ({
                 {/* APARTMENT / PERSON - poate fi total SAU defalcat */}
                 {(config.distributionType === 'apartment' || config.distributionType === 'person') && (
                   <>
-                    {/* MODE: TOTAL */}
-                    {config.receptionMode === 'per_association' && (
+                    {/* MODE: TOTAL — câmpul apare DOAR dacă nu există furnizori configurați.
+                        Când există furnizori, totalul se sincronizează automat din input-urile per-factură de sus,
+                        deci ar fi duplicat confuz. */}
+                    {config.receptionMode === 'per_association' && getEffectiveSuppliers(config).length === 0 && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Sumă de distribuit (RON) *
@@ -1592,8 +1597,10 @@ const ExpenseEntryModal = ({
                 {/* COTA PARTE - verifică și receptionMode */}
                 {(config.distributionType === 'cotaParte') && (
                   <>
-                    {/* MODE: TOTAL */}
-                    {config.receptionMode === 'per_association' && (
+                    {/* MODE: TOTAL — câmpul apare DOAR dacă nu există furnizori configurați.
+                        Când există furnizori, totalul se sincronizează automat din input-urile per-factură de sus,
+                        deci ar fi duplicat confuz. */}
+                    {config.receptionMode === 'per_association' && getEffectiveSuppliers(config).length === 0 && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Sumă de distribuit (RON) *

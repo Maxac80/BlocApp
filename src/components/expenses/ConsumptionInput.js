@@ -94,7 +94,7 @@ const ConsumptionInput = ({
     const customTypes = [];
     associationExpenses.forEach(expense => {
       const config = getExpenseConfig(expense);  // Trimite obiectul complet pentru a accesa expenseTypeId
-      if (config.distributionType === 'consumption' &&
+      if ((config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative') &&
           !defaultConsumptionTypes.some(dt => dt.name === expense.name) &&
           !disabledTypes.some(dt => dt.name === expense.name)) {
         customTypes.push({
@@ -183,7 +183,7 @@ const ConsumptionInput = ({
     const expense = getDistributedExpense(expenseTypeName);
     const config = getExpenseConfig(expense || expenseTypeName);  // Trimite obiectul cheltuielii pentru a accesa expenseTypeId
     const apartments = getFilteredApartments();
-    const isConsumption = config.distributionType === 'consumption';
+    const isConsumption = config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative';
 
     // Filtrează apartamentele EXCLUSE din calcul (nu participă deloc)
     const apartmentParticipations = config.apartmentParticipation || {};
@@ -236,7 +236,7 @@ const ConsumptionInput = ({
       }
 
       const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
-      const isConsumption = config.distributionType === 'consumption';
+      const isConsumption = config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative';
 
       // Mapează receptionMode
       let receptionMode = expense.receptionMode || 'total';
@@ -390,7 +390,7 @@ const ConsumptionInput = ({
             const isExpanded = expandedExpenses[expenseType.name];
             const apartments = getFilteredApartments();
 
-            const isConsumption = config.distributionType === 'consumption';
+            const isConsumption = config.distributionType === 'consumption' || config.distributionType === 'consumption_cumulative';
 
             // Obține date din expense distribuit SAU din pending consumptions
             let dataObject = {};
@@ -482,7 +482,8 @@ const ConsumptionInput = ({
                         <div className="flex items-center gap-3 text-gray-600">
                           <span className="font-medium">Distribuție:</span>
                           <span>
-                            {config.distributionType === "consumption" && "Pe consum (mc/apartament)"}
+                            {config.distributionType === "consumption" && `Pe consum (${config.consumptionUnit || 'mc'}/apartament)`}
+                            {config.distributionType === "consumption_cumulative" && `Pe consum cumulat (${config.consumptionUnit || 'mc'}/apartament)`}
                             {config.distributionType === "individual" && "Sume individuale (RON/apartament)"}
                           </span>
                         </div>
@@ -1227,7 +1228,9 @@ const ConsumptionInput = ({
                                 }
 
                                 // Obține consum manual/total
-                                const manualValue = String(dataObject[apartment.id] || '');
+                                // ATENȚIE: folosim `??` nu `||` ca să tratăm 0 ca valoare validă
+                                // (`||` ar transforma 0 în '' fiindcă 0 e falsy în JS)
+                                const manualValue = String(dataObject[apartment.id] ?? '');
 
                                 // Calculează consum total din indecși - verifică OPTIMISTIC values first
                                 const totalIndexConsumption = indexTypes.reduce((sum, indexType) => {
@@ -1444,7 +1447,7 @@ const ConsumptionInput = ({
                                     {isConsumption && (
                                       <td className="px-3 py-2 text-center border-l bg-green-50">
                                         {isDisabled ? (
-                                          <span className="text-gray-700 font-medium">{isExcluded ? '-' : (displayedConsumption || '-')}</span>
+                                          <span className="text-gray-700 font-medium">{isExcluded ? '-' : (displayedConsumption !== '' ? displayedConsumption : '-')}</span>
                                         ) : inputMode === 'indexes' ? (
                                           // INDEXES: read-only (calculat automat)
                                           <span className={`font-medium ${hasIndexData ? 'text-blue-700' : 'text-gray-400'}`}>
@@ -1494,7 +1497,7 @@ const ConsumptionInput = ({
                                     {!isConsumption && (
                                       <td className="px-3 py-2 text-center border-l">
                                         {isDisabled ? (
-                                          <span className="text-gray-600">{isExcluded ? '-' : (manualValue || '-')}</span>
+                                          <span className="text-gray-600">{isExcluded ? '-' : (manualValue !== '' ? manualValue : '-')}</span>
                                         ) : (
                                           <input
                                             type="text"
@@ -1775,7 +1778,7 @@ const ConsumptionInput = ({
                                       const expense = getDistributedExpense(expenseType.name);
                                       const config = getExpenseConfig(expense || expenseType.name);
                                       const apartmentParticipations = config?.apartmentParticipation || {};
-                                      const isConsumption = config?.distributionType === 'consumption';
+                                      const isConsumption = config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative';
 
                                       const totalAfterParticipation = apartments.reduce((sum, apt) => {
                                         const participation = apartmentParticipations[apt.id];
@@ -1857,7 +1860,7 @@ const ConsumptionInput = ({
 
                                     const config = getExpenseConfig(expense || expenseType.name);
                                     const apartmentParticipations = config?.apartmentParticipation || {};
-                                    const isConsumption = config?.distributionType === 'consumption';
+                                    const isConsumption = config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative';
 
                                     const totalAfterParticipation = apartmentsForDiff.reduce((sum, apt) => {
                                       const participation = apartmentParticipations[apt.id];
@@ -1984,7 +1987,7 @@ const ConsumptionInput = ({
 
                                       const config = getExpenseConfig(expense || expenseType.name);  // Trimite obiectul cheltuielii pentru expenseTypeId
                                       const apartmentParticipations = config?.apartmentParticipation || {};
-                                      const isConsumption = config?.distributionType === 'consumption';
+                                      const isConsumption = config?.distributionType === 'consumption' || config?.distributionType === 'consumption_cumulative';
 
                                       // Calculează total după participare pentru apartamentele corecte
                                       const totalAfterParticipation = apartmentsForCalculation.reduce((sum, apt) => {

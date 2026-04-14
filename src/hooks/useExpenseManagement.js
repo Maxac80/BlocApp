@@ -357,7 +357,8 @@ export const useExpenseManagement = ({
     }
 
     const expenseSettings = getExpenseConfig(expenseData.name);
-    const isConsumptionBased = expenseSettings.distributionType === "consumption";
+    const isConsumptionBased = expenseSettings.distributionType === "consumption" || expenseSettings.distributionType === "consumption_cumulative";
+    const isCumulativeBased = expenseSettings.distributionType === "consumption_cumulative";
     const isIndividualBased = expenseSettings.distributionType === "individual";
 
     // Calculează amount-ul total bazat pe receptionMode
@@ -394,6 +395,27 @@ export const useExpenseManagement = ({
     }
 
     try {
+      // 🧮 Pentru cumulativ, calculează snapshot-ul consumului din cheltuielile sursă
+      let cumulativeSnapshot = {};
+      if (isCumulativeBased) {
+        const sourceIds = expenseSettings.cumulativeFromExpenseTypeIds || [];
+        const sourceExpenses = (currentSheet?.expenses || []).filter(exp =>
+          sourceIds.includes(exp.expenseTypeId) || sourceIds.includes(exp.id)
+        );
+        // Derivă IDs apartamente din consumption keys ale cheltuielilor sursă
+        const allAptIds = new Set();
+        sourceExpenses.forEach(src => {
+          Object.keys(src.consumption || {}).forEach(aptId => allAptIds.add(aptId));
+        });
+        allAptIds.forEach(aptId => {
+          let total = 0;
+          sourceExpenses.forEach(src => {
+            total += parseFloat(src.consumption?.[aptId]) || 0;
+          });
+          cumulativeSnapshot[aptId] = total;
+        });
+      }
+
       // 1. Adaugă cheltuiala lunară
       const expensePayload = {
         name: expenseData.name,
@@ -404,7 +426,8 @@ export const useExpenseManagement = ({
         isUnitBased: isConsumptionBased,
         unitPrice: isConsumptionBased ? parseFloat(expenseData.unitPrice) : 0,
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
-        consumption: {},
+        consumption: isCumulativeBased ? cumulativeSnapshot : {},
+        cumulativeFromExpenseTypeIds: isCumulativeBased ? (expenseSettings.cumulativeFromExpenseTypeIds || []) : undefined,
         individualAmounts: {},
         amountsByBlock: expenseData.amountsByBlock || {},
         amountsByStair: expenseData.amountsByStair || {},
@@ -666,6 +689,34 @@ export const useExpenseManagement = ({
       await updateExpenseInSheet(expenseId, updatedExpense);
     } catch (error) {
       console.error('❌ Eroare la batch update sume individuale:', error);
+      throw error;
+    }
+  }, [currentSheet, updateExpenseInSheet]);
+
+  // 💧 BATCH UPDATE CONSUMURI (pentru import Excel, mod Manual)
+  // Primește un obiect { apartmentId: consumption } și face UN singur write în Firestore
+  // Merge cu valorile existente (apartamentele care nu apar în `consumptionsObject` rămân neschimbate)
+  const updateExpenseConsumptionBatch = useCallback(async (expenseId, consumptionsObject) => {
+    try {
+      if (!currentSheet || !currentSheet.expenses) {
+        console.error('❌ No current sheet or expenses');
+        return;
+      }
+
+      const expense = currentSheet.expenses.find(exp => exp.id === expenseId);
+      if (!expense) {
+        console.error('❌ Expense not found in sheet:', expenseId);
+        return;
+      }
+
+      const updatedExpense = {
+        ...expense,
+        consumption: { ...(expense.consumption || {}), ...consumptionsObject }
+      };
+
+      await updateExpenseInSheet(expenseId, updatedExpense);
+    } catch (error) {
+      console.error('❌ Eroare la batch update consumuri:', error);
       throw error;
     }
   }, [currentSheet, updateExpenseInSheet]);
@@ -939,7 +990,8 @@ export const useExpenseManagement = ({
     }
 
     const expenseSettings = getExpenseConfig(expenseData.name);
-    const isConsumptionBased = expenseSettings.distributionType === "consumption";
+    const isConsumptionBased = expenseSettings.distributionType === "consumption" || expenseSettings.distributionType === "consumption_cumulative";
+    const isCumulativeBased = expenseSettings.distributionType === "consumption_cumulative";
     const isIndividualBased = expenseSettings.distributionType === "individual";
 
 
@@ -998,6 +1050,27 @@ export const useExpenseManagement = ({
       // Găsește cheltuiala existentă pentru a păstra consumption și individualAmounts
       const existingExpense = currentSheet?.expenses?.find(exp => exp.id === expenseId);
 
+      // 🧮 Pentru cumulativ, recalculează snapshot-ul consumului din cheltuielile sursă curente
+      let cumulativeSnapshot = null;
+      if (isCumulativeBased) {
+        const sourceIds = expenseSettings.cumulativeFromExpenseTypeIds || [];
+        const sourceExpenses = (currentSheet?.expenses || []).filter(exp =>
+          (sourceIds.includes(exp.expenseTypeId) || sourceIds.includes(exp.id)) && exp.id !== expenseId
+        );
+        const allAptIds = new Set();
+        sourceExpenses.forEach(src => {
+          Object.keys(src.consumption || {}).forEach(aptId => allAptIds.add(aptId));
+        });
+        cumulativeSnapshot = {};
+        allAptIds.forEach(aptId => {
+          let total = 0;
+          sourceExpenses.forEach(src => {
+            total += parseFloat(src.consumption?.[aptId]) || 0;
+          });
+          cumulativeSnapshot[aptId] = total;
+        });
+      }
+
       // Actualizează cheltuiala
       const updatedExpenseRaw = {
         ...existingExpense,
@@ -1011,8 +1084,13 @@ export const useExpenseManagement = ({
         billAmount: isConsumptionBased ? parseFloat(expenseData.billAmount) : 0,
         amountsByBlock: expenseData.amountsByBlock || {},
         amountsByStair: expenseData.amountsByStair || {},
-        // Păstrează consumption și individualAmounts existente
-        consumption: existingExpense?.consumption || {},
+        // Păstrează consumption și individualAmounts existente; pentru cumulativ, actualizează snapshot
+        consumption: isCumulativeBased
+          ? (cumulativeSnapshot || existingExpense?.consumption || {})
+          : (existingExpense?.consumption || {}),
+        cumulativeFromExpenseTypeIds: isCumulativeBased
+          ? (expenseSettings.cumulativeFromExpenseTypeIds || [])
+          : (existingExpense?.cumulativeFromExpenseTypeIds),
         individualAmounts: existingExpense?.individualAmounts || {},
         // Actualizează datele facturii (single + multi-supplier)
         invoiceData: expenseData.invoiceData || existingExpense?.invoiceData || null,
@@ -1149,6 +1227,7 @@ export const useExpenseManagement = ({
     handleDeleteCustomExpense,
     handleDeleteMonthlyExpense,
     updateExpenseConsumption,
+    updateExpenseConsumptionBatch,
     updateExpenseIndividualAmount,
     updateExpenseIndividualAmountsBatch,
     updatePendingConsumption,

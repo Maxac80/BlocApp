@@ -370,11 +370,20 @@ const ExpenseConfigModal = ({
       }
 
       // Validare unitate de măsură custom
-      if (localConfig.distributionType === 'consumption' &&
+      if ((localConfig.distributionType === 'consumption' || localConfig.distributionType === 'consumption_cumulative') &&
           localConfig.consumptionUnit === 'custom' &&
           !localConfig.customConsumptionUnit?.trim()) {
         alert('Vă rog completați unitatea de măsură personalizată');
         return;
+      }
+
+      // Validare pentru consumption_cumulative: trebuie selectate cheltuieli sursă
+      if (localConfig.distributionType === 'consumption_cumulative') {
+        const sourceIds = localConfig.cumulativeFromExpenseTypeIds || [];
+        if (sourceIds.length === 0) {
+          alert('Selectează cel puțin o cheltuială sursă pentru consum cumulat');
+          return;
+        }
       }
 
       // Validare participări - verifică dacă există sume/procente necompletate
@@ -876,6 +885,7 @@ const ExpenseConfigModal = ({
                 >
                   <option value="cotaParte">Pe cotă parte indiviză</option>
                   <option value="consumption">Pe consum</option>
+                  <option value="consumption_cumulative">Pe consum cumulat</option>
                   <option value="person">Pe persoană</option>
                   <option value="apartment">Pe apartament</option>
                   <option value="individual">Sume individuale pe apartament</option>
@@ -885,6 +895,7 @@ const ExpenseConfigModal = ({
                   {localConfig.distributionType === 'individual' && 'Fiecare apartament are suma proprie'}
                   {localConfig.distributionType === 'person' && 'Cheltuiala se împarte pe numărul de persoane'}
                   {localConfig.distributionType === 'consumption' && 'Cheltuiala se calculează pe baza unităților consumate (mc, kWh, Gcal, etc.)'}
+                  {localConfig.distributionType === 'consumption_cumulative' && 'Consumul per apartament este calculat automat ca suma consumurilor din alte cheltuieli pe consum (ex: Canal = Apă rece + Apă caldă)'}
                   {localConfig.distributionType === 'cotaParte' && 'Cheltuiala se distribuie proporțional cu cota parte indiviză (% din suprafața utilă totală)'}
                 </p>
                 {localConfig.distributionType === 'cotaParte' && apartments.length === 0 && (
@@ -920,14 +931,110 @@ const ExpenseConfigModal = ({
                 </div>
               )}
 
-              {/* Unitate de măsură - apare doar pentru consumption */}
-              {localConfig.distributionType === 'consumption' && (
+              {/* Selector cheltuieli sursă - DOAR pentru consumption_cumulative */}
+              {localConfig.distributionType === 'consumption_cumulative' && (() => {
+                const currentExpenseId = expenseConfig?.id;
+                const currentExpenseName = expenseName || inputExpenseName;
+                const configsMap = currentSheet?.configSnapshot?.expenseConfigurations || {};
+
+                // Enumerează cheltuielile candidate: tip 'consumption' și diferite de cea curentă.
+                // Sursă: currentSheet.configSnapshot.expenseConfigurations (map cu chei expenseTypeId)
+                const candidateSources = Object.entries(configsMap)
+                  .map(([id, cfg]) => ({
+                    id,
+                    name: cfg.name || id,
+                    distributionType: cfg.distributionType,
+                    consumptionUnit: cfg.consumptionUnit || 'mc'
+                  }))
+                  .filter(et =>
+                    et.distributionType === 'consumption' &&
+                    et.id !== currentExpenseId &&
+                    et.name !== currentExpenseName
+                  );
+
+                const selectedIds = localConfig.cumulativeFromExpenseTypeIds || [];
+
+                return (
+                  <div className="border-t pt-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Cheltuieli sursă pentru consum cumulat *
+                    </label>
+                    <p className="text-xs text-gray-600 mb-2">
+                      Selectează cheltuielile din care se cumulează consumul (mc per apartament)
+                    </p>
+                    {candidateSources.length === 0 ? (
+                      <div className="text-xs text-orange-600 font-medium bg-orange-50 border border-orange-200 rounded-md p-2">
+                        ⚠ Trebuie să existe cel puțin o cheltuială pe consum configurată în asociație înainte
+                      </div>
+                    ) : (() => {
+                      // Determină unitatea blocată: unitatea primei surse bifate (toate trebuie să o aibă)
+                      const firstCheckedSrc = candidateSources.find(s => selectedIds.includes(s.id));
+                      const lockedUnit = firstCheckedSrc?.consumptionUnit || null;
+                      return (
+                        <div className="space-y-1.5 border border-gray-200 rounded-md p-2 bg-gray-50">
+                          {candidateSources.map(src => {
+                            const isChecked = selectedIds.includes(src.id);
+                            // Dezactivăm sursele cu altă unitate față de cea deja selectată
+                            const isIncompatible = lockedUnit && !isChecked && src.consumptionUnit !== lockedUnit;
+                            return (
+                              <label
+                                key={src.id}
+                                className={`flex items-center gap-2 text-sm rounded px-1 py-0.5 ${
+                                  isIncompatible
+                                    ? 'text-gray-400 cursor-not-allowed opacity-60'
+                                    : 'text-gray-700 cursor-pointer hover:bg-white'
+                                }`}
+                                title={isIncompatible ? `Unitate incompatibilă (${src.consumptionUnit} vs ${lockedUnit})` : undefined}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  disabled={isIncompatible}
+                                  onChange={(e) => {
+                                    const next = e.target.checked
+                                      ? [...selectedIds, src.id]
+                                      : selectedIds.filter(id => id !== src.id);
+                                    // Auto-setăm consumptionUnit pe cheltuiala cumulată la unitatea surselor
+                                    const newConfig = { ...localConfig, cumulativeFromExpenseTypeIds: next };
+                                    if (next.length > 0) {
+                                      const firstSrc = candidateSources.find(s => s.id === next[0]);
+                                      if (firstSrc?.consumptionUnit) {
+                                        newConfig.consumptionUnit = firstSrc.consumptionUnit;
+                                      }
+                                    }
+                                    setLocalConfig(newConfig);
+                                  }}
+                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 disabled:cursor-not-allowed"
+                                />
+                                <span>{src.name}</span>
+                                <span className="text-xs text-gray-500">({src.consumptionUnit})</span>
+                              </label>
+                            );
+                          })}
+                          {lockedUnit && (
+                            <div className="text-[11px] text-gray-500 italic pt-1">
+                              Unitate moștenită de la surse: <strong>{lockedUnit}</strong>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })()}
+
+              {/* Unitate de măsură - apare pentru consumption și consumption_cumulative */}
+              {(localConfig.distributionType === 'consumption' || localConfig.distributionType === 'consumption_cumulative') && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Unitate de măsură
+                    {localConfig.distributionType === 'consumption_cumulative' && (
+                      <span className="ml-1 text-[10px] text-gray-500 font-normal">(moștenită de la surse)</span>
+                    )}
                   </label>
                   <select
                     value={showCustomUnit ? 'custom' : localConfig.consumptionUnit}
+                    disabled={localConfig.distributionType === 'consumption_cumulative'}
                     onChange={(e) => {
                       if (e.target.value === 'custom') {
                         setShowCustomUnit(true);
@@ -937,7 +1044,7 @@ const ExpenseConfigModal = ({
                         setLocalConfig({ ...localConfig, consumptionUnit: e.target.value, customConsumptionUnit: '' });
                       }
                     }}
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="mc">mc (metri cubi) - Apă, Canalizare, Gaz</option>
                     <option value="Gcal">Gcal (gigacalorii) - Căldură</option>
