@@ -364,6 +364,12 @@ const ExpensesViewNew = ({
                       } else if (config.distributionType === "cotaParte") {
                         distributionText = "Pe cotă parte";
                         distributionBadgeClass = "bg-indigo-100 text-indigo-700";
+                      } else if (config.distributionType === "consumption_cumulative") {
+                        const srcIds = config.cumulativeFromExpenseTypeIds || [];
+                        const configs = currentSheet?.configSnapshot?.expenseConfigurations || {};
+                        const srcNames = srcIds.map(id => configs[id]?.name).filter(Boolean).join(' + ');
+                        distributionText = srcNames ? `Pe consum cumulat (din: ${srcNames})` : "Pe consum cumulat";
+                        distributionBadgeClass = "bg-cyan-100 text-cyan-700";
                       } else {
                         distributionText = "Pe consum";
                         distributionBadgeClass = "bg-teal-100 text-teal-700";
