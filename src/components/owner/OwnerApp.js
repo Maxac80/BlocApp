@@ -178,6 +178,33 @@ function OwnerContentHeader({ apartmentInfo, ownerProfile }) {
             <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
               {[apartmentInfo.associationName, locationParts.join(', ')].filter(Boolean).join(' • ')}
             </p>
+            {/* Badges: persoane, camere, mp, incalzire */}
+            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
+              {aptData?.persons != null && (
+                <span className="text-[10px] sm:text-xs bg-orange-100 text-orange-800 px-1.5 sm:px-2 py-0.5 rounded">
+                  {aptData.persons} {aptData.persons === 1 ? 'persoană' : 'persoane'}
+                </span>
+              )}
+              {aptData?.apartmentType && (
+                <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 sm:px-2 py-0.5 rounded">
+                  🏠 {aptData.apartmentType}
+                </span>
+              )}
+              {aptData?.surface ? (
+                <span className="text-[10px] sm:text-xs bg-green-100 text-green-700 px-1.5 sm:px-2 py-0.5 rounded">
+                  📐 {aptData.surface} mp
+                </span>
+              ) : (
+                <span className="text-[10px] sm:text-xs bg-gray-100 text-gray-400 px-1.5 sm:px-2 py-0.5 rounded">
+                  📐 - mp
+                </span>
+              )}
+              {aptData?.heatingSource && (
+                <span className="text-[10px] sm:text-xs bg-red-100 text-red-700 px-1.5 sm:px-2 py-0.5 rounded">
+                  🔥 {aptData.heatingSource}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Gauge, MessageSquare, MoreHorizontal, History, Users, User, X } from 'lucide-react';
+import { Home, Gauge, MessageSquare, MoreHorizontal, History, Users, User, X, ClipboardList } from 'lucide-react';
 
 /**
  * Bottom Navigation pentru Owner Portal (mobil)
@@ -12,7 +12,7 @@ const OwnerBottomNavigation = ({ currentView, handleNavigation, unreadMessages =
 
   // Primary nav items (4 visible buttons)
   const mainNavItems = [
-    { id: 'dashboard', label: 'Întreținere', icon: Home },
+    { id: 'dashboard', label: 'Întreținere', icon: ClipboardList },
     { id: 'meters', label: 'Contoare', icon: Gauge },
     { id: 'messages', label: 'Mesaje', icon: MessageSquare, badge: unreadMessages },
   ];

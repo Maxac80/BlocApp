@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import {
   TrendingUp, Users, Home, FileText, Download,
   AlertCircle, CheckCircle, Clock, X, ChevronDown, Flame,
-  CreditCard
+  CreditCard, ClipboardList
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
@@ -29,8 +29,14 @@ export default function OwnerDashboardView({ onNavigate }) {
     switchMonth,
     expenseDetails: realExpenseDetails,
     getExpenseDetailsForMonth,
-    paymentHistory
+    paymentHistory,
+    currentSheet,
+    publishedSheet
   } = useOwnerData(associationId, apartmentId);
+
+  // Consumption month (e.g., "martie 2026" pentru "aprilie 2026")
+  const activeSheet = publishedSheet?.monthYear === selectedMonth ? publishedSheet : currentSheet;
+  const consumptionMonth = activeSheet?.consumptionMonth;
 
   // State pentru modale
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -212,6 +218,15 @@ export default function OwnerDashboardView({ onNavigate }) {
             Componente
           </h3>
           <div className="space-y-2 sm:space-y-3">
+            {/* Întreținere curentă */}
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-2 sm:mr-3"></div>
+                <span className="text-gray-700 text-sm sm:text-base">Întreținere {selectedMonth}</span>
+              </div>
+              <span className="font-semibold text-blue-600 text-sm sm:text-base">{formatCurrency(currentMaintenance)}</span>
+            </div>
+
             {/* Restanțe */}
             {restante > 0 && (
               <div className="flex items-center justify-between p-2.5 sm:p-3 bg-red-50 rounded-lg">
@@ -223,24 +238,6 @@ export default function OwnerDashboardView({ onNavigate }) {
               </div>
             )}
 
-            {/* Întreținere curentă */}
-            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-2 sm:mr-3"></div>
-                <span className="text-gray-700 text-sm sm:text-base">Întreținere {selectedMonth}</span>
-              </div>
-              <span className="font-semibold text-blue-600 text-sm sm:text-base">{formatCurrency(currentMaintenance)}</span>
-            </div>
-
-            {/* Total Întreținere (Restanțe + Întreținere curentă) */}
-            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-              <div className="flex items-center">
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-indigo-500 rounded-full mr-2 sm:mr-3"></div>
-                <span className="text-gray-700 font-medium text-sm sm:text-base">Total Întreținere</span>
-              </div>
-              <span className="font-bold text-indigo-600 text-sm sm:text-base">{formatCurrency(restante + currentMaintenance)}</span>
-            </div>
-
             {/* Penalități */}
             {penalitati > 0 && (
               <div className="flex items-center justify-between p-2.5 sm:p-3 bg-orange-50 rounded-lg">
@@ -251,6 +248,12 @@ export default function OwnerDashboardView({ onNavigate }) {
                 <span className="font-semibold text-orange-600 text-sm sm:text-base">{formatCurrency(penalitati)}</span>
               </div>
             )}
+
+            {/* Total de plată */}
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-lg shadow-md mt-3 sm:mt-4">
+              <span className="text-white font-semibold text-sm sm:text-base">Total de plată</span>
+              <span className="font-bold text-white text-base sm:text-lg">{formatCurrency(restante + currentMaintenance + penalitati)}</span>
+            </div>
           </div>
         </div>
 
@@ -297,68 +300,6 @@ export default function OwnerDashboardView({ onNavigate }) {
         )}
       </div>
 
-      {/* Card Info Apartament */}
-      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
-          <Home className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-emerald-600" />
-          La o privire
-        </h3>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-          {/* Persoane */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mx-auto mb-1.5 sm:mb-2" />
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">
-              {apartmentData?.persons || maintenanceData.persons || 0}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">Persoane</p>
-          </div>
-
-          {/* Suprafață */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-            <Home className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mx-auto mb-1.5 sm:mb-2" />
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">
-              {apartmentData?.surface || '-'}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">mp</p>
-          </div>
-
-          {/* Cotă parte */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mx-auto mb-1.5 sm:mb-2" />
-            <p className="text-lg sm:text-xl font-bold text-gray-900">
-              {apartmentData?.cotaParte
-                ? `${apartmentData.cotaParte.toFixed(4)}%`
-                : '-'}
-            </p>
-            {apartmentData?.surface && apartmentData?.totalStairSurface ? (
-              <p className="text-[10px] sm:text-xs text-gray-500">
-                ({apartmentData.surface} / {apartmentData.totalStairSurface.toFixed(2)} mp)
-              </p>
-            ) : (
-              <p className="text-xs sm:text-sm text-gray-500">Cotă parte</p>
-            )}
-          </div>
-
-          {/* Tip apartament */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-            <Home className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mx-auto mb-1.5 sm:mb-2" />
-            <p className="text-base sm:text-lg font-bold text-gray-900">
-              {maintenanceData?.apartmentType || apartmentData?.apartmentType || '-'}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">Tip</p>
-          </div>
-
-          {/* Sursa încălzire */}
-          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-center">
-            <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 mx-auto mb-1.5 sm:mb-2" />
-            <p className="text-xs sm:text-sm font-bold text-gray-900">
-              {apartmentData?.heatingSource || '-'}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">Încălzire</p>
-          </div>
-        </div>
-      </div>
 
       {/* Modal Plată Online */}
       <OwnerPaymentModal
@@ -373,20 +314,33 @@ export default function OwnerDashboardView({ onNavigate }) {
 
       {/* Modal Detalii Cheltuieli */}
       {showDetailsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 z-[100] !mt-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(2px)' }}>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header Modal */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 sm:p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 sm:p-5 text-white">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg sm:text-xl font-bold">Detalii Cheltuieli</h3>
-                  <p className="text-emerald-100 text-xs sm:text-sm mt-0.5 sm:mt-1">
-                    {selectedMonth || 'Luna curentă'} • Ap. {apartmentNumber}
-                  </p>
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                  <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Întreținere · Apartament {apartmentNumber}
+                  </h3>
+                  {selectedMonth && (
+                    <p className="text-emerald-100 text-[11px] sm:text-xs mt-0.5">
+                      <span>{selectedMonth}</span>
+                      {consumptionMonth && (
+                        <>
+                          <span className="mx-1">·</span>
+                          <span>consum {consumptionMonth}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
@@ -395,46 +349,128 @@ export default function OwnerDashboardView({ onNavigate }) {
 
             {/* Content Modal - Scrollabil */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              {/* Sumar */}
-              <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-                <div className="flex justify-between items-center mb-1.5 sm:mb-2">
-                  <span className="text-gray-600 text-sm sm:text-base">Total întreținere:</span>
-                  <span className="text-lg sm:text-xl font-bold text-gray-900">{formatCurrency(currentMaintenance)}</span>
-                </div>
-                <p className="text-[10px] sm:text-xs text-gray-500">
-                  Calculat pentru {maintenanceData.persons || 0} persoane, {apartmentData?.surface || '-'} mp
-                </p>
-              </div>
+              {/* Header Cheltuieli + Total */}
+              {(() => {
+                const includedCount = expenseDetails.filter(e => e.participationType !== 'excluded').length;
+                const totalCount = expenseDetails.length;
+                return (
+                  <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
+                    <div className="min-w-0">
+                      <h4 className="text-sm sm:text-base font-semibold text-gray-800">
+                        Cheltuieli incluse
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                        {includedCount === totalCount
+                          ? `${totalCount} ${totalCount === 1 ? 'cheltuială' : 'cheltuieli'}`
+                          : `${includedCount} din ${totalCount} cheltuieli`}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 bg-emerald-100 border border-emerald-300 rounded-lg px-2.5 sm:px-4 py-1 sm:py-1.5 shadow-sm">
+                      <span className="text-base sm:text-2xl font-bold text-emerald-700">
+                        {formatCurrency(currentMaintenance)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Lista cheltuieli */}
-              <h4 className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider mb-2 sm:mb-3">
-                Breakdown pe categorii
-              </h4>
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2 sm:space-y-3">
                 {expenseDetails.length > 0 ? (
-                  expenseDetails.map((expense, index) => (
-                    <div
-                      key={expense.id || index}
-                      className="flex items-center justify-between p-2.5 sm:p-3 bg-white border border-gray-100 rounded-lg hover:border-gray-200 transition-colors"
-                    >
-                      <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-2 sm:mr-3 ${
-                          expense.type === 'consum' ? 'bg-blue-500' :
-                          expense.type === 'persoană' ? 'bg-purple-500' :
-                          expense.type === 'apartament' ? 'bg-green-500' :
-                          expense.type === 'cotă' ? 'bg-orange-500' :
-                          expense.type === 'individual' ? 'bg-pink-500' : 'bg-gray-500'
-                        }`}></div>
-                        <div>
-                          <p className="text-gray-900 font-medium text-sm sm:text-base">{expense.name}</p>
-                          <p className="text-[10px] sm:text-xs text-gray-500">
-                            {expense.label || expense.type}
-                          </p>
+                  expenseDetails.map((expense, index) => {
+                    const totalDisplayed = expense.amount + expense.difference;
+                    const badgeClass = {
+                      consum: 'bg-orange-50 text-orange-600 border-orange-200',
+                      persoană: 'bg-green-50 text-green-600 border-green-200',
+                      apartament: 'bg-blue-50 text-blue-600 border-blue-200',
+                      cotă: 'bg-teal-50 text-teal-600 border-teal-200',
+                      individual: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                    }[expense.type] || 'bg-gray-50 text-gray-600 border-gray-200';
+
+                    const borderColor = {
+                      consum: '#f97316',
+                      persoană: '#16a34a',
+                      apartament: '#2563eb',
+                      cotă: '#14b8a6',
+                      individual: '#6366f1'
+                    }[expense.type] || '#9ca3af';
+
+                    const persons = expense.persons || maintenanceData.persons || 0;
+
+                    // Build detail line
+                    let detailLine = null;
+                    if (expense.distributionType === 'person' || expense.distributionType === 'perPerson' || expense.distributionType === 'byPersons') {
+                      const pricePerPerson = persons > 0 ? (expense.amount / persons) : 0;
+                      detailLine = `${persons} ${persons === 1 ? 'persoană' : 'persoane'} × ${pricePerPerson.toFixed(2)} lei = ${expense.amount.toFixed(2)} lei`;
+                    } else if (expense.distributionType === 'consumption' || expense.distributionType === 'consumption_cumulative' || expense.distributionType === 'byConsumption') {
+                      if (expense.unitPrice > 0) {
+                        const subtotal = expense.consumption * expense.unitPrice;
+                        detailLine = `${expense.consumption.toFixed(2)} ${expense.consumptionUnit} × ${expense.unitPrice.toFixed(2)} lei/${expense.consumptionUnit} = ${subtotal.toFixed(2)} lei`;
+                      }
+                    }
+
+                    // Label badge with specific format
+                    let labelBadge = expense.label;
+                    if (expense.distributionType === 'apartment' || expense.distributionType === 'perApartament' || expense.distributionType === 'equal') {
+                      labelBadge = `${expense.amount.toFixed(2)} lei/apartament`;
+                    } else if ((expense.distributionType === 'person' || expense.distributionType === 'perPerson' || expense.distributionType === 'byPersons') && persons > 0) {
+                      labelBadge = `${(expense.amount / persons).toFixed(2)} lei/persoană`;
+                    }
+
+                    const isExcluded = expense.participationType === 'excluded';
+                    const participationBadge = isExcluded
+                      ? 'Exclus'
+                      : (expense.participationType === 'percentage' && expense.participationValue !== 100
+                          ? `Participare ${expense.participationValue}%`
+                          : (expense.participationType === 'fixed'
+                              ? `Sumă fixă: ${expense.participationValue} lei`
+                              : null));
+
+                    return (
+                      <div
+                        key={expense.id || index}
+                        className="bg-white border border-gray-100 rounded-lg p-2.5 sm:p-4 shadow-sm hover:shadow-md transition-shadow border-l-4"
+                        style={{ borderLeftColor: isExcluded ? '#9ca3af' : borderColor }}
+                      >
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-800 text-xs sm:text-base mb-1 sm:mb-2 truncate">
+                              {expense.name}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              <div className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border ${badgeClass}`}>
+                                {labelBadge}
+                              </div>
+                              {participationBadge && (
+                                <div className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200">
+                                  {participationBadge}
+                                </div>
+                              )}
+                            </div>
+                            {detailLine && !isExcluded && (
+                              <div className="text-[10px] sm:text-xs text-gray-600 mt-1 ml-1 truncate">
+                                {detailLine}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className={`text-sm sm:text-lg font-bold ${isExcluded ? 'text-gray-400 line-through' : 'text-emerald-700'}`}>
+                              {totalDisplayed.toFixed(2)} lei
+                            </div>
+                            {!isExcluded && Math.abs(expense.difference) >= 0.01 && (
+                              <div className="text-[10px] sm:text-xs text-gray-500 mt-1 whitespace-nowrap">
+                                {expense.amount.toFixed(2)}
+                                <span className={expense.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {' '}{expense.difference >= 0 ? '+' : '−'} {Math.abs(expense.difference).toFixed(2)}
+                                </span>
+                                <span className="text-gray-400"> dif.</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">{formatCurrency(expense.amount)}</span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-4 sm:py-6 text-gray-500">
                     <FileText className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 text-gray-300" />
@@ -442,36 +478,13 @@ export default function OwnerDashboardView({ onNavigate }) {
                   </div>
                 )}
               </div>
-
-              {/* Legendă */}
-              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 rounded-xl">
-                <h5 className="text-xs sm:text-sm font-medium text-blue-900 mb-1.5 sm:mb-2">Tipuri de distribuție:</h5>
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
-                  <div className="flex items-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mr-1.5 sm:mr-2"></div>
-                    <span className="text-blue-800">După consum (mc)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mr-1.5 sm:mr-2"></div>
-                    <span className="text-blue-800">Per persoană</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1.5 sm:mr-2"></div>
-                    <span className="text-blue-800">Per apartament</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full mr-1.5 sm:mr-2"></div>
-                    <span className="text-blue-800">După cotă parte</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Footer Modal */}
-            <div className="p-4 sm:p-6 border-t border-gray-100">
+            <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="w-full bg-gray-100 text-gray-700 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
               >
                 Închide
               </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Home, History, LogOut, X, Building2, Gauge, Users, MessageSquare,
-  ChevronUp, User
+  ChevronUp, User, ClipboardList
 } from 'lucide-react';
 import { useOwnerContext } from './OwnerApp';
 import { useOwnerMessaging } from '../../hooks/useOwnerMessaging';
@@ -74,7 +74,7 @@ export default function OwnerSidebar({ currentView, onNavigate }) {
     : userName.charAt(0).toUpperCase();
 
   const menuItems = [
-    { id: 'dashboard', label: 'Întreținere', icon: Home, description: 'Situația curentă' },
+    { id: 'dashboard', label: 'Întreținere', icon: ClipboardList, description: 'Situația curentă' },
     { id: 'meters', label: 'Contoare', icon: Gauge, description: 'Transmite indexuri' },
     { id: 'history', label: 'Istoric', icon: History, description: 'Luni anterioare & plăți' },
     { id: 'members', label: 'Membri', icon: Users, description: 'Locatarii apartamentului' }

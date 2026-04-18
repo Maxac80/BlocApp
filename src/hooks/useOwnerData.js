@@ -6,18 +6,47 @@ import { defaultExpenseTypes } from '../data/expenseTypes';
 /**
  * Mapare distributionType la etichete pentru UI
  */
+const DISTRIBUTION_ORDER_BY_TYPE = {
+  consumption: 1,
+  byConsumption: 1,
+  consumption_cumulative: 2,
+  person: 3,
+  perPerson: 3,
+  byPersons: 3,
+  apartment: 4,
+  perApartament: 4,
+  equal: 4,
+  individual: 5,
+  suma_individuala: 5,
+  cotaParte: 6,
+  byArea: 6,
+  fixed: 7
+};
+const sortExpensesByType = (a, b) => {
+  const orderA = DISTRIBUTION_ORDER_BY_TYPE[a.distributionType] || 99;
+  const orderB = DISTRIBUTION_ORDER_BY_TYPE[b.distributionType] || 99;
+  if (orderA !== orderB) return orderA - orderB;
+  return (b.amount + (b.difference || 0)) - (a.amount + (a.difference || 0));
+};
+
 const getDistributionLabel = (distributionType) => {
   const labels = {
-    'equal': { type: 'apartament', label: 'Per apartament' },
-    'byPersons': { type: 'persoană', label: 'Per persoană' },
-    'byConsumption': { type: 'consum', label: 'După consum' },
-    'consumption': { type: 'consum', label: 'După consum' },
-    'cotaParte': { type: 'cotă', label: 'După cotă parte' },
-    'byArea': { type: 'cotă', label: 'După suprafață' },
+    'equal': { type: 'apartament', label: 'Pe apartament' },
+    'apartment': { type: 'apartament', label: 'Pe apartament' },
+    'perApartament': { type: 'apartament', label: 'Pe apartament' },
+    'byPersons': { type: 'persoană', label: 'Pe persoană' },
+    'person': { type: 'persoană', label: 'Pe persoană' },
+    'perPerson': { type: 'persoană', label: 'Pe persoană' },
+    'byConsumption': { type: 'consum', label: 'Pe consum' },
+    'consumption': { type: 'consum', label: 'Pe consum' },
+    'consumption_cumulative': { type: 'consum', label: 'Pe consum cumulat' },
+    'cotaParte': { type: 'cotă', label: 'Cotă parte' },
+    'byArea': { type: 'cotă', label: 'Cotă parte' },
     'individual': { type: 'individual', label: 'Sumă individuală' },
+    'suma_individuala': { type: 'individual', label: 'Sumă individuală' },
     'fixed': { type: 'fix', label: 'Sumă fixă' }
   };
-  return labels[distributionType] || { type: 'apartament', label: 'Standard' };
+  return labels[distributionType] || { type: 'apartament', label: 'Pe apartament' };
 };
 
 /**
@@ -219,27 +248,37 @@ export function useOwnerData(associationId, apartmentId) {
         // ===== PROCESARE EXPENSE DETAILS =====
         // Extrage cheltuielile detaliate din maintenance.expenseDetails
         if (maintenance.expenseDetails) {
+          const apartmentPersons = maintenance.persons || 0;
+          const apartmentParticipations = activeSheet?.configSnapshot?.apartmentParticipations || {};
           const formattedExpenses = Object.entries(maintenance.expenseDetails)
             .map(([key, detail]) => {
-              // detail = { amount, name, expense }
               const distributionType = detail.expense?.distributionType || 'equal';
               const { type, label } = getDistributionLabel(distributionType);
+              const expense = detail.expense || {};
+              const participation = apartmentParticipations[`${apartmentId}-${key}`]
+                || apartmentParticipations[`${apartmentId}-${detail.name || key}`]
+                || { type: 'integral' };
 
               return {
                 id: key,
                 name: detail.name || key,
                 amount: detail.amount || 0,
+                difference: maintenance.expenseDifferenceDetails?.[key] || 0,
                 type,
                 label,
                 distributionType,
-                // Informații extra dacă e pe consum
-                consumptionInfo: detail.expense?.consumptionUnit
-                  ? { unit: detail.expense.consumptionUnit }
-                  : null
+                persons: apartmentPersons,
+                consumption: expense.consumption?.[apartmentId] || 0,
+                unitPrice: expense.unitPrice || expense.pricePerUnit || 0,
+                consumptionUnit: expense.consumptionUnit === 'custom'
+                  ? (expense.customConsumptionUnit || 'unități')
+                  : (expense.consumptionUnit || 'unități'),
+                individualAmount: expense.individualAmounts?.[apartmentId] || 0,
+                participationType: participation.type,
+                participationValue: participation.value
               };
             })
-            .filter(exp => exp.amount > 0) // Exclude cheltuielile cu sumă 0
-            .sort((a, b) => b.amount - a.amount); // Sortează descrescător după sumă
+            .sort(sortExpensesByType);
 
           setExpenseDetails(formattedExpenses);
         } else {
@@ -656,24 +695,36 @@ export function useOwnerData(associationId, apartmentId) {
 
       // Actualizează expense details pentru luna selectată
       if (maintenance.expenseDetails) {
+        const apartmentPersons = maintenance.persons || 0;
+        const apartmentParticipations = targetSheet?.configSnapshot?.apartmentParticipations || {};
         const formattedExpenses = Object.entries(maintenance.expenseDetails)
           .map(([key, detail]) => {
             const distributionType = detail.expense?.distributionType || 'equal';
             const { type, label } = getDistributionLabel(distributionType);
+            const expense = detail.expense || {};
+            const participation = apartmentParticipations[`${apartmentId}-${key}`]
+              || apartmentParticipations[`${apartmentId}-${detail.name || key}`]
+              || { type: 'integral' };
             return {
               id: key,
               name: detail.name || key,
               amount: detail.amount || 0,
+              difference: maintenance.expenseDifferenceDetails?.[key] || 0,
               type,
               label,
               distributionType,
-              consumptionInfo: detail.expense?.consumptionUnit
-                ? { unit: detail.expense.consumptionUnit }
-                : null
+              persons: apartmentPersons,
+              consumption: expense.consumption?.[apartmentId] || 0,
+              unitPrice: expense.unitPrice || expense.pricePerUnit || 0,
+              consumptionUnit: expense.consumptionUnit === 'custom'
+                ? (expense.customConsumptionUnit || 'unități')
+                : (expense.consumptionUnit || 'unități'),
+              individualAmount: expense.individualAmounts?.[apartmentId] || 0,
+              participationType: participation.type,
+              participationValue: participation.value
             };
           })
-          .filter(exp => exp.amount > 0)
-          .sort((a, b) => b.amount - a.amount);
+          .sort(sortExpensesByType);
         setExpenseDetails(formattedExpenses);
       } else {
         setExpenseDetails([]);
@@ -815,6 +866,9 @@ export function useOwnerData(associationId, apartmentId) {
     const sheetExpenses = monthData.sheet?.expenses || [];
     // Extrage diferențele (pierderi/scurgeri)
     const differenceDetails = monthData.maintenance?.expenseDifferenceDetails || {};
+    // Extrage participations din configSnapshot
+    const apartmentParticipations = monthData.sheet?.configSnapshot?.apartmentParticipations || {};
+    const apartmentPersons = monthData.maintenance?.persons || 0;
 
     return Object.entries(monthData.maintenance.expenseDetails)
       .map(([key, detail]) => {
@@ -921,26 +975,32 @@ export function useOwnerData(associationId, apartmentId) {
           }
         }
 
-        // Extrage diferența (pierderi/scurgeri) DOAR pentru cheltuieli pe consum
-        // Returnează null în loc de 0 pentru a evita afișarea "0" la cheltuielile fără diferență
-        const rawDifference = differenceDetails[key];
-        const difference = isConsumptionBased && rawDifference && rawDifference !== 0 ? rawDifference : null;
+        // Extrage diferența (pierderi/scurgeri) — pentru orice tip
+        const difference = differenceDetails[key] || 0;
+
+        // Lookup participation
+        const participation = apartmentParticipations[`${apartmentId}-${key}`]
+          || apartmentParticipations[`${apartmentId}-${detail.name || key}`]
+          || { type: 'integral' };
 
         return {
           id: key,
           name: detail.name || key,
           amount: detail.amount || 0,
+          difference,
           type,
           label,
           distributionType,
-          consumption,
+          persons: apartmentPersons,
+          consumption: consumption || 0,
           consumptionUnit,
-          unitPrice,
-          difference
+          unitPrice: unitPrice || 0,
+          individualAmount: detail.expense?.individualAmounts?.[apartmentId] || 0,
+          participationType: participation.type,
+          participationValue: participation.value
         };
       })
-      .filter(exp => exp.amount > 0)
-      .sort((a, b) => b.amount - a.amount);
+      .sort(sortExpensesByType);
   }, [monthlyHistory, apartmentId]);
 
   // 📱 Calculează submissionConfig bazat pe portalSubmission din contoare

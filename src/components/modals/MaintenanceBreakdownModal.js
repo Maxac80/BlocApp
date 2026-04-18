@@ -285,7 +285,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         return {
           type: 'individual',
           label: 'Sumă individuală',
-          details: individualAmount ? `${individualAmount.toFixed(2)} lei` : null,
+          details: null,
           participationBadge,
           color: 'text-indigo-600',
           bgColor: 'bg-indigo-50',
@@ -345,19 +345,35 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
     const distributionInfo = getDistributionInfo(expense, consumption, individualAmount, amount);
 
     // Include expense if it has amount, any difference (+/-), or apartment is excluded
-    const shouldShow = amount !== 0 || difference !== 0 || participation?.excluded;
+    const shouldShow = amount !== 0 || difference !== 0 || participation?.type === 'excluded';
 
     return {
       name: expense.name,
       amount,
       difference,
+      distributionType: expense.distributionType || expense.distribution || expense.type,
       distributionInfo,
+      isExcluded: participation?.type === 'excluded',
       shouldShow
     };
-  }).filter(item => item.shouldShow) || [];
+  }).filter(item => item.shouldShow).sort((a, b) => {
+    const typeOrder = {
+      consumption: 1, byConsumption: 1, consum: 1, pe_consum: 1,
+      consumption_cumulative: 2,
+      person: 3, perPerson: 3, byPersons: 3, pe_persoana: 3,
+      apartment: 4, perApartament: 4, equal: 4, pe_apartament: 4,
+      individual: 5, suma_individuala: 5,
+      cotaParte: 6, cota_parte: 6, byArea: 6,
+      fixed: 7
+    };
+    const orderA = typeOrder[a.distributionType] || 99;
+    const orderB = typeOrder[b.distributionType] || 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return (b.amount + (b.difference || 0)) - (a.amount + (a.difference || 0));
+  }) || [];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+    <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
@@ -536,7 +552,15 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                   <div
                     key={index}
                     className="bg-white rounded-lg p-2 sm:p-4 shadow-sm hover:shadow-md transition-shadow border-l-4"
-                    style={{ borderLeftColor: expense.distributionInfo.color.replace('text-', '#') }}
+                    style={{ borderLeftColor: expense.isExcluded ? '#9ca3af' : ({
+                      'text-orange-600': '#f97316',
+                      'text-green-600': '#16a34a',
+                      'text-blue-600': '#2563eb',
+                      'text-teal-600': '#14b8a6',
+                      'text-indigo-600': '#6366f1',
+                      'text-red-600': '#dc2626',
+                      'text-gray-600': '#9ca3af'
+                    }[expense.distributionInfo.color] || '#9ca3af') }}
                   >
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div className="flex-1 min-w-0">
@@ -554,7 +578,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                               </div>
                             )}
                           </div>
-                          {expense.distributionInfo.details && (
+                          {expense.distributionInfo.details && !expense.isExcluded && (
                             <div className="text-[10px] sm:text-xs text-gray-600 mt-1 ml-1 truncate">
                               {expense.distributionInfo.details}
                             </div>
@@ -562,10 +586,10 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className={`text-sm sm:text-lg font-bold ${expense.distributionInfo.type === 'excluded' ? 'text-red-600 line-through' : 'text-blue-600'}`}>
+                        <div className={`text-sm sm:text-lg font-bold ${expense.isExcluded ? 'text-gray-400 line-through' : 'text-blue-600'}`}>
                           {(expense.amount + expense.difference).toFixed(2)} lei
                         </div>
-                        {expense.difference !== 0 && (
+                        {!expense.isExcluded && expense.difference !== 0 && (
                           <div className="text-[10px] sm:text-xs text-gray-500 mt-1 whitespace-nowrap">
                             {expense.amount.toFixed(2)}
                             <span className={expense.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
