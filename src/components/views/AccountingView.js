@@ -8,6 +8,7 @@ import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
 import useSuppliers from '../../hooks/useSuppliers';
 import AddInvoiceModal from '../modals/AddInvoiceModal';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
+import { matchesSearch } from '../../utils/searchHelpers';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -160,12 +161,10 @@ const AccountingView = ({
       const apartment = apartments.find(apt => apt.id === inc.apartmentId);
       if (!apartment) return false;
       
-      const matchesSearch = 
+      return !searchTerm ||
         apartment.number.toString().includes(searchTerm) ||
-        apartment.owner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        matchesSearch(apartment.owner, searchTerm) ||
         inc.receiptNumber?.toString().includes(searchTerm);
-      
-      return matchesSearch;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -181,11 +180,11 @@ const AccountingView = ({
 
   // Filtrează facturile
   const filteredInvoices = monthlyInvoices.filter(invoice => {
-    const matchesSearch =
-      invoice.supplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.expenseName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.expenseType?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearchTerm = !searchTerm ||
+      matchesSearch(invoice.supplierName, searchTerm) ||
+      matchesSearch(invoice.invoiceNumber, searchTerm) ||
+      matchesSearch(invoice.expenseName, searchTerm) ||
+      matchesSearch(invoice.expenseType, searchTerm);
 
     const matchesStatus =
       filterStatus === 'all' ||
@@ -200,7 +199,7 @@ const AccountingView = ({
       else if (filterDistribution === 'undistributed') matchesDistribution = ratio === 0;
     }
 
-    return matchesSearch && matchesStatus && matchesDistribution;
+    return matchesSearchTerm && matchesStatus && matchesDistribution;
   }).sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate));
 
   // Obține apartamentele care nu au plătit

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Calculator, Search } from 'lucide-react';
 import { MaintenanceTableSimple } from '../tables';
+import { matchesSearch } from '../../utils/searchHelpers';
 
 const DashboardMaintenanceTable = ({
   maintenanceData,
@@ -53,11 +54,11 @@ const DashboardMaintenanceTable = ({
 
   // Filtrează datele în funcție de căutare
   const filteredData = stairFilteredData.filter(data => {
-    const searchLower = searchTerm.toLowerCase();
+    if (!searchTerm) return true;
     return (
-      data.apartment.toString().includes(searchLower) ||
-      data.owner?.toLowerCase().includes(searchLower) ||
-      data.paymentStatus?.toLowerCase().includes(searchLower)
+      data.apartment.toString().includes(searchTerm) ||
+      matchesSearch(data.owner, searchTerm) ||
+      matchesSearch(data.paymentStatus, searchTerm)
     );
   });
 

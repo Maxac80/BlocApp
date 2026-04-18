@@ -1470,6 +1470,7 @@ const MaintenanceView = ({
           stairs={stairs}
           payments={activeSheet?.payments || []}
           currentMonth={currentMonth}
+          consumptionMonth={activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}
         />
 
         {/* Modal pentru cheltuieli disponibile */}

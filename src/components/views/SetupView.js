@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
+import { matchesSearch } from '../../utils/searchHelpers';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
 import BlockModal from '../modals/BlockModal';
@@ -150,9 +151,8 @@ const SetupView = ({
   // Helper: verifică dacă un apartament corespunde căutării active
   const apartmentMatchesSearch = (apt) => {
     if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
     return apt.number.toString().includes(searchTerm) ||
-           apt.owner?.toLowerCase().includes(term) ||
+           matchesSearch(apt.owner, searchTerm) ||
            apt.persons?.toString().includes(searchTerm);
   };
 
@@ -1978,7 +1978,7 @@ return (
         apartment={selectedApartmentForMembers}
         association={association}
         currentUserId={currentUser?.uid}
-        cantEdit={cantEdit}
+        cantEdit={isReadOnlyRole}
         stair={selectedStairForMembers}
         block={selectedBlockForMembers}
       />

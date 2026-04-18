@@ -658,6 +658,7 @@ const useMaintenanceCalculation = ({
             break;
 
           case 'consumption':
+          case 'consumption_cumulative':
             // Pe consum - calculează consumul de bază pentru apartament
             let apartmentConsumption = 0;
 
@@ -764,6 +765,7 @@ const useMaintenanceCalculation = ({
 
       if (distributionType !== 'individual' &&
           distributionType !== 'consumption' &&
+          distributionType !== 'consumption_cumulative' &&
           hasSpecialParticipation) {
         const groupApartmentsWithPercentage = [];
         const groupApartmentsIntegral = [];

@@ -10,6 +10,7 @@ import {
 import ExpenseDistributionTable from './shared/ExpenseDistributionTable';
 import { generateIndividualAmountsTemplate, generateConsumptionTemplate } from '../../utils/excelTemplateIndividualAmounts';
 import ExcelUploadIndividualAmountsModal, { ExcelUploadConsumptionModal } from '../modals/ExcelUploadIndividualAmountsModal';
+import { matchesSearch } from '../../utils/searchHelpers';
 
 const ExpenseList = ({
   searchTerm = '',
@@ -729,7 +730,7 @@ const ExpenseList = ({
   // Filtrează și calculează totalul
   const filteredExpenses = associationExpenses.filter(expense => {
     // Filtru search după nume
-    if (searchTerm && !expense.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !matchesSearch(expense.name, searchTerm)) {
       return false;
     }
 

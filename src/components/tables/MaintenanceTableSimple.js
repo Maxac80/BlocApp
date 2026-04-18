@@ -17,7 +17,7 @@ const MaintenanceTableSimple = ({
   // Calculează statisticile de plată dacă funcția este disponibilă
   const paymentStats = getPaymentStats ? getPaymentStats() : null;
   return (
-    <table className="w-full text-xs sm:text-sm" style={{ tableLayout: 'fixed' }}>
+    <table className="w-full text-xs sm:text-sm table-auto sm:table-fixed">
       <colgroup>
         <col style={{ width: '60px' }} />
         <col style={{ width: '175px' }} />
@@ -37,7 +37,7 @@ const MaintenanceTableSimple = ({
       <thead className={`${disableSticky ? '' : 'sticky top-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
         <tr>
           <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>Ap.</th>
-          <th className="px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap">Proprietar</th>
+          <th className="px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap w-full sm:w-auto">Proprietar</th>
           {/* Coloane numerice — aliniate dreapta */}
           <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Pers.</th>
           <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Întreținere</th>
@@ -70,7 +70,7 @@ const MaintenanceTableSimple = ({
                     <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 )}
-                <span className="truncate max-w-[60px] sm:max-w-none text-xs sm:text-sm">{data.owner}</span>
+                <span className="truncate text-xs sm:text-sm">{data.owner}</span>
               </div>
             </td>
             {/* Coloane numerice — aliniate dreapta */}

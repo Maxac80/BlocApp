@@ -4,6 +4,7 @@ import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText,
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
+import { matchesSearch } from '../../utils/searchHelpers';
 
 const SuppliersView = ({
   association,
@@ -216,9 +217,9 @@ const SuppliersView = ({
                   <p className="text-gray-500 text-center py-8">Nu există furnizori adăugați</p>
                 ) : (() => {
                   const filteredSuppliers = suppliers.filter(supplier => {
-                    const matchesSearch = !searchTerm || supplier.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesSearchTerm = matchesSearch(supplier.name, searchTerm);
                     const matchesStatus = filterStatus === 'all' || getSupplierDistributionStatus(supplier.id).status === filterStatus;
-                    return matchesSearch && matchesStatus;
+                    return matchesSearchTerm && matchesStatus;
                   });
                   if (filteredSuppliers.length === 0) {
                     return <p className="text-gray-500 text-center py-8">Niciun furnizor nu corespunde filtrelor</p>;

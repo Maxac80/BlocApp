@@ -227,35 +227,73 @@ export const useOwnerInvitation = () => {
         ? '/api/validate-invite-token'
         : 'http://localhost:3000/api/validate-invite-token';
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        // Include error type pentru debugging
-        let errorMsg = data.error || 'Token invalid sau expirat';
-        if (data.errorType && data.errorType !== 'UNKNOWN') {
-          console.error('[validateToken] Error type:', data.errorType);
+        if (!response.ok) {
+          let errorMsg = data.error || 'Token invalid sau expirat';
+          if (data.errorType && data.errorType !== 'UNKNOWN') {
+            console.error('[validateToken] Error type:', data.errorType);
+          }
+          return {
+            valid: false,
+            error: errorMsg,
+            errorType: data.errorType,
+            alreadyActive: data.alreadyActive || false
+          };
         }
+
         return {
-          valid: false,
-          error: errorMsg,
-          errorType: data.errorType,
-          alreadyActive: data.alreadyActive || false
+          valid: true,
+          owner: data.owner,
+          hasExistingAccount: data.hasExistingAccount || false
+        };
+      } catch (apiErr) {
+        // DEV FALLBACK: API Vercel nu e disponibil local → validare directă din Firestore
+        if (process.env.NODE_ENV === 'production') throw apiErr;
+        console.warn('[validateToken] API unavailable, using Firestore fallback (dev only)');
+
+        const ownersRef = collection(db, 'owners');
+        const q = query(ownersRef, where('invitation.token', '==', token));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          return { valid: false, error: 'Token invalid sau expirat' };
+        }
+
+        const ownerDoc = snapshot.docs[0];
+        const owner = { id: ownerDoc.id, ...ownerDoc.data() };
+
+        const expiresAt = new Date(owner.invitation?.expiresAt);
+        if (expiresAt < new Date()) {
+          return { valid: false, error: 'Invitația a expirat. Contactează administratorul pentru o nouă invitație.' };
+        }
+
+        if (owner.status === 'active') {
+          return { valid: false, error: 'Contul a fost deja activat. Te poți autentifica.', alreadyActive: true };
+        }
+
+        return {
+          valid: true,
+          owner: {
+            id: owner.id,
+            email: owner.email,
+            firstName: owner.firstName || '',
+            lastName: owner.lastName || '',
+            associations: owner.associations || [],
+            status: owner.status
+          },
+          hasExistingAccount: false
         };
       }
-
-      return {
-        valid: true,
-        owner: data.owner,
-        hasExistingAccount: data.hasExistingAccount || false
-      };
     } catch (err) {
       console.error('Error validating token:', err);
       setError(err.message);
@@ -527,7 +565,7 @@ export const useOwnerInvitation = () => {
   const getMagicLink = (token) => {
     const baseUrl = process.env.NODE_ENV === 'production'
       ? 'https://locatari.blocapp.ro'
-      : 'http://localhost:3000';
+      : 'http://localhost:3001';
 
     return `${baseUrl}/invite/${token}`;
   };

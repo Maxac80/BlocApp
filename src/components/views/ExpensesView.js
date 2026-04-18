@@ -6,6 +6,7 @@ import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
+import { matchesSearch } from '../../utils/searchHelpers';
 
 const ExpensesViewNew = ({
   association,
@@ -317,8 +318,7 @@ const ExpensesViewNew = ({
                   {(() => {
                     const allExpenseTypes = getAssociationExpenseTypes();
                     const filteredExpenseTypes = allExpenseTypes.filter(expenseType => {
-                      const matchesSearch = !searchTerm || expenseType.name?.toLowerCase().includes(searchTerm.toLowerCase());
-                      if (!matchesSearch) return false;
+                      if (!matchesSearch(expenseType.name, searchTerm)) return false;
                       if (filterStatus === 'all') return true;
                       const isDistributed = currentSheet?.expenses?.some(exp =>
                         (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
