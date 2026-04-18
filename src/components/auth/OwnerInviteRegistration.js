@@ -242,15 +242,7 @@ export default function OwnerInviteRegistration({ token }) {
         <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-center mb-2 sm:mb-3">
             <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2" />
-            <input
-              type="email"
-              name="email"
-              value={owner?.email || ''}
-              readOnly
-              autoComplete="username"
-              className="flex-1 bg-transparent border-0 p-0 text-sm sm:text-base text-gray-900 font-medium focus:outline-none focus:ring-0 cursor-default"
-              tabIndex={-1}
-            />
+            <span className="text-sm sm:text-base text-gray-900 font-medium">{owner?.email}</span>
           </div>
 
           {owner?.associations?.length > 0 && (
@@ -278,8 +270,25 @@ export default function OwnerInviteRegistration({ token }) {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-          {/* Hidden email field for browser password manager */}
-          <input type="hidden" name="email" autoComplete="username" value={owner?.email || ''} />
+          {/* Email field off-screen pentru password manager (Chrome ignora readOnly/hidden inputs) */}
+          <input
+            type="email"
+            name="email"
+            autoComplete="username"
+            value={owner?.email || ''}
+            onChange={() => {}}
+            aria-hidden="true"
+            tabIndex={-1}
+            style={{
+              position: 'absolute',
+              left: '-9999px',
+              top: '0',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none'
+            }}
+          />
 
           {/* Prenume și Nume */}
           <div className="grid grid-cols-2 gap-3">
