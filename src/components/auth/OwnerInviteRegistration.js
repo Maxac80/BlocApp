@@ -242,7 +242,15 @@ export default function OwnerInviteRegistration({ token }) {
         <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-center mb-2 sm:mb-3">
             <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2" />
-            <span className="text-sm sm:text-base text-gray-900 font-medium">{owner?.email}</span>
+            <input
+              type="email"
+              name="email"
+              value={owner?.email || ''}
+              readOnly
+              autoComplete="username"
+              className="flex-1 bg-transparent border-0 p-0 text-sm sm:text-base text-gray-900 font-medium focus:outline-none focus:ring-0 cursor-default"
+              tabIndex={-1}
+            />
           </div>
 
           {owner?.associations?.length > 0 && (
