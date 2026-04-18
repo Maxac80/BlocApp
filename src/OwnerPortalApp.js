@@ -122,7 +122,7 @@ function OwnerPortalContent() {
   /**
    * Căutare principală: owners collection (firebaseUid) → fallback sheets (email)
    */
-  const findOwnerApartments = async (uid, email) => {
+  async function findOwnerApartments(uid, email) {
     setLoadingApartments(true);
     try {
       // 1. Caută în colecția owners după firebaseUid
@@ -146,12 +146,12 @@ function OwnerPortalContent() {
     } finally {
       setLoadingApartments(false);
     }
-  };
+  }
 
   /**
    * Caută în colecția owners după firebaseUid (proprietari invitați și activați)
    */
-  const findApartmentsFromOwnersCollection = async (uid) => {
+  async function findApartmentsFromOwnersCollection(uid) {
     const foundApartments = [];
     try {
       const ownersQuery = query(
@@ -275,12 +275,12 @@ function OwnerPortalContent() {
       console.error('[OwnerPortal] Error searching owners collection:', err);
     }
     return foundApartments;
-  };
+  }
 
   /**
    * Fallback: caută în sheets după email
    */
-  const findApartmentsByEmail = async (email) => {
+  async function findApartmentsByEmail(email) {
     try {
       const foundApartments = [];
       const associationsRef = collection(db, 'associations');
@@ -377,7 +377,7 @@ function OwnerPortalContent() {
     } catch (error) {
       console.error('[OwnerPortal] Error finding apartments by email:', error);
     }
-  };
+  }
 
   // Handler pentru acces rapid (selectare din dropdowns)
   const handleQuickAccessSelect = (apartmentInfo) => {
