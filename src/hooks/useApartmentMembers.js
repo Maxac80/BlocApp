@@ -29,6 +29,7 @@ export const useApartmentMembers = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const unsubscribeRef = useRef(null);
+  const unsubscribeMembersRef = useRef(null);
 
   // === HELPERS ===
 
@@ -54,7 +55,13 @@ export const useApartmentMembers = () => {
 
   // === LOAD MEMBERS ===
   // Query /owners/ for all owners that have this apartmentId
-  const loadApartmentMembers = useCallback(async (associationId, apartmentId) => {
+  const loadApartmentMembers = useCallback((associationId, apartmentId) => {
+    // Cleanup previous listener
+    if (unsubscribeMembersRef.current) {
+      unsubscribeMembersRef.current();
+      unsubscribeMembersRef.current = null;
+    }
+
     if (!associationId || !apartmentId) {
       setMembers([]);
       return;
@@ -63,38 +70,38 @@ export const useApartmentMembers = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      // Query all owners - filter client-side by apartmentId
-      // Firestore can't query inside nested arrays of objects
-      const ownersSnapshot = await getDocs(collection(db, 'owners'));
+    // Real-time listener pe owners — trigger la orice adaugare/modificare
+    unsubscribeMembersRef.current = onSnapshot(
+      collection(db, 'owners'),
+      (snapshot) => {
+        const apartmentMembers = [];
+        snapshot.docs.forEach(d => {
+          const ownerData = { id: d.id, ...d.data() };
 
-      const apartmentMembers = [];
-      ownersSnapshot.docs.forEach(d => {
-        const ownerData = { id: d.id, ...d.data() };
-
-        // Check if this owner has this apartment in any association
-        const assoc = ownerData.associations?.find(a => a.associationId === associationId);
-        if (assoc) {
-          const apt = assoc.apartments?.find(a => a.apartmentId === apartmentId);
-          if (apt && ownerData.status === 'active') {
-            apartmentMembers.push({
-              ...ownerData,
-              apartmentRole: apt.role || 'proprietar'
-            });
+          const assoc = ownerData.associations?.find(a => a.associationId === associationId);
+          if (assoc) {
+            const apt = assoc.apartments?.find(a => a.apartmentId === apartmentId);
+            if (apt && ownerData.status === 'active') {
+              apartmentMembers.push({
+                ...ownerData,
+                apartmentRole: apt.role || 'proprietar'
+              });
+            }
           }
-        }
-      });
+        });
 
-      setMembers(apartmentMembers);
-      // Curăță invitațiile orfane: exclude emailurile care au deja un cont activ
-      const activeEmails = new Set(apartmentMembers.map(m => m.email).filter(Boolean));
-      setInvitations(prev => prev.filter(inv => !activeEmails.has(inv.email)));
-    } catch (err) {
-      console.error('Error loading apartment members:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+        setMembers(apartmentMembers);
+        // Curăță invitațiile orfane: exclude emailurile care au deja un cont activ
+        const activeEmails = new Set(apartmentMembers.map(m => m.email).filter(Boolean));
+        setInvitations(prev => prev.filter(inv => !activeEmails.has(inv.email)));
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error loading apartment members:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
   }, []);
 
   // === LOAD INVITATIONS ===
@@ -161,6 +168,10 @@ export const useApartmentMembers = () => {
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
+    }
+    if (unsubscribeMembersRef.current) {
+      unsubscribeMembersRef.current();
+      unsubscribeMembersRef.current = null;
     }
   }, []);
 
