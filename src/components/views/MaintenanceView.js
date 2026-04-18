@@ -1471,6 +1471,14 @@ const MaintenanceView = ({
           payments={activeSheet?.payments || []}
           currentMonth={currentMonth}
           consumptionMonth={activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}
+          association={association}
+          blocks={blocks}
+          stats={{
+            blocs: (blocks || []).filter(b => b.associationId === association?.id).length,
+            stairs: new Set((apartments || []).map(a => a.stairId).filter(Boolean)).size,
+            apartments: apartments?.length || 0,
+            persons: (apartments || []).reduce((sum, apt) => sum + (apt.persons || 0), 0)
+          }}
         />
 
         {/* Modal pentru cheltuieli disponibile */}

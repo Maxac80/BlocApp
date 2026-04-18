@@ -429,6 +429,13 @@ const DashboardView = ({
             stairs={stairs || []}
             payments={activeSheet?.payments || []} // 🆕 Trimite plățile din sheet-ul activ
             currentMonth={currentMonth}
+            association={association}
+            blocks={blocks}
+            stats={{
+              blocs: (blocks || []).filter(b => b.associationId === association?.id).length,
+              apartments: (getAssociationApartments?.() || []).length,
+              persons: (getAssociationApartments?.() || []).reduce((sum, apt) => sum + (apt.persons || 0), 0)
+            }}
           />
         );
       })()}

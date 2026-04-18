@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React from 'react';
-import { X, Home, User, Users, Receipt, AlertCircle, Info, ClipboardList, DoorOpen } from 'lucide-react';
+import { X, Home, User, Users, Receipt, AlertCircle, Info, ClipboardList, DoorOpen, Download } from 'lucide-react';
+import { downloadMaintenancePdf } from '../../utils/maintenancePdfGenerator';
 
-const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesList, apartmentParticipations, apartmentSurface, allApartments, allMaintenanceData, getExpenseConfig, stairs, payments, currentMonth, consumptionMonth }) => {
+const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesList, apartmentParticipations, apartmentSurface, allApartments, allMaintenanceData, getExpenseConfig, stairs, blocks, payments, currentMonth, consumptionMonth, association, stats }) => {
   if (!isOpen || !apartmentData) return null;
 
   const {
@@ -613,7 +614,91 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex justify-end">
+        <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex justify-between items-center">
+          <button
+            onClick={async () => {
+              try {
+                const aptId = apartmentData?.apartmentId;
+                const pdfExpenses = (expensesList || []).map((expense) => {
+                  const details = apartmentData?.expenseDetails || {};
+                  const diffDetails = apartmentData?.expenseDifferenceDetails || {};
+                  const detail = details[expense.expenseTypeId]
+                    || details[expense.id]
+                    || details[expense.name];
+                  const difference = diffDetails[expense.expenseTypeId]
+                    || diffDetails[expense.id]
+                    || diffDetails[expense.name]
+                    || 0;
+                  const participation = apartmentParticipations?.[aptId]?.[expense.name];
+                  const isExcluded = participation?.type === 'excluded';
+                  const amount = typeof detail === 'object' ? (detail?.amount || 0) : (detail || 0);
+
+                  // Consum per apartament: e pe expense.consumption[apartmentId]
+                  const consumption = (typeof detail === 'object' && detail?.consumption)
+                    || expense.consumption?.[aptId]
+                    || 0;
+                  const unitPrice = (typeof detail === 'object' && detail?.unitPrice)
+                    || expense.unitPrice
+                    || expense.pricePerUnit
+                    || expense.price
+                    || 0;
+                  const individualAmount = (typeof detail === 'object' && detail?.individualAmount)
+                    || expense.individualAmounts?.[aptId]
+                    || 0;
+
+                  return {
+                    name: expense.name,
+                    distributionType: expense.distributionType,
+                    amount,
+                    difference,
+                    isExcluded,
+                    persons: apartmentData?.persons,
+                    consumption,
+                    unitPrice,
+                    consumptionUnit: expense.consumptionUnit,
+                    surface: apartmentData?.surface,
+                    individualAmount
+                  };
+                });
+
+                // Lookup bloc + scara pentru apartament
+                const currentApt = (allApartments || []).find(a => a.id === apartmentData?.apartmentId);
+                const currentStair = (stairs || []).find(s => s.id === currentApt?.stairId);
+                const currentBlock = (blocks || []).find(b => b.id === currentStair?.blockId);
+
+                await downloadMaintenancePdf({
+                  association: association || {},
+                  stats: stats || {},
+                  apartment: {
+                    number: apartmentData?.apartment,
+                    owner: apartmentData?.owner || '',
+                    persons: apartmentData?.persons,
+                    rooms: apartmentData?.rooms,
+                    surface: apartmentData?.surface,
+                    heatingType: apartmentData?.heatingType,
+                    blockName: currentBlock?.name,
+                    stairName: currentStair?.name
+                  },
+                  monthYear: currentMonth,
+                  consumptionMonth,
+                  expenses: pdfExpenses,
+                  totals: {
+                    currentMaintenance: apartmentData?.currentMaintenance || 0,
+                    restante: apartmentData?.restante || 0,
+                    penalitati: apartmentData?.penalitati || 0,
+                    totalDatorat: apartmentData?.totalDatorat || 0
+                  }
+                });
+              } catch (err) {
+                console.error('Eroare generare PDF:', err);
+                alert('Eroare la generarea PDF-ului. Verifică consola pentru detalii.');
+              }
+            }}
+            className="flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm sm:text-base"
+          >
+            <Download className="w-4 h-4" />
+            Descarcă PDF
+          </button>
           <button
             onClick={onClose}
             className="px-4 sm:px-6 py-1.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"

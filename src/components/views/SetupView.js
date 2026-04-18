@@ -1966,6 +1966,14 @@ return (
         stairs={stairs}
         payments={activeSheet?.payments || []} // 🆕 Trimite plățile din sheet-ul activ
         currentMonth={currentMonth}
+        association={association}
+        blocks={blocks}
+        stats={{
+          blocs: (blocks || []).filter(b => b.associationId === association?.id).length,
+          stairs: new Set((associationApartments || []).map(a => a.stairId).filter(Boolean)).size,
+          apartments: associationApartments?.length || 0,
+          persons: (associationApartments || []).reduce((sum, apt) => sum + (apt.persons || 0), 0)
+        }}
       />
 
       {/* Modal Membri Apartament */}

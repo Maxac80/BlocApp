@@ -8,6 +8,7 @@ import {
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
 import OwnerPaymentModal from '../modals/OwnerPaymentModal';
+import { downloadMaintenancePdf } from '../../../utils/maintenancePdfGenerator';
 
 /**
  * Dashboard pentru proprietar - vizualizare situație curentă
@@ -17,7 +18,8 @@ export default function OwnerDashboardView({ onNavigate }) {
     apartmentId,
     apartmentNumber,
     apartmentData,
-    associationId
+    associationId,
+    associationData
   } = useOwnerContext();
 
   const {
@@ -116,9 +118,55 @@ export default function OwnerDashboardView({ onNavigate }) {
   const totalIncasat = currentMonthPayments.reduce((sum, p) => sum + (p.total || 0), 0);
 
   // Handler pentru descărcare PDF
-  const handleDownloadPdf = () => {
-    setShowPdfMessage(true);
-    setTimeout(() => setShowPdfMessage(false), 3000);
+  const handleDownloadPdf = async () => {
+    try {
+      // Citim blocuri/scari/apartamente din associationSnapshot (sheet activ)
+      const snapshot = activeSheet?.associationSnapshot || {};
+      const blocks = snapshot.blocks || [];
+      const stairs = snapshot.stairs || [];
+      const allApartments = snapshot.apartments || [];
+
+      // Gaseste apartamentul curent pentru a extrage stair + block
+      const currentApt = allApartments.find(a =>
+        String(a.id) === String(apartmentId) ||
+        String(a.number) === String(apartmentNumber)
+      );
+      const currentStair = stairs.find(s => s.id === currentApt?.stairId);
+      const currentBlock = blocks.find(b => b.id === currentStair?.blockId);
+
+      await downloadMaintenancePdf({
+        association: associationData || {},
+        stats: {
+          blocs: blocks.length,
+          stairs: stairs.length,
+          apartments: allApartments.length,
+          persons: allApartments.reduce((s, a) => s + (a.persons || 0), 0)
+        },
+        apartment: {
+          number: apartmentNumber,
+          owner: apartmentData?.ownerName || apartmentData?.owner || '',
+          persons: apartmentData?.persons,
+          rooms: apartmentData?.rooms,
+          surface: apartmentData?.surface,
+          heatingType: apartmentData?.heatingType || apartmentData?.apartmentType,
+          blockName: currentBlock?.name,
+          stairName: currentStair?.name
+        },
+        monthYear: selectedMonth,
+        consumptionMonth,
+        expenses: expenseDetails || [],
+        totals: {
+          currentMaintenance,
+          restante,
+          penalitati,
+          totalDatorat: totalDue
+        }
+      });
+    } catch (err) {
+      console.error('Eroare generare PDF:', err);
+      setShowPdfMessage(true);
+      setTimeout(() => setShowPdfMessage(false), 3000);
+    }
   };
 
   return (
@@ -290,10 +338,10 @@ export default function OwnerDashboardView({ onNavigate }) {
         {/* Toast PDF */}
         {showPdfMessage && (
           <div className="px-4 sm:px-6 pb-3 sm:pb-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 sm:p-3 flex items-center">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mr-1.5 sm:mr-2 flex-shrink-0" />
-              <span className="text-xs sm:text-sm text-amber-800">
-                Funcționalitatea PDF va fi disponibilă în curând.
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 sm:p-3 flex items-center">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="text-xs sm:text-sm text-red-800">
+                Eroare la generarea PDF-ului. Încearcă din nou.
               </span>
             </div>
           </div>
