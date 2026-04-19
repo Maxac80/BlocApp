@@ -661,7 +661,7 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                   };
                 });
 
-                // Lookup bloc + scara pentru apartament
+                // Lookup apartament complet + bloc + scara
                 const currentApt = (allApartments || []).find(a => a.id === apartmentData?.apartmentId);
                 const currentStair = (stairs || []).find(s => s.id === currentApt?.stairId);
                 const currentBlock = (blocks || []).find(b => b.id === currentStair?.blockId);
@@ -671,11 +671,11 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                   stats: stats || {},
                   apartment: {
                     number: apartmentData?.apartment,
-                    owner: apartmentData?.owner || '',
-                    persons: apartmentData?.persons,
-                    rooms: apartmentData?.rooms,
-                    surface: apartmentData?.surface,
-                    heatingType: apartmentData?.heatingType,
+                    owner: apartmentData?.owner || currentApt?.owner || '',
+                    persons: apartmentData?.persons ?? currentApt?.persons,
+                    apartmentType: currentApt?.apartmentType,
+                    surface: apartmentData?.surface ?? currentApt?.surface,
+                    heatingType: currentApt?.heatingSource || currentApt?.heatingType,
                     blockName: currentBlock?.name,
                     stairName: currentStair?.name
                   },

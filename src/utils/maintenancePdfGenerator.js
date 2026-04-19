@@ -387,16 +387,19 @@ export const generateMaintenancePdf = async ({
   doc.setTextColor(...COLORS.grayDark);
   doc.text(fixRo(`Proprietar: ${apartment.owner || '-'}`), margin + 3, y + 10);
 
-  // Info dreapta: persoane, camere, mp, incalzire
+  // Info dreapta: persoane, tip apartament (ex "3 camere"), mp, incalzire
   const infoParts = [];
-  if (apartment.persons !== undefined) {
-    const p = apartment.persons;
+  if (apartment.persons !== undefined && apartment.persons !== null) {
+    const p = Number(apartment.persons);
     infoParts.push(`${p} ${p === 1 ? 'persoana' : 'persoane'}`);
   }
-  if (apartment.rooms !== undefined && apartment.rooms > 0) {
-    infoParts.push(`${apartment.rooms} camere`);
+  if (apartment.apartmentType) {
+    infoParts.push(fixRo(apartment.apartmentType));
+  } else if (apartment.rooms && Number(apartment.rooms) > 0) {
+    const r = Number(apartment.rooms);
+    infoParts.push(`${r} ${r === 1 ? 'camera' : 'camere'}`);
   }
-  if (apartment.surface !== undefined && apartment.surface > 0) {
+  if (apartment.surface !== undefined && apartment.surface !== null && Number(apartment.surface) > 0) {
     infoParts.push(`${apartment.surface} mp`);
   }
   if (apartment.heatingType) {

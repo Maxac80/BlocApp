@@ -144,11 +144,14 @@ export default function OwnerDashboardView({ onNavigate }) {
         },
         apartment: {
           number: apartmentNumber,
-          owner: apartmentData?.ownerName || apartmentData?.owner || '',
-          persons: apartmentData?.persons,
-          rooms: apartmentData?.rooms,
-          surface: apartmentData?.surface,
-          heatingType: apartmentData?.heatingType || apartmentData?.apartmentType,
+          owner: apartmentData?.ownerName || apartmentData?.owner || currentApt?.owner || '',
+          persons: apartmentData?.persons ?? currentApt?.persons,
+          apartmentType: apartmentData?.apartmentType ?? currentApt?.apartmentType,
+          surface: apartmentData?.surface ?? currentApt?.surface,
+          heatingType: apartmentData?.heatingSource
+            || apartmentData?.heatingType
+            || currentApt?.heatingSource
+            || currentApt?.heatingType,
           blockName: currentBlock?.name,
           stairName: currentStair?.name
         },
