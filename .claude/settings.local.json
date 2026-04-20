@@ -181,7 +181,13 @@
       "Bash(node --check src/components/expenses/ExpenseList.js)",
       "Bash(tail -5 \"C:\\\\\\\\Users\\\\\\\\maxac\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--blocapp\\\\\\\\d041844b-57e4-4ceb-a7cc-0102741c90ba\\\\\\\\tasks\\\\\\\\bycf2pohv.output\")",
       "Bash(tail -10 \"C:\\\\\\\\Users\\\\\\\\maxac\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--blocapp\\\\\\\\d041844b-57e4-4ceb-a7cc-0102741c90ba\\\\\\\\tasks\\\\\\\\bycf2pohv.output\")",
-      "Bash(node -e \"console.log\\(require\\('./package.json'\\).dependencies['jspdf-autotable']\\)\")"
+      "Bash(node -e \"console.log\\(require\\('./package.json'\\).dependencies['jspdf-autotable']\\)\")",
+      "Bash(git worktree *)",
+      "Bash(cmd //c \"mklink /J c:\\\\blocapp-refactor\\\\node_modules c:\\\\blocapp\\\\node_modules\")",
+      "Bash(cp c:/blocapp/.env c:/blocapp-refactor/.env)",
+      "Bash(cp c:/blocapp/.env.local c:/blocapp-refactor/.env.local)",
+      "Bash(cmd //c \"rmdir c:\\\\blocapp-refactor\\\\node_modules\")",
+      "Bash(git stash *)"
     ],
     "deny": [],
     "ask": [],

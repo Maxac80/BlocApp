@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
-import React from 'react';
-import { CheckCircle, XCircle, Eye } from 'lucide-react';
-import PaymentStatusDetail from '../common/PaymentStatusDetail';
+import React, { useState } from 'react';
+import { ClipboardList, Coins, ChevronDown, ChevronUp } from 'lucide-react';
 
 const MaintenanceTableSimple = ({
   maintenanceData,
@@ -12,104 +11,150 @@ const MaintenanceTableSimple = ({
   isHistoricMonth = false,
   getPaymentStats,
   isLoadingPayments = false,
-  disableSticky = false
+  disableSticky = false,
+  payments = [],
+  handleNavigation
 }) => {
-  // Calculează statisticile de plată dacă funcția este disponibilă
-  const paymentStats = getPaymentStats ? getPaymentStats() : null;
+  const [expandedId, setExpandedId] = useState(null);
+
+  // Helper: status vizual (culoare bara + procent)
+  const getStatusVisual = (data) => {
+    const totalDatorat = Number(data.totalDatorat) || 0;
+    const totalPaid = Number(data.paymentInfo?.totalPaid) || 0;
+    const totalInitial = totalDatorat + totalPaid;
+    const paidPct = totalInitial > 0 ? Math.round((totalPaid / totalInitial) * 100) : 0;
+
+    if (data.isPaid || totalDatorat < 0.01) {
+      return { color: 'bg-green-500', text: '✓ Plătit', textColor: 'text-green-600', paidPct: 100 };
+    }
+    if (data.isPartiallyPaid || paidPct > 0) {
+      return { color: 'bg-orange-500', text: `${paidPct}% plătit`, textColor: 'text-orange-600', paidPct };
+    }
+    return { color: 'bg-red-500', text: 'Neplătit', textColor: 'text-red-600', paidPct: 0 };
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '-';
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '-';
+    const pad = (x) => String(x).padStart(2, '0');
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+  };
+
+  const getApartmentPayments = (apartmentId) =>
+    (payments || []).filter(p => p.apartmentId === apartmentId)
+      .sort((a, b) => new Date(b.timestamp || b.createdAt || 0) - new Date(a.timestamp || a.createdAt || 0));
+
   return (
     <table className="w-full text-xs sm:text-sm table-auto sm:table-fixed">
       <colgroup>
-        <col style={{ width: '60px' }} />
-        <col style={{ width: '175px' }} />
+        <col style={{ width: '6px' }} />
+        <col style={{ width: '52px' }} />
+        <col style={{ width: '195px' }} />
         <col style={{ width: '70px' }} />
         <col style={{ width: '120px' }} />
         <col style={{ width: '110px' }} />
-        <col style={{ width: '120px' }} />
         <col style={{ width: '110px' }} />
         <col style={{ width: '130px' }} />
-        {isMonthReadOnly && (
-          <>
-            <col style={{ width: '120px' }} />
-            {!isHistoricMonth && <col style={{ width: '120px' }} />}
-          </>
-        )}
+        {isMonthReadOnly && !isHistoricMonth && <col style={{ width: '120px' }} />}
       </colgroup>
-      <thead className={`${disableSticky ? '' : 'sticky top-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+      <thead className={`${disableSticky ? '' : 'sticky top-0 z-20'} ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
         <tr>
-          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>Ap.</th>
-          <th className="px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap w-full sm:w-auto">Proprietar</th>
-          {/* Coloane numerice — aliniate dreapta */}
-          <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Pers.</th>
-          <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Întreținere</th>
-          <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Restanță</th>
-          <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Total</th>
-          <th className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Penalități</th>
-          <th className="px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap">Total Datorat</th>
-          {isMonthReadOnly && (
-            <>
-              <th className="px-1 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap">Status</th>
-              {!isHistoricMonth && (
-                <th className="px-1 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap"><span className="hidden sm:inline">Acțiuni</span><span className="sm:hidden"></span></th>
-              )}
-            </>
+          <th className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></th>
+          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Ap.</th>
+          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap w-full sm:w-auto ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Proprietar</th>
+          <th className={`hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Pers.</th>
+          <th className={`hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Întreținere</th>
+          <th className={`hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Restanță</th>
+          <th className={`hidden lg:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Penalități</th>
+          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Total Datorat</th>
+          {isMonthReadOnly && !isHistoricMonth && (
+            <th
+              className={`px-1 sm:px-3 py-2 sm:py-3 text-center font-medium text-gray-700 whitespace-nowrap sticky right-0 z-30 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
+              style={{ boxShadow: '-4px 0 6px -2px rgba(0,0,0,0.08)' }}
+            >
+              Acțiuni
+            </th>
           )}
         </tr>
       </thead>
       <tbody className="divide-y">
-        {maintenanceData.map(data => (
-          <tr key={data.apartmentId} className="hover:bg-gray-50">
-            <td className="pl-3 pr-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap bg-white">{data.apartment}</td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 text-blue-600 font-medium">
-              <div className="flex items-center gap-1 sm:gap-2">
-                {onOpenMaintenanceBreakdown && (
-                  <button
-                    onClick={() => onOpenMaintenanceBreakdown(data)}
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded p-0.5 sm:p-1 transition-colors flex-shrink-0"
-                    title="Vezi detalii întreținere"
-                  >
-                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
-                )}
-                <span className="truncate text-xs sm:text-sm">{data.owner}</span>
-              </div>
-            </td>
-            {/* Coloane numerice — aliniate dreapta */}
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right whitespace-nowrap">{data.persons || 0}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-indigo-600 whitespace-nowrap">{(data.currentMaintenance || 0).toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-red-600 whitespace-nowrap">{(data.restante || 0).toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-purple-600 whitespace-nowrap">{(data.totalMaintenance || 0).toFixed(2)}</td>
-            <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap">{(data.penalitati || 0).toFixed(2)}</td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">{(data.totalDatorat || 0).toFixed(2)}</td>
-            {isMonthReadOnly && (
-              <>
-                <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap">
-                  <PaymentStatusDetail
-                    paymentStatus={data.paymentStatus}
-                    isPaid={data.isPaid}
-                    isPartiallyPaid={data.isPartiallyPaid}
-                    paymentInfo={data.paymentInfo}
-                    apartmentData={data}
-                  />
+        {maintenanceData.map(data => {
+          const status = getStatusVisual(data);
+          const isExpanded = expandedId === data.apartmentId;
+          const aptPayments = getApartmentPayments(data.apartmentId);
+          const colCount = 8 + (isMonthReadOnly && !isHistoricMonth ? 1 : 0);
+
+          return (
+            <React.Fragment key={data.apartmentId}>
+              <tr
+                onClick={() => setExpandedId(isExpanded ? null : data.apartmentId)}
+                className={`cursor-pointer transition-colors group ${isExpanded ? 'bg-blue-50' : 'hover:bg-blue-50'}`}
+                title="Click pentru a vedea plățile apartamentului"
+              >
+                <td className={`p-0 ${status.color}`}></td>
+                <td className={`pl-2 pr-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap transition-colors ${isExpanded ? 'bg-blue-50' : 'bg-white group-hover:bg-blue-50'}`}>
+                  <div className="flex items-center gap-1">
+                    <span>{data.apartment}</span>
+                    {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
+                  </div>
                 </td>
-                {!isHistoricMonth && (
-                  <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap">
+                <td className="px-1 sm:px-3 py-2 sm:py-3 text-blue-600 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="truncate text-xs sm:text-sm">{data.owner}</span>
+                      {isMonthReadOnly && (
+                        <span className={`sm:hidden text-[10px] mt-0.5 ${status.textColor}`}>
+                          {status.text}
+                        </span>
+                      )}
+                    </div>
+                    {onOpenMaintenanceBreakdown && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenMaintenanceBreakdown(data);
+                        }}
+                        className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                        title="Detalii cheltuieli"
+                      >
+                        <ClipboardList className="w-[18px] h-[18px]" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+                <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right whitespace-nowrap">{data.persons || 0}</td>
+                <td className="hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-indigo-600 whitespace-nowrap">{(data.currentMaintenance || 0).toFixed(2)}</td>
+                <td className="hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-red-600 whitespace-nowrap">{(data.restante || 0).toFixed(2)}</td>
+                <td className="hidden lg:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap">{(data.penalitati || 0).toFixed(2)}</td>
+                <td className="px-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">{(data.totalDatorat || 0).toFixed(2)}</td>
+                {isMonthReadOnly && !isHistoricMonth && (
+                  <td
+                    className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap sticky right-0 z-10 transition-colors ${isExpanded ? 'bg-blue-50' : 'bg-white group-hover:bg-blue-50'}`}
+                    style={{ boxShadow: '-4px 0 6px -2px rgba(0,0,0,0.08)' }}
+                  >
                     <button
-                      onClick={() => data.paymentInfo?.canReceivePayment && onOpenPaymentModal && onOpenPaymentModal({
-                        apartmentId: data.apartmentId,
-                        apartmentNumber: data.apartment,
-                        owner: data.owner,
-                        restante: data.restante,
-                        intretinere: data.currentMaintenance,
-                        penalitati: data.penalitati,
-                        totalDatorat: data.totalDatorat
-                      })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (data.paymentInfo?.canReceivePayment && onOpenPaymentModal) {
+                          onOpenPaymentModal({
+                            apartmentId: data.apartmentId,
+                            apartmentNumber: data.apartment,
+                            owner: data.owner,
+                            restante: data.restante,
+                            intretinere: data.currentMaintenance,
+                            penalitati: data.penalitati,
+                            totalDatorat: data.totalDatorat
+                          });
+                        }
+                      }}
                       disabled={!data.paymentInfo?.canReceivePayment}
-                      className={`px-1.5 sm:px-4 py-1 sm:py-2 rounded-lg text-[10px] sm:text-sm font-medium shadow-md transition-none ${
+                      className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium shadow-sm transition-colors ${
                         isLoadingPayments
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed invisible'
                           : data.paymentInfo?.canReceivePayment
                             ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                       title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
                     >
@@ -118,71 +163,113 @@ const MaintenanceTableSimple = ({
                     </button>
                   </td>
                 )}
-              </>
-            )}
-          </tr>
-        ))}
+              </tr>
+              {isExpanded && (
+                <tr className="bg-blue-50">
+                  <td className={`p-0 ${status.color}`}></td>
+                  <td colSpan={colCount - 1} className="px-3 sm:px-4 py-3 sm:py-4">
+                    <div className="bg-white rounded-lg border border-blue-200 p-3 sm:p-4">
+                      <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className="flex items-center gap-2">
+                          <Coins className="w-4 h-4 text-blue-600" />
+                          <h4 className="text-sm sm:text-base font-semibold text-gray-800">
+                            Încasări efectuate — Apartament {data.apartment}
+                          </h4>
+                          {status.paidPct > 0 && status.paidPct < 100 && (
+                            <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                              {status.paidPct}% încasat
+                            </span>
+                          )}
+                        </div>
+                        {handleNavigation && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavigation('accounting');
+                            }}
+                            className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Toate încasările →
+                          </button>
+                        )}
+                      </div>
+                      {aptPayments.length === 0 ? (
+                        <p className="text-xs sm:text-sm text-gray-500 italic py-2">
+                          Nicio încasare înregistrată pentru această lună.
+                        </p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs sm:text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-200 text-gray-500">
+                                <th className="text-left py-1.5 pr-3 font-medium">Data</th>
+                                <th className="text-left py-1.5 pr-3 font-medium">Chitanță</th>
+                                <th className="text-right py-1.5 pr-3 font-medium">Întreținere</th>
+                                <th className="text-right py-1.5 pr-3 font-medium">Restanțe</th>
+                                <th className="text-right py-1.5 pr-3 font-medium">Penalități</th>
+                                <th className="text-right py-1.5 font-medium text-gray-700">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {aptPayments.map((p, i) => {
+                                const intret = Number(p.intretinere) || 0;
+                                const rest = Number(p.restante) || 0;
+                                const pen = Number(p.penalitati) || 0;
+                                const total = intret + rest + pen;
+                                return (
+                                  <tr key={p.id || i}>
+                                    <td className="py-1.5 pr-3 text-gray-700 whitespace-nowrap">
+                                      {formatDate(p.timestamp || p.createdAt)}
+                                    </td>
+                                    <td className="py-1.5 pr-3 text-gray-700">
+                                      {p.receiptNumber ? `#${p.receiptNumber}` : '—'}
+                                    </td>
+                                    <td className="py-1.5 pr-3 text-right tabular-nums text-indigo-600">{intret.toFixed(2)}</td>
+                                    <td className="py-1.5 pr-3 text-right tabular-nums text-red-600">{rest.toFixed(2)}</td>
+                                    <td className="py-1.5 pr-3 text-right tabular-nums text-orange-600">{pen.toFixed(2)}</td>
+                                    <td className="py-1.5 text-right font-bold text-emerald-700 tabular-nums">{total.toFixed(2)} lei</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          );
+        })}
       </tbody>
-      <tfoot className={`${disableSticky ? '' : 'sticky bottom-0 z-10'} ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}>
+      <tfoot className={`${disableSticky ? '' : 'sticky bottom-0 z-10'} ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
         <tr>
-          <td className={`pl-3 pr-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}></td>
-          <td className="px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap">TOTAL:</td>
-          {/* Totaluri numerice — aliniate dreapta */}
-          <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 whitespace-nowrap">
+          <td className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
+          <td className={`pl-2 pr-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
+          <td className={`px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>TOTAL:</td>
+          <td className={`hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             {maintenanceData.reduce((sum, d) => sum + (d.persons || 0), 0)}
           </td>
-          <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-indigo-600 whitespace-nowrap">
+          <td className={`hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-indigo-600 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             {maintenanceData.reduce((sum, d) => sum + (d.currentMaintenance || 0), 0).toFixed(2)}
           </td>
-          <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-red-600 whitespace-nowrap">
+          <td className={`hidden md:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-red-600 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             {maintenanceData.reduce((sum, d) => sum + (d.restante || 0), 0).toFixed(2)}
           </td>
-          <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-purple-600 whitespace-nowrap">
-            {maintenanceData.reduce((sum, d) => sum + (d.totalMaintenance || 0), 0).toFixed(2)}
-          </td>
-          <td className="hidden sm:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap">
+          <td className={`hidden lg:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             {maintenanceData.reduce((sum, d) => sum + (d.penalitati || 0), 0).toFixed(2)}
           </td>
-          <td className="px-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap">
+          <td className={`px-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
             {maintenanceData.reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
           </td>
-          {isMonthReadOnly && (
-            <>
-              <td className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}></td>
-              {!isHistoricMonth && <td className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? "bg-purple-100" : "bg-gray-50"}`}></td>}
-            </>
+          {isMonthReadOnly && !isHistoricMonth && (
+            <td
+              className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap sticky right-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
+              style={{ boxShadow: '-4px 0 6px -2px rgba(0,0,0,0.08)' }}
+            ></td>
           )}
         </tr>
-        {isMonthReadOnly && (
-          <tr className="bg-blue-50">
-            <td className="pl-3 pr-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50"></td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50">
-              <span className="font-semibold text-xs sm:text-sm">ÎNCASAT:</span>
-              <span className="sm:hidden font-bold text-green-600 ml-1 text-xs">
-                {(paymentStats?.totalIncasat || 0).toFixed(2)}
-              </span>
-            </td>
-            <td className="hidden sm:table-cell px-3 py-3 whitespace-nowrap bg-blue-50"></td>
-            <td className="hidden sm:table-cell px-3 py-3 text-right font-bold text-green-600 whitespace-nowrap bg-blue-50">
-              {(paymentStats?.totalIncasat || 0).toFixed(2)}
-            </td>
-            <td className="hidden sm:table-cell px-3 py-3 whitespace-nowrap bg-blue-50"></td>
-            <td className="hidden sm:table-cell px-3 py-3 font-semibold text-right whitespace-nowrap bg-blue-50">RESTANȚE:</td>
-            <td className="hidden sm:table-cell px-3 py-3 text-right font-bold text-red-600 whitespace-nowrap bg-blue-50">
-              {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
-            </td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50">
-              <div className="sm:hidden">
-                <span className="font-semibold text-xs">Restanțe: </span>
-                <span className="font-bold text-red-600 text-xs">
-                  {maintenanceData.filter(d => !d.paid).reduce((sum, d) => sum + (d.totalDatorat || 0), 0).toFixed(2)}
-                </span>
-              </div>
-            </td>
-            <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50"></td>
-            {!isHistoricMonth && <td className="px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap bg-blue-50"></td>}
-          </tr>
-        )}
       </tfoot>
     </table>
   );

@@ -18,7 +18,9 @@ const DashboardMaintenanceTable = ({
   expenses,
   isHistoricMonth = false,
   getPaymentStats,
-  isLoadingPayments = false
+  isLoadingPayments = false,
+  payments = [],
+  consumptionMonth
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
@@ -100,57 +102,16 @@ const DashboardMaintenanceTable = ({
   return (
     <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200 overflow-hidden">
       <div className={`p-3 sm:p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-          <div className="flex-shrink-0">
-            <h3 className={`text-sm sm:text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
-              📊 Tabel Întreținere - {currentMonth}
-            </h3>
-          </div>
-
-          {/* Statistici de încasare - discret în dreapta */}
-          {isMonthReadOnly && (
-            <div className="hidden md:flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Grad încasare:</span>
-                <span className="font-semibold text-green-600">{(gradIncasare || 0).toFixed(1)}%</span>
-                <span className="text-gray-400">({(totalIncasat || 0).toFixed(0)} / {(totalDatoratInitial || 0).toFixed(0)} RON)</span>
-              </div>
-              <div className="h-4 w-px bg-gray-300"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Încasări:</span>
-                <span className="font-semibold text-blue-600">{apartamenteCuIncasari} / {apartamenteTotal}</span>
-                <span className="text-gray-400">apartamente</span>
-              </div>
-            </div>
-          )}
-
-          {/* Bara de căutare mutată în header */}
-          <div className="relative w-full sm:flex-1 sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Caută apartament, proprietar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm w-full"
-            />
-          </div>
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <h3 className={`text-sm sm:text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
+            📊 Tabel Întreținere - {currentMonth}
+            {consumptionMonth && (
+              <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">
+                · consum {consumptionMonth}
+              </span>
+            )}
+          </h3>
         </div>
-
-        {/* Statistici compacte pe mobile */}
-        {isMonthReadOnly && (
-          <div className="flex md:hidden items-center justify-between mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500">Grad încasare:</span>
-              <span className="font-semibold text-green-600">{(gradIncasare || 0).toFixed(1)}%</span>
-              <span className="text-gray-400">({(totalIncasat || 0).toFixed(0)}/{(totalDatoratInitial || 0).toFixed(0)} RON)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500">Încasări:</span>
-              <span className="font-semibold text-blue-600">{apartamenteCuIncasari}/{apartamenteTotal} ap</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Tab-uri pentru scări - doar dacă avem mai multe blocuri/scări */}
@@ -205,6 +166,8 @@ const DashboardMaintenanceTable = ({
           getPaymentStats={getPaymentStats}
           isLoadingPayments={isLoadingPayments}
           disableSticky={filteredData.length <= 10}
+          payments={payments}
+          handleNavigation={handleNavigation}
         />
       </div>
     </div>
