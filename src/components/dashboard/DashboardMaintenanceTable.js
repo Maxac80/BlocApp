@@ -100,16 +100,21 @@ const DashboardMaintenanceTable = ({
   const apartamenteCuIncasari = stairFilteredData.filter(d => d.isPaid || d.isPartiallyPaid).length;
 
   return (
-    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200 overflow-hidden">
-      <div className={`p-3 sm:p-4 border-b ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}>
+    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200">
+      <div
+        className={`p-3 sm:p-4 border-b rounded-t-xl ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}
+      >
         <div className="flex items-center justify-between gap-2 sm:gap-4">
-          <h3 className={`text-sm sm:text-lg font-semibold ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
-            📊 Tabel Întreținere - {currentMonth}
-            {consumptionMonth && (
-              <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">
-                · consum {consumptionMonth}
-              </span>
-            )}
+          <h3 className={`text-sm sm:text-lg font-semibold flex items-start gap-2 ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
+            <span className="flex-shrink-0">📊</span>
+            <span>
+              Tabel Întreținere - {currentMonth}
+              {consumptionMonth && (
+                <span className="block sm:inline text-[11px] sm:text-sm font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {consumptionMonth}
+                </span>
+              )}
+            </span>
           </h3>
         </div>
       </div>
@@ -152,24 +157,19 @@ const DashboardMaintenanceTable = ({
         </div>
       )}
 
-      <div
-        className={`overflow-x-auto ${filteredData.length > 10 ? "overflow-y-auto" : "overflow-y-hidden"}`}
-        style={filteredData.length > 10 ? { maxHeight: '70vh' } : {}}
-      >
-        <MaintenanceTableSimple
-          maintenanceData={filteredData}
-          isMonthReadOnly={isMonthReadOnly}
-          togglePayment={() => {}} // Nu e disponibil în Dashboard
-          onOpenPaymentModal={onOpenPaymentModal}
-          onOpenMaintenanceBreakdown={onOpenMaintenanceBreakdown}
-          isHistoricMonth={isHistoricMonth}
-          getPaymentStats={getPaymentStats}
-          isLoadingPayments={isLoadingPayments}
-          disableSticky={filteredData.length <= 10}
-          payments={payments}
-          handleNavigation={handleNavigation}
-        />
-      </div>
+      <MaintenanceTableSimple
+        maintenanceData={filteredData}
+        isMonthReadOnly={isMonthReadOnly}
+        togglePayment={() => {}} // Nu e disponibil în Dashboard
+        onOpenPaymentModal={onOpenPaymentModal}
+        onOpenMaintenanceBreakdown={onOpenMaintenanceBreakdown}
+        isHistoricMonth={isHistoricMonth}
+        getPaymentStats={getPaymentStats}
+        isLoadingPayments={isLoadingPayments}
+        disableSticky={false}
+        payments={payments}
+        handleNavigation={handleNavigation}
+      />
     </div>
   );
 };

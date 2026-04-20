@@ -95,6 +95,8 @@ const DashboardView = ({
 
   // State pentru cautarea apartamentului in tabel
   const [apartmentSearchTerm, setApartmentSearchTerm] = useState('');
+  // Filtru de status plata: 'all' | 'unpaid' | 'partial' | 'paid'
+  const [paymentFilter, setPaymentFilter] = useState('all');
 
   // Calculează datele actualizate pentru afișare în tabel
   // IMPORTANT: Calculăm întotdeauna datele, NU le schimbăm condiționat
@@ -183,13 +185,16 @@ const DashboardView = ({
       <div className="w-full">
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            📋 Întreținere{currentMonth ? ` ${currentMonth}` : ''}
-            {activeSheet?.consumptionMonth && (
-              <span className="text-sm sm:text-base font-normal text-gray-500 ml-2">
-                · consum {activeSheet.consumptionMonth}
-              </span>
-            )}
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2">
+            <span className="flex-shrink-0">📋</span>
+            <span>
+              Întreținere{currentMonth ? ` ${currentMonth}` : ''}
+              {activeSheet?.consumptionMonth && (
+                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
+                </span>
+              )}
+            </span>
           </h1>
         </div>
 
@@ -396,12 +401,23 @@ const DashboardView = ({
               // Filtru search pe apartament / proprietar (normalizare diacritice)
               const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
               const term = (apartmentSearchTerm || '').trim();
-              const filteredData = term
+              let filteredData = term
                 ? data.filter(d =>
                     normalize(d.apartment).includes(normalize(term)) ||
                     normalize(d.owner).includes(normalize(term))
                   )
                 : data;
+
+              // Counts pt chip-uri filtru (pe datele filtrate cu search)
+              const countAll = filteredData.length;
+              const countPaid = filteredData.filter(d => d.isPaid).length;
+              const countPartial = filteredData.filter(d => !d.isPaid && d.isPartiallyPaid).length;
+              const countUnpaid = filteredData.filter(d => !d.isPaid && !d.isPartiallyPaid).length;
+
+              // Aplicare filtru status
+              if (paymentFilter === 'paid') filteredData = filteredData.filter(d => d.isPaid);
+              else if (paymentFilter === 'partial') filteredData = filteredData.filter(d => !d.isPaid && d.isPartiallyPaid);
+              else if (paymentFilter === 'unpaid') filteredData = filteredData.filter(d => !d.isPaid && !d.isPartiallyPaid);
 
               return (
                 <>
@@ -448,8 +464,8 @@ const DashboardView = ({
                     );
                   })()}
 
-                  {/* Bara cautare + buton Vezi Incasari */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
+                  {/* Zona sticky: Search + Filtru status + Vezi Incasari */}
+                  <div className="sticky top-0 z-40 -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 py-2 bg-gray-50 border-b border-gray-200 mb-4 flex flex-row gap-2 sm:gap-3">
                     <div className="relative flex-1">
                       <input
                         type="text"
@@ -471,12 +487,23 @@ const DashboardView = ({
                         </button>
                       )}
                     </div>
+                    <select
+                      value={paymentFilter}
+                      onChange={(e) => setPaymentFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-shrink-0"
+                    >
+                      <option value="all">Toate ({countAll})</option>
+                      <option value="unpaid">Neîncasate ({countUnpaid})</option>
+                      <option value="partial">Parțial încasate ({countPartial})</option>
+                      <option value="paid">Încasate integral ({countPaid})</option>
+                    </select>
                     <button
                       onClick={() => handleNavigation('accounting')}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                      className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 flex-shrink-0"
+                      title="Vezi Încasări"
                     >
                       <Coins className="w-4 h-4" />
-                      Vezi Încasări
+                      <span className="hidden sm:inline">Vezi Încasări</span>
                     </button>
                   </div>
 
