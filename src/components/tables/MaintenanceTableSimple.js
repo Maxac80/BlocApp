@@ -260,7 +260,7 @@ const MaintenanceTableSimple = ({
           );
         })}
       </tbody>
-      <tfoot className={`${disableSticky ? '' : 'sticky bottom-0 z-20'} ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
+      <tfoot className={`${disableSticky ? '' : 'sticky bottom-[64px] lg:bottom-0 z-20'} ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
         <tr>
           <td className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
           <td className={`px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
