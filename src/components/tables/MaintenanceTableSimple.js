@@ -136,100 +136,54 @@ const MaintenanceTableSimple = ({
               >
                 <td className={`p-0 ${status.color}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
                 <td
-                  colSpan={isMonthReadOnly && !isHistoricMonth ? 7 : 8}
+                  colSpan={isMonthReadOnly && !isHistoricMonth ? 8 : 7}
                   className={`px-2 py-2 transition-colors ${stickyCellBg}`}
                   style={{ maxWidth: 0 }}
                 >
-                  <div className="flex flex-col gap-1 min-w-0">
-                    {/* Rândul 1: Apartament + chevron stânga | Total dreapta */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1 font-semibold text-sm">
-                        <span>{data.apartment}</span>
-                        {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
-                      </span>
-                      <span className="font-bold text-base text-gray-800">{origTotal.toFixed(2)}</span>
-                    </div>
-                    {/* Rândul 2: iconiță + owner + status + breakdown */}
-                    <div className="flex items-start gap-2">
-                      {onOpenMaintenanceBreakdown && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenMaintenanceBreakdown(data);
-                          }}
-                          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 transition-colors"
-                          title="Detalii cheltuieli"
-                        >
-                          <ClipboardList className="w-4 h-4" />
-                        </button>
+                  {/* Layout 3 coloane: stânga (Apt#+chevron), mijloc (Owner / status), dreapta (Total / defalcare / Încasat / Rămas). Acțiunile (Vezi detalii / Încasează) sunt în expand row. */}
+                  <div className="flex items-start gap-2 min-w-0">
+                    {/* COLOANA STÂNGA: doar Apt# + chevron */}
+                    <span className="flex items-center gap-0.5 font-semibold text-sm flex-shrink-0">
+                      <span>{data.apartment}</span>
+                      {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
+                    </span>
+                    {/* COLOANA MIJLOC: r1 = Owner (truncate, lățime max), r2 = status text */}
+                    <div className="flex flex-col min-w-0 flex-1 gap-1">
+                      <span className="truncate text-sm text-blue-600 font-medium">{data.owner}</span>
+                      {isMonthReadOnly && (
+                        <span className={`text-[11px] ${status.textColor}`}>{status.text}</span>
                       )}
-                      <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                        <span className="truncate text-sm text-blue-600 font-medium">{data.owner}</span>
-                        {isMonthReadOnly && (
-                          <span className={`text-[11px] ${status.textColor}`}>{status.text}</span>
-                        )}
-                        {/* Breakdown — fiecare item pe linia lui (avem lățime suficientă) */}
-                        {(origIntretinere > 0 || origRestante > 0 || origPenalitati > 0) && (
-                          <div className="text-[11px] text-gray-500 leading-tight mt-0.5">
-                            {origIntretinere > 0 && (
-                              <div>Înt: <span className="text-indigo-600 font-medium">{origIntretinere.toFixed(2)}</span></div>
-                            )}
-                            {origRestante > 0 && (
-                              <div>Restanță: <span className="text-red-600 font-medium">{origRestante.toFixed(2)}</span></div>
-                            )}
-                            {origPenalitati > 0 && (
-                              <div>Pen: <span className="text-orange-600 font-medium">{origPenalitati.toFixed(2)}</span></div>
-                            )}
-                          </div>
-                        )}
-                        {/* Info plată — pe O linie (avem spațiu) */}
-                        {totalPaid > 0 && restCurent > 0.01 && (
-                          <div className="text-[11px] text-gray-500 leading-tight">
-                            încasat <span className="text-green-600 font-medium">{totalPaid.toFixed(2)}</span> • rămas <span className="text-orange-600 font-medium">{restCurent.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {totalPaid > 0 && restCurent <= 0.01 && (
-                          <div className="text-[11px] text-gray-500 leading-tight">
-                            încasat <span className="text-green-600 font-medium">{totalPaid.toFixed(2)} lei</span>
-                          </div>
-                        )}
-                      </div>
+                    </div>
+                    {/* COLOANA DREAPTA: Total bold sus + defalcare aliniată dreapta */}
+                    <div className="flex flex-col items-end flex-shrink-0 text-right">
+                      <span className="font-bold text-base text-gray-800 leading-tight">{origTotal.toFixed(2)}</span>
+                      {(origIntretinere > 0 || origRestante > 0 || origPenalitati > 0) && (
+                        <div className="text-[11px] text-gray-500 leading-tight mt-0.5 space-y-0">
+                          {origIntretinere > 0 && (
+                            <div>Întreținere <span className="text-indigo-600 font-medium ml-1">{origIntretinere.toFixed(2)}</span></div>
+                          )}
+                          {origRestante > 0 && (
+                            <div>Restanță <span className="text-red-600 font-medium ml-1">{origRestante.toFixed(2)}</span></div>
+                          )}
+                          {origPenalitati > 0 && (
+                            <div>Penalități <span className="text-orange-600 font-medium ml-1">{origPenalitati.toFixed(2)}</span></div>
+                          )}
+                        </div>
+                      )}
+                      {totalPaid > 0 && restCurent > 0.01 && (
+                        <div className="text-[11px] leading-tight mt-0.5">
+                          <div className="text-gray-500">Încasat <span className="text-green-600 font-medium ml-1">{totalPaid.toFixed(2)}</span></div>
+                          <div className="text-gray-700 font-semibold">Rămas <span className="text-orange-600 font-bold ml-1">{restCurent.toFixed(2)}</span></div>
+                        </div>
+                      )}
+                      {totalPaid > 0 && restCurent <= 0.01 && (
+                        <div className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                          Încasat <span className="text-green-600 font-medium ml-1">{totalPaid.toFixed(2)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
-                {isMonthReadOnly && !isHistoricMonth && (
-                  <td
-                    className={`pl-1 pr-2 py-2 whitespace-nowrap text-center sticky right-0 z-10 transition-colors ${stickyCellBg}`}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (data.paymentInfo?.canReceivePayment && onOpenPaymentModal) {
-                          onOpenPaymentModal({
-                            apartmentId: data.apartmentId,
-                            apartmentNumber: data.apartment,
-                            owner: data.owner,
-                            restante: data.restante,
-                            intretinere: data.currentMaintenance,
-                            penalitati: data.penalitati,
-                            totalDatorat: data.totalDatorat
-                          });
-                        }
-                      }}
-                      disabled={!data.paymentInfo?.canReceivePayment}
-                      className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium shadow-sm transition-colors ${
-                        isLoadingPayments
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed invisible'
-                          : data.paymentInfo?.canReceivePayment
-                            ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                      title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
-                    >
-                      <HandCoins className="w-[18px] h-[18px]" />
-                    </button>
-                  </td>
-                )}
               </tr>
               {/* DESKTOP row: structura clasică pe coloane */}
               <tr
@@ -334,6 +288,52 @@ const MaintenanceTableSimple = ({
                     style={{ maxWidth: 0 }}
                   >
                     <div className={`bg-white rounded-lg border ${expandBorder} p-3 sm:p-4 w-full overflow-hidden`} style={{ minWidth: 0 }}>
+                      {/* Mobile-only: butoane acțiuni (Vezi detalii + Încasează) în partea de sus a expand row */}
+                      <div className="sm:hidden mb-3 grid grid-cols-2 gap-2">
+                        {onOpenMaintenanceBreakdown && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenMaintenanceBreakdown(data);
+                            }}
+                            className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-500"
+                            title="Detalii cheltuieli pentru apartament"
+                          >
+                            <ClipboardList className="w-5 h-5" />
+                            <span>Vezi detalii</span>
+                          </button>
+                        )}
+                        {isMonthReadOnly && !isHistoricMonth && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (data.paymentInfo?.canReceivePayment && onOpenPaymentModal) {
+                                onOpenPaymentModal({
+                                  apartmentId: data.apartmentId,
+                                  apartmentNumber: data.apartment,
+                                  owner: data.owner,
+                                  restante: data.restante,
+                                  intretinere: data.currentMaintenance,
+                                  penalitati: data.penalitati,
+                                  totalDatorat: data.totalDatorat
+                                });
+                              }
+                            }}
+                            disabled={!data.paymentInfo?.canReceivePayment}
+                            className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors ${
+                              isLoadingPayments
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : data.paymentInfo?.canReceivePayment
+                                  ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                            title={!data.paymentInfo?.canReceivePayment ? 'Apartamentul are soldul zero' : 'Înregistrează încasare'}
+                          >
+                            <HandCoins className="w-5 h-5" />
+                            <span>Încasează</span>
+                          </button>
+                        )}
+                      </div>
                       {/* Progres încasare per categorie */}
                       {(() => {
                         const paid = data.paymentInfo?.totalsByCategory || {};
@@ -444,17 +444,17 @@ const MaintenanceTableSimple = ({
                                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
                                     {intret > 0 && (
                                       <span className="text-indigo-600">
-                                        Înt: <span className="font-medium tabular-nums">{intret.toFixed(2)}</span>
+                                        Întreținere: <span className="font-medium tabular-nums">{intret.toFixed(2)}</span>
                                       </span>
                                     )}
                                     {rest > 0 && (
                                       <span className="text-red-600">
-                                        Rest: <span className="font-medium tabular-nums">{rest.toFixed(2)}</span>
+                                        Restanțe: <span className="font-medium tabular-nums">{rest.toFixed(2)}</span>
                                       </span>
                                     )}
                                     {pen > 0 && (
                                       <span className="text-orange-600">
-                                        Pen: <span className="font-medium tabular-nums">{pen.toFixed(2)}</span>
+                                        Penalități: <span className="font-medium tabular-nums">{pen.toFixed(2)}</span>
                                       </span>
                                     )}
                                   </div>
@@ -546,7 +546,7 @@ const MaintenanceTableSimple = ({
               <tr className="sm:hidden">
                 <td className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
                 <td
-                  colSpan={isMonthReadOnly && !isHistoricMonth ? 7 : 8}
+                  colSpan={isMonthReadOnly && !isHistoricMonth ? 8 : 7}
                   className={`px-2 py-2 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
                   style={{ maxWidth: 0 }}
                 >
@@ -555,11 +555,6 @@ const MaintenanceTableSimple = ({
                     <span className="font-bold text-base text-gray-800">{sumTotal.toFixed(2)}</span>
                   </div>
                 </td>
-                {isMonthReadOnly && !isHistoricMonth && (
-                  <td
-                    className={`pl-1 pr-2 py-2 sticky right-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
-                  ></td>
-                )}
               </tr>
               {/* DESKTOP tfoot: structura clasică */}
             <tr className="hidden sm:table-row">
