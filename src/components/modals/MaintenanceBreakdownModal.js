@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React from 'react';
-import { X, Home, User, Users, Receipt, AlertCircle, Info, ClipboardList, DoorOpen, Download } from 'lucide-react';
+import { X, Home, User, Users, Receipt, AlertCircle, Info, ClipboardList, DoorOpen, Download, Coins } from 'lucide-react';
 import { downloadMaintenancePdf } from '../../utils/maintenancePdfGenerator';
 
 const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesList, apartmentParticipations, apartmentSurface, allApartments, allMaintenanceData, getExpenseConfig, stairs, blocks, payments, currentMonth, consumptionMonth, association, stats }) => {
@@ -477,11 +477,18 @@ const MaintenanceBreakdownModal = ({ isOpen, onClose, apartmentData, expensesLis
                   </span>
                 </div>
               )}
+              {/* Total Datorat (suma celor de mai sus) */}
+              <div className="flex justify-between items-center text-xs sm:text-base pt-1.5 sm:pt-2 border-t border-gray-200">
+                <span className="font-semibold text-gray-800">Total Datorat</span>
+                <span className="font-bold text-gray-800">
+                  {((initialCurrentMaintenance || 0) + (initialRestante || 0) + (initialPenalitati || 0)).toFixed(2)} lei
+                </span>
+              </div>
               {apartmentPayments.length > 0 && (
                 <div className="pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 border-t border-gray-200">
                   <div className="flex justify-between items-center text-xs sm:text-base mb-1">
                     <span className="flex items-center text-gray-700">
-                      <Receipt className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-600" />
+                      <Coins className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-600" />
                       Încasări ({apartmentPayments.length})
                     </span>
                     <span className="font-semibold text-green-600">

@@ -34,6 +34,7 @@ import {
   MessagesView
 } from './components/views';
 import SuppliersView from './components/views/SuppliersView';
+import IncasariView from './components/views/IncasariView';
 
 export default function BlocApp({ associationId, userRole, onSwitchContext, onStandaloneNavigate }) {
   const { userProfile, currentUser, clearContext } = useAuthEnhanced();
@@ -480,7 +481,6 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
-    deleteAllBlocAppData,
     handleAddAssociation,
     handleAddBlock,
     handleAddStair,
@@ -667,7 +667,6 @@ useEffect(() => {
         handleNavigation={handleNavigationWithStandalone}
         association={association}
         getAssociationApartments={getAssociationApartments}
-        deleteAllBlocAppData={deleteAllBlocAppData}
         userProfile={userProfile}
         activeUser={activeUser}
         setCurrentMonth={setCurrentMonth}
@@ -696,7 +695,6 @@ useEffect(() => {
         userProfile={userProfile}
         activeUser={activeUser}
         handleNavigation={handleNavigationWithStandalone}
-        deleteAllBlocAppData={deleteAllBlocAppData}
         userRole={userRole}
       />
 
@@ -1031,6 +1029,22 @@ useEffect(() => {
                 setMessagesTargetApartmentId(apartmentId);
                 handleNavigation('messages');
               }}
+            />
+          )}
+
+          {/* Incasari View - contextual din pagina Întreținere */}
+          {currentView === "incasari" && (
+            <IncasariView
+              association={association}
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              getAvailableMonths={getAvailableMonths}
+              publishedSheet={publishedSheet}
+              sheets={sheets || []}
+              currentSheet={currentSheet}
+              getAssociationApartments={getAssociationApartments}
+              isReadOnlyRole={isReadOnlyRole}
+              handleNavigation={handleNavigation}
             />
           )}
 

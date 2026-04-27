@@ -45,7 +45,6 @@ const ContextSelectorView = ({
   onCreateAssociation,
   // Dropdown props pentru OrgHeader
   onNavigate,
-  onDeleteData,
   isAdmin = false
 }) => {
   const { organizations, loading: orgsLoading, loadUserOrganizations } = useOrganizations(userId);
@@ -362,7 +361,6 @@ const ContextSelectorView = ({
         onLogoClick={() => {}}
         isAdmin={isAdmin}
         onNavigate={onNavigate}
-        onDeleteData={onDeleteData}
       />
 
       {/* Page Header */}

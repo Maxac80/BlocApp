@@ -82,13 +82,14 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
   }, [currentSheet?.id, currentSheet?.status, association?.id]);
 
   // 🆕 FAZA 5: Sincronizare cross-sheet automată
-  // Când se înregistrează plăți în currentSheet, actualizează nextSheet automat
+  // Când se modifică plățile în currentSheet (adăugare SAU ștergere), actualizează nextSheet automat.
+  // Iterează peste toate apartamentele din maintenanceTable; cele fără plăți primesc restanța inițială
+  // (rollback corect la ștergere). Adjustments manuale (reason ≠ "Transfer automat din...") sunt păstrate.
   useEffect(() => {
-    if (!currentSheet?.id || !association?.id || Object.keys(paymentSummary).length === 0) {
+    if (!currentSheet?.id || !association?.id) {
       return;
     }
 
-    // Găsește sheet-ul IN_PROGRESS pentru luna următoare
     const findAndUpdateNextSheet = async () => {
       try {
         const sheetsQuery = query(
@@ -98,11 +99,10 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
 
         const snapshot = await getDocs(sheetsQuery);
 
-        // Căutăm sheet-ul cu luna imediat următoare
         const currentSheetMonth = new Date(currentSheet.month + '-01');
         const nextMonthDate = new Date(currentSheetMonth);
         nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-        const nextMonthStr = nextMonthDate.toISOString().substring(0, 7); // Format: 2025-12
+        const nextMonthStr = nextMonthDate.toISOString().substring(0, 7);
 
         let nextSheet = null;
         snapshot.forEach((doc) => {
@@ -111,41 +111,44 @@ export const usePaymentSync = (association, currentMonth, currentSheet = null) =
           }
         });
 
-        if (!nextSheet) {
-          // Nu există sheet următor, nu facem nimic
-          return;
-        }
+        if (!nextSheet) return;
 
-        // Actualizăm balanceAdjustments pentru fiecare apartament cu plăți
         const maintenanceTable = currentSheet.maintenanceTable || [];
-        const updatedAdjustments = { ...(nextSheet.configSnapshot?.balanceAdjustments || {}) };
+        const existingAdjustments = nextSheet.configSnapshot?.balanceAdjustments || {};
 
-        Object.keys(paymentSummary).forEach((apartmentId) => {
-          // Găsim datele apartamentului din maintenanceTable capturat la publicare
-          const apartmentData = maintenanceTable.find(item => item.apartmentId === apartmentId);
+        // Pornim de la adjustments existente, dar curățăm cele automate (le recalculăm).
+        // Adjustments manuale (cele fără reason "Transfer automat din...") rămân intacte.
+        const updatedAdjustments = {};
+        Object.entries(existingAdjustments).forEach(([aptId, adj]) => {
+          const isAutoTransfer = typeof adj?.reason === 'string' && adj.reason.startsWith('Transfer automat din');
+          if (!isAutoTransfer) {
+            updatedAdjustments[aptId] = adj;
+          }
+        });
 
-          if (!apartmentData) return;
+        // Recalculăm pentru toate apartamentele din maintenance table
+        maintenanceTable.forEach((apartmentData) => {
+          const apartmentId = apartmentData.apartmentId;
+          const payments = paymentSummary[apartmentId] || { totalRestante: 0, totalIntretinere: 0 };
 
-          const payments = paymentSummary[apartmentId];
           const initialRestante = apartmentData.restante || 0;
           const initialIntretinere = apartmentData.currentMaintenance || 0;
 
-          // Calculăm ce a mai rămas de plătit
           const remainingRestante = Math.max(0, initialRestante - payments.totalRestante);
           const remainingIntretinere = Math.max(0, initialIntretinere - payments.totalIntretinere);
-
-          // Formula: Restanță pentru Sheet-2 = restante rămase + întreținere rămasă
           const newRestante = remainingRestante + remainingIntretinere;
 
-          // Actualizăm adjustment pentru acest apartament
-          updatedAdjustments[apartmentId] = {
-            restante: newRestante,
-            reason: `Transfer automat din ${currentSheet.month}`,
-            timestamp: new Date().toISOString()
-          };
+          // Doar setăm dacă există datorie de transferat
+          if (newRestante > 0.01) {
+            updatedAdjustments[apartmentId] = {
+              restante: newRestante,
+              reason: `Transfer automat din ${currentSheet.month}`,
+              timestamp: new Date().toISOString()
+            };
+          }
+          // Dacă newRestante === 0 (totul plătit), nu adăugăm cheia → adjustment automat eliminat = rollback corect
         });
 
-        // Actualizăm sheet-ul următorului cu noile adjustments
         const nextSheetRef = getSheetRef(association.id, nextSheet.id);
         await updateDoc(nextSheetRef, {
           'configSnapshot.balanceAdjustments': updatedAdjustments,
