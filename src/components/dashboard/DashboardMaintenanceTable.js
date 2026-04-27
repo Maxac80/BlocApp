@@ -169,6 +169,8 @@ const DashboardMaintenanceTable = ({
         disableSticky={false}
         payments={payments}
         handleNavigation={handleNavigation}
+        apartments={getAssociationApartments ? getAssociationApartments() : []}
+        association={association}
       />
     </div>
   );

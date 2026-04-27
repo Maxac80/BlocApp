@@ -104,7 +104,7 @@ const BottomNavigation = ({ currentView, handleNavigation }) => {
           {/* Butoane principale */}
           {mainNavItems.map(item => {
             const Icon = item.icon;
-            const isActive = currentView === item.id;
+            const isActive = currentView === item.id || (item.id === 'dashboard' && currentView === 'incasari');
 
             return (
               <button

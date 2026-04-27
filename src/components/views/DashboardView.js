@@ -7,7 +7,7 @@ import {
 import { PaymentModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
-import { Building, Calculator, Coins } from 'lucide-react';
+import { Building, Calculator, Coins, Filter, ClipboardList } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 
 const DashboardView = ({
@@ -155,10 +155,9 @@ const DashboardView = ({
     const result = await addIncasare(incasareData);
     
     if (result.success) {
-      // console.log(`✅ Încasare salvată cu succes. Chitanță nr: ${result.receiptNumber}`);
       // Tabelul se va actualiza automat prin usePaymentSync
+      // Pagina Încasări va afișa plata cu nr chitanță
       setShowPaymentModal(false);
-      alert(`✅ Plată înregistrată cu succes!\nChitanță nr: ${result.receiptNumber}`);
     } else {
       console.error('❌ Eroare la salvarea încasării:', result.error);
       alert(`Eroare la salvarea încasării: ${result.error}`);
@@ -184,9 +183,9 @@ const DashboardView = ({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         {/* Page Title */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2">
-            <span className="flex-shrink-0">📋</span>
+        <div className="mb-4 sm:mb-6 flex items-start justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+            <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
             <span>
               Întreținere{currentMonth ? ` ${currentMonth}` : ''}
               {activeSheet?.consumptionMonth && (
@@ -196,6 +195,16 @@ const DashboardView = ({
               )}
             </span>
           </h1>
+          {activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived' ? (
+            <button
+              onClick={() => handleNavigation('incasari')}
+              className="flex-shrink-0 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
+              title="Vezi Încasări"
+            >
+              <Coins className="w-4 h-4" />
+              <span className="hidden sm:inline">Vezi Încasări</span>
+            </button>
+          ) : null}
         </div>
 
 
@@ -377,11 +386,12 @@ const DashboardView = ({
                 );
               }
               
-              // Stats + Search + Filtered data
-              const data = updatedMaintenanceData || [];
-              const totalCurrent = data.reduce((s, d) => s + (Number(d.currentMaintenance) || 0), 0);
-              const totalRestante = data.reduce((s, d) => s + (Number(d.restante) || 0), 0);
-              const totalPenalitati = data.reduce((s, d) => s + (Number(d.penalitati) || 0), 0);
+              // Statistici: folosesc valorile INIȚIALE (din maintenanceData raw)
+              // ca să fie consistent cu pagina Încasări și să nu dubleze scăderea plăților.
+              const originalData = maintenanceData || [];
+              const totalCurrent = originalData.reduce((s, d) => s + (Number(d.currentMaintenance) || 0), 0);
+              const totalRestante = originalData.reduce((s, d) => s + (Number(d.restante) || 0), 0);
+              const totalPenalitati = originalData.reduce((s, d) => s + (Number(d.penalitati) || 0), 0);
               const totalDatorat = totalCurrent + totalRestante + totalPenalitati;
 
               const payments = activeSheet?.payments || [];
@@ -392,8 +402,11 @@ const DashboardView = ({
 
               const ramas = Math.max(0, totalDatorat - totalIncasat);
 
+              // Search/filtre/counts pe datele actualizate (cu paymentInfo)
+              const data = updatedMaintenanceData || [];
               const totalApts = data.length;
-              const aptsCuRestante = data.filter(d => (Number(d.restante) || 0) > 0 || (Number(d.penalitati) || 0) > 0).length;
+              // Apt cu rest de încasat = mai au datorii după plăți
+              const aptsCuRestante = data.filter(d => (Number(d.totalDatorat) || 0) > 0.01).length;
               const procentRestante = totalApts > 0 ? Math.round((aptsCuRestante / totalApts) * 100) : 0;
 
               const fmt = (n) => `${Number(n).toFixed(2)} lei`;
@@ -464,8 +477,8 @@ const DashboardView = ({
                     );
                   })()}
 
-                  {/* Zona sticky: Search + Filtru status + Vezi Incasari */}
-                  <div className="sticky top-0 z-40 -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 py-2 bg-gray-50 border-b border-gray-200 mb-4 flex flex-row gap-2 sm:gap-3">
+                  {/* Search + Filtru status + Vezi Incasari */}
+                  <div className="mb-4 flex flex-row gap-2 sm:gap-3">
                     <div className="relative flex-1">
                       <input
                         type="text"
@@ -487,24 +500,35 @@ const DashboardView = ({
                         </button>
                       )}
                     </div>
+                    {/* Mobile: filter compact (icoana + badge) */}
+                    <div className="relative sm:hidden flex-shrink-0">
+                      <select
+                        value={paymentFilter}
+                        onChange={(e) => setPaymentFilter(e.target.value)}
+                        className="appearance-none w-10 h-full px-2 border border-gray-300 rounded-lg bg-white text-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                        aria-label="Filtru status încasare"
+                      >
+                        <option value="all" className="text-gray-700">Toate ({countAll})</option>
+                        <option value="unpaid" className="text-gray-700">Neîncasate ({countUnpaid})</option>
+                        <option value="partial" className="text-gray-700">Parțial încasate ({countPartial})</option>
+                        <option value="paid" className="text-gray-700">Încasate integral ({countPaid})</option>
+                      </select>
+                      <Filter className="w-4 h-4 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                      {paymentFilter !== 'all' && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white pointer-events-none" />
+                      )}
+                    </div>
+                    {/* Desktop: filter cu text */}
                     <select
                       value={paymentFilter}
                       onChange={(e) => setPaymentFilter(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-shrink-0"
+                      className="hidden sm:block px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-shrink-0"
                     >
                       <option value="all">Toate ({countAll})</option>
                       <option value="unpaid">Neîncasate ({countUnpaid})</option>
                       <option value="partial">Parțial încasate ({countPartial})</option>
                       <option value="paid">Încasate integral ({countPaid})</option>
                     </select>
-                    <button
-                      onClick={() => handleNavigation('accounting')}
-                      className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 flex-shrink-0"
-                      title="Vezi Încasări"
-                    >
-                      <Coins className="w-4 h-4" />
-                      <span className="hidden sm:inline">Vezi Încasări</span>
-                    </button>
                   </div>
 
                   <DashboardMaintenanceTable
