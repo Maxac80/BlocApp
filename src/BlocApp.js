@@ -481,7 +481,6 @@ export default function BlocApp({ associationId, userRole, onSwitchContext, onSt
 
   // 🔥 HOOK PENTRU OPERAȚIUNI DE DATE
   const {
-    deleteAllBlocAppData,
     handleAddAssociation,
     handleAddBlock,
     handleAddStair,
@@ -668,7 +667,6 @@ useEffect(() => {
         handleNavigation={handleNavigationWithStandalone}
         association={association}
         getAssociationApartments={getAssociationApartments}
-        deleteAllBlocAppData={deleteAllBlocAppData}
         userProfile={userProfile}
         activeUser={activeUser}
         setCurrentMonth={setCurrentMonth}
@@ -697,7 +695,6 @@ useEffect(() => {
         userProfile={userProfile}
         activeUser={activeUser}
         handleNavigation={handleNavigationWithStandalone}
-        deleteAllBlocAppData={deleteAllBlocAppData}
         userRole={userRole}
       />
 

@@ -12,7 +12,6 @@ const Sidebar = ({
   handleNavigation,
   association,
   getAssociationApartments,
-  deleteAllBlocAppData,
   userProfile,
   activeUser,
   setCurrentMonth,
@@ -387,7 +386,6 @@ const Sidebar = ({
             setSidebarOpen(false);
           }}
           onSwitchAssociation={onSwitchContext || null}
-          onDeleteData={isAdmin && association ? deleteAllBlocAppData : null}
           onLogout={handleLogout}
           onClose={() => setUserMenuOpen(false)}
         />

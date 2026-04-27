@@ -4,7 +4,6 @@ import {
   CreditCard,
   BookOpen,
   ArrowLeftRight,
-  Trash2,
   LogOut
 } from 'lucide-react';
 
@@ -22,7 +21,6 @@ const UserDropdownMenu = ({
   position = 'below',
   onNavigate,
   onSwitchAssociation,
-  onDeleteData,
   onLogout,
   onClose
 }) => {
@@ -94,17 +92,6 @@ const UserDropdownMenu = ({
 
       {/* Divider */}
       <div className="border-t border-gray-100 my-1" />
-
-      {/* Sterge datele - doar admin */}
-      {isAdmin && onDeleteData && (
-        <button
-          onClick={() => handleItemClick(onDeleteData)}
-          className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-        >
-          <Trash2 className="w-4 h-4 mr-3" />
-          Sterge TOATE datele
-        </button>
-      )}
 
       {/* Deconectare */}
       <button

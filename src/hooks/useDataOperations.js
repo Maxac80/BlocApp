@@ -1,8 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // hooks/useDataOperations.js
 import { useCallback } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 export const useDataOperations = ({
   association,
@@ -20,137 +18,6 @@ export const useDataOperations = ({
   updateStair,
   deleteStair
 }) => {
-
-  // Funcție pentru ștergerea tuturor datelor BlocApp
-  const deleteAllBlocAppData = useCallback(async () => {
-    if (!window.confirm('⚠️ ATENȚIE! Ești sigur că vrei să ștergi TOATE datele?\n\nAceasta va șterge:\n- Toate asociațiile\n- Toate blocurile\n- Toate scările\n- Toate apartamentele\n- Toate cheltuielile\n- Toate soldurile și ajustările\n- Toate configurările\n- Toate profilurile utilizatori\n\nAceastă acțiune este IREVERSIBILĂ!')) {
-      return;
-    }
-    
-    // A doua confirmare pentru siguranță
-    if (!window.confirm('🚨 ULTIMA CONFIRMARE!\n\nEști 100% sigur? Toate datele vor fi șterse definitiv!')) {
-      return;
-    }
-    
-    
-    // Afișează un loading pentru utilizator
-    const loadingDiv = document.createElement('div');
-    loadingDiv.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      font-size: 18px;
-      font-weight: bold;
-    `;
-    loadingDiv.innerHTML = '🗑️ Șterge toate datele... Te rog așteaptă...';
-    document.body.appendChild(loadingDiv);
-    
-    try {
-      // Lista completă a colecțiilor care trebuie șterse
-      const collectionsToDelete = [
-        'expenses',
-        'customExpenses',
-        'apartments',
-        'stairs',
-        'blocks',
-        'associations', // Șterge asociațiile (și toate subcollections nested cum ar fi sheets și invoices)
-        'balanceAdjustments',
-        'disabledExpenses',
-        'initialBalances',
-        'users',
-        'test',
-        'audit_logs',
-        'login_attempts',
-        'onboarding_progress',
-        'user_profiles',
-        'expenseConfigurations',
-        'incasari',
-        // 'invoices' removed - now nested under associations/{id}/invoices (auto-deleted with parent)
-        'monthStatuses',
-        // 'sheets' removed - now nested under associations/{id}/sheets (auto-deleted with parent)
-        'suppliers',
-        'settings'
-      ];
-
-      // Șterge toate colecțiile în paralel pentru viteză
-      const deletePromises = collectionsToDelete.map(async (collectionName) => {
-        try {
-          
-          const collectionRef = collection(db, collectionName);
-          const querySnapshot = await getDocs(collectionRef);
-          
-          if (querySnapshot.empty) {
-            return;
-          }
-          
-          const batch = [];
-          querySnapshot.forEach((document) => {
-            batch.push(deleteDoc(doc(db, collectionName, document.id)));
-          });
-          
-          await Promise.all(batch);
-        } catch (error) {
-          console.error(`❌ Eroare la ștergerea colecției ${collectionName}:`, error);
-        }
-      });
-
-      // Așteaptă ca toate colecțiile să fie șterse
-      await Promise.all(deletePromises);
-      
-      
-      // Actualizează mesajul de loading
-      loadingDiv.innerHTML = '✅ Date șterse! Resetez aplicația...';
-      
-      // Forțează o resetare completă
-      try {
-        // Șterge toate datele din localStorage
-        localStorage.clear();
-        
-        // Șterge toate cookie-urile
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        });
-        
-        // Șterge toate datele din sessionStorage
-        sessionStorage.clear();
-        
-        // Încearcă deconectarea Firebase
-        try {
-          const { signOut } = await import('firebase/auth');
-          const { auth } = await import('../firebase');
-          await signOut(auth);
-        } catch (authError) {
-        }
-        
-        
-        // Forțează reîncărcarea completă (fără cache)
-        window.location.href = window.location.origin + window.location.pathname + '?t=' + Date.now();
-        
-      } catch (resetError) {
-        console.error('❌ Eroare la resetare:', resetError);
-        // Fallback: reîncărcare simplă
-        window.location.reload(true);
-      }
-      
-    } catch (error) {
-      console.error('❌ Eroare la ștergerea datelor:', error);
-      
-      // Elimină loading-ul
-      if (loadingDiv && loadingDiv.parentNode) {
-        loadingDiv.parentNode.removeChild(loadingDiv);
-      }
-      
-      alert('❌ Eroare la ștergerea datelor: ' + error.message);
-    }
-  }, []);
 
   // Funcții actualizate pentru a folosi hook-urile Firestore
   const handleAddAssociation = useCallback(async (activeUser, newAssociation, resetForm, initializeMonths) => {
@@ -294,9 +161,6 @@ export const useDataOperations = ({
   }, [association, blocks, stairs]);
 
   return {
-    // Delete operations
-    deleteAllBlocAppData,
-    
     // CRUD operations
     handleAddAssociation,
     handleAddBlock,

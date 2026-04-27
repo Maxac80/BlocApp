@@ -16,8 +16,7 @@ const OrgHeader = ({
   // Dropdown props
   isAdmin = false,
   onNavigate,
-  onSwitchAssociation,
-  onDeleteData
+  onSwitchAssociation
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -141,7 +140,6 @@ const OrgHeader = ({
                 position="below"
                 onNavigate={onNavigate || (() => {})}
                 onSwitchAssociation={onSwitchAssociation || null}
-                onDeleteData={onDeleteData || null}
                 onLogout={handleLogout}
                 onClose={() => setIsDropdownOpen(false)}
               />

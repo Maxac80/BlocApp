@@ -9,7 +9,6 @@ const MobileHeader = ({
   userProfile,
   activeUser,
   handleNavigation,
-  deleteAllBlocAppData,
   userRole
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -115,7 +114,6 @@ const MobileHeader = ({
               else if (view === 'profile' && onAvatarClick) onAvatarClick();
             }}
             onSwitchAssociation={onSwitchContext || null}
-            onDeleteData={isAdmin && association && deleteAllBlocAppData ? deleteAllBlocAppData : null}
             onLogout={handleLogout}
             onClose={() => setIsDropdownOpen(false)}
           />
