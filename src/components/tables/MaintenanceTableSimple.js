@@ -64,16 +64,16 @@ const MaintenanceTableSimple = ({
       <thead className={`${disableSticky ? '' : 'sticky top-0 z-30'} ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
         <tr>
           <th className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></th>
-          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Ap.</th>
-          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap w-full sm:w-auto ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Proprietar</th>
+          <th className={`px-1 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Ap.</th>
+          <th className={`px-1 sm:px-3 py-2 sm:py-3 text-left font-medium text-gray-700 whitespace-nowrap w-full sm:w-auto ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Proprietar</th>
           <th className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Pers.</th>
           <th className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Întreținere</th>
           <th className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Restanță</th>
           <th className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Penalități</th>
-          <th className={`px-2 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Total Datorat</th>
+          <th className={`pl-1 pr-1 sm:px-3 py-2 sm:py-3 text-right font-medium text-gray-700 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>Total Datorat</th>
           {isMonthReadOnly && !isHistoricMonth && (
             <th
-              className={`pl-3 pr-2 sm:px-3 py-2 sm:py-3 text-center font-medium text-gray-700 whitespace-nowrap sticky right-0 z-30 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
+              className={`pl-1 pr-2 sm:px-3 py-2 sm:py-3 text-center font-medium text-gray-700 whitespace-nowrap sticky right-0 z-30 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
             >
               Încasează
             </th>
@@ -134,7 +134,7 @@ const MaintenanceTableSimple = ({
                 title="Click pentru a vedea încasările apartamentului"
               >
                 <td className={`p-0 ${status.color}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
-                <td className={`px-2 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap transition-colors ${stickyCellBg}`}>
+                <td className={`px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap transition-colors ${stickyCellBg}`}>
                   <div className="flex items-center gap-1">
                     <span>{data.apartment}</span>
                     {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
@@ -168,7 +168,7 @@ const MaintenanceTableSimple = ({
                 <td className="hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-indigo-600 whitespace-nowrap">{origIntretinere.toFixed(2)}</td>
                 <td className="hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-red-600 whitespace-nowrap">{origRestante.toFixed(2)}</td>
                 <td className="hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap">{origPenalitati.toFixed(2)}</td>
-                <td className="pl-1 pr-3 sm:px-3 py-2 sm:py-3 text-right whitespace-nowrap align-top xl:align-middle">
+                <td className="pl-1 pr-1 sm:px-3 py-2 sm:py-3 text-right align-top xl:align-middle">
                   <div className="flex flex-col items-end">
                     <span className="font-bold text-gray-800 text-sm sm:text-base">{origTotal.toFixed(2)}</span>
                     {/* Breakdown mic vizibil doar pe mobile (sub xl) — direct sub total */}
@@ -201,7 +201,7 @@ const MaintenanceTableSimple = ({
                 </td>
                 {isMonthReadOnly && !isHistoricMonth && (
                   <td
-                    className={`pl-3 pr-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-center sticky right-0 z-10 transition-colors ${stickyCellBg}`}
+                    className={`pl-1 pr-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-center sticky right-0 z-10 transition-colors ${stickyCellBg}`}
                   >
                     <button
                       onClick={(e) => {
@@ -452,7 +452,7 @@ const MaintenanceTableSimple = ({
           return (
             <tr>
               <td className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
-              <td className={`px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
+              <td className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
               <td className={`px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>TOTAL:</td>
               <td className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
                 {sumPersons}
@@ -466,12 +466,12 @@ const MaintenanceTableSimple = ({
               <td className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-orange-600 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
                 {sumPenalitati.toFixed(2)}
               </td>
-              <td className={`px-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
+              <td className={`pl-1 pr-1 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 text-xs sm:text-base whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
                 {sumTotal.toFixed(2)}
               </td>
               {isMonthReadOnly && !isHistoricMonth && (
                 <td
-                  className={`pl-3 pr-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap sticky right-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
+                  className={`pl-1 pr-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap sticky right-0 z-10 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}
                 ></td>
               )}
             </tr>

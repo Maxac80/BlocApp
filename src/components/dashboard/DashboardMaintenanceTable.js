@@ -100,7 +100,7 @@ const DashboardMaintenanceTable = ({
   const apartamenteCuIncasari = stairFilteredData.filter(d => d.isPaid || d.isPartiallyPaid).length;
 
   return (
-    <div className="rounded-xl shadow-lg bg-white border-2 border-gray-200">
+    <div className="rounded-xl shadow-lg bg-white ring-2 ring-gray-200">
       <div
         className={`p-3 sm:p-4 border-b rounded-t-xl ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}
       >
