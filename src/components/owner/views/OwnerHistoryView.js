@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useOwnerContext } from '../OwnerApp';
 import { useOwnerData, formatCurrency, formatDate, getPaymentStatusInfo } from '../../../hooks/useOwnerData';
+import { generateDetailedReceipt } from '../../../utils/receiptGenerator';
 
 /**
  * View pentru istoric luni + plăți (consolidat)
@@ -14,7 +15,38 @@ import { useOwnerData, formatCurrency, formatDate, getPaymentStatusInfo } from '
  * Tab "Plăți" = lista plăților individuale cu breakdown
  */
 export default function OwnerHistoryView({ onNavigate }) {
-  const { apartmentId, apartmentNumber, apartmentData, associationId } = useOwnerContext();
+  const { apartmentId, apartmentNumber, apartmentData, associationId, associationData } = useOwnerContext();
+
+  const handleDownloadReceipt = async (payment) => {
+    try {
+      const paymentData = {
+        restante: Number(payment.restante) || 0,
+        intretinere: Number(payment.intretinere) || 0,
+        penalitati: Number(payment.penalitati) || 0,
+        total: Number(payment.total) || 0,
+        timestamp: payment.timestamp || payment.paymentDate || payment.createdAt,
+        month: payment.month || payment.sheetMonth || '',
+        receiptNumber: payment.receiptNumber,
+      };
+      const apartmentDataReceipt = {
+        apartmentNumber: apartmentNumber,
+        owner: apartmentData?.ownerName || apartmentData?.owner || '',
+        persons: apartmentData?.persons,
+        totalDatorat: (Number(payment.restante) || 0) + (Number(payment.intretinere) || 0) + (Number(payment.penalitati) || 0),
+      };
+      const associationReceipt = {
+        name: associationData?.name || '',
+        cui: associationData?.cui || '',
+        address: associationData?.address || '',
+        bankAccount: associationData?.bankAccount || '',
+        bank: associationData?.bank || '',
+        administrator: associationData?.administrator || '',
+      };
+      await generateDetailedReceipt(paymentData, apartmentDataReceipt, associationReceipt);
+    } catch (err) {
+      console.error('Eroare descarcare chitanta:', err);
+    }
+  };
 
   const {
     loading,
@@ -355,7 +387,11 @@ export default function OwnerHistoryView({ onNavigate }) {
 
                     <div className="text-right">
                       <p className="text-sm sm:text-base font-bold text-gray-900">{formatCurrency(payment.total)}</p>
-                      <button className="text-xs sm:text-sm text-emerald-600 hover:text-emerald-700 flex items-center mt-1">
+                      <button
+                        onClick={() => handleDownloadReceipt(payment)}
+                        className="text-xs sm:text-sm text-emerald-600 hover:text-emerald-700 flex items-center mt-1"
+                        title="Descarcă chitanța PDF"
+                      >
                         <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Chitanță
                       </button>

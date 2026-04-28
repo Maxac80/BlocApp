@@ -20,6 +20,7 @@ const PaymentModal = ({
   setShowPaymentModal,
   currentMonth,
   selectedApartment,
+  association,
   onSavePayment
 }) => {
   const [paymentData, setPaymentData] = useState({
@@ -160,7 +161,7 @@ const PaymentModal = ({
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) {
       setFeedback({ type: 'error', text: 'Verificați câmpurile marcate.' });
       return;
@@ -185,6 +186,7 @@ const PaymentModal = ({
         const apartmentData = {
           apartmentNumber: selectedApartment.apartmentNumber,
           owner: selectedApartment.owner,
+          persons: selectedApartment.persons,
           totalDatorat,
           restante: restanteMax,
           intretinere: intretinereMax,
@@ -192,10 +194,14 @@ const PaymentModal = ({
           initialBalance
         };
         const associationData = {
-          name: selectedApartment.associationName || 'Asociația Proprietarilor',
-          address: selectedApartment.associationAddress || ''
+          name: association?.name || selectedApartment.associationName || 'Asociația Proprietarilor',
+          cui: association?.cui || '',
+          address: association?.address || selectedApartment.associationAddress || '',
+          bankAccount: association?.bankAccount || '',
+          bank: association?.bank || '',
+          administrator: association?.administrator || ''
         };
-        generateDetailedReceipt(payment, apartmentData, associationData);
+        await generateDetailedReceipt(payment, apartmentData, associationData);
       } catch (error) {
         console.error('Eroare la generarea chitanței:', error);
       }

@@ -7,8 +7,9 @@ import {
 import { PaymentModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
-import { Building, Calculator, Coins, Filter, ClipboardList } from 'lucide-react';
+import { Building, Calculator, Coins, Filter, ClipboardList, Printer } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
+import { downloadIntretinerePdf } from '../../utils/intretinerePdfGenerator';
 
 const DashboardView = ({
   // Association data
@@ -196,14 +197,31 @@ const DashboardView = ({
             </span>
           </h1>
           {activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived' ? (
-            <button
-              onClick={() => handleNavigation('incasari')}
-              className="flex-shrink-0 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
-              title="Vezi Încasări"
-            >
-              <Coins className="w-4 h-4" />
-              <span className="hidden sm:inline">Vezi Încasări</span>
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={async () => {
+                  await downloadIntretinerePdf({
+                    maintenanceData,
+                    association,
+                    monthYear: currentMonth,
+                  });
+                }}
+                disabled={!maintenanceData || maintenanceData.length === 0}
+                className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap transition-all"
+                title="Imprimă tabel întreținere"
+              >
+                <Printer className="w-4 h-4" />
+                <span className="hidden sm:inline">Imprimă tabel</span>
+              </button>
+              <button
+                onClick={() => handleNavigation('incasari')}
+                className="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
+                title="Vezi Încasări"
+              >
+                <Coins className="w-4 h-4" />
+                <span className="hidden sm:inline">Vezi Încasări</span>
+              </button>
+            </div>
           ) : null}
         </div>
 
@@ -562,6 +580,7 @@ const DashboardView = ({
         setShowPaymentModal={setShowPaymentModal}
         currentMonth={currentMonth}
         selectedApartment={selectedApartment}
+        association={association}
         onSavePayment={handleSavePayment}
       />
 

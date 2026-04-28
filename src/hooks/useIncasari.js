@@ -137,6 +137,7 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
         penalitati: incasareData.penalitati || 0,
         total: incasareData.total,
         timestamp: incasareData.timestamp || new Date().toISOString(),
+        month: incasareData.month || publishedSheet.monthYear || '', // pentru chitanță premium
         receiptNumber: newReceiptNumber,
         createdAt: new Date().toISOString(),
         createdBy: incasareData.createdBy || 'Administrator',

@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2, Search } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, Printer } from 'lucide-react';
+import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
 import StatsCard from '../common/StatsCard';
-import { MaintenanceTableSimple, MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
+import { MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
 import { useIncasari } from '../../hooks/useIncasari';
@@ -1237,54 +1238,29 @@ const MaintenanceView = ({
                             </button>
                           )}
 
-                          {/* Buton Export PDF - doar pentru luna publicată și Tabel Simplificat */}
-                          {maintenanceData.length > 0 && activeMaintenanceTab === "simple" && isMonthReadOnly && (
+                          {/* Buton Imprimă tabel detaliat - cu logo BlocApp Admin */}
+                          {filteredMaintenanceData.length > 0 && isMonthReadOnly && (
                             <button
-                              onClick={exportPDFAvizier}
-                              className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-purple-700 flex items-center text-xs sm:text-sm"
-                              title="Exportă PDF pentru avizier (fără nume proprietari)"
+                              onClick={async () => {
+                                await downloadDistributiePdf({
+                                  maintenanceData: filteredMaintenanceData,
+                                  expenses: distributedExpenses,
+                                  association,
+                                  monthYear: currentMonth,
+                                });
+                              }}
+                              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm"
+                              title="Imprimă tabel distribuție cheltuieli"
                             >
-                              📄 Export PDF
-                            </button>
-                          )}
-                          {/* Buton Export PDF Detaliat - doar pentru luna publicată și Tabel Detaliat */}
-                          {filteredMaintenanceData.length > 0 && activeMaintenanceTab === "detailed" && isMonthReadOnly && (
-                            <button className="bg-green-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-600 flex items-center text-xs sm:text-sm">
-                              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                              Export PDF Detaliat
+                              <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                              Imprimă tabel
                             </button>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Tab-uri pentru vizualizarea tabelului */}
-                    <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
-                      <div className="flex">
-                        <button
-                          onClick={() => setActiveMaintenanceTab("simple")}
-                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
-                            activeMaintenanceTab === "simple"
-                              ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                              : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                          }`}
-                        >
-                          Simplificat
-                        </button>
-                        <button
-                          onClick={() => setActiveMaintenanceTab("detailed")}
-                          className={`px-3 sm:px-6 py-2 sm:py-4 text-sm sm:text-base font-medium whitespace-nowrap transition-colors border-b-2 ${
-                            activeMaintenanceTab === "detailed"
-                              ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-700'
-                              : 'bg-gray-50 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                          }`}
-                        >
-                          Detaliat
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Container cu scroll orizontal pentru tabel */}
+                    {/* Container cu scroll orizontal pentru tabel - DOAR Detaliat in pagina Distributie Cheltuieli */}
                     <div
                       className={
                         filteredMaintenanceData.length > 10
@@ -1293,31 +1269,17 @@ const MaintenanceView = ({
                       }
                       style={filteredMaintenanceData.length > 10 ? { maxHeight: '70vh' } : {}}
                     >
-                      {activeMaintenanceTab === "simple" ? (
-                        <MaintenanceTableSimple
-                          maintenanceData={filteredMaintenanceData}
-                          isMonthReadOnly={isMonthReadOnly}
-                          togglePayment={togglePayment}
-                          onOpenPaymentModal={handleOpenPaymentModal}
-                          onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
-                          isHistoricMonth={monthType === 'historic'}
-                          getPaymentStats={getPaymentStats}
-                          isLoadingPayments={!isDataReady}
-                          disableSticky={filteredMaintenanceData.length <= 10}
-                        />
-                      ) : (
-                        <MaintenanceTableDetailed
-                          maintenanceData={filteredMaintenanceData}
-                          expenses={distributedExpenses}
-                          association={association}
-                          isMonthReadOnly={isMonthReadOnly}
-                          onOpenPaymentModal={handleOpenPaymentModal}
-                          onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
-                          isHistoricMonth={monthType === 'historic'}
-                          isLoadingPayments={!isDataReady}
-                          disableSticky={filteredMaintenanceData.length <= 10}
-                        />
-                      )}
+                      <MaintenanceTableDetailed
+                        maintenanceData={filteredMaintenanceData}
+                        expenses={distributedExpenses}
+                        association={association}
+                        isMonthReadOnly={isMonthReadOnly}
+                        onOpenPaymentModal={handleOpenPaymentModal}
+                        onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
+                        isHistoricMonth={monthType === 'historic'}
+                        isLoadingPayments={!isDataReady}
+                        disableSticky={filteredMaintenanceData.length <= 10}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -1381,6 +1343,7 @@ const MaintenanceView = ({
           setShowPaymentModal={setShowPaymentModal}
           currentMonth={currentMonth}
           selectedApartment={selectedApartment}
+          association={association}
           onSavePayment={handleSavePayment}
         />
 

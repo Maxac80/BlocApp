@@ -9,10 +9,12 @@ import {
   Receipt,
   Search,
   X,
-  ClipboardList
+  ClipboardList,
+  Printer
 } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
 import { regenerateReceipt } from '../../utils/incasariHelpers';
+import { downloadIncasariPdf } from '../../utils/incasariPdfGenerator';
 import { matchesSearch } from '../../utils/searchHelpers';
 import StatsCard from '../common/StatsCard';
 
@@ -64,9 +66,9 @@ const IncasariView = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handleRegenerate = (incasare) => {
-    const result = regenerateReceipt(incasare, apartments, association);
+  const handleRegenerate = async (incasare) => {
     setOpenDropdown(null);
+    const result = await regenerateReceipt(incasare, apartments, association, currentMonth);
     if (!result?.success) {
       console.error('Eroare regenerare chitanță:', result?.error);
     }
@@ -205,14 +207,32 @@ const IncasariView = ({
               </span>
             </span>
           </h1>
-          <button
-            onClick={() => handleNavigation && handleNavigation('dashboard')}
-            className="flex-shrink-0 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
-            title="Vezi Întreținere"
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span className="hidden sm:inline">Vezi Întreținere</span>
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={async () => {
+                await downloadIncasariPdf({
+                  incasari,
+                  apartments,
+                  association,
+                  monthYear: currentMonth,
+                });
+              }}
+              disabled={!incasari || incasari.length === 0}
+              className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap transition-all"
+              title="Imprimă raport încasări"
+            >
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Imprimă raport</span>
+            </button>
+            <button
+              onClick={() => handleNavigation && handleNavigation('dashboard')}
+              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
+              title="Vezi Întreținere"
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span className="hidden sm:inline">Vezi Întreținere</span>
+            </button>
+          </div>
         </div>
 
       {/* Conținut */}

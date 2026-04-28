@@ -271,7 +271,7 @@ const AccountingView = ({
   };
 
   // Regenerează chitanța pentru o încasare
-  const regenerateReceipt = (incasare) => {
+  const regenerateReceipt = async (incasare) => {
     const apartment = apartments.find(apt => apt.id === incasare.apartmentId);
     if (!apartment) {
       alert('Nu s-a găsit apartamentul pentru această încasare');
@@ -292,6 +292,7 @@ const AccountingView = ({
     const apartmentData = {
       apartmentNumber: apartment.number,
       owner: apartment.owner || incasare.owner,
+      persons: apartment.persons,
       totalDatorat: incasare.restante + incasare.intretinere + incasare.penalitati,
       restante: incasare.restante,
       intretinere: incasare.intretinere,
@@ -299,12 +300,16 @@ const AccountingView = ({
     };
 
     const associationData = {
-      name: association.name,
-      address: association.address || ""
+      name: association?.name || '',
+      cui: association?.cui || '',
+      address: association?.address || '',
+      bankAccount: association?.bankAccount || '',
+      bank: association?.bank || '',
+      administrator: association?.administrator || ''
     };
 
     try {
-      const result = generateDetailedReceipt(payment, apartmentData, associationData);
+      const result = await generateDetailedReceipt(payment, apartmentData, associationData);
       if (result.success) {
         alert(`Chitanța a fost regenerată: ${result.fileName}`);
       } else {

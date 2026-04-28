@@ -429,7 +429,7 @@ const MaintenanceTableSimple = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        regenerateReceipt(p, apartments, association);
+                                        regenerateReceipt(p, apartments, association, p.month);
                                       }}
                                       className="p-1.5 text-blue-600 hover:bg-blue-50 rounded flex-shrink-0"
                                       title="Regenerează chitanța PDF"
@@ -499,7 +499,7 @@ const MaintenanceTableSimple = ({
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            regenerateReceipt(p, apartments, association);
+                                            regenerateReceipt(p, apartments, association, p.month);
                                           }}
                                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                                           title="Regenerează chitanța PDF"

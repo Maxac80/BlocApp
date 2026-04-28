@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { generateDetailedReceipt } from './receiptGenerator';
 
-export const regenerateReceipt = (incasare, apartments, association) => {
+export const regenerateReceipt = async (incasare, apartments, association, monthHint) => {
   const apartment = apartments.find((apt) => apt.id === incasare.apartmentId);
   if (!apartment) {
     return { success: false, error: 'Apartament negăsit' };
@@ -15,13 +15,14 @@ export const regenerateReceipt = (incasare, apartments, association) => {
     penalitati: incasare.penalitati,
     total: incasare.total,
     timestamp: incasare.timestamp,
-    month: incasare.month,
+    month: incasare.month || monthHint || '',
     receiptNumber: incasare.receiptNumber
   };
 
   const apartmentData = {
     apartmentNumber: apartment.number,
     owner: apartment.owner || incasare.owner,
+    persons: apartment.persons,
     totalDatorat: incasare.restante + incasare.intretinere + incasare.penalitati,
     restante: incasare.restante,
     intretinere: incasare.intretinere,
@@ -30,11 +31,15 @@ export const regenerateReceipt = (incasare, apartments, association) => {
 
   const associationData = {
     name: association?.name || 'Asociația Proprietarilor',
-    address: association?.address || ''
+    cui: association?.cui || '',
+    address: association?.address || '',
+    bankAccount: association?.bankAccount || '',
+    bank: association?.bank || '',
+    administrator: association?.administrator || ''
   };
 
   try {
-    return generateDetailedReceipt(payment, apartmentData, associationData);
+    return await generateDetailedReceipt(payment, apartmentData, associationData);
   } catch (error) {
     console.error('Eroare la regenerarea chitanței:', error);
     return { success: false, error: error.message };
