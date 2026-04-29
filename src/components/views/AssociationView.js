@@ -54,7 +54,8 @@ const AssociationView = ({
       workingMonth: romanianMonths[currentDate.getMonth()],
       workingYear: currentDate.getFullYear(),
       consumptionMonth: romanianMonths[previousDate.getMonth()],
-      consumptionYear: previousDate.getFullYear()
+      consumptionYear: previousDate.getFullYear(),
+      paymentDueDay: 25
     };
   });
   const [generalSettings, setGeneralSettings] = useState({
@@ -143,13 +144,14 @@ const AssociationView = ({
         workingMonth: romanianMonths[currentDate.getMonth()],
         workingYear: currentDate.getFullYear(),
         consumptionMonth: romanianMonths[previousDate.getMonth()],
-        consumptionYear: previousDate.getFullYear()
+        consumptionYear: previousDate.getFullYear(),
+        paymentDueDay: 25
       };
 
       if (settingsDoc.exists()) {
         const data = settingsDoc.data();
         if (data.monthSettings?.workingMonth && data.monthSettings?.consumptionMonth) {
-          setMonthSettings(data.monthSettings);
+          setMonthSettings({ paymentDueDay: 25, ...data.monthSettings });
         } else {
           setMonthSettings(defaultSettings);
         }
@@ -210,7 +212,8 @@ const AssociationView = ({
       workingMonth: romanianMonths[currentDate.getMonth()],
       workingYear: currentDate.getFullYear(),
       consumptionMonth: romanianMonths[previousDate.getMonth()],
-      consumptionYear: previousDate.getFullYear()
+      consumptionYear: previousDate.getFullYear(),
+      paymentDueDay: 25
     });
     setGeneralSettings({
       autoPublish: false,
@@ -1150,6 +1153,32 @@ const AssociationView = ({
                       </div>
                     </div>
 
+                    {/* Scadență plată */}
+                    <div className="bg-gray-50 rounded-md p-3">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Scadență plată întreținere</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Ziua scadenței (din lună)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            value={monthSettings.paymentDueDay || 25}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value) || 25;
+                              setMonthSettings(prev => ({ ...prev, paymentDueDay: Math.min(31, Math.max(1, v)) }));
+                            }}
+                            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Ziua până la care locatarii trebuie să achite (1-31). După această zi se calculează penalități.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     {monthSettings.workingMonth && monthSettings.consumptionMonth && (
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                         <h3 className="text-sm font-semibold text-gray-900 mb-2">Preview Document</h3>
@@ -1160,6 +1189,9 @@ const AssociationView = ({
                           </p>
                           <p className="text-center text-xs sm:text-sm text-gray-700">
                             Consum luna <strong className="text-blue-600">{monthSettings.consumptionMonth.charAt(0).toUpperCase() + monthSettings.consumptionMonth.slice(1)} {monthSettings.consumptionYear}</strong>
+                          </p>
+                          <p className="text-center text-xs sm:text-sm text-gray-700 mt-1">
+                            Scadență: ziua <strong className="text-blue-600">{monthSettings.paymentDueDay || 25}</strong> a lunii
                           </p>
                         </div>
                       </div>

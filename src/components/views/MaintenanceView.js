@@ -11,6 +11,8 @@ import { useIncasari } from '../../hooks/useIncasari';
 import { usePaymentSync } from '../../hooks/usePaymentSync';
 import useInvoices from '../../hooks/useInvoices';
 import jsPDF from 'jspdf';
+import { doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const MaintenanceView = ({
   // Association data
@@ -246,6 +248,20 @@ const MaintenanceView = ({
       apartmentNumbers.includes(data.apartment)
     );
   }, [selectedStairTab, updatedMaintenanceData, apartments]);
+
+  // Datele ORIGINALE (fără scădere încasări) pentru tabelul Distribuție Cheltuieli
+  // Why: tabelul Detaliat trebuie să arate sumele rezultate din distribuție, independent de plăți ulterioare
+  const filteredOriginalMaintenanceData = useMemo(() => {
+    if (!maintenanceData) return [];
+    if (selectedStairTab === 'all') return maintenanceData;
+
+    const stairApartments = apartments.filter(apt => apt.stairId === selectedStairTab);
+    const apartmentNumbers = stairApartments.map(apt => apt.number);
+
+    return maintenanceData.filter(data =>
+      apartmentNumbers.includes(data.apartment)
+    );
+  }, [selectedStairTab, maintenanceData, apartments]);
 
   // Cheltuieli distribuite (cele care au fost introduse și au sume)
   const distributedExpenses = useMemo(() => {
@@ -1192,7 +1208,7 @@ const MaintenanceView = ({
               </div>
 
               {/* Tabelul de întreținere - card separat */}
-              <div className="mb-2">
+              <div>
                 {filteredMaintenanceData.length > 0 ? (
                   <div className="rounded-xl shadow-sm border border-gray-200 bg-white">
                     <div className={`p-3 sm:p-4 border-b ${
@@ -1242,11 +1258,89 @@ const MaintenanceView = ({
                           {filteredMaintenanceData.length > 0 && isMonthReadOnly && (
                             <button
                               onClick={async () => {
+                                // Construim grupuri per scara (un tabel/pagina per scara)
+                                const associationBlockIds = (blocks || [])
+                                  .filter(b => b.associationId === association?.id)
+                                  .map(b => b.id);
+                                const associationStairs = (stairs || [])
+                                  .filter(s => associationBlockIds.includes(s.blockId))
+                                  .filter(s => selectedStairTab === 'all' || s.id === selectedStairTab);
+
+                                const groups = associationStairs.map(stair => {
+                                  const block = (blocks || []).find(b => b.id === stair.blockId);
+                                  const stairApartmentNumbers = (apartments || [])
+                                    .filter(a => a.stairId === stair.id)
+                                    .map(a => a.number);
+                                  const stairData = (maintenanceData || [])
+                                    .filter(d => stairApartmentNumbers.includes(d.apartment));
+                                  return {
+                                    blocName: block?.name || '',
+                                    stairName: stair.name || '',
+                                    maintenanceData: stairData,
+                                  };
+                                });
+
+                                // Data publicării: citim sheet-ul direct din Firestore
+                                // Fallback chain: publishedAt → updatedAt (la publicare ambele sunt scrise în același batch)
+                                const parseTimestamp = (raw) => {
+                                  if (!raw) return null;
+                                  if (typeof raw.toDate === 'function') return raw.toDate();
+                                  if (typeof raw.seconds === 'number') return new Date(raw.seconds * 1000);
+                                  if (typeof raw === 'string') {
+                                    const d = new Date(raw);
+                                    return isNaN(d.getTime()) ? null : d;
+                                  }
+                                  return null;
+                                };
+                                let publicationDate = null;
+                                try {
+                                  const sheetIdToFetch = activeSheet?.id || currentSheet?.id;
+                                  if (association?.id && sheetIdToFetch) {
+                                    const sheetRef = firestoreDoc(db, 'associations', association.id, 'sheets', sheetIdToFetch);
+                                    const sheetSnap = await getDoc(sheetRef);
+                                    if (sheetSnap.exists()) {
+                                      const data = sheetSnap.data();
+                                      publicationDate = parseTimestamp(data?.publishedAt) || parseTimestamp(data?.updatedAt);
+                                    }
+                                  }
+                                } catch (e) {
+                                  console.warn('Nu s-a putut citi publishedAt:', e);
+                                }
+                                if (!publicationDate || isNaN(publicationDate.getTime())) {
+                                  publicationDate = null;
+                                }
+
+                                // Scadenta plata: citim paymentDueDay din settings/app (default 25)
+                                let dueDay = 25;
+                                try {
+                                  if (association?.id) {
+                                    const settingsRef = firestoreDoc(db, 'associations', association.id, 'settings', 'app');
+                                    const settingsSnap = await getDoc(settingsRef);
+                                    if (settingsSnap.exists()) {
+                                      const ms = settingsSnap.data()?.monthSettings;
+                                      if (ms?.paymentDueDay) dueDay = parseInt(ms.paymentDueDay) || 25;
+                                    }
+                                  }
+                                } catch (e) {
+                                  console.warn('Nu s-a putut citi paymentDueDay, folosim default 25:', e);
+                                }
+                                let dueDate = null;
+                                if (publicationDate) {
+                                  dueDate = new Date(publicationDate);
+                                  if (publicationDate.getDate() > dueDay) {
+                                    dueDate.setMonth(dueDate.getMonth() + 1);
+                                  }
+                                  dueDate.setDate(dueDay);
+                                }
+
                                 await downloadDistributiePdf({
-                                  maintenanceData: filteredMaintenanceData,
+                                  groups,
                                   expenses: distributedExpenses,
                                   association,
                                   monthYear: currentMonth,
+                                  consumptionMonth: activeSheet?.consumptionMonth || currentSheet?.consumptionMonth,
+                                  publicationDate,
+                                  dueDate,
                                 });
                               }}
                               className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm"
@@ -1270,15 +1364,12 @@ const MaintenanceView = ({
                       style={filteredMaintenanceData.length > 10 ? { maxHeight: '70vh' } : {}}
                     >
                       <MaintenanceTableDetailed
-                        maintenanceData={filteredMaintenanceData}
+                        maintenanceData={filteredOriginalMaintenanceData}
                         expenses={distributedExpenses}
                         association={association}
                         isMonthReadOnly={isMonthReadOnly}
-                        onOpenPaymentModal={handleOpenPaymentModal}
                         onOpenMaintenanceBreakdown={handleOpenMaintenanceBreakdown}
-                        isHistoricMonth={monthType === 'historic'}
-                        isLoadingPayments={!isDataReady}
-                        disableSticky={filteredMaintenanceData.length <= 10}
+                        disableSticky={filteredOriginalMaintenanceData.length <= 10}
                       />
                     </div>
                   </div>
