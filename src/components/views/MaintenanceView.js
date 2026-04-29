@@ -1,8 +1,25 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, Printer } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search } from 'lucide-react';
+
+// Iconițe inline PDF & Excel (cu label "PDF" / "XLS" pentru recognoaștere instant)
+const PdfFileIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <text x="12" y="18" fontSize="6" fontWeight="700" textAnchor="middle" fill="currentColor" stroke="none">PDF</text>
+  </svg>
+);
+const ExcelFileIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <text x="12" y="18" fontSize="6" fontWeight="700" textAnchor="middle" fill="currentColor" stroke="none">XLS</text>
+  </svg>
+);
 import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
+import { downloadDistributieExcel } from '../../utils/distributieExcelGenerator';
 import StatsCard from '../common/StatsCard';
 import { MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
@@ -425,6 +442,90 @@ const MaintenanceView = ({
     // și ar trebui să conțină expenseDetails
     setSelectedMaintenanceData(apartmentData);
     setShowMaintenanceBreakdown(true);
+  };
+
+  // Helper: construiește payload-ul pentru export PDF/Excel (same data pentru ambele formate)
+  const buildDistributieExportPayload = async () => {
+    const associationBlockIds = (blocks || [])
+      .filter(b => b.associationId === association?.id)
+      .map(b => b.id);
+    const associationStairs = (stairs || [])
+      .filter(s => associationBlockIds.includes(s.blockId))
+      .filter(s => selectedStairTab === 'all' || s.id === selectedStairTab);
+
+    const groups = associationStairs.map(stair => {
+      const block = (blocks || []).find(b => b.id === stair.blockId);
+      const stairApartmentNumbers = (apartments || [])
+        .filter(a => a.stairId === stair.id)
+        .map(a => a.number);
+      const stairData = (maintenanceData || [])
+        .filter(d => stairApartmentNumbers.includes(d.apartment));
+      return {
+        blocName: block?.name || '',
+        stairName: stair.name || '',
+        maintenanceData: stairData,
+      };
+    });
+
+    const parseTimestamp = (raw) => {
+      if (!raw) return null;
+      if (typeof raw.toDate === 'function') return raw.toDate();
+      if (typeof raw.seconds === 'number') return new Date(raw.seconds * 1000);
+      if (typeof raw === 'string') {
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    };
+    let publicationDate = null;
+    try {
+      const sheetIdToFetch = activeSheet?.id || currentSheet?.id;
+      if (association?.id && sheetIdToFetch) {
+        const sheetRef = firestoreDoc(db, 'associations', association.id, 'sheets', sheetIdToFetch);
+        const sheetSnap = await getDoc(sheetRef);
+        if (sheetSnap.exists()) {
+          const data = sheetSnap.data();
+          publicationDate = parseTimestamp(data?.publishedAt) || parseTimestamp(data?.updatedAt);
+        }
+      }
+    } catch (e) {
+      console.warn('Nu s-a putut citi publishedAt:', e);
+    }
+    if (!publicationDate || isNaN(publicationDate.getTime())) {
+      publicationDate = null;
+    }
+
+    let dueDay = 25;
+    try {
+      if (association?.id) {
+        const settingsRef = firestoreDoc(db, 'associations', association.id, 'settings', 'app');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const ms = settingsSnap.data()?.monthSettings;
+          if (ms?.paymentDueDay) dueDay = parseInt(ms.paymentDueDay) || 25;
+        }
+      }
+    } catch (e) {
+      console.warn('Nu s-a putut citi paymentDueDay, folosim default 25:', e);
+    }
+    let dueDate = null;
+    if (publicationDate) {
+      dueDate = new Date(publicationDate);
+      if (publicationDate.getDate() > dueDay) {
+        dueDate.setMonth(dueDate.getMonth() + 1);
+      }
+      dueDate.setDate(dueDay);
+    }
+
+    return {
+      groups,
+      expenses: distributedExpenses,
+      association,
+      monthYear: currentMonth,
+      consumptionMonth: activeSheet?.consumptionMonth || currentSheet?.consumptionMonth,
+      publicationDate,
+      dueDate,
+    };
   };
 
   // Helper: Obține unitatea de măsură configurată
@@ -1254,100 +1355,33 @@ const MaintenanceView = ({
                             </button>
                           )}
 
-                          {/* Buton Imprimă tabel detaliat - cu logo BlocApp Admin */}
+                          {/* Buton Export PDF distribuție cheltuieli (cu logo BlocApp) */}
                           {filteredMaintenanceData.length > 0 && isMonthReadOnly && (
                             <button
                               onClick={async () => {
-                                // Construim grupuri per scara (un tabel/pagina per scara)
-                                const associationBlockIds = (blocks || [])
-                                  .filter(b => b.associationId === association?.id)
-                                  .map(b => b.id);
-                                const associationStairs = (stairs || [])
-                                  .filter(s => associationBlockIds.includes(s.blockId))
-                                  .filter(s => selectedStairTab === 'all' || s.id === selectedStairTab);
-
-                                const groups = associationStairs.map(stair => {
-                                  const block = (blocks || []).find(b => b.id === stair.blockId);
-                                  const stairApartmentNumbers = (apartments || [])
-                                    .filter(a => a.stairId === stair.id)
-                                    .map(a => a.number);
-                                  const stairData = (maintenanceData || [])
-                                    .filter(d => stairApartmentNumbers.includes(d.apartment));
-                                  return {
-                                    blocName: block?.name || '',
-                                    stairName: stair.name || '',
-                                    maintenanceData: stairData,
-                                  };
-                                });
-
-                                // Data publicării: citim sheet-ul direct din Firestore
-                                // Fallback chain: publishedAt → updatedAt (la publicare ambele sunt scrise în același batch)
-                                const parseTimestamp = (raw) => {
-                                  if (!raw) return null;
-                                  if (typeof raw.toDate === 'function') return raw.toDate();
-                                  if (typeof raw.seconds === 'number') return new Date(raw.seconds * 1000);
-                                  if (typeof raw === 'string') {
-                                    const d = new Date(raw);
-                                    return isNaN(d.getTime()) ? null : d;
-                                  }
-                                  return null;
-                                };
-                                let publicationDate = null;
-                                try {
-                                  const sheetIdToFetch = activeSheet?.id || currentSheet?.id;
-                                  if (association?.id && sheetIdToFetch) {
-                                    const sheetRef = firestoreDoc(db, 'associations', association.id, 'sheets', sheetIdToFetch);
-                                    const sheetSnap = await getDoc(sheetRef);
-                                    if (sheetSnap.exists()) {
-                                      const data = sheetSnap.data();
-                                      publicationDate = parseTimestamp(data?.publishedAt) || parseTimestamp(data?.updatedAt);
-                                    }
-                                  }
-                                } catch (e) {
-                                  console.warn('Nu s-a putut citi publishedAt:', e);
-                                }
-                                if (!publicationDate || isNaN(publicationDate.getTime())) {
-                                  publicationDate = null;
-                                }
-
-                                // Scadenta plata: citim paymentDueDay din settings/app (default 25)
-                                let dueDay = 25;
-                                try {
-                                  if (association?.id) {
-                                    const settingsRef = firestoreDoc(db, 'associations', association.id, 'settings', 'app');
-                                    const settingsSnap = await getDoc(settingsRef);
-                                    if (settingsSnap.exists()) {
-                                      const ms = settingsSnap.data()?.monthSettings;
-                                      if (ms?.paymentDueDay) dueDay = parseInt(ms.paymentDueDay) || 25;
-                                    }
-                                  }
-                                } catch (e) {
-                                  console.warn('Nu s-a putut citi paymentDueDay, folosim default 25:', e);
-                                }
-                                let dueDate = null;
-                                if (publicationDate) {
-                                  dueDate = new Date(publicationDate);
-                                  if (publicationDate.getDate() > dueDay) {
-                                    dueDate.setMonth(dueDate.getMonth() + 1);
-                                  }
-                                  dueDate.setDate(dueDay);
-                                }
-
-                                await downloadDistributiePdf({
-                                  groups,
-                                  expenses: distributedExpenses,
-                                  association,
-                                  monthYear: currentMonth,
-                                  consumptionMonth: activeSheet?.consumptionMonth || currentSheet?.consumptionMonth,
-                                  publicationDate,
-                                  dueDate,
-                                });
+                                const payload = await buildDistributieExportPayload();
+                                await downloadDistributiePdf(payload);
                               }}
                               className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 flex items-center text-xs sm:text-sm"
-                              title="Imprimă tabel distribuție cheltuieli"
+                              title="Exportă tabel distribuție cheltuieli în PDF"
                             >
-                              <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                              Imprimă tabel
+                              <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                              Exportă PDF
+                            </button>
+                          )}
+
+                          {/* Buton Export Excel */}
+                          {filteredMaintenanceData.length > 0 && isMonthReadOnly && (
+                            <button
+                              onClick={async () => {
+                                const payload = await buildDistributieExportPayload();
+                                await downloadDistributieExcel(payload);
+                              }}
+                              className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 flex items-center text-xs sm:text-sm"
+                              title="Exportă tabel în Excel"
+                            >
+                              <ExcelFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                              Exportă Excel
                             </button>
                           )}
                         </div>
