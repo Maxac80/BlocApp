@@ -2,6 +2,18 @@
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList } from 'lucide-react';
+import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
+import { downloadDistributieExcel } from '../../utils/distributieExcelGenerator';
+import StatsCard from '../common/StatsCard';
+import { MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
+import { ExpenseForm, ExpenseList } from '../expenses';
+import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
+import { useIncasari } from '../../hooks/useIncasari';
+import { usePaymentSync } from '../../hooks/usePaymentSync';
+import useInvoices from '../../hooks/useInvoices';
+import jsPDF from 'jspdf';
+import { doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 // Iconițe inline PDF & Excel (cu label "PDF" / "XLS" pentru recognoaștere instant)
 const PdfFileIcon = ({ className = 'w-4 h-4' }) => (
@@ -18,18 +30,6 @@ const ExcelFileIcon = ({ className = 'w-4 h-4' }) => (
     <text x="12" y="18" fontSize="6" fontWeight="700" textAnchor="middle" fill="currentColor" stroke="none">XLS</text>
   </svg>
 );
-import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
-import { downloadDistributieExcel } from '../../utils/distributieExcelGenerator';
-import StatsCard from '../common/StatsCard';
-import { MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
-import { ExpenseForm, ExpenseList } from '../expenses';
-import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
-import { useIncasari } from '../../hooks/useIncasari';
-import { usePaymentSync } from '../../hooks/usePaymentSync';
-import useInvoices from '../../hooks/useInvoices';
-import jsPDF from 'jspdf';
-import { doc as firestoreDoc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 
 const MaintenanceView = ({
   // Association data
