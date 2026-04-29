@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search, Truck } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
@@ -77,7 +77,7 @@ const SuppliersView = ({
     const supplierInvs = invoices.filter(inv => inv.supplierId === supplierId);
     const hasInvoices = supplierInvs.length > 0;
 
-    const distributedExpenses = currentSheet?.expenses || [];
+    const distributedExpenses = activeSheet?.expenses || [];
     const distributed = [];
     const undistributed = [];
 
@@ -153,7 +153,17 @@ const SuppliersView = ({
       <div className="w-full">
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🚛 Furnizori</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+            <span>
+              Furnizori{currentMonth ? ` - ${currentMonth}` : ''}
+              {currentSheet?.consumptionMonth && (
+                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {currentSheet.consumptionMonth}
+                </span>
+              )}
+            </span>
+          </h1>
         </div>
 
         {/* Statistici furnizori */}

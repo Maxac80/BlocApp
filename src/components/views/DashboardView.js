@@ -10,6 +10,8 @@ import { usePaymentSync } from '../../hooks/usePaymentSync';
 import { Building, Calculator, Coins, Filter, ClipboardList, Printer } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { downloadIntretinerePdf } from '../../utils/intretinerePdfGenerator';
+import { doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const DashboardView = ({
   // Association data
@@ -111,6 +113,90 @@ const DashboardView = ({
     setShowPaymentModal(true);
   };
 
+  // Helper: construiește payload-ul pentru export PDF Întreținere (similar cu Distribuție)
+  const handleExportIntretinerePdf = async (filteredMaintenanceData) => {
+    // Construim grupuri per scara
+    const associationBlockIds = (blocks || [])
+      .filter(b => b.associationId === association?.id)
+      .map(b => b.id);
+    const associationStairs = (stairs || [])
+      .filter(s => associationBlockIds.includes(s.blockId));
+
+    const apartments = getAssociationApartments ? getAssociationApartments() : [];
+
+    const groups = associationStairs.map(stair => {
+      const block = (blocks || []).find(b => b.id === stair.blockId);
+      const stairApartmentNumbers = (apartments || [])
+        .filter(a => a.stairId === stair.id)
+        .map(a => a.number);
+      const stairData = (filteredMaintenanceData || maintenanceData || [])
+        .filter(d => stairApartmentNumbers.includes(d.apartment));
+      return {
+        blocName: block?.name || '',
+        stairName: stair.name || '',
+        maintenanceData: stairData,
+      };
+    });
+
+    // Data publicării din sheet (fallback updatedAt)
+    const parseTimestamp = (raw) => {
+      if (!raw) return null;
+      if (typeof raw.toDate === 'function') return raw.toDate();
+      if (typeof raw.seconds === 'number') return new Date(raw.seconds * 1000);
+      if (typeof raw === 'string') {
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    };
+    let publicationDate = null;
+    try {
+      const sheetIdToFetch = activeSheet?.id;
+      if (association?.id && sheetIdToFetch) {
+        const sheetRef = firestoreDoc(db, 'associations', association.id, 'sheets', sheetIdToFetch);
+        const sheetSnap = await getDoc(sheetRef);
+        if (sheetSnap.exists()) {
+          const data = sheetSnap.data();
+          publicationDate = parseTimestamp(data?.publishedAt) || parseTimestamp(data?.updatedAt);
+        }
+      }
+    } catch (e) {
+      console.warn('Nu s-a putut citi publishedAt:', e);
+    }
+
+    // Scadenta: paymentDueDay din settings/app (default 25)
+    let dueDay = 25;
+    try {
+      if (association?.id) {
+        const settingsRef = firestoreDoc(db, 'associations', association.id, 'settings', 'app');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const ms = settingsSnap.data()?.monthSettings;
+          if (ms?.paymentDueDay) dueDay = parseInt(ms.paymentDueDay) || 25;
+        }
+      }
+    } catch (e) {
+      console.warn('Nu s-a putut citi paymentDueDay:', e);
+    }
+    let dueDate = null;
+    if (publicationDate) {
+      dueDate = new Date(publicationDate);
+      if (publicationDate.getDate() > dueDay) {
+        dueDate.setMonth(dueDate.getMonth() + 1);
+      }
+      dueDate.setDate(dueDay);
+    }
+
+    await downloadIntretinerePdf({
+      groups,
+      association,
+      monthYear: currentMonth,
+      consumptionMonth: activeSheet?.consumptionMonth,
+      publicationDate,
+      dueDate,
+    });
+  };
+
   // Handler pentru deschiderea modalului de breakdown întreținere
   const handleOpenMaintenanceBreakdown = (apartmentData) => {
     // Pentru Dashboard, folosim datele din maintenanceData (publishedSheet.maintenanceTable)
@@ -188,7 +274,7 @@ const DashboardView = ({
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
             <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
             <span>
-              Întreținere{currentMonth ? ` ${currentMonth}` : ''}
+              Întreținere{currentMonth ? ` - ${currentMonth}` : ''}
               {activeSheet?.consumptionMonth && (
                 <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
                   <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
@@ -198,21 +284,6 @@ const DashboardView = ({
           </h1>
           {activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived' ? (
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={async () => {
-                  await downloadIntretinerePdf({
-                    maintenanceData,
-                    association,
-                    monthYear: currentMonth,
-                  });
-                }}
-                disabled={!maintenanceData || maintenanceData.length === 0}
-                className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap transition-all"
-                title="Imprimă tabel întreținere"
-              >
-                <Printer className="w-4 h-4" />
-                <span className="hidden sm:inline">Imprimă tabel</span>
-              </button>
               <button
                 onClick={() => handleNavigation('incasari')}
                 className="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-green-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
@@ -566,6 +637,8 @@ const DashboardView = ({
                     isLoadingPayments={!isDataReady}
                     payments={activeSheet?.payments || []}
                     consumptionMonth={activeSheet?.consumptionMonth}
+                    onExportPdf={handleExportIntretinerePdf}
+                    canExportPdf={activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived'}
                   />
                 </>
               );

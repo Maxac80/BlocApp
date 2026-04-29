@@ -222,20 +222,27 @@ const ExpensesViewNew = ({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Tag className="w-6 h-6 text-indigo-600" />
-            Cheltuieli
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+            <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+            <span>
+              Cheltuieli{currentMonth ? ` - ${currentMonth}` : ''}
+              {activeSheet?.consumptionMonth && (
+                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
+                </span>
+              )}
+            </span>
           </h1>
         </div>
 
         {/* Statistici cheltuieli */}
         {(() => {
           const totalExpenseTypes = getAssociationExpenseTypes().length;
-          const distributedExpenses = currentSheet?.expenses?.length || 0;
+          const distributedExpenses = activeSheet?.expenses?.length || 0;
           const undistributed = totalExpenseTypes - distributedExpenses;
           // Pentru cheltuieli pe consum (normale + cumulative), suma reală e în billAmount
           // (amount e 0 pentru consumption-based). Pentru alte tipuri folosim amount.
-          const totalDistributed = (currentSheet?.expenses || []).reduce((sum, exp) => {
+          const totalDistributed = (activeSheet?.expenses || []).reduce((sum, exp) => {
             const val = exp.isUnitBased || exp.distributionType === 'consumption' || exp.distributionType === 'consumption_cumulative'
               ? (parseFloat(exp.billAmount) || 0)
               : (parseFloat(exp.amount) || 0);
@@ -320,7 +327,7 @@ const ExpensesViewNew = ({
                     const filteredExpenseTypes = allExpenseTypes.filter(expenseType => {
                       if (!matchesSearch(expenseType.name, searchTerm)) return false;
                       if (filterStatus === 'all') return true;
-                      const isDistributed = currentSheet?.expenses?.some(exp =>
+                      const isDistributed = activeSheet?.expenses?.some(exp =>
                         (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
                         // Cheltuielile pe consum au amount=0 și sumele în billAmount / invoicesData
                         (exp.amount > 0 || exp.billAmount > 0 || (exp.invoicesData && exp.invoicesData.length > 0))
@@ -344,7 +351,7 @@ const ExpensesViewNew = ({
                       const isLastItem = index >= array.length - 2; // ultimele 2 iteme
 
                       // Verifică dacă cheltuiala a fost distribuită în calcul întreținere
-                      const isDistributed = currentSheet?.expenses?.some(exp =>
+                      const isDistributed = activeSheet?.expenses?.some(exp =>
                         (exp.expenseTypeId === expenseType.id || exp.expenseType === expenseType.name) &&
                         // Cheltuielile pe consum au amount=0 și sumele în billAmount / invoicesData
                         (exp.amount > 0 || exp.billAmount > 0 || (exp.invoicesData && exp.invoicesData.length > 0))

@@ -522,7 +522,17 @@ return (
       {/* Header cu dropdown luni */}
       {/* Page Title */}
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🏢 Configurare apartamente</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+          <Building className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+          <span>
+            Apartamente{currentMonth ? ` - ${currentMonth}` : ''}
+            {activeSheet?.consumptionMonth && (
+              <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
+              </span>
+            )}
+          </span>
+        </h1>
       </div>
 
         {/* Statistici */}

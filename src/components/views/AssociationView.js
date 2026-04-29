@@ -427,7 +427,17 @@ const AssociationView = ({
       <div className="w-full">
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">⚙️ Setări Asociație</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+            <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 flex-shrink-0 mt-0.5 sm:mt-1" />
+            <span>
+              Setări Asociație{currentMonth ? ` - ${currentMonth}` : ''}
+              {currentSheet?.consumptionMonth && (
+                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {currentSheet.consumptionMonth}
+                </span>
+              )}
+            </span>
+          </h1>
         </div>
 
         {/* Dacă utilizatorul a trecut prin onboarding dar nu are asociație */}

@@ -196,7 +196,7 @@ const IncasariView = ({
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
             <Coins className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 flex-shrink-0 mt-0.5 sm:mt-1" />
             <span>
-              Încasări{currentMonth ? ` ${currentMonth}` : ''}
+              Încasări{currentMonth ? ` - ${currentMonth}` : ''}
               <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
                 <span className="hidden sm:inline">· </span>
                 {loading

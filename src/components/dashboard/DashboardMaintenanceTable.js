@@ -1,8 +1,17 @@
 // src/components/dashboard/DashboardMaintenanceTable.js
 import React, { useState } from 'react';
-import { Calculator, Search } from 'lucide-react';
+import { Calculator, Search, ClipboardList } from 'lucide-react';
 import { MaintenanceTableSimple } from '../tables';
 import { matchesSearch } from '../../utils/searchHelpers';
+
+// Iconiță inline file PDF cu badge "PDF"
+const PdfFileIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <text x="12" y="18" fontSize="6" fontWeight="700" textAnchor="middle" fill="currentColor" stroke="none">PDF</text>
+  </svg>
+);
 
 const DashboardMaintenanceTable = ({
   maintenanceData,
@@ -20,7 +29,9 @@ const DashboardMaintenanceTable = ({
   getPaymentStats,
   isLoadingPayments = false,
   payments = [],
-  consumptionMonth
+  consumptionMonth,
+  onExportPdf,
+  canExportPdf = false
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
@@ -105,17 +116,28 @@ const DashboardMaintenanceTable = ({
         className={`p-3 sm:p-4 border-b rounded-t-xl ${isMonthReadOnly ? 'bg-blue-50' : 'bg-indigo-50'}`}
       >
         <div className="flex items-center justify-between gap-2 sm:gap-4">
-          <h3 className={`text-sm sm:text-lg font-semibold flex items-start gap-2 ${isMonthReadOnly ? 'text-gray-800' : ''}`}>
-            <span className="flex-shrink-0">📊</span>
+          <h3 className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${isMonthReadOnly ? 'text-gray-800' : 'text-gray-900'}`}>
+            <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
             <span>
-              Tabel Întreținere - {currentMonth}
+              Tabel Întreținere{currentMonth ? ` - ${currentMonth}` : ''}
               {consumptionMonth && (
-                <span className="block sm:inline text-[11px] sm:text-sm font-normal text-gray-500 sm:ml-2">
-                  <span className="hidden sm:inline">· </span>consum {consumptionMonth}
+                <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1 sm:ml-2">
+                  · consum {consumptionMonth}
                 </span>
               )}
             </span>
           </h3>
+          {canExportPdf && onExportPdf && (
+            <button
+              onClick={() => onExportPdf(stairFilteredData)}
+              disabled={!maintenanceData || maintenanceData.length === 0}
+              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm flex-shrink-0"
+              title="Exportă tabel întreținere în PDF"
+            >
+              <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Exportă PDF
+            </button>
+          )}
         </div>
       </div>
 

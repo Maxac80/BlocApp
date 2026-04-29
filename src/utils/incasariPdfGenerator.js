@@ -4,11 +4,12 @@ import autoTable from 'jspdf-autotable';
 /**
  * Generator PDF pentru Raport Incasari lunar.
  *
- * Format: A4 portrait (mai putine coloane decat tabele intretinere)
- * - Antet: logo BlocApp Admin (albastru) + nume asociatie + CUI + adresa
- * - Stats compact: Total incasat • Numar incasari • Apartamente diferite
+ * Format: A4 portrait
+ * - Antet: nume asociatie + CUI + adresa + IBAN | logo BlocApp dreapta + www.blocapp.ro
+ * - Titlu: "RAPORT INCASARI - [LUNA]"
+ * - Stats: Total incasat • Numar incasari • Apartamente diferite
  * - Tabel: Data | Ap | Proprietar | Restante | Intretinere | Penalitati | Total | Chitanta
- * - Footer: semnatura casier + logo + timestamp
+ * - Footer: Administrator | Casier | Cenzor cu nume din association
  */
 
 const COLORS = {
@@ -51,26 +52,30 @@ const formatDate = (input) => {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
 };
 
-const formatDateTimeRO = () => {
-  const d = new Date();
-  const pad = (x) => String(x).padStart(2, '0');
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-
 const composeAddress = (address) => {
   if (!address) return '';
   if (typeof address === 'string') return address;
   const parts = [];
-  if (address.street) parts.push(address.street);
-  if (address.number) parts.push(`nr. ${address.number}`);
+  if (address.street) {
+    let streetPart = address.street;
+    if (address.number) streetPart += ` nr. ${address.number}`;
+    parts.push(streetPart);
+  }
   if (address.city) parts.push(address.city);
   if (address.county) parts.push(address.county);
   return parts.join(', ');
 };
 
+const composeBankAccount = (association) => {
+  const iban = association?.bankAccount || association?.bankAccountData?.iban || '';
+  const bank = association?.bank || association?.bankAccountData?.bank || '';
+  if (!iban) return '';
+  return bank ? `${bank} - ${iban}` : `IBAN: ${iban}`;
+};
+
 const loadLogo = async () => {
   try {
-    const response = await fetch('/logo-admin.png', { cache: 'no-store' });
+    const response = await fetch('/blocapp-logo.png', { cache: 'no-store' });
     if (!response.ok) return null;
     const blob = await response.blob();
     const dataUrl = await new Promise((resolve) => {
@@ -95,59 +100,68 @@ const loadLogo = async () => {
 /**
  * @param {object} options
  * @param {Array} options.incasari - lista încasărilor lunii
- * @param {Array} options.apartments - apartamentele asociației (pentru lookup nume)
- * @param {object} options.association - { name, cui, address }
+ * @param {Array} options.apartments
+ * @param {object} options.association - { name, cui, address, bankAccount, legalAdmin, president, censor }
  * @param {string} options.monthYear - ex: "aprilie 2026"
  */
 export const generateIncasariPdf = async ({ incasari = [], apartments = [], association, monthYear }) => {
   const doc = new jsPDF('portrait', 'mm', 'a4');
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 15;
+  const margin = 12;
 
   const logo = await loadLogo();
 
   // ============== ANTET ==============
   let y = margin;
-  let textX = margin;
+
+  // Logo dreapta sus + www.blocapp.ro
   if (logo?.dataUrl && logo.w && logo.h) {
-    const logoH = 10;
+    const logoH = 11;
     const logoW = (logo.w / logo.h) * logoH;
-    doc.addImage(logo.dataUrl, 'PNG', margin, y + 1, logoW, logoH);
-    textX = margin + logoW + 6;
+    doc.addImage(logo.dataUrl, 'PNG', pageW - margin - logoW, y, logoW, logoH);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...COLORS.gray);
+    doc.text('www.blocapp.ro', pageW - margin, y + logoH + 3, { align: 'right' });
   }
 
+  // Nume asociatie stanga sus
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(...COLORS.black);
-  doc.text(fixRo((association?.name || 'ASOCIATIA DE PROPRIETARI').toUpperCase()), textX, y + 5);
+  doc.text(fixRo((association?.name || 'ASOCIATIA DE PROPRIETARI').toUpperCase()), margin, y + 5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.gray);
   let metaY = y + 10;
   if (association?.cui) {
-    doc.text(fixRo(`CUI: ${association.cui}`), textX, metaY);
+    doc.text(fixRo(`CUI: ${association.cui}`), margin, metaY);
     metaY += 4;
   }
   const addr = composeAddress(association?.address);
   if (addr) {
-    doc.text(fixRo(addr), textX, metaY);
+    doc.text(fixRo(addr), margin, metaY);
+    metaY += 4;
+  }
+  const bankLine = composeBankAccount(association);
+  if (bankLine) {
+    doc.text(fixRo(bankLine), margin, metaY);
     metaY += 4;
   }
 
-  y = Math.max(y + 13, metaY) + 2;
-
+  y = metaY - 1;
   doc.setDrawColor(...COLORS.grayMid);
   doc.setLineWidth(0.3);
   doc.line(margin, y, pageW - margin, y);
-  y += 8;
+  y += 6;
 
   // ============== TITLU ==============
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(13);
   doc.setTextColor(...COLORS.primaryDark);
-  doc.text(fixRo(`Raport incasari — ${monthYear || ''}`), margin, y);
+  doc.text(fixRo(`Raport incasari - ${monthYear || ''}`).toUpperCase(), margin, y);
   y += 7;
 
   // ============== STATS ==============
@@ -163,13 +177,11 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.grayDark);
   const statW = (pageW - 2 * margin) / 3;
-  // Total încasat
   doc.text(fixRo('Total incasat'), margin + 4, y + 5);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.greenDark);
   doc.text(`${formatLei(totalAmount)} lei`, margin + 4, y + 11);
-  // Numar
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.grayDark);
@@ -178,7 +190,6 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
   doc.setFontSize(11);
   doc.setTextColor(...COLORS.primaryDark);
   doc.text(String(incasari.length), margin + statW + 4, y + 11);
-  // Apartamente
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.grayDark);
@@ -191,7 +202,6 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
   y += statsBoxH + 6;
 
   // ============== TABEL ==============
-  // Sortez incasari descrescator dupa timestamp
   const sorted = [...incasari].sort(
     (a, b) => new Date(b.timestamp || b.createdAt || 0) - new Date(a.timestamp || a.createdAt || 0)
   );
@@ -239,9 +249,7 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
     ]],
     body,
     foot: [[
-      fixRo('TOTAL'),
-      '',
-      '',
+      { content: fixRo('TOTAL'), colSpan: 3, styles: { halign: 'right' } },
       formatLei(sumRest),
       formatLei(sumIntr),
       formatLei(sumPen),
@@ -252,8 +260,8 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
     margin: { left: margin, right: margin, bottom: 22 },
     styles: {
       font: 'helvetica',
-      fontSize: 8,
-      cellPadding: 2,
+      fontSize: 9,
+      cellPadding: 1.8,
       textColor: COLORS.grayDark,
       lineColor: COLORS.grayMid,
       lineWidth: 0.15,
@@ -262,7 +270,7 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
       fillColor: COLORS.primary,
       textColor: COLORS.white,
       fontStyle: 'bold',
-      halign: 'left',
+      halign: 'center',
     },
     footStyles: {
       fillColor: COLORS.greenLight,
@@ -272,25 +280,45 @@ export const generateIncasariPdf = async ({ incasari = [], apartments = [], asso
     columnStyles: {
       0: { cellWidth: 22, halign: 'center' },
       1: { cellWidth: 12, halign: 'center' },
-      2: { cellWidth: 'auto' },
+      2: { cellWidth: 'auto', halign: 'left' },
       3: { cellWidth: 22, halign: 'right', textColor: COLORS.red },
       4: { cellWidth: 22, halign: 'right', textColor: COLORS.indigo },
       5: { cellWidth: 22, halign: 'right', textColor: COLORS.orange },
-      6: { cellWidth: 22, halign: 'right', fontStyle: 'bold', textColor: COLORS.greenDark },
+      6: {
+        cellWidth: 24,
+        halign: 'right',
+        fontStyle: 'bold',
+        fillColor: COLORS.greenLight,
+        textColor: COLORS.black,
+      },
       7: { cellWidth: 18, halign: 'center' },
     },
     didDrawPage: () => {
-      const fY = pageH - 15;
+      // Footer: Administrator | Casier | Cenzor (cu nume din association)
+      const fY = pageH - 14;
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...COLORS.gray);
-      doc.text(fixRo('Casier / Administrator: ___________________'), margin, fY);
-      if (logo?.dataUrl && logo.w && logo.h) {
-        const fLogoH = 5;
-        const fLogoW = (logo.w / logo.h) * fLogoH;
-        doc.addImage(logo.dataUrl, 'PNG', (pageW - fLogoW) / 2, fY - 2, fLogoW, fLogoH);
-      }
-      doc.text(fixRo(`Generat de BlocApp - ${formatDateTimeRO()}`), pageW - margin, fY, { align: 'right' });
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.grayDark);
+      const slotW = (pageW - 2 * margin) / 3;
+      const slots = [
+        { label: 'Administrator', name: association?.legalAdmin || '' },
+        { label: 'Presedinte', name: association?.president || '' },
+        { label: 'Cenzor', name: association?.censor || '' },
+      ];
+      slots.forEach((slot, idx) => {
+        const slotX = margin + slotW * idx + slotW / 2;
+        doc.setFont('helvetica', 'bold');
+        doc.text(fixRo(slot.label), slotX, fY - 3, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        if (slot.name) {
+          doc.setTextColor(...COLORS.black);
+          doc.text(fixRo(slot.name), slotX, fY + 1, { align: 'center' });
+          doc.setTextColor(...COLORS.grayDark);
+        }
+        doc.setDrawColor(...COLORS.grayMid);
+        doc.setLineWidth(0.3);
+        doc.line(slotX - slotW / 2 + 8, fY + 4, slotX + slotW / 2 - 8, fY + 4);
+      });
     },
   });
 

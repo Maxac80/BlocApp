@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2, Search } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList } from 'lucide-react';
 
 // Iconițe inline PDF & Excel (cu label "PDF" / "XLS" pentru recognoaștere instant)
 const PdfFileIcon = ({ className = 'w-4 h-4' }) => (
@@ -1033,7 +1033,17 @@ const MaintenanceView = ({
       <div className="w-full px-3 sm:px-4 lg:px-6">
         {/* Page Title */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">🔀 Distribuție cheltuieli</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
+            <Share2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0 mt-0.5 sm:mt-1" />
+            <span>
+              Distribuție cheltuieli{currentMonth ? ` - ${currentMonth}` : ''}
+              {(activeSheet?.consumptionMonth || currentSheet?.consumptionMonth) && (
+                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
+                  <span className="hidden sm:inline">· </span>consum {activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}
+                </span>
+              )}
+            </span>
+          </h1>
         </div>
 
         {/* Statistici distribuție */}
@@ -1321,10 +1331,18 @@ const MaintenanceView = ({
                     }`}>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                         <div>
-                          <h3 className={`text-base sm:text-lg font-semibold ${
-                            monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-gray-800' : ''
+                          <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${
+                            monthType === 'historic' ? 'text-gray-800' : isMonthReadOnly ? 'text-gray-800' : 'text-gray-900'
                           }`}>
-                            🧾 Tabel Întreținere
+                            <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                            <span>
+                              Tabel Întreținere{currentMonth ? ` - ${currentMonth}` : ''}
+                              {(activeSheet?.consumptionMonth || currentSheet?.consumptionMonth) && (
+                                <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1 sm:ml-2">
+                                  · consum {activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}
+                                </span>
+                              )}
+                            </span>
                           </h3>
                         </div>
                         <div className="flex flex-wrap gap-2">
