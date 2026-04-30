@@ -27,6 +27,35 @@ const formatDate = (d) => {
 };
 
 const fmt = (n) => `${Number(n || 0).toFixed(2)} lei`;
+const fmtNum = (n) => Number(n || 0).toFixed(2);
+
+const PdfFileIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <text x="12" y="18" fontSize="6" fontWeight="700" textAnchor="middle" fill="currentColor" stroke="none">PDF</text>
+  </svg>
+);
+
+const buildCashierName = (userProfile, currentUser) => {
+  const p = userProfile?.profile?.personalInfo;
+  if (p?.firstName || p?.lastName) {
+    return `${p.firstName || ''} ${p.lastName || ''}`.trim();
+  }
+  return currentUser?.displayName || currentUser?.email || '';
+};
+
+const ROLE_LABELS = {
+  admin_asociatie: 'Administrator',
+  assoc_president: 'Presedinte',
+  assoc_censor: 'Cenzor',
+  master: 'Master'
+};
+
+const buildCashierRole = (userProfile) => {
+  const role = userProfile?.role || userProfile?.profile?.role || '';
+  return ROLE_LABELS[role] || 'Administrator';
+};
 
 const IncasariView = ({
   association,
@@ -37,6 +66,10 @@ const IncasariView = ({
   sheets = [],
   currentSheet,
   getAssociationApartments,
+  blocks = [],
+  stairs = [],
+  userProfile,
+  currentUser,
   isReadOnlyRole,
   handleNavigation
 }) => {
@@ -55,6 +88,7 @@ const IncasariView = ({
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState(''); // YYYY-MM-DD
+  const [statusFilter, setStatusFilter] = useState('all'); // all | integral | partial
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -66,9 +100,13 @@ const IncasariView = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+
   const handleRegenerate = async (incasare) => {
     setOpenDropdown(null);
-    const result = await regenerateReceipt(incasare, apartments, association, currentMonth);
+    const cashierName = incasare.recordedBy?.name || buildCashierName(userProfile, currentUser);
+    const cashierRole = incasare.recordedBy?.role || buildCashierRole(userProfile);
+    const consumFallback = activeSheet?.consumptionMonth || currentSheet?.consumptionMonth || '';
+    const result = await regenerateReceipt(incasare, apartments, association, currentMonth, blocks, stairs, cashierName, cashierRole, consumFallback);
     if (!result?.success) {
       console.error('Eroare regenerare chitanță:', result?.error);
     }
@@ -115,8 +153,48 @@ const IncasariView = ({
     );
   }, [incasari, searchTerm, dateFilter, apartments]);
 
-  const sortedIncasari = filteredIncasari;
-  const hasFilters = searchTerm.trim() || dateFilter;
+  const hasFilters = searchTerm.trim() || dateFilter || statusFilter !== 'all';
+
+  // Status per încasare: 'integral' (acoperă datoria totală a apt cumulativ) sau 'partial'
+  const paymentStatusById = useMemo(() => {
+    const map = new Map();
+    const data = activeSheet?.maintenanceTable || [];
+    const allIncasari = incasari || [];
+
+    // totalDatorat per apartment
+    const totalDatoratByApt = new Map();
+    data.forEach((d) => {
+      const total = (Number(d.currentMaintenance) || 0) + (Number(d.restante) || 0) + (Number(d.penalitati) || 0);
+      totalDatoratByApt.set(d.apartmentId, total);
+    });
+
+    // grupează încasările per apt sortate cronologic ascendent
+    const byApt = new Map();
+    allIncasari.forEach((inc) => {
+      if (!byApt.has(inc.apartmentId)) byApt.set(inc.apartmentId, []);
+      byApt.get(inc.apartmentId).push(inc);
+    });
+    byApt.forEach((arr) => {
+      arr.sort((a, b) => new Date(a.timestamp || a.createdAt || 0) - new Date(b.timestamp || b.createdAt || 0));
+    });
+
+    byApt.forEach((arr, aptId) => {
+      const totalDatorat = totalDatoratByApt.get(aptId) || 0;
+      let cumul = 0;
+      arr.forEach((inc) => {
+        cumul += Number(inc.total) || 0;
+        const isIntegral = totalDatorat > 0 && cumul + 0.01 >= totalDatorat;
+        map.set(inc.id, isIntegral ? 'integral' : 'partial');
+      });
+    });
+
+    return map;
+  }, [incasari, activeSheet]);
+
+  const sortedIncasari = useMemo(() => {
+    if (statusFilter === 'all') return filteredIncasari;
+    return filteredIncasari.filter((inc) => paymentStatusById.get(inc.id) === statusFilter);
+  }, [filteredIncasari, statusFilter, paymentStatusById]);
 
   // Statistici (aceleași 4 carduri ca pe pagina Întreținere)
   const stats = useMemo(() => {
@@ -208,22 +286,6 @@ const IncasariView = ({
             </span>
           </h1>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={async () => {
-                await downloadIncasariPdf({
-                  incasari,
-                  apartments,
-                  association,
-                  monthYear: currentMonth,
-                });
-              }}
-              disabled={!incasari || incasari.length === 0}
-              className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap transition-all"
-              title="Imprimă raport încasări"
-            >
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Imprimă raport</span>
-            </button>
             <button
               onClick={() => handleNavigation && handleNavigation('dashboard')}
               className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap transition-all"
@@ -346,6 +408,19 @@ const IncasariView = ({
                 </button>
               )}
             </div>
+            {/* Filtru status plată */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={`px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 flex-shrink-0 ${
+                statusFilter !== 'all' ? 'border-green-400 text-green-700' : 'border-gray-300 text-gray-700'
+              }`}
+              aria-label="Filtru status plată"
+            >
+              <option value="all">Toate încasările</option>
+              <option value="integral">Încasări integrale</option>
+              <option value="partial">Încasări parțiale</option>
+            </select>
           </div>
         )}
         {!activeSheet ? (
@@ -388,9 +463,41 @@ const IncasariView = ({
             )}
           </div>
         ) : (
-          <>
+          <div className="rounded-xl shadow-sm border border-gray-200 bg-white">
+            {/* Header card (unified cu pagina Întreținere) */}
+            <div className="p-3 sm:p-4 border-b bg-blue-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-gray-800">
+                    <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    <span>
+                      Lista Încasări{currentMonth ? ` - ${currentMonth}` : ''}
+                    </span>
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => {
+                      await downloadIncasariPdf({
+                        incasari,
+                        apartments,
+                        association,
+                        monthYear: currentMonth,
+                      });
+                    }}
+                    disabled={!incasari || incasari.length === 0}
+                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                    title="Exportă raport încasări în PDF"
+                  >
+                    <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    Exportă PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Mobile: lista de carduri */}
-            <div className="sm:hidden space-y-3">
+            <div className="sm:hidden p-3 space-y-3">
               {sortedIncasari.map((inc) => {
                 const dropdownId = `inc-${inc.id}`;
                 const barColor = getBarColor(inc);
@@ -493,39 +600,49 @@ const IncasariView = ({
             </div>
 
             {/* Desktop: tabel */}
-            <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="hidden sm:block">
+              <div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium text-gray-700">Ap.</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-700">Proprietar</th>
-                      <th className="px-4 py-3 text-right font-medium text-gray-700">Restanțe</th>
-                      <th className="px-4 py-3 text-right font-medium text-gray-700">Întreținere</th>
-                      <th className="px-4 py-3 text-right font-medium text-gray-700">Penalități</th>
-                      <th className="px-4 py-3 text-right font-medium text-gray-700">Total</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-700">Data</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-700">Chitanță</th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-700">Acțiuni</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-left font-semibold text-teal-900 text-sm bg-teal-100">Ap.</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-left font-semibold text-teal-900 text-sm bg-teal-100">Proprietar</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-right font-semibold text-teal-900 text-sm bg-teal-100">Întreținere</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-right font-semibold text-teal-900 text-sm bg-teal-100">Restanțe</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-right font-semibold text-teal-900 text-sm bg-teal-100">Penalități</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-right font-semibold text-teal-900 text-sm bg-teal-100 whitespace-nowrap">Total Încasat</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-center font-semibold text-teal-900 text-sm bg-teal-100">Data</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-center font-semibold text-teal-900 text-sm bg-teal-100">Chitanță</th>
+                      <th className="sticky top-0 z-10 px-4 py-3 text-center font-semibold text-teal-900 text-sm bg-teal-100">Acțiuni</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {sortedIncasari.map((inc) => {
                       const dropdownId = `inc-d-${inc.id}`;
+                      const status = paymentStatusById.get(inc.id);
                       return (
                         <tr key={inc.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 font-medium text-gray-900">{getApartmentNumber(inc)}</td>
-                          <td className="px-4 py-3 text-gray-900">{getOwnerName(inc)}</td>
-                          <td className="px-4 py-3 text-right text-red-600">
-                            {inc.restante > 0 ? fmt(inc.restante) : '-'}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-green-800 font-medium text-sm truncate">{getOwnerName(inc)}</span>
+                              {status && (
+                                <span className={`text-[10px] mt-0.5 font-medium ${status === 'integral' ? 'text-green-700' : 'text-orange-600'}`}>
+                                  {status === 'integral' ? '✓ Încasare integrală' : 'Încasare parțială'}
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-4 py-3 text-right text-blue-600">
-                            {inc.intretinere > 0 ? fmt(inc.intretinere) : '-'}
+                          <td className="px-4 py-3 text-right font-bold text-blue-600">
+                            {inc.intretinere > 0 ? fmtNum(inc.intretinere) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-right text-orange-600">
-                            {inc.penalitati > 0 ? fmt(inc.penalitati) : '-'}
+                          <td className="px-4 py-3 text-right font-bold text-red-600">
+                            {inc.restante > 0 ? fmtNum(inc.restante) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-right font-bold text-green-600">{fmt(inc.total)}</td>
+                          <td className="px-4 py-3 text-right font-bold text-orange-600">
+                            {inc.penalitati > 0 ? fmtNum(inc.penalitati) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-900">{fmtNum(inc.total)}</td>
                           <td className="px-4 py-3 text-center text-gray-500">{formatDate(inc.timestamp || inc.createdAt)}</td>
                           <td className="px-4 py-3 text-center">
                             <span className="px-2 py-0.5 inline-flex text-xs font-semibold rounded bg-green-100 text-green-700">
@@ -533,13 +650,13 @@ const IncasariView = ({
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => handleRegenerate(inc)}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 hover:shadow-sm transition-colors"
                                 title="Regenerează chitanța"
                               >
-                                <FileText className="w-4 h-4" />
+                                <FileText className="w-[18px] h-[18px]" />
                               </button>
                               {!isReadOnlyRole && (
                                 <div className="relative" data-dropdown-container>
@@ -572,10 +689,33 @@ const IncasariView = ({
                       );
                     })}
                   </tbody>
+                  <tfoot className="sticky bottom-[64px] lg:bottom-0 z-20 bg-teal-100">
+                    {(() => {
+                      const sumRestante = sortedIncasari.reduce((s, i) => s + (Number(i.restante) || 0), 0);
+                      const sumIntretinere = sortedIncasari.reduce((s, i) => s + (Number(i.intretinere) || 0), 0);
+                      const sumPenalitati = sortedIncasari.reduce((s, i) => s + (Number(i.penalitati) || 0), 0);
+                      const sumTotal = sortedIncasari.reduce((s, i) => s + (Number(i.total) || 0), 0);
+                      const uniqueApts = new Set(sortedIncasari.map((i) => i.apartmentId)).size;
+                      return (
+                        <tr>
+                          <td colSpan={2} className="bg-teal-100 px-4 py-3 font-semibold text-teal-900 text-sm">
+                            Total {sortedIncasari.length} {sortedIncasari.length === 1 ? 'încasare' : 'încasări'} · {uniqueApts} {uniqueApts === 1 ? 'apartament' : 'apartamente'}
+                          </td>
+                          <td className="bg-teal-100 px-4 py-3 text-right font-bold text-blue-700">{fmtNum(sumIntretinere)}</td>
+                          <td className="bg-teal-100 px-4 py-3 text-right font-bold text-red-700">{fmtNum(sumRestante)}</td>
+                          <td className="bg-teal-100 px-4 py-3 text-right font-bold text-orange-700">{fmtNum(sumPenalitati)}</td>
+                          <td className="bg-teal-100 px-4 py-3 text-right font-bold text-gray-900 text-base">{fmtNum(sumTotal)}</td>
+                          <td className="bg-teal-100 px-4 py-3"></td>
+                          <td className="bg-teal-100 px-4 py-3"></td>
+                          <td className="bg-teal-100 px-4 py-3"></td>
+                        </tr>
+                      );
+                    })()}
+                  </tfoot>
                 </table>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
       </div>

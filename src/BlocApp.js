@@ -757,6 +757,7 @@ useEffect(() => {
               expenses={currentSheet?.expenses || []}
               maintenanceData={maintenanceData}
               userProfile={userProfile}
+              currentUser={activeUser}
               getMonthType={getMonthType}
               currentSheet={activeSheet}
               publishedSheet={publishedSheet}
@@ -847,6 +848,8 @@ useEffect(() => {
               deleteCustomExpense={handleDeleteCustomExpenseWithCleanup}
               handleNavigation={handleNavigation}
               monthlyBalances={monthlyBalances}
+              userProfile={userProfile}
+              currentUser={activeUser}
               isReadOnlyRole={isReadOnlyRole}
             />
           )}
@@ -1043,6 +1046,10 @@ useEffect(() => {
               sheets={sheets || []}
               currentSheet={currentSheet}
               getAssociationApartments={getAssociationApartments}
+              blocks={blocks}
+              stairs={stairs}
+              userProfile={userProfile}
+              currentUser={activeUser}
               isReadOnlyRole={isReadOnlyRole}
               handleNavigation={handleNavigation}
             />

@@ -40,6 +40,7 @@ const DashboardView = ({
 
   // User profile
   userProfile,
+  currentUser,
 
   // Expense configuration
   getExpenseConfig,
@@ -109,7 +110,14 @@ const DashboardView = ({
 
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
-    setSelectedApartment(apartmentData);
+    const apt = getAssociationApartments?.().find((a) => a.id === apartmentData.apartmentId);
+    const stair = stairs?.find((s) => s.id === apt?.stairId);
+    const bloc = blocks?.find((b) => b.id === (stair?.blockId || apt?.blocId));
+    setSelectedApartment({
+      ...apartmentData,
+      blockName: bloc?.name || '',
+      stairName: stair?.name || ''
+    });
     setShowPaymentModal(true);
   };
 
@@ -240,7 +248,7 @@ const DashboardView = ({
     };
     
     const result = await addIncasare(incasareData);
-    
+
     if (result.success) {
       // Tabelul se va actualiza automat prin usePaymentSync
       // Pagina Încasări va afișa plata cu nr chitanță
@@ -249,6 +257,7 @@ const DashboardView = ({
       console.error('❌ Eroare la salvarea încasării:', result.error);
       alert(`Eroare la salvarea încasării: ${result.error}`);
     }
+    return result;
   };
 
   // Funcție simplificată pentru export PDF (pentru Dashboard)
@@ -639,6 +648,8 @@ const DashboardView = ({
                     consumptionMonth={activeSheet?.consumptionMonth}
                     onExportPdf={handleExportIntretinerePdf}
                     canExportPdf={activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived'}
+                    userProfile={userProfile}
+                    currentUser={currentUser}
                   />
                 </>
               );
@@ -652,6 +663,7 @@ const DashboardView = ({
         showPaymentModal={showPaymentModal}
         setShowPaymentModal={setShowPaymentModal}
         currentMonth={currentMonth}
+        consumptionMonth={activeSheet?.consumptionMonth || ''}
         selectedApartment={selectedApartment}
         association={association}
         onSavePayment={handleSavePayment}

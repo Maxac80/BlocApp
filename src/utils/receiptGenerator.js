@@ -94,6 +94,8 @@ const composeAddress = (address) => {
   const parts = [];
   if (address.street) parts.push(address.street);
   if (address.number) parts.push(`nr. ${address.number}`);
+  if (address.block || address.bloc) parts.push(`bl. ${address.block || address.bloc}`);
+  if (address.stair || address.scara) parts.push(`sc. ${address.stair || address.scara}`);
   if (address.city) parts.push(address.city);
   if (address.county) parts.push(address.county);
   return parts.join(', ');
@@ -111,6 +113,19 @@ const buildReceiptNumber = (paymentData) => {
 };
 
 /**
+ * Construiește prefixul de serie din numele asociației (primele 2-3 majuscule).
+ * Ex: "Asociația Vulturul B4A" → "VBA"; default "BA" (BlocApp).
+ */
+const buildSeriesPrefix = (associationData) => {
+  if (associationData?.receiptSeries) return String(associationData.receiptSeries).toUpperCase();
+  const name = associationData?.name || '';
+  const tokens = name.split(/\s+/).filter((t) => t && !/^(asociatia|asociația|de|proprietari)$/i.test(t));
+  if (tokens.length === 0) return 'BA';
+  const initials = tokens.slice(0, 3).map((t) => t.charAt(0).toUpperCase()).join('');
+  return initials || 'BA';
+};
+
+/**
  * Generează chitanța PDF premium și o descarcă.
  * Semnătură păstrată identică (call sites: PaymentModal, incasariHelpers, MaintenanceTableSimple).
  *
@@ -120,9 +135,9 @@ const buildReceiptNumber = (paymentData) => {
  */
 export const generateDetailedReceipt = async (paymentData, apartmentData, associationData) => {
   try {
-    const doc = new jsPDF('portrait', 'mm', 'a4');
+    const doc = new jsPDF('portrait', 'mm', 'a5');
     const pageW = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const margin = 10;
     const contentW = pageW - 2 * margin;
 
     const logo = await loadLogo();
@@ -130,86 +145,124 @@ export const generateDetailedReceipt = async (paymentData, apartmentData, associ
     // ============== ANTET ==============
     let y = margin;
 
-    // Logo stânga
-    let headerTextX = margin;
+    // Logo în partea DREAPTA + URL sub logo
+    let logoW = 0;
+    let logoH = 0;
     if (logo?.dataUrl && logo.w && logo.h) {
-      const logoH = 10;
-      const logoW = (logo.w / logo.h) * logoH;
-      doc.addImage(logo.dataUrl, 'PNG', margin, y + 1, logoW, logoH);
-      headerTextX = margin + logoW + 6;
+      logoH = 10;
+      logoW = (logo.w / logo.h) * logoH;
+      doc.addImage(logo.dataUrl, 'PNG', pageW - margin - logoW, y + 1, logoW, logoH);
+      // URL aliniat la dreapta paginii (cu margin-ul)
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...COLORS.gray);
+      doc.text('www.blocapp.ro', pageW - margin, y + logoH + 4, { align: 'right' });
     }
 
-    // Bloc text dreapta: nume asociație + CUI + adresă
+    // Bloc text STANGA: nume asociație + CUI + adresă
+    const headerTextX = margin;
+    const headerMaxX = pageW - margin - logoW - 4;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(10);
     doc.setTextColor(...COLORS.black);
-    doc.text(fixRo((associationData?.name || 'ASOCIATIA DE PROPRIETARI').toUpperCase()), headerTextX, y + 5);
+    const nameLines = doc.splitTextToSize(
+      fixRo((associationData?.name || 'ASOCIATIA DE PROPRIETARI').toUpperCase()),
+      headerMaxX - headerTextX
+    );
+    doc.text(nameLines, headerTextX, y + 4);
+    let metaY = y + 4 + nameLines.length * 4 + 1;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(7.5);
     doc.setTextColor(...COLORS.gray);
-    let metaY = y + 10;
     if (associationData?.cui) {
       doc.text(fixRo(`CUI: ${associationData.cui}`), headerTextX, metaY);
-      metaY += 4;
+      metaY += 3.5;
     }
     const addr = composeAddress(associationData?.address);
     if (addr) {
-      doc.text(fixRo(addr), headerTextX, metaY);
-      metaY += 4;
+      const addrLines = doc.splitTextToSize(fixRo(addr), headerMaxX - headerTextX);
+      doc.text(addrLines, headerTextX, metaY);
+      metaY += addrLines.length * 3.5;
     }
     if (associationData?.bankAccount) {
       const bank = associationData.bank ? `${associationData.bank} — ` : '';
       doc.text(fixRo(`${bank}IBAN: ${associationData.bankAccount}`), headerTextX, metaY);
-      metaY += 4;
+      metaY += 3.5;
     }
 
-    y = Math.max(y + 18, metaY) + 2;
+    y = Math.max(y + 14, metaY) + 1;
 
-    // Linie separator
+    // Linie separator (mai aproape de antet, departe de titlu)
     doc.setDrawColor(...COLORS.grayMid);
     doc.setLineWidth(0.3);
     doc.line(margin, y, pageW - margin, y);
     y += 8;
 
-    // ============== TITLU ==============
+    // ============== TITLU (cu serie) ==============
     const receiptNo = buildReceiptNumber(paymentData);
+    const seriesPrefix = buildSeriesPrefix(associationData);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
+    doc.setFontSize(14);
     doc.setTextColor(...COLORS.primaryDark);
-    doc.text(fixRo(`CHITANTA NR. ${receiptNo}`), pageW / 2, y, { align: 'center' });
-    y += 10;
+    doc.text(fixRo(`CHITANTA   SERIA ${seriesPrefix}   NR. ${receiptNo}`), pageW / 2, y, { align: 'center' });
+    y += 7;
 
-    // ============== METADATA (data + luna) ==============
+    // ============== METADATA (data emiterii) ==============
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(8.5);
     doc.setTextColor(...COLORS.grayDark);
     doc.text(fixRo(`Data emiterii: ${formatDateRO(paymentData?.timestamp)}`), margin, y);
-    doc.text(fixRo(`Luna: ${paymentData?.month || '-'}`), pageW - margin, y, { align: 'right' });
-    y += 8;
+    if (paymentData?.month) {
+      doc.text(fixRo(`Luna intretinerii: ${paymentData.month}`), pageW - margin, y, { align: 'right' });
+    }
+    y += 5;
 
-    // ============== BLOC PLATITOR ==============
+    // ============== AM PRIMIT DE LA + SUMA ==============
+    // Curățare nume bloc/scară (elimină prefixul "Bloc"/"Scara" dacă utilizatorul l-a inclus deja)
+    const stripPrefix = (name, prefix) => {
+      if (!name) return '';
+      const re = new RegExp(`^${prefix}\\s+`, 'i');
+      return String(name).replace(re, '').trim();
+    };
+    const blocClean = stripPrefix(apartmentData?.blockName, 'bloc');
+    const scaraClean = stripPrefix(apartmentData?.stairName, 'scara|scar[ăa]');
+
+    // Construiește propoziția identificare plătitor
+    const idParts = [];
+    if (apartmentData?.apartmentNumber) idParts.push(`apartamentul ${apartmentData.apartmentNumber}`);
+    if (blocClean) idParts.push(`bloc ${blocClean}`);
+    if (scaraClean) idParts.push(`scara ${scaraClean}`);
+    const idSentence = `${apartmentData?.owner || '-'}, ${idParts.join(', ')}`;
+
+    const totalAmount = (Number(paymentData?.restante) || 0)
+      + (Number(paymentData?.intretinere) || 0)
+      + (Number(paymentData?.penalitati) || 0);
+
     doc.setFillColor(...COLORS.grayLight);
     doc.setDrawColor(...COLORS.grayMid);
     const blockH = 18;
     doc.roundedRect(margin, y, contentW, blockH, 1.5, 1.5, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(8.5);
     doc.setTextColor(...COLORS.black);
-    doc.text(fixRo('Apartament:'), margin + 4, y + 6);
-    doc.text(fixRo('Proprietar:'), margin + 4, y + 12);
-
+    doc.text(fixRo('Am primit de la:'), margin + 3, y + 5);
     doc.setFont('helvetica', 'normal');
-    doc.text(fixRo(String(apartmentData?.apartmentNumber || '-')), margin + 32, y + 6);
-    doc.text(fixRo(apartmentData?.owner || '-'), margin + 32, y + 12);
+    const idLines = doc.splitTextToSize(fixRo(idSentence), contentW - 32);
+    doc.text(idLines, margin + 31, y + 5);
 
-    if (apartmentData?.persons) {
-      doc.setFont('helvetica', 'bold');
-      doc.text(fixRo('Persoane:'), margin + 100, y + 6);
-      doc.setFont('helvetica', 'normal');
-      doc.text(fixRo(String(apartmentData.persons)), margin + 124, y + 6);
-    }
+    doc.setFont('helvetica', 'bold');
+    doc.text(fixRo('Suma de:'), margin + 3, y + 14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primaryDark);
+    doc.text(fixRo(`${(Number(paymentData?.total) || totalAmount).toFixed(2)} lei`), margin + 31, y + 14);
+
+    // Eticheta "Reprezentand contravaloare:" deasupra tabelului
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COLORS.black);
+    doc.text(fixRo('Reprezentand contravaloare:'), margin, y + blockH + 5);
 
     y += blockH + 8;
 
@@ -219,22 +272,35 @@ export const generateDetailedReceipt = async (paymentData, apartmentData, associ
     const penalitati = Number(paymentData?.penalitati) || 0;
     const total = Number(paymentData?.total) || (restante + intretinere + penalitati);
 
+    const luna = paymentData?.month || '';
+    const consumLuna = paymentData?.consumptionMonth || '';
+    const intretinereLabel = luna
+      ? (consumLuna && consumLuna !== luna
+          ? `Intretinere luna ${luna} (consum ${consumLuna})`
+          : `Intretinere luna ${luna}`)
+      : 'Intretinere curenta';
+    const restanteLabel = luna ? `Restante (anterior lunii ${luna})` : 'Restante';
+    const penalitatiLabel = luna ? `Penalitati cumulate (la ${luna})` : 'Penalitati cumulate';
+
     const tableRows = [];
-    if (restante > 0) tableRows.push(['Restante', formatLei(restante)]);
-    if (intretinere > 0) tableRows.push(['Intretinere curenta', formatLei(intretinere)]);
-    if (penalitati > 0) tableRows.push(['Penalitati', formatLei(penalitati)]);
+    if (intretinere > 0) tableRows.push([intretinereLabel, formatLei(intretinere)]);
+    if (restante > 0) tableRows.push([restanteLabel, formatLei(restante)]);
+    if (penalitati > 0) tableRows.push([penalitatiLabel, formatLei(penalitati)]);
 
     autoTable(doc, {
       startY: y,
       head: [[fixRo('Categorie'), fixRo('Suma incasata')]],
       body: tableRows.map((r) => [fixRo(r[0]), r[1]]),
-      foot: [[fixRo('TOTAL INCASAT'), formatLei(total)]],
+      foot: [[
+        { content: fixRo('TOTAL INCASAT'), styles: { halign: 'left' } },
+        { content: formatLei(total), styles: { halign: 'right' } }
+      ]],
       theme: 'grid',
       margin: { left: margin, right: margin },
       styles: {
         font: 'helvetica',
-        fontSize: 10,
-        cellPadding: 3,
+        fontSize: 8.5,
+        cellPadding: 2,
         textColor: COLORS.grayDark,
         lineColor: COLORS.grayMid,
         lineWidth: 0.2,
@@ -244,12 +310,13 @@ export const generateDetailedReceipt = async (paymentData, apartmentData, associ
         textColor: COLORS.white,
         fontStyle: 'bold',
         halign: 'left',
+        fontSize: 8.5,
       },
       footStyles: {
         fillColor: COLORS.primaryLight,
         textColor: COLORS.primaryDark,
         fontStyle: 'bold',
-        fontSize: 11,
+        fontSize: 9.5,
       },
       columnStyles: {
         0: { cellWidth: contentW * 0.65 },
@@ -257,68 +324,48 @@ export const generateDetailedReceipt = async (paymentData, apartmentData, associ
       },
     });
 
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + 4;
 
     // ============== TOTAL ÎN LITERE ==============
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9);
+    doc.setFontSize(7.5);
     doc.setTextColor(...COLORS.grayDark);
     const inLitere = numberToWordsRo(total);
-    const inLitereLines = doc.splitTextToSize(fixRo(`Suma incasata: ${total.toFixed(2)} lei (${inLitere})`), contentW);
+    const inLitereLines = doc.splitTextToSize(fixRo(`Adica: ${total.toFixed(2)} lei (${inLitere})`), contentW);
     doc.text(inLitereLines, margin, y);
-    y += inLitereLines.length * 4 + 4;
+    y += inLitereLines.length * 3.5 + 6;
 
-    // ============== SITUAȚIE DUPĂ ÎNCASARE ==============
-    const totalDatorat = Number(apartmentData?.totalDatorat) || 0;
-    const remaining = Math.max(0, totalDatorat - total);
-
-    doc.setFillColor(...(remaining > 0.01 ? COLORS.grayLight : COLORS.primaryLight));
-    doc.setDrawColor(...COLORS.grayMid);
-    doc.roundedRect(margin, y, contentW, 14, 1.5, 1.5, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...COLORS.grayDark);
-    doc.text(fixRo('Total datorat luna:'), margin + 4, y + 6);
+    // ============== SEMNATURA CASIER ==============
     doc.setFont('helvetica', 'normal');
-    doc.text(formatLei(totalDatorat), margin + 50, y + 6);
-
-    doc.setFont('helvetica', 'bold');
-    if (remaining > 0.01) {
-      doc.setTextColor(...COLORS.orange);
-      doc.text(fixRo('Rest de incasat:'), margin + 4, y + 11.5);
-      doc.text(formatLei(remaining), margin + 50, y + 11.5);
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.grayDark);
+    const cashierName = associationData?.cashier || associationData?.administrator || '';
+    const cashierRole = associationData?.cashierRole || 'Administrator';
+    const cashierLabel = `Casier / ${cashierRole}:`;
+    doc.text(fixRo(cashierLabel), margin, y);
+    const labelW = doc.getTextWidth(fixRo(cashierLabel)) + 2;
+    if (cashierName) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.black);
+      doc.text(fixRo(cashierName), margin + labelW, y);
     } else {
-      doc.setTextColor(...COLORS.primaryDark);
-      doc.text(fixRo('Incasat integral'), margin + 4, y + 11.5);
+      // Linie goală pentru semnătura manuală
+      doc.setDrawColor(...COLORS.grayDark);
+      doc.setLineWidth(0.2);
+      doc.line(margin + labelW, y + 1.5, margin + labelW + 60, y + 1.5);
     }
+    y += 8;
 
-    y += 22;
-
-    // ============== FOOTER ==============
-    const footerY = doc.internal.pageSize.getHeight() - 30;
-
-    // Semnătură stânga
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.grayDark);
-    const adminLabel = associationData?.administrator
-      ? `Casier / Administrator: ${associationData.administrator}`
-      : 'Casier / Administrator:';
-    doc.text(fixRo(adminLabel), margin, footerY);
-    doc.setDrawColor(...COLORS.grayDark);
-    doc.setLineWidth(0.2);
-    doc.line(margin, footerY + 10, margin + 70, footerY + 10);
-
-    // Logo BlocApp mic centrat + timestamp
-    if (logo?.dataUrl) {
-      const fLogoH = 6;
-      const fLogoW = (logo.w / logo.h) * fLogoH;
-      doc.addImage(logo.dataUrl, 'PNG', (pageW - fLogoW) / 2, footerY + 4, fLogoW, fLogoH);
-    }
-    doc.setFontSize(7);
+    // ============== NOTA OMFP (jos pe pagina) ==============
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setFontSize(6);
     doc.setTextColor(...COLORS.gray);
-    doc.text(fixRo(`Generat de BlocApp - ${formatDateTimeRO()}`), pageW / 2, footerY + 14, { align: 'center' });
+    doc.text(
+      fixRo('Conform OMFP nr. 2634/2015 si OMFP nr. 3103/2017 - formular financiar-contabil cod 14-4-1'),
+      pageW / 2,
+      pageH - 6,
+      { align: 'center' }
+    );
 
     // ============== SAVE ==============
     const fileName = `Chitanta_Ap${apartmentData?.apartmentNumber || 'X'}_${receiptNo}.pdf`;

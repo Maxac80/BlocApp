@@ -16,9 +16,29 @@ const MaintenanceTableSimple = ({
   payments = [],
   handleNavigation,
   apartments = [],
+  blocks = [],
+  stairs = [],
+  userProfile,
+  currentUser,
   association
 }) => {
   const [expandedId, setExpandedId] = useState(null);
+
+  const ROLE_LABELS = {
+    admin_asociatie: 'Administrator',
+    assoc_president: 'Presedinte',
+    assoc_censor: 'Cenzor',
+    master: 'Master'
+  };
+  const handleRegenerate = (p) => {
+    const cashierName = p.recordedBy?.name || (() => {
+      const pi = userProfile?.profile?.personalInfo;
+      if (pi?.firstName || pi?.lastName) return `${pi.firstName || ''} ${pi.lastName || ''}`.trim();
+      return currentUser?.displayName || userProfile?.email || currentUser?.email || '';
+    })();
+    const cashierRole = p.recordedBy?.role || ROLE_LABELS[userProfile?.role] || 'Administrator';
+    return regenerateReceipt(p, apartments, association, p.month, blocks, stairs, cashierName, cashierRole, p.consumptionMonth || '');
+  };
 
   // Helper: status vizual (culoare bara + procent)
   const getStatusVisual = (data) => {
@@ -239,7 +259,7 @@ const MaintenanceTableSimple = ({
                     )}
                     {totalPaid > 0 && restCurent <= 0.01 && (
                       <span className="text-[10px] leading-tight text-gray-500 mt-1">
-                        încasat <span className="text-green-600 font-medium">{totalPaid.toFixed(2)} lei</span>
+                        încasat <span className="text-green-600 font-medium">{totalPaid.toFixed(2)}</span>
                       </span>
                     )}
                   </div>
@@ -429,7 +449,7 @@ const MaintenanceTableSimple = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        regenerateReceipt(p, apartments, association, p.month);
+                                        handleRegenerate(p);
                                       }}
                                       className="p-1.5 text-blue-600 hover:bg-blue-50 rounded flex-shrink-0"
                                       title="Regenerează chitanța PDF"
@@ -499,7 +519,7 @@ const MaintenanceTableSimple = ({
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            regenerateReceipt(p, apartments, association, p.month);
+                                            handleRegenerate(p);
                                           }}
                                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                                           title="Regenerează chitanța PDF"
@@ -559,7 +579,7 @@ const MaintenanceTableSimple = ({
               {/* DESKTOP tfoot: structura clasică */}
             <tr className="hidden sm:table-row">
               <td className={`p-0 ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`} aria-hidden="true" style={{ width: '4px', minWidth: '4px', maxWidth: '4px' }}></td>
-              <td className={`px-1 sm:px-3 py-2 sm:py-3 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}></td>
+              <td className={`px-1 sm:px-3 py-2 sm:py-3 font-bold text-gray-800 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>{maintenanceData.length}</td>
               <td className={`px-1 sm:px-3 py-2 sm:py-3 font-semibold whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>TOTAL:</td>
               <td className={`hidden xl:table-cell px-2 sm:px-3 py-2 sm:py-3 text-right font-bold text-gray-800 whitespace-nowrap ${isMonthReadOnly ? 'bg-purple-100' : 'bg-gray-50'}`}>
                 {sumPersons}

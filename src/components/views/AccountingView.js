@@ -289,10 +289,15 @@ const AccountingView = ({
       receiptNumber: incasare.receiptNumber
     };
 
+    const stair = stairs?.find((s) => s.id === apartment.stairId);
+    const bloc = blocks?.find((b) => b.id === (stair?.blockId || apartment.blocId));
+
     const apartmentData = {
       apartmentNumber: apartment.number,
       owner: apartment.owner || incasare.owner,
       persons: apartment.persons,
+      blockName: bloc?.name || '',
+      stairName: stair?.name || '',
       totalDatorat: incasare.restante + incasare.intretinere + incasare.penalitati,
       restante: incasare.restante,
       intretinere: incasare.intretinere,

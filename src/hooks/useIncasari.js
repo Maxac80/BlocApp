@@ -8,7 +8,8 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
-  getDocs
+  getDocs,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getSheetRef, getSheetsCollection } from '../utils/firestoreHelpers';
@@ -123,42 +124,71 @@ export const useIncasari = (association, currentMonth, publishedSheet = null) =>
       throw new Error('Apartamentul nu există în tabelul de întreținere publicat');
     }
 
+    let outerPaymentId = null;
     try {
-      const newReceiptNumber = lastReceiptNumber + 1;
-
-      // 🆕 FAZA 4: Structura plății pentru array-ul din sheet
-      const paymentRecord = {
-        id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID unic
-        apartmentId: incasareData.apartmentId,
-        apartmentNumber: incasareData.apartmentNumber,
-        owner: incasareData.owner,
-        restante: incasareData.restante || 0,
-        intretinere: incasareData.intretinere || 0,
-        penalitati: incasareData.penalitati || 0,
-        total: incasareData.total,
-        timestamp: incasareData.timestamp || new Date().toISOString(),
-        month: incasareData.month || publishedSheet.monthYear || '', // pentru chitanță premium
-        receiptNumber: newReceiptNumber,
-        createdAt: new Date().toISOString(),
-        createdBy: incasareData.createdBy || 'Administrator',
-        paymentMethod: incasareData.paymentMethod || 'cash',
-        notes: incasareData.notes || ''
-      };
-
-      // 🆕 FAZA 4: Adaugă plata în array-ul payments din sheet
       const sheetRef = getSheetRef(association.id, publishedSheet.id);
-      const currentPayments = publishedSheet.payments || [];
+      const associationRef = doc(db, 'associations', association.id);
 
-      await updateDoc(sheetRef, {
-        payments: [...currentPayments, paymentRecord],
-        updatedAt: serverTimestamp()
+      // Tranzacție atomică pe documentul asociației + sheet-ul publicat.
+      // Counter `lastReceiptNumber` pe asociație garantează unicitate globală
+      // chiar la încasări paralele.
+      const newReceiptNumber = await runTransaction(db, async (tx) => {
+        const sheetSnap = await tx.get(sheetRef);
+        if (!sheetSnap.exists()) throw new Error('Sheet-ul publicat nu există');
+        const assocSnap = await tx.get(associationRef);
+        const assocData = assocSnap.exists() ? assocSnap.data() : {};
+
+        // Bootstrap counter dacă lipseşte: scanează payments din sheet-ul curent
+        // (ulterior counter-ul rămâne autoritate).
+        const currentMax = Number(assocData.lastReceiptNumber) || 0;
+        let baseline = currentMax;
+        if (!assocData.lastReceiptNumber) {
+          const payments = sheetSnap.data().payments || [];
+          payments.forEach((p) => {
+            const n = Number(p.receiptNumber) || 0;
+            if (n > baseline) baseline = n;
+          });
+        }
+        const nextNum = baseline + 1;
+
+        const sheetData = sheetSnap.data();
+        const currentPayments = sheetData.payments || [];
+
+        const paymentRecord = {
+          id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          apartmentId: incasareData.apartmentId,
+          apartmentNumber: incasareData.apartmentNumber,
+          owner: incasareData.owner,
+          restante: incasareData.restante || 0,
+          intretinere: incasareData.intretinere || 0,
+          penalitati: incasareData.penalitati || 0,
+          total: incasareData.total,
+          timestamp: incasareData.timestamp || new Date().toISOString(),
+          month: incasareData.month || publishedSheet.monthYear || '',
+          consumptionMonth: incasareData.consumptionMonth || '',
+          recordedBy: incasareData.recordedBy || null,
+          receiptNumber: nextNum,
+          createdAt: new Date().toISOString(),
+          createdBy: incasareData.recordedBy?.name || incasareData.createdBy || 'Administrator',
+          paymentMethod: incasareData.paymentMethod || 'cash',
+          notes: incasareData.notes || ''
+        };
+
+        tx.update(sheetRef, {
+          payments: [...currentPayments, paymentRecord],
+          updatedAt: serverTimestamp()
+        });
+        tx.set(associationRef, { lastReceiptNumber: nextNum }, { merge: true });
+
+        outerPaymentId = paymentRecord.id;
+        return nextNum;
       });
 
       setLastReceiptNumber(newReceiptNumber);
 
       return {
         success: true,
-        id: paymentRecord.id,
+        id: outerPaymentId,
         receiptNumber: newReceiptNumber
       };
     } catch (err) {

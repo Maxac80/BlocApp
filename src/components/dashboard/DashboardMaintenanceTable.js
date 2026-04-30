@@ -31,7 +31,9 @@ const DashboardMaintenanceTable = ({
   payments = [],
   consumptionMonth,
   onExportPdf,
-  canExportPdf = false
+  canExportPdf = false,
+  userProfile,
+  currentUser
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStairTab, setSelectedStairTab] = useState('all'); // 🆕 FAZA 6: Tab scară selectată
@@ -192,6 +194,10 @@ const DashboardMaintenanceTable = ({
         payments={payments}
         handleNavigation={handleNavigation}
         apartments={getAssociationApartments ? getAssociationApartments() : []}
+        blocks={blocks}
+        stairs={stairs}
+        userProfile={userProfile}
+        currentUser={currentUser}
         association={association}
       />
     </div>

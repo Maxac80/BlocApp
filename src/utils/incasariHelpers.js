@@ -2,11 +2,14 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { generateDetailedReceipt } from './receiptGenerator';
 
-export const regenerateReceipt = async (incasare, apartments, association, monthHint) => {
+export const regenerateReceipt = async (incasare, apartments, association, monthHint, blocks = [], stairs = [], cashierName = '', cashierRole = '', consumptionMonthFallback = '') => {
   const apartment = apartments.find((apt) => apt.id === incasare.apartmentId);
   if (!apartment) {
     return { success: false, error: 'Apartament negăsit' };
   }
+
+  const stair = stairs.find((s) => String(s.id) === String(apartment.stairId));
+  const bloc = blocks.find((b) => String(b.id) === String(stair?.blockId || apartment.blocId));
 
   const payment = {
     apartmentId: incasare.apartmentId,
@@ -16,6 +19,7 @@ export const regenerateReceipt = async (incasare, apartments, association, month
     total: incasare.total,
     timestamp: incasare.timestamp,
     month: incasare.month || monthHint || '',
+    consumptionMonth: incasare.consumptionMonth || consumptionMonthFallback || '',
     receiptNumber: incasare.receiptNumber
   };
 
@@ -23,6 +27,8 @@ export const regenerateReceipt = async (incasare, apartments, association, month
     apartmentNumber: apartment.number,
     owner: apartment.owner || incasare.owner,
     persons: apartment.persons,
+    blockName: bloc?.name || '',
+    stairName: stair?.name || '',
     totalDatorat: incasare.restante + incasare.intretinere + incasare.penalitati,
     restante: incasare.restante,
     intretinere: incasare.intretinere,
@@ -35,7 +41,9 @@ export const regenerateReceipt = async (incasare, apartments, association, month
     address: association?.address || '',
     bankAccount: association?.bankAccount || '',
     bank: association?.bank || '',
-    administrator: association?.administrator || ''
+    administrator: association?.administrator || '',
+    cashier: cashierName || incasare.recordedBy?.name || '',
+    cashierRole: cashierRole || incasare.recordedBy?.role || ''
   };
 
   try {

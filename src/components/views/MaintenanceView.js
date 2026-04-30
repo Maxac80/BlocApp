@@ -121,6 +121,8 @@ const MaintenanceView = ({
 
   // Monthly balances
   monthlyBalances,
+  userProfile,
+  currentUser,
   isReadOnlyRole
 }) => {
 
@@ -409,19 +411,44 @@ const MaintenanceView = ({
 
   // Handler pentru deschiderea modalului de plăți
   const handleOpenPaymentModal = (apartmentData) => {
-    setSelectedApartment(apartmentData);
+    const apt = getAssociationApartments?.().find((a) => a.id === apartmentData.apartmentId);
+    const stair = stairs?.find((s) => s.id === apt?.stairId);
+    const bloc = blocks?.find((b) => b.id === (stair?.blockId || apt?.blocId));
+    const consumptionMonth = activeSheet?.consumptionMonth || currentSheet?.consumptionMonth || '';
+    setSelectedApartment({
+      ...apartmentData,
+      blockName: bloc?.name || '',
+      stairName: stair?.name || '',
+      consumptionMonth
+    });
     setShowPaymentModal(true);
   };
 
   // Handler pentru salvarea plății cu integrare Firestore
   const handleSavePayment = async (paymentData) => {
+    const cashierName = (() => {
+      const p = userProfile?.profile?.personalInfo;
+      if (p?.firstName || p?.lastName) return `${p.firstName || ''} ${p.lastName || ''}`.trim();
+      return userProfile?.email || '';
+    })();
+    const roleLabels = {
+      admin_asociatie: 'Administrator',
+      assoc_president: 'Presedinte',
+      assoc_censor: 'Cenzor',
+      master: 'Master'
+    };
+    const cashierRole = roleLabels[userProfile?.role] || 'Administrator';
 
-    // Salvează încasarea în Firestore
+    const consumptionMonth = activeSheet?.consumptionMonth || currentSheet?.consumptionMonth || '';
+
+    // Salvează încasarea în Firestore (cu cine a încasat)
     const incasareData = {
       ...paymentData,
       apartmentNumber: selectedApartment.apartmentNumber,
       owner: selectedApartment.owner,
-      associationName: association.name
+      associationName: association.name,
+      consumptionMonth,
+      recordedBy: cashierName ? { uid: userProfile?.uid || null, name: cashierName, role: cashierRole } : null
     };
 
     const result = await addIncasare(incasareData);
@@ -433,6 +460,7 @@ const MaintenanceView = ({
       console.error('❌ Eroare la salvarea încasării:', result.error);
       alert(`Eroare la salvarea încasării: ${result.error}`);
     }
+    return result;
   };
 
   // Handler pentru deschiderea modalului de breakdown întreținere
@@ -1485,8 +1513,11 @@ const MaintenanceView = ({
           showPaymentModal={showPaymentModal}
           setShowPaymentModal={setShowPaymentModal}
           currentMonth={currentMonth}
+          consumptionMonth={activeSheet?.consumptionMonth || currentSheet?.consumptionMonth || ''}
           selectedApartment={selectedApartment}
           association={association}
+          userProfile={userProfile}
+          currentUser={currentUser}
           onSavePayment={handleSavePayment}
         />
 

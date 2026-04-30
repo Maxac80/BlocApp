@@ -12,17 +12,27 @@ import {
   Lock
 } from 'lucide-react';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
+import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 
 const fmt = (n) => `${Number(n || 0).toFixed(2)} lei`;
+
+const ROLE_LABELS = {
+  admin_asociatie: 'Administrator',
+  assoc_president: 'Presedinte',
+  assoc_censor: 'Cenzor',
+  master: 'Master'
+};
 
 const PaymentModal = ({
   showPaymentModal,
   setShowPaymentModal,
   currentMonth,
+  consumptionMonth = '',
   selectedApartment,
   association,
   onSavePayment
 }) => {
+  const { userProfile, currentUser } = useAuthEnhanced();
   const [paymentData, setPaymentData] = useState({
     restante: '',
     intretinere: '',
@@ -178,15 +188,31 @@ const PaymentModal = ({
       penalitati: penalitatiPaid,
       total: totalIncasat,
       timestamp: new Date().toISOString(),
-      month: currentMonth
+      month: currentMonth,
+      consumptionMonth: consumptionMonth || selectedApartment.consumptionMonth || '',
+      recordedBy: (() => {
+        const p = userProfile?.profile?.personalInfo;
+        const name = (p?.firstName || p?.lastName)
+          ? `${p.firstName || ''} ${p.lastName || ''}`.trim()
+          : (currentUser?.displayName || userProfile?.email || currentUser?.email || '');
+        const role = ROLE_LABELS[userProfile?.role] || 'Administrator';
+        return name ? { uid: userProfile?.uid || currentUser?.uid || null, name, role } : null;
+      })()
     };
+
+    // SALVEAZĂ MAI ÎNTÂI încasarea ca să primim receiptNumber-ul real, apoi generează PDF cu acelaşi număr
+    const saveResult = await onSavePayment(payment);
+    const realReceiptNumber = saveResult?.receiptNumber || saveResult?.id || null;
 
     if (generatePdf) {
       try {
+        const paymentForPdf = realReceiptNumber ? { ...payment, receiptNumber: realReceiptNumber } : payment;
         const apartmentData = {
           apartmentNumber: selectedApartment.apartmentNumber,
           owner: selectedApartment.owner,
           persons: selectedApartment.persons,
+          blockName: selectedApartment.blockName || '',
+          stairName: selectedApartment.stairName || '',
           totalDatorat,
           restante: restanteMax,
           intretinere: intretinereMax,
@@ -199,15 +225,16 @@ const PaymentModal = ({
           address: association?.address || selectedApartment.associationAddress || '',
           bankAccount: association?.bankAccount || '',
           bank: association?.bank || '',
-          administrator: association?.administrator || ''
+          administrator: association?.administrator || '',
+          cashier: payment.recordedBy?.name || '',
+          cashierRole: payment.recordedBy?.role || ''
         };
-        await generateDetailedReceipt(payment, apartmentData, associationData);
+        await generateDetailedReceipt(paymentForPdf, apartmentData, associationData);
       } catch (error) {
         console.error('Eroare la generarea chitanței:', error);
       }
     }
 
-    onSavePayment(payment);
     setShowPaymentModal(false);
   };
 
