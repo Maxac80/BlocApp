@@ -1,6 +1,6 @@
 // src/components/dashboard/DashboardMaintenanceTable.js
 import React, { useState } from 'react';
-import { Calculator, Search, ClipboardList } from 'lucide-react';
+import { Calculator, Search, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import { MaintenanceTableSimple } from '../tables';
 import { matchesSearch } from '../../utils/searchHelpers';
 
@@ -32,6 +32,8 @@ const DashboardMaintenanceTable = ({
   consumptionMonth,
   onExportPdf,
   canExportPdf = false,
+  onExportExcel,
+  exportingExcel = false,
   userProfile,
   currentUser
 }) => {
@@ -129,16 +131,31 @@ const DashboardMaintenanceTable = ({
               )}
             </span>
           </h3>
-          {canExportPdf && onExportPdf && (
-            <button
-              onClick={() => onExportPdf(stairFilteredData)}
-              disabled={!maintenanceData || maintenanceData.length === 0}
-              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm flex-shrink-0"
-              title="Exportă tabel întreținere în PDF"
-            >
-              <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Exportă PDF
-            </button>
+          {canExportPdf && (onExportPdf || onExportExcel) && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {onExportPdf && (
+                <button
+                  onClick={() => onExportPdf(stairFilteredData)}
+                  disabled={!maintenanceData || maintenanceData.length === 0}
+                  className="bg-red-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                  title="Exportă tabel întreținere în PDF"
+                >
+                  <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Exportă PDF
+                </button>
+              )}
+              {onExportExcel && (
+                <button
+                  onClick={() => onExportExcel(stairFilteredData)}
+                  disabled={!maintenanceData || maintenanceData.length === 0 || exportingExcel}
+                  className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                  title="Exportă tabel întreținere în Excel"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  {exportingExcel ? 'Se generează…' : 'Exportă Excel'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

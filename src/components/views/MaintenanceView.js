@@ -1,9 +1,11 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList, ListChecks, Printer } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList, ListChecks, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
 import { downloadDistributieExcel } from '../../utils/distributieExcelGenerator';
+import { downloadDistribuieCheltuieliExcel } from '../../utils/distribuieCheltuieliExcelGenerator';
+import { downloadDistribuieCheltuieliPdf } from '../../utils/distribuieCheltuieliPdfGenerator';
 import StatsCard from '../common/StatsCard';
 import PageHeader from '../common/PageHeader';
 import SearchFilterBar from '../common/SearchFilterBar';
@@ -134,6 +136,7 @@ const MaintenanceView = ({
   // State pentru modalul de plăți
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState(null);
+  const [exportingDistribuie, setExportingDistribuie] = useState(null);
 
   // State pentru modalul de breakdown întreținere
   const [showMaintenanceBreakdown, setShowMaintenanceBreakdown] = useState(false);
@@ -1056,6 +1059,62 @@ const MaintenanceView = ({
         }
       };
 
+  const handleExportDistribuiePdf = async () => {
+    if (!associationExpenses || associationExpenses.length === 0) return;
+    setExportingDistribuie('pdf');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadDistribuieCheltuieliPdf({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth || activeSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        distributedExpenses: associationExpenses,
+        getExpenseConfig,
+        invoices,
+        activeSheet: activeSheet || currentSheet,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export PDF distribuție:', err);
+      alert('Eroare la generarea fișierului PDF.');
+    } finally {
+      setExportingDistribuie(null);
+    }
+  };
+
+  const handleExportDistribuieExcel = async () => {
+    if (!associationExpenses || associationExpenses.length === 0) return;
+    setExportingDistribuie('excel');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadDistribuieCheltuieliExcel({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth || activeSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        distributedExpenses: associationExpenses,
+        getExpenseConfig,
+        invoices,
+        activeSheet: activeSheet || currentSheet,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel distribuție:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExportingDistribuie(null);
+    }
+  };
+
   const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
   const monthType = getMonthType ? getMonthType(currentMonth) : null;
 
@@ -1290,14 +1349,26 @@ const MaintenanceView = ({
                 title="Lista cheltuieli distribuite"
                 headerBg="bg-purple-50"
                 actions={
-                  <button
-                    disabled
-                    className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-                    title="Imprimă lista distribuțiilor (în curând)"
-                  >
-                    <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    Imprimă
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleExportDistribuiePdf}
+                      disabled={!associationExpenses || associationExpenses.length === 0 || exportingDistribuie !== null}
+                      className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                      title="Exportă lista distribuțiilor în PDF"
+                    >
+                      <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      {exportingDistribuie === 'pdf' ? 'Se generează…' : 'Exportă PDF'}
+                    </button>
+                    <button
+                      onClick={handleExportDistribuieExcel}
+                      disabled={!associationExpenses || associationExpenses.length === 0 || exportingDistribuie !== null}
+                      className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                      title="Exportă lista distribuțiilor în Excel"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      {exportingDistribuie === 'excel' ? 'Se generează…' : 'Exportă Excel'}
+                    </button>
+                  </div>
                 }
                 className="mb-4"
               >

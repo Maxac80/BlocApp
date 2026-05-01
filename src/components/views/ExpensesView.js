@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search, Tag, Printer } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search, Tag, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import PageHeader from '../common/PageHeader';
 import SearchFilterBar from '../common/SearchFilterBar';
@@ -10,6 +10,8 @@ import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import { matchesSearch } from '../../utils/searchHelpers';
+import { downloadCheltuieliExcel } from '../../utils/cheltuieliExcelGenerator';
+import { downloadCheltuieliPdf } from '../../utils/cheltuieliPdfGenerator';
 
 const ExpensesViewNew = ({
   association,
@@ -62,6 +64,7 @@ const ExpensesViewNew = ({
   const [selectedSupplierId, setSelectedSupplierId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [exportingCheltuieli, setExportingCheltuieli] = useState(null);
 
   // Determină sheet-ul corect pentru luna selectată
   // 1. Dacă suntem pe luna publicată, folosește publishedSheet
@@ -93,6 +96,64 @@ const ExpensesViewNew = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+
+  const handleExportCheltuieliPdf = async () => {
+    const expTypes = getAssociationExpenseTypes();
+    if (!expTypes || expTypes.length === 0) return;
+    setExportingCheltuieli('pdf');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadCheltuieliPdf({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        expenseTypes: expTypes,
+        getExpenseConfig,
+        invoices,
+        activeSheet,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export PDF cheltuieli:', err);
+      alert('Eroare la generarea fișierului PDF.');
+    } finally {
+      setExportingCheltuieli(null);
+    }
+  };
+
+  const handleExportCheltuieliExcel = async () => {
+    const expTypes = getAssociationExpenseTypes();
+    if (!expTypes || expTypes.length === 0) return;
+    setExportingCheltuieli('excel');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadCheltuieliExcel({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        expenseTypes: expTypes,
+        getExpenseConfig,
+        invoices,
+        activeSheet,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel cheltuieli:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExportingCheltuieli(null);
+    }
+  };
 
   const handleConfigureExpense = (expenseIdOrName) => {
     setSelectedExpense(expenseIdOrName);
@@ -318,14 +379,26 @@ const ExpensesViewNew = ({
           title="Configurare cheltuieli"
           headerBg="bg-indigo-50"
           actions={
-            <button
-              disabled
-              className="bg-indigo-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-              title="Imprimă lista cheltuielilor (în curând)"
-            >
-              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Imprimă
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCheltuieliPdf}
+                disabled={exportingCheltuieli !== null}
+                className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title="Exportă configurarea cheltuielilor în PDF"
+              >
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingCheltuieli === 'pdf' ? 'Se generează…' : 'Exportă PDF'}
+              </button>
+              <button
+                onClick={handleExportCheltuieliExcel}
+                disabled={exportingCheltuieli !== null}
+                className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title="Exportă configurarea cheltuielilor în Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingCheltuieli === 'excel' ? 'Se generează…' : 'Exportă Excel'}
+              </button>
+            </div>
           }
         >
                 <div>

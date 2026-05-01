@@ -1,7 +1,9 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search, Printer } from 'lucide-react';
+import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
+import { downloadApartamenteExcel } from '../../utils/apartamenteExcelGenerator';
+import { downloadApartamentePdf } from '../../utils/apartamentePdfGenerator';
 import { matchesSearch } from '../../utils/searchHelpers';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
 import ApartmentModal from '../modals/ApartmentModal';
@@ -69,6 +71,7 @@ const SetupView = ({
 
   // State pentru modalul de upload Excel - TREBUIE să fie înainte de orice return
   const [showExcelUploadModal, setShowExcelUploadModal] = useState(false);
+  const [exportingApartamente, setExportingApartamente] = useState(null);
 
   // State pentru dropdown-urile hamburger ale blocurilor, scărilor și apartamentelor
   const [openBlockMenus, setOpenBlockMenus] = useState({});
@@ -213,6 +216,50 @@ const SetupView = ({
     const stairApartments = associationApartments.filter(apt => apt.stairId === stair.id);
     return stairApartments.length === 0;
   }).length;
+
+  // 📤 Export PDF cu structura apartamentelor
+  const handleExportApartamentePdf = async () => {
+    if (associationApartments.length === 0) return;
+    setExportingApartamente('pdf');
+    try {
+      await downloadApartamentePdf({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        apartments: associationApartments,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export PDF apartamente:', err);
+      alert('Eroare la generarea fișierului PDF.');
+    } finally {
+      setExportingApartamente(null);
+    }
+  };
+
+  // 📤 Export Excel cu structura apartamentelor
+  const handleExportApartamenteExcel = async () => {
+    if (associationApartments.length === 0) return;
+    setExportingApartamente('excel');
+    try {
+      await downloadApartamenteExcel({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        apartments: associationApartments,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel apartamente:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExportingApartamente(null);
+    }
+  };
 
   // 📊 FUNCȚIE PENTRU DESCĂRCAREA TEMPLATE-ULUI EXCEL
   const handleDownloadExcelTemplate = async () => {
@@ -629,14 +676,26 @@ return (
           title="Structură apartamente"
           headerBg="bg-blue-50"
           actions={
-            <button
-              disabled
-              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-              title="Imprimă structura apartamentelor (în curând)"
-            >
-              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Imprimă
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportApartamentePdf}
+                disabled={associationApartments.length === 0 || exportingApartamente !== null}
+                className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={associationApartments.length === 0 ? 'Nu există apartamente' : 'Exportă structura apartamentelor în PDF'}
+              >
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingApartamente === 'pdf' ? 'Se generează…' : 'Exportă PDF'}
+              </button>
+              <button
+                onClick={handleExportApartamenteExcel}
+                disabled={associationApartments.length === 0 || exportingApartamente !== null}
+                className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={associationApartments.length === 0 ? 'Nu există apartamente' : 'Exportă structura apartamentelor în Excel'}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingApartamente === 'excel' ? 'Se generează…' : 'Exportă Excel'}
+              </button>
+            </div>
           }
         >
           {associationBlocks.length > 3 && (

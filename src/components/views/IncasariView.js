@@ -10,11 +10,13 @@ import {
   Search,
   X,
   ClipboardList,
-  Printer
+  Printer,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useIncasari } from '../../hooks/useIncasari';
 import { regenerateReceipt } from '../../utils/incasariHelpers';
 import { downloadIncasariPdf } from '../../utils/incasariPdfGenerator';
+import { downloadIncasariExcel } from '../../utils/incasariExcelGenerator';
 import { matchesSearch } from '../../utils/searchHelpers';
 import StatsCard from '../common/StatsCard';
 
@@ -89,6 +91,7 @@ const IncasariView = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState(''); // YYYY-MM-DD
   const [statusFilter, setStatusFilter] = useState('all'); // all | integral | partial
+  const [exportingExcel, setExportingExcel] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -486,11 +489,44 @@ const IncasariView = ({
                       });
                     }}
                     disabled={!incasari || incasari.length === 0}
-                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                    className="bg-red-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
                     title="Exportă raport încasări în PDF"
                   >
                     <PdfFileIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Exportă PDF
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!incasari || incasari.length === 0) return;
+                      setExportingExcel(true);
+                      try {
+                        const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+                        const associationStairs = (stairs || []).filter(s =>
+                          associationBlocks.some(b => b.id === s.blockId)
+                        );
+                        await downloadIncasariExcel({
+                          association,
+                          monthYear: currentMonth,
+                          consumptionMonth: activeSheet?.consumptionMonth,
+                          publicationDate: new Date(),
+                          incasari,
+                          apartments,
+                          blocks: associationBlocks,
+                          stairs: associationStairs,
+                        });
+                      } catch (err) {
+                        console.error('Eroare export Excel încasări:', err);
+                        alert('Eroare la generarea fișierului Excel.');
+                      } finally {
+                        setExportingExcel(false);
+                      }
+                    }}
+                    disabled={!incasari || incasari.length === 0 || exportingExcel}
+                    className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                    title="Exportă raport încasări în Excel"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    {exportingExcel ? 'Se generează…' : 'Exportă Excel'}
                   </button>
                 </div>
               </div>

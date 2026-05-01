@@ -12,6 +12,9 @@ import useSuppliers from '../../hooks/useSuppliers';
 import AddInvoiceModal from '../modals/AddInvoiceModal';
 import { generateDetailedReceipt } from '../../utils/receiptGenerator';
 import { matchesSearch } from '../../utils/searchHelpers';
+import { downloadFacturiExcel } from '../../utils/facturiExcelGenerator';
+import { downloadFacturiPdf } from '../../utils/facturiPdfGenerator';
+import { FileSpreadsheet, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -93,6 +96,83 @@ const AccountingView = ({
   const [showEditInvoiceModal, setShowEditInvoiceModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [expandedInvoices, setExpandedInvoices] = useState({});
+  const [exportingFacturi, setExportingFacturi] = useState(null);
+
+  const handleExportFacturiPdf = async () => {
+    if (filteredInvoices.length === 0) return;
+    setExportingFacturi('pdf');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadFacturiPdf({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentMonthSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        invoices: filteredInvoices,
+        expenseTypes: Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {})
+          .filter(c => c.isEnabled !== false)
+          .map(c => ({ id: c.id, name: c.name }))
+          .sort((a, b) => {
+            const order = defaultExpenseTypes.map(d => d.id);
+            const ai = order.indexOf(a.id);
+            const bi = order.indexOf(b.id);
+            if (ai !== -1 && bi !== -1) return ai - bi;
+            if (ai !== -1) return -1;
+            if (bi !== -1) return 1;
+            return (a.name || '').localeCompare(b.name || '');
+          }),
+        blocks: associationBlocks,
+        stairs: associationStairs,
+        getSupplierExpenseNames,
+      });
+    } catch (err) {
+      console.error('Eroare export PDF facturi:', err);
+      alert('Eroare la generarea fișierului PDF.');
+    } finally {
+      setExportingFacturi(null);
+    }
+  };
+
+  const handleExportFacturiExcel = async () => {
+    if (filteredInvoices.length === 0) return;
+    setExportingFacturi('excel');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadFacturiExcel({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentMonthSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        invoices: filteredInvoices,
+        expenseTypes: Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {})
+          .filter(c => c.isEnabled !== false)
+          .map(c => ({ id: c.id, name: c.name }))
+          .sort((a, b) => {
+            const order = defaultExpenseTypes.map(d => d.id);
+            const ai = order.indexOf(a.id);
+            const bi = order.indexOf(b.id);
+            if (ai !== -1 && bi !== -1) return ai - bi;
+            if (ai !== -1) return -1;
+            if (bi !== -1) return 1;
+            return (a.name || '').localeCompare(b.name || '');
+          }),
+        blocks: associationBlocks,
+        stairs: associationStairs,
+        getSupplierExpenseNames,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel facturi:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExportingFacturi(null);
+    }
+  };
 
   const toggleInvoiceExpand = (invoiceId) => {
     setExpandedInvoices(prev => ({ ...prev, [invoiceId]: !prev[invoiceId] }));
@@ -499,24 +579,26 @@ const AccountingView = ({
           title="Lista facturi"
           headerBg="bg-orange-50"
           actions={
-            <>
+            <div className="flex items-center gap-2">
               <button
-                disabled
-                className="bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-                title="Exportă lista de facturi în PDF (în curând)"
+                onClick={handleExportFacturiPdf}
+                disabled={filteredInvoices.length === 0 || exportingFacturi !== null}
+                className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={filteredInvoices.length === 0 ? 'Nu există facturi' : 'Exportă lista facturilor în PDF'}
               >
-                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Exportă PDF
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingFacturi === 'pdf' ? 'Se generează…' : 'Exportă PDF'}
               </button>
               <button
-                disabled
-                className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-                title="Exportă lista de facturi în Excel (în curând)"
+                onClick={handleExportFacturiExcel}
+                disabled={filteredInvoices.length === 0 || exportingFacturi !== null}
+                className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={filteredInvoices.length === 0 ? 'Nu există facturi' : 'Exportă lista facturilor în Excel'}
               >
-                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Exportă Excel
+                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exportingFacturi === 'excel' ? 'Se generează…' : 'Exportă Excel'}
               </button>
-            </>
+            </div>
           }
         >
             {false && /* Încasări mutat la pagina Întreținere */ (

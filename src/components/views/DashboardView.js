@@ -10,6 +10,7 @@ import { usePaymentSync } from '../../hooks/usePaymentSync';
 import { Building, Calculator, Coins, Filter, ClipboardList, Printer } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { downloadIntretinerePdf } from '../../utils/intretinerePdfGenerator';
+import { downloadIntretinereExcel } from '../../utils/intretinereExcelGenerator';
 import { doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
@@ -203,6 +204,90 @@ const DashboardView = ({
       publicationDate,
       dueDate,
     });
+  };
+
+  const [exportingIntretinereExcel, setExportingIntretinereExcel] = useState(false);
+  const handleExportIntretinereExcel = async (filteredMaintenanceData) => {
+    setExportingIntretinereExcel(true);
+    try {
+      const associationBlockIds = (blocks || [])
+        .filter(b => b.associationId === association?.id)
+        .map(b => b.id);
+      const associationStairs = (stairs || [])
+        .filter(s => associationBlockIds.includes(s.blockId));
+      const apartments = getAssociationApartments ? getAssociationApartments() : [];
+
+      const groups = associationStairs.map(stair => {
+        const block = (blocks || []).find(b => b.id === stair.blockId);
+        const stairApartmentNumbers = (apartments || [])
+          .filter(a => a.stairId === stair.id)
+          .map(a => a.number);
+        const stairData = (filteredMaintenanceData || maintenanceData || [])
+          .filter(d => stairApartmentNumbers.includes(d.apartment));
+        return {
+          blocName: block?.name || '',
+          stairName: stair.name || '',
+          maintenanceData: stairData,
+        };
+      });
+
+      // Reuse same publication/due date logic ca PDF (best-effort)
+      const parseTimestamp = (raw) => {
+        if (!raw) return null;
+        if (typeof raw.toDate === 'function') return raw.toDate();
+        if (typeof raw.seconds === 'number') return new Date(raw.seconds * 1000);
+        if (typeof raw === 'string') {
+          const d = new Date(raw);
+          return isNaN(d.getTime()) ? null : d;
+        }
+        return null;
+      };
+      let publicationDate = null;
+      let dueDate = null;
+      try {
+        const sheetIdToFetch = activeSheet?.id;
+        if (association?.id && sheetIdToFetch) {
+          const sheetRef = firestoreDoc(db, 'associations', association.id, 'sheets', sheetIdToFetch);
+          const sheetSnap = await getDoc(sheetRef);
+          if (sheetSnap.exists()) {
+            const data = sheetSnap.data();
+            publicationDate = parseTimestamp(data?.publishedAt) || parseTimestamp(data?.updatedAt);
+          }
+        }
+        let dueDay = 25;
+        if (association?.id) {
+          const settingsRef = firestoreDoc(db, 'associations', association.id, 'settings', 'app');
+          const settingsSnap = await getDoc(settingsRef);
+          if (settingsSnap.exists()) {
+            const ms = settingsSnap.data()?.monthSettings;
+            if (ms?.paymentDueDay) dueDay = parseInt(ms.paymentDueDay) || 25;
+          }
+        }
+        if (publicationDate) {
+          dueDate = new Date(publicationDate);
+          if (publicationDate.getDate() > dueDay) {
+            dueDate.setMonth(dueDate.getMonth() + 1);
+          }
+          dueDate.setDate(dueDay);
+        }
+      } catch (e) {
+        console.warn('Nu s-a putut citi metadata sheet:', e);
+      }
+
+      await downloadIntretinereExcel({
+        groups,
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: activeSheet?.consumptionMonth,
+        publicationDate,
+        dueDate,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel întreținere:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExportingIntretinereExcel(false);
+    }
   };
 
   // Handler pentru deschiderea modalului de breakdown întreținere
@@ -648,6 +733,8 @@ const DashboardView = ({
                     consumptionMonth={activeSheet?.consumptionMonth}
                     onExportPdf={handleExportIntretinerePdf}
                     canExportPdf={activeSheet?.status === 'PUBLISHED' || activeSheet?.status === 'published' || activeSheet?.status === 'archived'}
+                    onExportExcel={handleExportIntretinereExcel}
+                    exportingExcel={exportingIntretinereExcel}
                     userProfile={userProfile}
                     currentUser={currentUser}
                   />

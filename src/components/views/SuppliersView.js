@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search, Truck, Printer } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search, Truck, Printer, FileSpreadsheet, FileDown } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
@@ -8,6 +8,8 @@ import PageHeader from '../common/PageHeader';
 import SearchFilterBar from '../common/SearchFilterBar';
 import ContentCard from '../common/ContentCard';
 import { matchesSearch } from '../../utils/searchHelpers';
+import { downloadFurnizoriExcel } from '../../utils/furnizoriExcelGenerator';
+import { downloadFurnizoriPdf } from '../../utils/furnizoriPdfGenerator';
 
 const SuppliersView = ({
   association,
@@ -136,6 +138,66 @@ const SuppliersView = ({
     }
   };
 
+  const [exporting, setExporting] = useState(null); // 'excel' | 'pdf' | null
+
+  const handleExportPdf = async () => {
+    if (suppliers.length === 0) return;
+    setExporting('pdf');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadFurnizoriPdf({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        suppliers,
+        invoices,
+        expenseTypes: getAssociationExpenseTypes(),
+        activeSheet,
+        getSupplierExpenseTypes,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export PDF furnizori:', err);
+      alert('Eroare la generarea fișierului PDF. Verifică consola.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (suppliers.length === 0) return;
+    setExporting('excel');
+    try {
+      const associationBlocks = (blocks || []).filter(b => b.associationId === association?.id);
+      const associationStairs = (stairs || []).filter(s =>
+        associationBlocks.some(b => b.id === s.blockId)
+      );
+      await downloadFurnizoriExcel({
+        association,
+        monthYear: currentMonth,
+        consumptionMonth: currentSheet?.consumptionMonth,
+        publicationDate: new Date(),
+        suppliers,
+        invoices,
+        expenseTypes: getAssociationExpenseTypes(),
+        activeSheet,
+        getSupplierExpenseTypes,
+        blocks: associationBlocks,
+        stairs: associationStairs,
+      });
+    } catch (err) {
+      console.error('Eroare export Excel furnizori:', err);
+      alert('Eroare la generarea fișierului Excel. Verifică consola.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const handleSupplierSave = async (supplierData) => {
     try {
       if (editingSupplier) {
@@ -217,14 +279,26 @@ const SuppliersView = ({
           title="Lista furnizori"
           headerBg="bg-blue-50"
           actions={
-            <button
-              disabled
-              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
-              title="Imprimă lista furnizorilor (în curând)"
-            >
-              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Imprimă
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportPdf}
+                disabled={suppliers.length === 0 || exporting !== null}
+                className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={suppliers.length === 0 ? 'Nu există furnizori' : 'Exportă lista furnizorilor în PDF'}
+              >
+                <FileDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exporting === 'pdf' ? 'Se generează…' : 'Exportă PDF'}
+              </button>
+              <button
+                onClick={handleExportExcel}
+                disabled={suppliers.length === 0 || exporting !== null}
+                className="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm transition-colors"
+                title={suppliers.length === 0 ? 'Nu există furnizori' : 'Exportă lista furnizorilor în Excel'}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {exporting === 'excel' ? 'Se generează…' : 'Exportă Excel'}
+              </button>
+            </div>
           }
         >
               <div>
