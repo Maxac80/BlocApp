@@ -1,9 +1,12 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search, Truck } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, ChevronDown, ChevronUp, FileText, Search, Truck, Printer } from 'lucide-react';
 import SupplierModal from '../modals/SupplierModal';
 import useSuppliers from '../../hooks/useSuppliers';
 import StatsCard from '../common/StatsCard';
+import PageHeader from '../common/PageHeader';
+import SearchFilterBar from '../common/SearchFilterBar';
+import ContentCard from '../common/ContentCard';
 import { matchesSearch } from '../../utils/searchHelpers';
 
 const SuppliersView = ({
@@ -152,19 +155,12 @@ const SuppliersView = ({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         {/* Page Title */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
-            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
-            <span>
-              Furnizori{currentMonth ? ` - ${currentMonth}` : ''}
-              {currentSheet?.consumptionMonth && (
-                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
-                  <span className="hidden sm:inline">· </span>consum {currentSheet.consumptionMonth}
-                </span>
-              )}
-            </span>
-          </h1>
-        </div>
+        <PageHeader
+          icon={Truck}
+          iconColor="text-blue-600"
+          title={`Furnizori${currentMonth ? ` - ${currentMonth}` : ''}`}
+          subtitle={currentSheet?.consumptionMonth ? `consum ${currentSheet.consumptionMonth}` : null}
+        />
 
         {/* Statistici furnizori */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -173,53 +169,64 @@ const SuppliersView = ({
           <StatsCard label="Cheltuieli asociate" value={supplierStats.totalLinks} borderColor="border-teal-500" />
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-            <div>
-              {/* Bara de căutare, filtru și buton acțiune */}
-              <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Caută după nume furnizor..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  <option value="all">Toți furnizorii</option>
-                  <option value="full">Distribuit</option>
-                  <option value="partial">Parțial distribuit</option>
-                  <option value="undistributed">Nedistribuit</option>
-                  <option value="no_invoices">Fără facturi</option>
-                  <option value="no_expenses">Fără cheltuieli</option>
-                </select>
-                <button
-                  onClick={() => {
-                    if (cantEdit) {
-                      alert('Nu poți adăuga furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
-                      return;
-                    }
-                    handleAddSupplier();
-                  }}
-                  className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-                    cantEdit
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                  disabled={cantEdit}
-                  title={cantEdit ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor'}
-                >
-                  <Plus className="w-4 h-4" />
-                  Adaugă furnizor
-                </button>
-              </div>
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Caută după nume furnizor..."
+          focusRingColor="focus:ring-blue-400"
+          filters={
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm bg-white"
+            >
+              <option value="all">Toți furnizorii</option>
+              <option value="full">Distribuit</option>
+              <option value="partial">Parțial distribuit</option>
+              <option value="undistributed">Nedistribuit</option>
+              <option value="no_invoices">Fără facturi</option>
+              <option value="no_expenses">Fără cheltuieli</option>
+            </select>
+          }
+          actions={
+            <button
+              onClick={() => {
+                if (cantEdit) {
+                  alert('Nu poți adăuga furnizori într-o lună publicată sau arhivată.\n\nPentru a face modificări, mergi la luna în lucru.');
+                  return;
+                }
+                handleAddSupplier();
+              }}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap text-sm font-medium ${
+                cantEdit
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+              disabled={cantEdit}
+              title={cantEdit ? 'Adăugare blocată - lună publicată/arhivată' : 'Adaugă furnizor'}
+            >
+              <Plus className="w-4 h-4" />
+              Adaugă furnizor
+            </button>
+          }
+        />
 
+        <ContentCard
+          icon={Truck}
+          iconColor="text-blue-600"
+          title="Lista furnizori"
+          headerBg="bg-blue-50"
+          actions={
+            <button
+              disabled
+              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+              title="Imprimă lista furnizorilor (în curând)"
+            >
+              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Imprimă
+            </button>
+          }
+        >
               <div>
                 {loading ? (
                   <p className="text-gray-500 text-center py-8">Se încarcă furnizorii...</p>
@@ -442,8 +449,7 @@ const SuppliersView = ({
                   );
                 })()}
               </div>
-            </div>
-        </div>
+        </ContentCard>
 
         <SupplierModal
           isOpen={supplierModalOpen}

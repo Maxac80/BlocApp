@@ -1,7 +1,10 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Coins, Download, Eye, Search, FileText, TrendingUp, AlertCircle, Building, Receipt, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, Pencil, MoreVertical, Share2, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
+import PageHeader from '../common/PageHeader';
+import SearchFilterBar from '../common/SearchFilterBar';
+import ContentCard from '../common/ContentCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import { useIncasari } from '../../hooks/useIncasari';
 import useExpenseConfigurations from '../../hooks/useExpenseConfigurations';
@@ -403,19 +406,12 @@ const AccountingView = ({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         {/* Header standard */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
-            <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 flex-shrink-0 mt-0.5 sm:mt-1" />
-            <span>
-              Facturi{currentMonth ? ` - ${currentMonth}` : ''}
-              {currentMonthSheet?.consumptionMonth && (
-                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
-                  <span className="hidden sm:inline">· </span>consum {currentMonthSheet.consumptionMonth}
-                </span>
-              )}
-            </span>
-          </h1>
-        </div>
+        <PageHeader
+          icon={FileText}
+          iconColor="text-orange-600"
+          title={`Facturi${currentMonth ? ` - ${currentMonth}` : ''}`}
+          subtitle={currentMonthSheet?.consumptionMonth ? `consum ${currentMonthSheet.consumptionMonth}` : null}
+        />
 
         {/* Guard: nu există apartamente configurate */}
         {apartments.length === 0 ? (
@@ -456,7 +452,73 @@ const AccountingView = ({
           );
         })()}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Caută după furnizor, număr factură sau tip cheltuială..."
+          focusRingColor="focus:ring-orange-400"
+          filters={
+            <>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm bg-white"
+              >
+                <option value="all">Toate facturile</option>
+                <option value="paid">Plătite</option>
+                <option value="unpaid">Neplătite</option>
+              </select>
+              <select
+                value={filterDistribution}
+                onChange={(e) => setFilterDistribution(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm bg-white"
+              >
+                <option value="all">Toate distribuțiile</option>
+                <option value="distributed">Distribuite</option>
+                <option value="partial">Parțial distribuite</option>
+                <option value="undistributed">Nedistribuite</option>
+              </select>
+            </>
+          }
+          actions={
+            !isReadOnlyRole && !isMonthReadOnly && (
+              <button
+                onClick={() => setShowAddInvoiceModal(true)}
+                className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Adaugă factura
+              </button>
+            )
+          }
+        />
+
+        <ContentCard
+          icon={FileText}
+          iconColor="text-orange-600"
+          title="Lista facturi"
+          headerBg="bg-orange-50"
+          actions={
+            <>
+              <button
+                disabled
+                className="bg-orange-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                title="Exportă lista de facturi în PDF (în curând)"
+              >
+                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Exportă PDF
+              </button>
+              <button
+                disabled
+                className="bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                title="Exportă lista de facturi în Excel (în curând)"
+              >
+                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Exportă Excel
+              </button>
+            </>
+          }
+        >
             {false && /* Încasări mutat la pagina Întreținere */ (
               <div className="space-y-4 sm:space-y-6">
                 {/* Statistici Încasări */}
@@ -661,51 +723,6 @@ const AccountingView = ({
 
             {/* Facturi */}
               <div>
-                {/* Bara de căutare și filtre pentru facturi */}
-                <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Caută după furnizor, număr factură sau tip cheltuială..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="all">Toate facturile</option>
-                    <option value="paid">Plătite</option>
-                    <option value="unpaid">Neplătite</option>
-                  </select>
-
-                  <select
-                    value={filterDistribution}
-                    onChange={(e) => setFilterDistribution(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="all">Toate distribuțiile</option>
-                    <option value="distributed">Distribuite</option>
-                    <option value="partial">Parțial distribuite</option>
-                    <option value="undistributed">Nedistribuite</option>
-                  </select>
-
-                  {!isReadOnlyRole && !isMonthReadOnly && (
-                    <button
-                      onClick={() => setShowAddInvoiceModal(true)}
-                      className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Adaugă factura
-                    </button>
-                  )}
-                </div>
-
                 {/* Card-uri Facturi */}
                 {filteredInvoices.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
@@ -923,7 +940,7 @@ const AccountingView = ({
                   </div>
                 )}
               </div>
-        </div>
+        </ContentCard>
         </>
       )}
 

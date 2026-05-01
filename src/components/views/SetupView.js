@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search } from 'lucide-react';
+import { Eye, Layers, Building, Building2, DoorOpen, Home, Users, Receipt, Plus, MessageSquare, Search, Printer } from 'lucide-react';
 import { generateExcelTemplate } from '../../utils/excelTemplateGeneratorExcelJS';
 import { matchesSearch } from '../../utils/searchHelpers';
 import ExcelUploadModal from '../modals/ExcelUploadModal';
@@ -11,6 +11,9 @@ import MaintenanceBreakdownModal from '../modals/MaintenanceBreakdownModal';
 import ApartmentMembersModal from '../modals/ApartmentMembersModal';
 import { useAuthEnhanced } from '../../context/AuthContextEnhanced';
 import StatsCard from '../common/StatsCard';
+import PageHeader from '../common/PageHeader';
+import SearchFilterBar from '../common/SearchFilterBar';
+import ContentCard from '../common/ContentCard';
 
 const SetupView = ({
   association,
@@ -519,21 +522,13 @@ const currentMonthStr = new Date().toLocaleDateString("ro-RO", { month: "long", 
 return (
   <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
     <div className="w-full">
-      {/* Header cu dropdown luni */}
       {/* Page Title */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
-          <Building className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-1" />
-          <span>
-            Apartamente{currentMonth ? ` - ${currentMonth}` : ''}
-            {activeSheet?.consumptionMonth && (
-              <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
-                <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
-              </span>
-            )}
-          </span>
-        </h1>
-      </div>
+      <PageHeader
+        icon={Building}
+        iconColor="text-blue-600"
+        title={`Apartamente${currentMonth ? ` - ${currentMonth}` : ''}`}
+        subtitle={activeSheet?.consumptionMonth ? `consum ${activeSheet.consumptionMonth}` : null}
+      />
 
         {/* Statistici */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -577,24 +572,17 @@ return (
           </div>
         )}
 
-        {/* Structura ierarhică */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-          {/* Bara de căutare, filtru și buton acțiune */}
-          <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Caută după număr apartament, proprietar sau persoane..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-            </div>
+        {/* Bara de căutare, filtru și buton acțiune - STANDALONE */}
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Caută după număr apartament, proprietar sau persoane..."
+          focusRingColor="focus:ring-blue-400"
+          filters={
             <select
               value={filterScope}
               onChange={(e) => setFilterScope(e.target.value)}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm bg-white"
             >
               <option value="all">Toate apartamentele</option>
               {associationBlocks.length > 1 && associationBlocks.map(b => (
@@ -610,6 +598,8 @@ return (
                 );
               })}
             </select>
+          }
+          actions={
             <button
               onClick={() => {
                 if (cantEdit) {
@@ -618,7 +608,7 @@ return (
                 }
                 openAddBlockModal();
               }}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap text-sm font-medium ${
                 cantEdit
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -629,8 +619,26 @@ return (
               <Plus className="w-4 h-4" />
               Adaugă bloc
             </button>
-          </div>
+          }
+        />
 
+        {/* Card cu structura ierarhică */}
+        <ContentCard
+          icon={Building}
+          iconColor="text-blue-600"
+          title="Structură apartamente"
+          headerBg="bg-blue-50"
+          actions={
+            <button
+              disabled
+              className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+              title="Imprimă structura apartamentelor (în curând)"
+            >
+              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Imprimă
+            </button>
+          }
+        >
           {associationBlocks.length > 3 && (
             <div className="flex justify-end gap-2 mb-3 sm:mb-4">
               <button
@@ -1905,7 +1913,7 @@ return (
               });
             })()}
           </div>
-        </div>
+        </ContentCard>
       </div>
 
       {/* Modal pentru Upload Excel */}

@@ -1,7 +1,10 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search, Tag } from 'lucide-react';
+import { Plus, Settings, Trash2, Building, Building2, Package, MoreVertical, Home, Users, User, BarChart3, ChevronDown, ChevronUp, FileText, Search, Tag, Printer } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
+import PageHeader from '../common/PageHeader';
+import SearchFilterBar from '../common/SearchFilterBar';
+import ContentCard from '../common/ContentCard';
 import { defaultExpenseTypes } from '../../data/expenseTypes';
 import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 import SupplierModal from '../modals/SupplierModal';
@@ -221,19 +224,12 @@ const ExpensesViewNew = ({
   return (
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
-            <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0 mt-0.5 sm:mt-1" />
-            <span>
-              Cheltuieli{currentMonth ? ` - ${currentMonth}` : ''}
-              {activeSheet?.consumptionMonth && (
-                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
-                  <span className="hidden sm:inline">· </span>consum {activeSheet.consumptionMonth}
-                </span>
-              )}
-            </span>
-          </h1>
-        </div>
+        <PageHeader
+          icon={Tag}
+          iconColor="text-indigo-600"
+          title={`Cheltuieli${currentMonth ? ` - ${currentMonth}` : ''}`}
+          subtitle={activeSheet?.consumptionMonth ? `consum ${activeSheet.consumptionMonth}` : null}
+        />
 
         {/* Statistici cheltuieli */}
         {(() => {
@@ -276,51 +272,62 @@ const ExpensesViewNew = ({
             </button>
           </div>
         ) : (
+        <>
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Caută după nume cheltuială..."
+          focusRingColor="focus:ring-indigo-400"
+          filters={
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm bg-white"
+            >
+              <option value="all">Toate cheltuielile</option>
+              <option value="distributed">Distribuite</option>
+              <option value="undistributed">Nedistribuite</option>
+            </select>
+          }
+          actions={
+            <button
+              onClick={() => {
+                if (cantEdit) {
+                  alert('Nu poți adăuga cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
+                  return;
+                }
+                setAddModalOpen(true);
+              }}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap text-sm font-medium ${
+                cantEdit
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+              disabled={cantEdit}
+              title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă cheltuială nouă'}
+            >
+              <Plus className="w-4 h-4" />
+              Adaugă cheltuială
+            </button>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-              <div>
-                {/* Bara de căutare, filtru și buton acțiune */}
-                <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Caută după nume cheltuială..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    <option value="all">Toate cheltuielile</option>
-                    <option value="distributed">Distribuite</option>
-                    <option value="undistributed">Nedistribuite</option>
-                  </select>
-                  <button
-                    onClick={() => {
-                      if (cantEdit) {
-                        alert('Nu poți adăuga cheltuieli într-o lună publicată.\n\nPentru a face modificări, mergi la luna în lucru (decembrie).');
-                        return;
-                      }
-                      setAddModalOpen(true);
-                    }}
-                    className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-                      cantEdit
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                    disabled={cantEdit}
-                    title={cantEdit ? 'Adăugare blocată - lună publicată' : 'Adaugă cheltuială nouă'}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Adaugă cheltuială
-                  </button>
-                </div>
-
+        <ContentCard
+          icon={Tag}
+          iconColor="text-indigo-600"
+          title="Configurare cheltuieli"
+          headerBg="bg-indigo-50"
+          actions={
+            <button
+              disabled
+              className="bg-indigo-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+              title="Imprimă lista cheltuielilor (în curând)"
+            >
+              <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Imprimă
+            </button>
+          }
+        >
                 <div>
                   {(() => {
                     const allExpenseTypes = getAssociationExpenseTypes();
@@ -784,8 +791,8 @@ const ExpensesViewNew = ({
                     </div>
                   </div>
                 )}
-              </div>
-        </div>
+        </ContentCard>
+        </>
         )}
 
         <ExpenseConfigModal

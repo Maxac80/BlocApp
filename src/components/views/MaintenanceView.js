@@ -1,10 +1,13 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // src/components/views/MaintenanceView.js
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList } from 'lucide-react';
+import { Calculator, Plus, Settings, Info, X, Building, Share2, Search, ClipboardList, ListChecks, Printer } from 'lucide-react';
 import { downloadDistributiePdf } from '../../utils/distributiePdfGenerator';
 import { downloadDistributieExcel } from '../../utils/distributieExcelGenerator';
 import StatsCard from '../common/StatsCard';
+import PageHeader from '../common/PageHeader';
+import SearchFilterBar from '../common/SearchFilterBar';
+import ContentCard from '../common/ContentCard';
 import { MaintenanceTableDetailed, MaintenanceSummary } from '../tables';
 import { ExpenseForm, ExpenseList } from '../expenses';
 import { ExpenseConfigModal, AdjustBalancesModal, PaymentModal, ExpenseEntryModal, MaintenanceBreakdownModal } from '../modals';
@@ -1060,19 +1063,12 @@ const MaintenanceView = ({
         <div className="pb-20 lg:pb-2">
       <div className="w-full px-3 sm:px-4 lg:px-6">
         {/* Page Title */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-start gap-2 min-w-0">
-            <Share2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0 mt-0.5 sm:mt-1" />
-            <span>
-              Distribuție cheltuieli{currentMonth ? ` - ${currentMonth}` : ''}
-              {(activeSheet?.consumptionMonth || currentSheet?.consumptionMonth) && (
-                <span className="block sm:inline text-xs sm:text-base font-normal text-gray-500 sm:ml-2">
-                  <span className="hidden sm:inline">· </span>consum {activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}
-                </span>
-              )}
-            </span>
-          </h1>
-        </div>
+        <PageHeader
+          icon={Share2}
+          iconColor="text-purple-600"
+          title={`Distribuție cheltuieli${currentMonth ? ` - ${currentMonth}` : ''}`}
+          subtitle={(activeSheet?.consumptionMonth || currentSheet?.consumptionMonth) ? `consum ${activeSheet?.consumptionMonth || currentSheet?.consumptionMonth}` : null}
+        />
 
         {/* Statistici distribuție */}
         {(() => {
@@ -1203,30 +1199,26 @@ const MaintenanceView = ({
               </div>
               )}
 
-              {/* Card unificat: search bar + listă cheltuieli */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4">
-              {/* Bara search + filtru + butoane acțiuni */}
-              <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4 mb-4">
-                    <div className="flex-1 relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input
-                        type="text"
-                        placeholder="Caută după nume cheltuială..."
-                        value={expenseSearchTerm}
-                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      />
-                    </div>
-                    <select
-                      value={expenseDistributionFilter}
-                      onChange={(e) => setExpenseDistributionFilter(e.target.value)}
-                      className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    >
-                      <option value="all">Toate cheltuielile</option>
-                      <option value="distributed">Distribuite</option>
-                      <option value="partial">Parțial distribuite</option>
-                      <option value="undistributed">Nedistribuite</option>
-                    </select>
+              {/* Bara search + filtru + butoane acțiuni - STANDALONE */}
+              <SearchFilterBar
+                searchValue={expenseSearchTerm}
+                onSearchChange={setExpenseSearchTerm}
+                searchPlaceholder="Caută după nume cheltuială..."
+                focusRingColor="focus:ring-purple-400"
+                filters={
+                  <select
+                    value={expenseDistributionFilter}
+                    onChange={(e) => setExpenseDistributionFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm bg-white"
+                  >
+                    <option value="all">Toate cheltuielile</option>
+                    <option value="distributed">Distribuite</option>
+                    <option value="partial">Parțial distribuite</option>
+                    <option value="undistributed">Nedistribuite</option>
+                  </select>
+                }
+                actions={
+                  <>
                     {/* Buton Distribuie Cheltuială - afișat când luna nu e read-only */}
                     {!isMonthReadOnly && !isReadOnlyRole && getAvailableExpenseTypes && getAvailableExpenseTypes().length > 0 && (
                       <button
@@ -1257,7 +1249,7 @@ const MaintenanceView = ({
                       </button>
                     )}
 
-                    {/* Buton Depublică Luna - ascuns dacă există încasări sau datele nu sunt gata */}
+                    {/* Buton Depublică Luna */}
                     {isMonthReadOnly && getMonthType(currentMonth) === 'current' && unpublishSheet && isDataReady && incasari.length === 0 && !isReadOnlyRole && (
                       <button
                         onClick={async () => {
@@ -1287,9 +1279,28 @@ const MaintenanceView = ({
                         ↩️ Depublică Luna
                       </button>
                     )}
-              </div>
+                  </>
+                }
+              />
 
-              {/* Lista de cheltuieli unificată */}
+              {/* Card cu header pentru lista de distribuții */}
+              <ContentCard
+                icon={ListChecks}
+                iconColor="text-purple-600"
+                title="Lista cheltuieli distribuite"
+                headerBg="bg-purple-50"
+                actions={
+                  <button
+                    disabled
+                    className="bg-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center text-xs sm:text-sm"
+                    title="Imprimă lista distribuțiilor (în curând)"
+                  >
+                    <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    Imprimă
+                  </button>
+                }
+                className="mb-4"
+              >
                   <ExpenseList
                     searchTerm={expenseSearchTerm}
                     distributionFilter={expenseDistributionFilter}
@@ -1344,7 +1355,7 @@ const MaintenanceView = ({
                     maintenanceData={maintenanceData}
                     isReadOnlyRole={isReadOnlyRole}
                   />
-              </div>
+              </ContentCard>
 
               {/* Tabelul de întreținere - card separat */}
               <div>

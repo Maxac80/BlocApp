@@ -7,10 +7,8 @@ const MaintenanceSummary = ({
 
 return (
   <div>
-    <div className="bg-white rounded-xl shadow-lg">
-      {/* Afișăm conținutul direct fără tab-uri pentru luni */}
-      {tabContent}
-    </div>
+    {/* Afișăm conținutul direct fără tab-uri pentru luni */}
+    {tabContent}
   </div>
 );
 };
