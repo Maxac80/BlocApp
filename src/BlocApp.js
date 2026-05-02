@@ -31,7 +31,9 @@ import {
   ProfileView,
   TutorialsView,
   AccountingView,
-  MessagesView
+  MessagesView,
+  MetersIndexesView,
+  MetersConfigView
 } from './components/views';
 import SuppliersView from './components/views/SuppliersView';
 import IncasariView from './components/views/IncasariView';
@@ -1052,6 +1054,39 @@ useEffect(() => {
               currentUser={activeUser}
               isReadOnlyRole={isReadOnlyRole}
               handleNavigation={handleNavigation}
+            />
+          )}
+
+          {/* Indexes View - captare indecși lunari pe contoare */}
+          {currentView === "indexes" && (
+            <MetersIndexesView
+              association={association}
+              blocks={blocks}
+              stairs={stairs}
+              currentMonth={currentMonth}
+              currentSheet={currentSheet}
+              getAssociationApartments={getAssociationApartments}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              isReadOnlyRole={isReadOnlyRole}
+              handleNavigation={handleNavigation}
+              updateExpenseIndexes={updateExpenseIndexes}
+              updatePendingIndexes={updatePendingIndexes}
+            />
+          )}
+
+          {/* Meters Config View - configurare contoare per cheltuială */}
+          {currentView === "meters" && (
+            <MetersConfigView
+              association={association}
+              blocks={blocks}
+              stairs={stairs}
+              currentMonth={currentMonth}
+              currentSheet={currentSheet}
+              getAssociationApartments={getAssociationApartments}
+              isMonthReadOnly={isMonthReadOnly(currentMonth)}
+              isReadOnlyRole={isReadOnlyRole}
+              handleNavigation={handleNavigation}
+              updateExpenseConfig={updateFirestoreExpenseConfig}
             />
           )}
 

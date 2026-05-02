@@ -205,7 +205,14 @@
       "Bash(pdftotext \"/c/blocapp/.playwright-mcp/Chitanta-Ap4-28.pdf\" -)",
       "Bash(pdftotext \"/c/blocapp/.playwright-mcp/Chitanta-Ap26-28.pdf\" -)",
       "Bash(pdftotext \"/c/blocapp/.playwright-mcp/Chitanta-Ap15-30.pdf\" -)",
-      "Bash(pdftotext \"/c/blocapp/.playwright-mcp/Chitanta-Ap1-34.pdf\" -)"
+      "Bash(pdftotext \"/c/blocapp/.playwright-mcp/Chitanta-Ap1-34.pdf\" -)",
+      "PowerShell(Stop-Process -Id 9672 -Force)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "Bash(tail -n 3 c:\\\\\\\\blocapp\\\\\\\\src\\\\\\\\utils\\\\\\\\cheltuieliExcelGenerator.js)",
+      "Bash(Get-ChildItem -Path c:\\\\blocapp\\\\src -Recurse -Filter \"*.jsx\" -o -Filter \"*.js\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Select-String -Pattern \"\\(contor|indicator|meter|reading\\)\" -CaseSensitive)",
+      "PowerShell(head -30)"
     ],
     "deny": [],
     "ask": [],
