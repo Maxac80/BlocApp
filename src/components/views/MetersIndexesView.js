@@ -1,13 +1,15 @@
 /* eslint-disable no-unused-vars */
 import React, { useMemo, useState } from 'react';
-import { Activity, Gauge, Building, Smartphone, AlertTriangle, Settings } from 'lucide-react';
+import { Activity, Gauge, Cog, Building, Smartphone, AlertTriangle, Settings } from 'lucide-react';
 import PageHeader from '../common/PageHeader';
 import StatsCard from '../common/StatsCard';
 import ContentCard from '../common/ContentCard';
 import SearchFilterBar from '../common/SearchFilterBar';
 import { matchesSearch } from '../../utils/searchHelpers';
+import { sortByExpenseName } from '../../utils/expenseSortHelpers';
 import ExpenseAccordion from '../meters/ExpenseAccordion';
 import IndexesInputTable from '../meters/IndexesInputTable';
+import ExpenseConfigModal from '../modals/ExpenseConfigModal';
 
 export default function MetersIndexesView({
   association,
@@ -21,17 +23,24 @@ export default function MetersIndexesView({
   handleNavigation,
   updateExpenseIndexes,
   updatePendingIndexes,
+  getExpenseConfig,
+  updateExpenseConfig,
+  saveApartmentParticipations,
+  getApartmentParticipation,
+  setApartmentParticipation,
+  onSyncSupplierServiceTypes,
 }) {
   const apartments = getAssociationApartments ? getAssociationApartments() : [];
   const readOnly = isMonthReadOnly || isReadOnlyRole;
   const [searchTerm, setSearchTerm] = useState('');
   const [filterExpense, setFilterExpense] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all'); // all | complete | incomplete | portal
+  const [configModalExpense, setConfigModalExpense] = useState(null);
 
   // Cheltuieli pe consum cu indecși configurați
   const meterExpenses = useMemo(() => {
     const configs = Object.values(currentSheet?.configSnapshot?.expenseConfigurations || {});
-    return configs
+    const filtered = configs
       .filter((c) => {
         if (c.isEnabled === false) return false;
         if (c.distributionType !== 'consumption') return false;
@@ -46,6 +55,7 @@ export default function MetersIndexesView({
         );
         return { config: cfg, expense };
       });
+    return sortByExpenseName(filtered, ({ config }) => config.name);
   }, [currentSheet]);
 
   // Stats
@@ -117,7 +127,7 @@ export default function MetersIndexesView({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         <PageHeader
-          icon={Activity}
+          icon={Gauge}
           iconColor="text-blue-600"
           title={`Consumuri${currentMonth ? ` - ${currentMonth}` : ''}`}
           subtitle="Captare consumuri lunare (indecși sau introducere directă)"
@@ -126,8 +136,8 @@ export default function MetersIndexesView({
               onClick={() => handleNavigation && handleNavigation('meters')}
               className="flex items-center justify-center gap-1.5 bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap text-sm font-medium"
             >
-              <Gauge className="w-4 h-4" />
-              Contoare
+              <Cog className="w-4 h-4" />
+              Vezi contoare
             </button>
           }
         />
@@ -213,7 +223,7 @@ export default function MetersIndexesView({
             />
 
             <ContentCard
-              icon={Activity}
+              icon={Gauge}
               iconColor="text-blue-600"
               title="Consumuri lunare"
               subtitle={`${meterExpenses.length} ${meterExpenses.length === 1 ? 'cheltuială' : 'cheltuieli'} pe consum`}
@@ -230,7 +240,7 @@ export default function MetersIndexesView({
 
               {meterExpenses.length === 0 ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-md p-6 text-center">
-                  <Activity className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <Gauge className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-600 mb-3">
                     Nicio cheltuială pe consum cu indecși configurată pentru această lună.
                   </p>
@@ -238,8 +248,8 @@ export default function MetersIndexesView({
                     onClick={() => handleNavigation && handleNavigation('meters')}
                     className="inline-flex items-center gap-1.5 text-purple-600 text-sm font-medium hover:underline"
                   >
-                    <Gauge className="w-4 h-4" />
-                    Contoare
+                    <Cog className="w-4 h-4" />
+                    Vezi contoare
                   </button>
                 </div>
               ) : (
@@ -339,6 +349,13 @@ export default function MetersIndexesView({
                         defaultOpen={meterExpenses.length === 1}
                         iconColor="text-blue-600"
                         headerBg="bg-blue-50"
+                        menuItems={updateExpenseConfig ? [
+                          {
+                            label: 'Configurează cheltuiala',
+                            icon: Settings,
+                            onClick: () => setConfigModalExpense(config),
+                          },
+                        ] : []}
                       >
                         <IndexesInputTable
                           apartments={apartments}
@@ -362,6 +379,25 @@ export default function MetersIndexesView({
           </>
         )}
       </div>
+
+      {updateExpenseConfig && (
+        <ExpenseConfigModal
+          isOpen={!!configModalExpense}
+          onClose={() => setConfigModalExpense(null)}
+          expenseName={configModalExpense?.name || null}
+          expenseConfig={configModalExpense || null}
+          updateExpenseConfig={updateExpenseConfig}
+          saveApartmentParticipations={saveApartmentParticipations}
+          getAssociationApartments={getAssociationApartments}
+          getApartmentParticipation={getApartmentParticipation}
+          setApartmentParticipation={setApartmentParticipation}
+          currentSheet={currentSheet}
+          blocks={blocks}
+          stairs={stairs}
+          initialTab="indexes"
+          onSyncSupplierServiceTypes={onSyncSupplierServiceTypes}
+        />
+      )}
     </div>
   );
 }

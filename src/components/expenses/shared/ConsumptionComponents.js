@@ -354,6 +354,15 @@ export const ConsumptionTable = ({
   const indexTypes = isCumulative ? [] : (config.indexConfiguration?.indexTypes || []);
   const inputMode = isCumulative ? 'manual' : (config.indexConfiguration?.inputMode || 'manual');
 
+  // 🔒 Cheltuielile pe consum cu indecși/mixed se completează DOAR în pagina Consumuri.
+  // Aici (Distribuție) inputurile rămân doar pentru afișare; sunt grișate.
+  const inputLockedFromConsumuri =
+    !isCumulative &&
+    config?.distributionType === 'consumption' &&
+    config?.indexConfiguration?.enabled === true &&
+    (inputMode === 'indexes' || inputMode === 'mixed') &&
+    indexTypes.length > 0;
+
   // 🔧 Configurare contoare per apartament
   const apartmentMeters = config.indexConfiguration?.apartmentMeters || {};
 
@@ -386,6 +395,15 @@ export const ConsumptionTable = ({
   const showPersonsColumn = isPerPersonDistribution || differenceUsesPersons;
 
   return (
+    <div className="space-y-2">
+      {inputLockedFromConsumuri && (
+        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+          <span className="text-base leading-none">💡</span>
+          <div>
+            Indecșii și consumurile pentru această cheltuială se completează din pagina <strong>Consumuri</strong> (din meniul lateral). Aici sunt afișați doar pentru verificare.
+          </div>
+        </div>
+      )}
     <div className="overflow-x-auto border rounded-lg">
       <table className="w-full text-sm">
         <thead className="bg-gray-100 sticky top-0 border-b-2 border-gray-400">
@@ -631,7 +649,7 @@ export const ConsumptionTable = ({
             // Verifică dacă e exclus - participation este obiect { type: 'excluded' }
             const isExcluded = participation?.type === 'excluded';
 
-            const isDisabled = isMonthReadOnly || isExcluded;
+            const isDisabled = isMonthReadOnly || isExcluded || inputLockedFromConsumuri;
 
             // Calculează totalul final pentru acest apartament
             let finalConsumption = 0;
@@ -1128,6 +1146,7 @@ export const ConsumptionTable = ({
           showPersonsColumn={showPersonsColumn}
         />
       </table>
+    </div>
     </div>
   );
 };

@@ -49,6 +49,13 @@ const SuppliersView = ({
 
   const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier, updateSupplierServiceTypes } = useSuppliers(activeSheet);
 
+  // 🗓️ Izolare pe lună: păstrăm doar facturile lunii curente (alt fel s-ar arăta toate
+  // facturile asociației pe orice lună, ceea ce confundă administratorul).
+  const monthInvoices = React.useMemo(
+    () => (invoices || []).filter(inv => inv.month === currentMonth),
+    [invoices, currentMonth]
+  );
+
   // Închide dropdown-ul când se dă click în afara lui
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -79,7 +86,7 @@ const SuppliersView = ({
     if (expenseTypes.length === 0) return { status: 'no_expenses', label: 'Fără cheltuieli', color: 'bg-gray-100 text-gray-500', distributed: [], undistributed: [] };
 
     // Verifică dacă furnizorul are facturi în luna curentă
-    const supplierInvs = invoices.filter(inv => inv.supplierId === supplierId);
+    const supplierInvs = monthInvoices.filter(inv => inv.supplierId === supplierId);
     const hasInvoices = supplierInvs.length > 0;
 
     const distributedExpenses = activeSheet?.expenses || [];
@@ -116,7 +123,7 @@ const SuppliersView = ({
     }).length;
     return { totalLinks, withDistributed };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suppliers, invoices]);
+  }, [suppliers, monthInvoices]);
 
   const handleAddSupplier = () => {
     setEditingSupplier(null);
@@ -154,7 +161,7 @@ const SuppliersView = ({
         consumptionMonth: currentSheet?.consumptionMonth,
         publicationDate: new Date(),
         suppliers,
-        invoices,
+        invoices: monthInvoices,
         expenseTypes: getAssociationExpenseTypes(),
         activeSheet,
         getSupplierExpenseTypes,
@@ -183,7 +190,7 @@ const SuppliersView = ({
         consumptionMonth: currentSheet?.consumptionMonth,
         publicationDate: new Date(),
         suppliers,
-        invoices,
+        invoices: monthInvoices,
         expenseTypes: getAssociationExpenseTypes(),
         activeSheet,
         getSupplierExpenseTypes,
@@ -322,7 +329,7 @@ const SuppliersView = ({
                       const activeExpenseTypes = getSupplierExpenseTypes(supplier.id);
 
                       const isExpanded = expandedSuppliers[supplier.id];
-                      const supplierInvoices = invoices.filter(inv => inv.supplierId === supplier.id);
+                      const supplierInvoices = monthInvoices.filter(inv => inv.supplierId === supplier.id);
 
                       return (
                         <div

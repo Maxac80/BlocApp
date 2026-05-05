@@ -1141,7 +1141,10 @@ const MaintenanceView = ({
               : (parseFloat(exp.amount) || 0);
             return sum + val;
           }, 0);
-          const totalInvoices = (invoices || []).reduce((sum, inv) => sum + (parseFloat(inv.totalInvoiceAmount) || 0), 0);
+          // 🗓️ Doar facturile lunii curente, nu toate facturile asociației
+          const totalInvoices = (invoices || [])
+            .filter(inv => inv.month === currentMonth)
+            .reduce((sum, inv) => sum + (parseFloat(inv.totalInvoiceAmount) || 0), 0);
           return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <StatsCard label="Total cheltuieli" value={totalExpenseTypes} borderColor="border-blue-500" />

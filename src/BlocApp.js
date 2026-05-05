@@ -1071,6 +1071,11 @@ useEffect(() => {
               handleNavigation={handleNavigation}
               updateExpenseIndexes={updateExpenseIndexes}
               updatePendingIndexes={updatePendingIndexes}
+              getExpenseConfig={getFirestoreExpenseConfig}
+              updateExpenseConfig={updateFirestoreExpenseConfig}
+              saveApartmentParticipations={saveApartmentParticipations}
+              getApartmentParticipation={getApartmentParticipation}
+              setApartmentParticipation={setApartmentParticipation}
             />
           )}
 

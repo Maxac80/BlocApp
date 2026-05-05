@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ClipboardList, Share2, X, FileText, Tag, Settings, Building, Truck, ChevronUp, MessageSquare, Activity } from 'lucide-react';
+import { ClipboardList, Share2, X, FileText, Tag, Settings, Building, Truck, ChevronUp, MessageSquare, Gauge } from 'lucide-react';
 import UserDropdownMenu from './UserDropdownMenu';
 import { useMessaging } from '../../hooks/useMessaging';
 
@@ -208,74 +208,26 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Apartamente */}
+        {/* Consumuri (include și pagina secundară Contoare) */}
         <button
-          onClick={() => handleNavigation("setup")}
+          onClick={() => handleNavigation("indexes")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "setup"
+            currentView === "indexes" || currentView === "meters"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Building className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Gauge className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Apartamente</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scari, apartamente</div>
+              <div className="text-sm lg:text-base font-medium">Consumuri</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Indecși & contoare</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Apartamente
-            </div>
-          )}
-        </button>
-
-        {/* Cheltuieli */}
-        <button
-          onClick={() => handleNavigation("expenses")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "expenses"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <Tag className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Cheltuieli</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Configurare cheltuieli</div>
-            </div>
-          )}
-
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Cheltuieli
-            </div>
-          )}
-        </button>
-
-        {/* Furnizori */}
-        <button
-          onClick={() => handleNavigation("suppliers")}
-          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "suppliers"
-              ? "bg-blue-100 text-blue-700"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <Truck className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-          {sidebarExpanded && (
-            <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Furnizori</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Gestionare furnizori</div>
-            </div>
-          )}
-
-          {!sidebarExpanded && (
-            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Furnizori
+              Consumuri
             </div>
           )}
         </button>
@@ -304,26 +256,74 @@ const Sidebar = ({
           )}
         </button>
 
-        {/* Indecși (include și pagina secundară Contoare) */}
+        {/* Furnizori */}
         <button
-          onClick={() => handleNavigation("indexes")}
+          onClick={() => handleNavigation("suppliers")}
           className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
-            currentView === "indexes" || currentView === "meters"
+            currentView === "suppliers"
               ? "bg-blue-100 text-blue-700"
               : "text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <Activity className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          <Truck className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <div className="ml-2 lg:ml-3">
-              <div className="text-sm lg:text-base font-medium">Consumuri</div>
-              <div className="text-xs text-gray-500 hidden lg:block">Indecși & contoare</div>
+              <div className="text-sm lg:text-base font-medium">Furnizori</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Gestionare furnizori</div>
             </div>
           )}
 
           {!sidebarExpanded && (
             <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Consumuri
+              Furnizori
+            </div>
+          )}
+        </button>
+
+        {/* Cheltuieli */}
+        <button
+          onClick={() => handleNavigation("expenses")}
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "expenses"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Tag className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Configurare cheltuieli</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Tipuri și distribuție</div>
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Configurare cheltuieli
+            </div>
+          )}
+        </button>
+
+        {/* Apartamente */}
+        <button
+          onClick={() => handleNavigation("setup")}
+          className={`w-full flex items-center px-2 lg:px-3 py-2 lg:py-3 text-left rounded-lg transition-all duration-200 group ${
+            currentView === "setup"
+              ? "bg-blue-100 text-blue-700"
+              : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Building className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          {sidebarExpanded && (
+            <div className="ml-2 lg:ml-3">
+              <div className="text-sm lg:text-base font-medium">Apartamente</div>
+              <div className="text-xs text-gray-500 hidden lg:block">Blocuri, scari, apartamente</div>
+            </div>
+          )}
+
+          {!sidebarExpanded && (
+            <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Apartamente
             </div>
           )}
         </button>

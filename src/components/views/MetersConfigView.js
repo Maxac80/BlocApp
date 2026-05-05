@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useMemo, useCallback, useState } from 'react';
-import { Gauge, Activity, Building, Smartphone, AlertTriangle } from 'lucide-react';
+import { Gauge, Cog, Activity, Building, Smartphone, AlertTriangle } from 'lucide-react';
 import PageHeader from '../common/PageHeader';
 import StatsCard from '../common/StatsCard';
 import ContentCard from '../common/ContentCard';
@@ -83,7 +83,7 @@ export default function MetersConfigView({
     <div className="px-3 sm:px-4 lg:px-6 pb-20 lg:pb-2">
       <div className="w-full">
         <PageHeader
-          icon={Gauge}
+          icon={Cog}
           iconColor="text-purple-600"
           title={`Contoare${currentMonth ? ` - ${currentMonth}` : ''}`}
           subtitle="Configurare contoare, serii și transmitere din portal"
@@ -92,9 +92,9 @@ export default function MetersConfigView({
               onClick={() => handleNavigation && handleNavigation('indexes')}
               className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm font-medium"
             >
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Înapoi la indecși</span>
-              <span className="sm:hidden">Indecși</span>
+              <Gauge className="w-4 h-4" />
+              <span className="hidden sm:inline">Vezi consumuri</span>
+              <span className="sm:hidden">Consumuri</span>
             </button>
           }
         />
@@ -173,7 +173,7 @@ export default function MetersConfigView({
             />
 
             <ContentCard
-              icon={Gauge}
+              icon={Cog}
               iconColor="text-purple-600"
               title="Configurare contoare"
               subtitle={`${meterExpenses.length} ${meterExpenses.length === 1 ? 'cheltuială' : 'cheltuieli'} pe consum`}

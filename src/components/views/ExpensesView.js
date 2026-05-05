@@ -84,6 +84,13 @@ const ExpensesViewNew = ({
 
   const { suppliers, loading, addSupplier, updateSupplier, deleteSupplier, updateSupplierServiceTypes } = useSuppliers(activeSheet);
 
+  // 🗓️ Izolare pe lună: păstrăm doar facturile lunii curente, ca administratorul
+  // să nu vadă pe luna „în lucru" facturi rămase de pe luna publicată anterior.
+  const monthInvoices = React.useMemo(
+    () => (invoices || []).filter(inv => inv.month === currentMonth),
+    [invoices, currentMonth]
+  );
+
   // Închide dropdown-ul când se dă click în afara lui
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -113,7 +120,7 @@ const ExpensesViewNew = ({
         publicationDate: new Date(),
         expenseTypes: expTypes,
         getExpenseConfig,
-        invoices,
+        invoices: monthInvoices,
         activeSheet,
         blocks: associationBlocks,
         stairs: associationStairs,
@@ -142,7 +149,7 @@ const ExpensesViewNew = ({
         publicationDate: new Date(),
         expenseTypes: expTypes,
         getExpenseConfig,
-        invoices,
+        invoices: monthInvoices,
         activeSheet,
         blocks: associationBlocks,
         stairs: associationStairs,
@@ -288,7 +295,7 @@ const ExpensesViewNew = ({
         <PageHeader
           icon={Tag}
           iconColor="text-indigo-600"
-          title={`Cheltuieli${currentMonth ? ` - ${currentMonth}` : ''}`}
+          title={`Configurare cheltuieli${currentMonth ? ` - ${currentMonth}` : ''}`}
           subtitle={activeSheet?.consumptionMonth ? `consum ${activeSheet.consumptionMonth}` : null}
         />
 
@@ -470,7 +477,7 @@ const ExpensesViewNew = ({
                         ...(config.suppliers || []).map(s => s.supplierId).filter(Boolean),
                         ...(config.supplierId ? [config.supplierId] : [])
                       ]);
-                      const expenseInvoices = invoices.filter(inv =>
+                      const expenseInvoices = monthInvoices.filter(inv =>
                         inv.expenseTypeId === expenseType.id ||
                         inv.distributionHistory?.some(d => d.expenseName === expenseType.name) ||
                         (inv.supplierId && linkedSupplierIds.has(inv.supplierId))
